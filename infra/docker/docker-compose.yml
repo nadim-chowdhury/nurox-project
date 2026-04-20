@@ -1,0 +1,9 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: nurox
+      POSTGRES_PASSWORD: nurox
+      POSTGRES_DB: nurox_erp
+    ports:
+      - "5432:5432"
