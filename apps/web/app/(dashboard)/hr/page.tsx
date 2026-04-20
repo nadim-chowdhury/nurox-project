@@ -1,17 +1,62 @@
 "use client";
 
 import React from "react";
-import { Row, Col, Button, Tag } from "antd";
+import { Row, Col, Card, Button } from "antd";
 import {
-  PlusOutlined,
   TeamOutlined,
   ApartmentOutlined,
   TrophyOutlined,
+  IdcardOutlined,
+  UserAddOutlined,
+  RightOutlined,
+  PlusOutlined,
 } from "@ant-design/icons";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/common/PageHeader";
 import { KpiCard } from "@/components/common/KpiCard";
 
+const modules = [
+  {
+    title: "Employees",
+    description: "View, add, and manage employee records",
+    icon: <TeamOutlined style={{ fontSize: 28, color: "#c3f5ff" }} />,
+    href: "/hr/employees",
+    count: "284",
+  },
+  {
+    title: "Departments",
+    description: "Organizational structure and teams",
+    icon: <ApartmentOutlined style={{ fontSize: 28, color: "#80d8ff" }} />,
+    href: "/hr/departments",
+    count: "12",
+  },
+  {
+    title: "Designations",
+    description: "Job titles, levels, and salary bands",
+    icon: <IdcardOutlined style={{ fontSize: 28, color: "#6dd58c" }} />,
+    href: "/hr/designations",
+    count: "32",
+  },
+  {
+    title: "Recruitment",
+    description: "Job postings and applicant tracking",
+    icon: <UserAddOutlined style={{ fontSize: 28, color: "#ffb347" }} />,
+    href: "/hr/recruitment",
+    count: "6 open",
+  },
+  {
+    title: "Performance",
+    description: "Reviews, goals, and appraisals",
+    icon: <TrophyOutlined style={{ fontSize: 28, color: "#e3eeff" }} />,
+    href: "/hr/performance",
+    count: "87%",
+  },
+];
+
 export default function HRPage() {
+  const router = useRouter();
+
   return (
     <div className="animate-fade-in-up">
       <PageHeader
@@ -19,110 +64,103 @@ export default function HRPage() {
         subtitle="Manage your workforce, departments, and performance"
         breadcrumbs={[{ label: "Home", href: "/dashboard" }, { label: "HR" }]}
         extra={
-          <Button type="primary" icon={<PlusOutlined />}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => router.push("/hr/employees/new")}
+          >
             Add Employee
           </Button>
         }
       />
 
-      <Row gutter={[20, 20]} style={{ marginBottom: 32 }}>
-        <Col xs={24} sm={8}>
-          <KpiCard
-            title={
-              <span style={{ color: "var(--color-on-surface-variant)" }}>
-                Total Employees
-              </span>
-            }
-            value={284}
-            prefix={
-              <TeamOutlined
-                style={{ color: "var(--color-primary)", marginRight: 8 }}
-              />
-            }
-            trend="up"
-            trendValue="+4.4%"
-          />
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={12} sm={6}>
+          <KpiCard title="Total Employees" value="284" />
         </Col>
-        <Col xs={24} sm={8}>
-          <KpiCard
-            title={
-              <span style={{ color: "var(--color-on-surface-variant)" }}>
-                Departments
-              </span>
-            }
-            value={12}
-            prefix={
-              <ApartmentOutlined
-                style={{ color: "var(--color-primary)", marginRight: 8 }}
-              />
-            }
-          />
+        <Col xs={12} sm={6}>
+          <KpiCard title="Active" value="271" />
         </Col>
-        <Col xs={24} sm={8}>
-          <KpiCard
-            title={
-              <span style={{ color: "var(--color-on-surface-variant)" }}>
-                Avg. Performance
-              </span>
-            }
-            value={87}
-            suffix="%"
-            prefix={
-              <TrophyOutlined
-                style={{ color: "var(--color-primary)", marginRight: 8 }}
-              />
-            }
-            trend="up"
-            trendValue="+2.1%"
-          />
+        <Col xs={12} sm={6}>
+          <KpiCard title="On Leave" value="8" />
+        </Col>
+        <Col xs={12} sm={6}>
+          <KpiCard title="Open Positions" value="6" />
         </Col>
       </Row>
 
-      <div
-        style={{
-          background: "var(--color-surface)",
-          border: "1px solid var(--ghost-border)",
-          borderRadius: 4,
-          padding: 48,
-          textAlign: "center",
-          color: "var(--color-on-surface-variant)",
-        }}
-      >
-        <TeamOutlined
-          style={{
-            fontSize: 48,
-            marginBottom: 16,
-            color: "var(--color-primary)",
-            opacity: 0.3,
-          }}
-        />
-        <div
-          style={{
-            fontSize: 16,
-            fontFamily: "var(--font-display)",
-            marginBottom: 8,
-          }}
-        >
-          Employee Management
-        </div>
-        <div style={{ fontSize: 13 }}>
-          Employee list, departments, and performance reviews will be built
-          here.
-        </div>
-        <div
-          style={{
-            marginTop: 16,
-            display: "flex",
-            gap: 8,
-            justifyContent: "center",
-          }}
-        >
-          <Tag>Employees</Tag>
-          <Tag>Departments</Tag>
-          <Tag>Designations</Tag>
-          <Tag>Performance</Tag>
-        </div>
-      </div>
+      <Row gutter={[16, 16]}>
+        {modules.map((m) => (
+          <Col xs={24} sm={12} lg={8} key={m.title}>
+            <Link href={m.href}>
+              <Card
+                hoverable
+                style={{
+                  background: "var(--color-surface)",
+                  border: "1px solid var(--ghost-border)",
+                  borderRadius: 4,
+                  height: "100%",
+                  cursor: "pointer",
+                  transition: "border-color 0.2s",
+                }}
+                styles={{ body: { padding: 24 } }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  {m.icon}
+                  <span
+                    style={{
+                      fontFamily: "var(--font-display)",
+                      color: "var(--color-primary)",
+                      fontWeight: 700,
+                      fontSize: 18,
+                    }}
+                  >
+                    {m.count}
+                  </span>
+                </div>
+                <h3
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    color: "var(--color-on-surface)",
+                    fontWeight: 600,
+                    fontSize: 16,
+                    marginTop: 16,
+                    marginBottom: 6,
+                  }}
+                >
+                  {m.title}
+                </h3>
+                <p
+                  style={{
+                    color: "var(--color-on-surface-variant)",
+                    fontSize: 13,
+                    margin: 0,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {m.description}
+                </p>
+                <div
+                  style={{
+                    marginTop: 16,
+                    color: "var(--color-primary)",
+                    fontSize: 13,
+                    fontWeight: 500,
+                  }}
+                >
+                  View {m.title} <RightOutlined style={{ fontSize: 10 }} />
+                </div>
+              </Card>
+            </Link>
+          </Col>
+        ))}
+      </Row>
     </div>
   );
 }

@@ -1,34 +1,73 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  ParseUUIDPipe,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+} from '@nestjs/common';
 import { PayrollService } from './payroll.service';
-import { CreatePayrollDto } from './dto/create-payroll.dto';
-import { UpdatePayrollDto } from './dto/update-payroll.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('payroll')
+@UseGuards(JwtAuthGuard)
 export class PayrollController {
   constructor(private readonly payrollService: PayrollService) {}
 
-  @Post()
-  create(@Body() createPayrollDto: CreatePayrollDto) {
-    return this.payrollService.create(createPayrollDto);
+  @Post('runs')
+  createRun(@Body() dto: any) {
+    return this.payrollService.createRun(dto);
   }
 
-  @Get()
-  findAll() {
-    return this.payrollService.findAll();
+  @Get('runs')
+  findAllRuns(@Query('page') page?: string, @Query('limit') limit?: string) {
+    return this.payrollService.findAllRuns(
+      Number(page) || 1,
+      Number(limit) || 20,
+    );
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.payrollService.findOne(+id);
+  @Get('runs/:id')
+  findRun(@Param('id', ParseUUIDPipe) id: string) {
+    return this.payrollService.findRunById(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePayrollDto: UpdatePayrollDto) {
-    return this.payrollService.update(+id, updatePayrollDto);
+  @Patch('runs/:id')
+  updateRun(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+    return this.payrollService.updateRun(id, dto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.payrollService.remove(+id);
+  @Delete('runs/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  removeRun(@Param('id', ParseUUIDPipe) id: string) {
+    return this.payrollService.removeRun(id);
+  }
+
+  @Post('payslips')
+  createPayslip(@Body() dto: any) {
+    return this.payrollService.createPayslip(dto);
+  }
+
+  @Get('payslips/run/:runId')
+  findPayslipsByRun(@Param('runId', ParseUUIDPipe) runId: string) {
+    return this.payrollService.findPayslipsByRun(runId);
+  }
+
+  @Get('payslips/employee/:employeeId')
+  findPayslipsByEmployee(
+    @Param('employeeId', ParseUUIDPipe) employeeId: string,
+  ) {
+    return this.payrollService.findPayslipsByEmployee(employeeId);
+  }
+
+  @Get('payslips/:id')
+  findPayslip(@Param('id', ParseUUIDPipe) id: string) {
+    return this.payrollService.findPayslipById(id);
   }
 }

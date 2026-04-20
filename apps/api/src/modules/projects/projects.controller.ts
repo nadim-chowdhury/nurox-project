@@ -1,34 +1,87 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  ParseUUIDPipe,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+} from '@nestjs/common';
 import { ProjectsService } from './projects.service';
-import { CreateProjectDto } from './dto/create-project.dto';
-import { UpdateProjectDto } from './dto/update-project.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('projects')
+@UseGuards(JwtAuthGuard)
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
   @Post()
-  create(@Body() createProjectDto: CreateProjectDto) {
-    return this.projectsService.create(createProjectDto);
+  createProject(@Body() dto: any) {
+    return this.projectsService.createProject(dto);
   }
 
   @Get()
-  findAll() {
-    return this.projectsService.findAll();
+  findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
+    return this.projectsService.findAllProjects(
+      Number(page) || 1,
+      Number(limit) || 20,
+    );
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.projectsService.findOne(+id);
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.projectsService.findProjectById(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProjectDto: UpdateProjectDto) {
-    return this.projectsService.update(+id, updateProjectDto);
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+    return this.projectsService.updateProject(id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.projectsService.remove(+id);
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.projectsService.removeProject(id);
+  }
+
+  // ─── TASKS ──────────────────────────────────────────────────
+
+  @Post('tasks')
+  createTask(@Body() dto: any) {
+    return this.projectsService.createTask(dto);
+  }
+
+  @Get('tasks')
+  findAllTasks(
+    @Query('projectId') projectId?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.projectsService.findAllTasks(
+      projectId,
+      Number(page) || 1,
+      Number(limit) || 50,
+    );
+  }
+
+  @Get('tasks/:id')
+  findTask(@Param('id', ParseUUIDPipe) id: string) {
+    return this.projectsService.findTaskById(id);
+  }
+
+  @Patch('tasks/:id')
+  updateTask(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+    return this.projectsService.updateTask(id, dto);
+  }
+
+  @Delete('tasks/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  removeTask(@Param('id', ParseUUIDPipe) id: string) {
+    return this.projectsService.removeTask(id);
   }
 }

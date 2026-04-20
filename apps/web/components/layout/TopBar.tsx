@@ -66,7 +66,7 @@ export function TopBar() {
         alignItems: "center",
         justifyContent: "space-between",
         padding: "0 24px",
-        // marginLeft: collapsed ? 64 : 256,
+        marginLeft: collapsed ? 64 : 256,
         transition: "margin-left 0.2s ease",
         background: "rgba(17, 24, 39, 0.7)",
         height: 64,
