@@ -1,26 +1,90 @@
-import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  constructor(
+    @InjectRepository(User)
+    private readonly usersRepo: Repository<User>,
+  ) {}
+
+  /**
+   * Find user by email. Optionally include passwordHash for auth validation.
+   */
+  async findByEmail(
+    email: string,
+    includePassword = false,
+  ): Promise<User | null> {
+    const qb = this.usersRepo
+      .createQueryBuilder('user')
+      .where('user.email = :email', { email: email.toLowerCase() });
+
+    if (includePassword) {
+      qb.addSelect('user.passwordHash');
+    }
+
+    return qb.getOne();
   }
 
-  findAll() {
-    return `This action returns all users`;
+  /**
+   * Find user by ID. Optionally include refreshTokenHash for token rotation.
+   */
+  async findById(
+    id: string,
+    includeRefreshToken = false,
+  ): Promise<User | null> {
+    const qb = this.usersRepo
+      .createQueryBuilder('user')
+      .where('user.id = :id', { id });
+
+    if (includeRefreshToken) {
+      qb.addSelect('user.refreshTokenHash');
+    }
+
+    return qb.getOne();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  /**
+   * Find user by ID or throw 404.
+   */
+  async findByIdOrFail(id: string): Promise<User> {
+    const user = await this.findById(id);
+    if (!user) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
+    return user;
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  /**
+   * Create a new user (password should already be hashed).
+   */
+  async create(data: Partial<User>): Promise<User> {
+    const user = this.usersRepo.create(data);
+    return this.usersRepo.save(user);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  /**
+   * Update user fields.
+   */
+  async update(id: string, data: Partial<User>): Promise<User> {
+    await this.usersRepo.update(id, data);
+    return this.findByIdOrFail(id);
+  }
+
+  /**
+   * Update refresh token hash (for token rotation).
+   */
+  async updateRefreshTokenHash(id: string, hash: string | null): Promise<void> {
+    await this.usersRepo.update(id, { refreshTokenHash: hash });
+  }
+
+  /**
+   * Soft delete a user.
+   */
+  async remove(id: string): Promise<void> {
+    await this.findByIdOrFail(id);
+    await this.usersRepo.softDelete(id);
   }
 }

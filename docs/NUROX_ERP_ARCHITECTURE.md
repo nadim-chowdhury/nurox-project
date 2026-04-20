@@ -1,7 +1,7 @@
 # Nurox ERP — Production-Ready System Documentation
 
 > **Project:** Nurox ERP · **Design System:** Liquid Precision (Architectural Infinite)
-> **Stack:** Next.js 16 · NestJS 11 · TypeORM 0.3 · PostgreSQL 17 · Ant Design 5.x · RTK Query · NextAuth v5
+> **Stack:** Next.js 16 · NestJS 11 · TypeORM 0.3 · PostgreSQL 18 · Ant Design 6.x · RTK Query · Custom JWT Auth (Passport.js)
 > **Last Updated:** April 2026
 
 ---
@@ -34,37 +34,37 @@ To ensure production-readiness, refer to these specialized documents for granula
 
 ### 1.1 Frontend
 
-| Category                | Technology                      | Version            | Purpose                                                                                                                       |
-| ----------------------- | ------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| Framework               | Next.js                         | 16 (App Router)    | SSR, SSG, RSC, routing                                                                                                        |
-| Language                | TypeScript                      | 5.x                | Type safety                                                                                                                   |
-| UI Component Library    | **Ant Design (antd)**           | **5.x**            | Primary component library — forms, tables, modals, date pickers, upload, notifications                                        |
-| Layout Utilities        | TailwindCSS                     | 4.x                | Spacing, flex, grid utilities only — no component styling                                                                     |
-| Icons                   | Ant Design Icons + Lucide React | latest             | Icon set (antd icons primary, lucide for custom)                                                                              |
-| Form Management         | React Hook Form                 | 7.x                | Performant form state                                                                                                         |
-| Schema Validation       | Zod                             | 3.x                | Runtime validation (shared frontend ↔ backend)                                                                                |
-| RHF + Zod Bridge        | @hookform/resolvers             | latest             | `zodResolver` integration                                                                                                     |
-| State Management        | Redux Toolkit                   | 2.x                | Global UI state only (excluding server & form state)                                                                          |
-| Server State / API      | RTK Query                       | (bundled with RTK) | Data fetching, caching, mutations                                                                                             |
-| Auth State Persistence  | redux-persist                   | latest             | Persist auth slice to localStorage                                                                                            |
-| Auth (Frontend Session) | NextAuth                        | v5 (Auth.js)       | User session proxy (delegating to NestJS backend)                                                                             |
-| Rich Text Editor        | Tiptap                          | 2.x                | Descriptions, announcements, notes                                                                                            |
-| Date Handling           | date-fns                        | 3.x                | Formatting, arithmetic, locale                                                                                                |
-| Charts                  | Recharts                        | 2.x                | Bar, Line, Area, Pie, Donut                                                                                                   |
-| Data Tables             | TanStack Table                  | 8.x                | Advanced client-side filtering/sorting on large (10k+ row) virtualized datasets only; standard tables use antd Table directly |
-| Virtualization          | TanStack Virtual                | 3.x                | Large list rendering                                                                                                          |
-| Drag & Drop             | @dnd-kit/core                   | 6.x                | Kanban boards, sortable lists                                                                                                 |
-| File Upload             | antd Upload                     | —                  | Drag-and-drop file input (antd Upload has built-in drag support; no separate library needed)                                  |
-| PDF Viewer              | react-pdf                       | 7.x                | In-app PDF preview                                                                                                            |
-| Toast Notifications     | antd message + notification API | —                  | Non-blocking toasts (accessed via `antd-message.ts` global instance for use outside components)                               |
-| Animations              | Framer Motion                   | 11.x               | Page transitions, micro-interactions                                                                                          |
-| Real-time               | Socket.io Client                | 4.x                | WebSocket connection                                                                                                          |
-| i18n                    | next-intl                       | 3.x                | Multi-language + locale routing                                                                                               |
-| Component Docs          | Storybook                       | 8.x                | Component development and documentation                                                                                       |
-| Testing                 | Vitest + Testing Library        | latest             | Unit + component tests                                                                                                        |
-| E2E Testing             | Playwright                      | latest             | Critical flow automation                                                                                                      |
-| Linting                 | ESLint (flat config)            | 9.x                | Code quality                                                                                                                  |
-| Formatting              | Prettier                        | 3.x                | Code formatting                                                                                                               |
+| Category                | Technology                       | Version            | Purpose                                                                                                                       |
+| ----------------------- | -------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| Framework               | Next.js                          | 16 (App Router)    | SSR, SSG, RSC, routing                                                                                                        |
+| Language                | TypeScript                       | 5.x                | Type safety                                                                                                                   |
+| UI Component Library    | **Ant Design (antd)**            | **6.x**            | Primary component library — forms, tables, modals, date pickers, upload, notifications                                        |
+| Layout Utilities        | TailwindCSS                      | 4.x                | Spacing, flex, grid utilities only — no component styling                                                                     |
+| Icons                   | @ant-design/icons + Lucide React | 6.x                | Icon set (antd icons primary, lucide for custom)                                                                              |
+| Form Management         | React Hook Form                  | 7.x                | Performant form state                                                                                                         |
+| Schema Validation       | Zod                              | 4.x                | Runtime validation (shared frontend ↔ backend via `@repo/shared-schemas`)                                                     |
+| RHF + Zod Bridge        | @hookform/resolvers              | latest             | `zodResolver` integration                                                                                                     |
+| State Management        | Redux Toolkit                    | 2.x                | Global UI state only (excluding server & form state)                                                                          |
+| Server State / API      | RTK Query                        | (bundled with RTK) | Data fetching, caching, mutations                                                                                             |
+| Auth State Persistence  | redux-persist                    | latest             | Persist auth slice to localStorage                                                                                            |
+| Auth (Frontend Session) | Custom JWT (Redux + httpOnly)    | —                  | Token storage in Redux (memory) + httpOnly refresh cookie; no third-party auth lib                                            |
+| Rich Text Editor        | Tiptap                           | 2.x                | Descriptions, announcements, notes                                                                                            |
+| Date Handling           | date-fns                         | 3.x                | Formatting, arithmetic, locale                                                                                                |
+| Charts                  | Recharts                         | 2.x                | Bar, Line, Area, Pie, Donut                                                                                                   |
+| Data Tables             | TanStack Table                   | 8.x                | Advanced client-side filtering/sorting on large (10k+ row) virtualized datasets only; standard tables use antd Table directly |
+| Virtualization          | TanStack Virtual                 | 3.x                | Large list rendering                                                                                                          |
+| Drag & Drop             | @dnd-kit/core                    | 6.x                | Kanban boards, sortable lists                                                                                                 |
+| File Upload             | antd Upload                      | —                  | Drag-and-drop file input (antd Upload has built-in drag support; no separate library needed)                                  |
+| PDF Viewer              | react-pdf                        | 7.x                | In-app PDF preview                                                                                                            |
+| Toast Notifications     | antd message + notification API  | —                  | Non-blocking toasts (accessed via `antd-message.ts` global instance for use outside components)                               |
+| Animations              | Framer Motion                    | 11.x               | Page transitions, micro-interactions                                                                                          |
+| Real-time               | Socket.io Client                 | 4.x                | WebSocket connection                                                                                                          |
+| i18n                    | next-intl                        | 3.x                | Multi-language + locale routing                                                                                               |
+| Component Docs          | Storybook                        | 8.x                | Component development and documentation                                                                                       |
+| Testing                 | Vitest + Testing Library         | latest             | Unit + component tests                                                                                                        |
+| E2E Testing             | Playwright                       | latest             | Critical flow automation                                                                                                      |
+| Linting                 | ESLint (flat config)             | 9.x                | Code quality                                                                                                                  |
+| Formatting              | Prettier                         | 3.x                | Code formatting                                                                                                               |
 
 ### 1.2 Backend
 
@@ -73,7 +73,7 @@ To ensure production-readiness, refer to these specialized documents for granula
 | Framework        | NestJS                             | 11.x    | Modular Node.js backend                                |
 | Language         | TypeScript                         | 5.x     | Strict type safety                                     |
 | ORM              | TypeORM                            | 0.3.x   | Database access, migrations, relations                 |
-| Database         | PostgreSQL                         | 17      | Primary relational store                               |
+| Database         | PostgreSQL                         | 18      | Primary relational store                               |
 | Cache            | Redis                              | 7.x     | Session, cache, rate limit store                       |
 | Queue            | BullMQ                             | 5.x     | Background jobs, email, payroll runs                   |
 | Auth             | Passport.js + JWT                  | latest  | Core backend authentication / token verification       |
@@ -754,10 +754,6 @@ nurox-erp/
 │   │   │   │       └── security/
 │   │   │   │           └── page.tsx
 │   │   │   │
-│   │   │   ├── api/
-│   │   │   │   └── auth/
-│   │   │   │       └── [...nextauth]/
-│   │   │   │           └── route.ts      # NextAuth v5 catch-all handler
 │   │   │   │
 │   │   │   ├── layout.tsx                # Root layout — AntdProvider + fonts
 │   │   │   ├── not-found.tsx
@@ -767,7 +763,7 @@ nurox-erp/
 │   │   │   ├── providers/
 │   │   │   │   ├── AntdProvider.tsx      # ConfigProvider with Deep Space theme
 │   │   │   │   ├── ReduxProvider.tsx     # Redux store provider
-│   │   │   │   └── SessionProvider.tsx   # NextAuth session provider
+│   │   │   │   └── AuthProvider.tsx      # Custom JWT auth context (stores tokens in Redux)
 │   │   │   │
 │   │   │   ├── layout/
 │   │   │   │   ├── AppShell.tsx          # Root layout shell
@@ -856,7 +852,7 @@ nurox-erp/
 │   │   │
 │   │   ├── lib/
 │   │   │   ├── api-client.ts             # fetchBaseQuery with auth headers
-│   │   │   ├── auth.ts                   # NextAuth v5 helpers
+│   │   │   ├── auth.ts                   # JWT token helpers (getAccessToken, refreshToken)
 │   │   │   ├── utils.ts                  # cn(), formatCurrency(), etc.
 │   │   │   └── antd-message.ts           # Global antd message instance
 │   │   │
@@ -874,8 +870,7 @@ nurox-erp/
 │   │   │       ├── bn.json               # Bengali
 │   │   │       └── ar.json               # Arabic (RTL)
 │   │   │
-│   │   ├── auth.ts                       # NextAuth v5 config
-│   │   ├── middleware.ts                      # Next.js 16 Proxy (route protection)
+│   │   ├── middleware.ts                      # Next.js 16 Proxy (route protection via JWT cookie)
 │   │   ├── next.config.ts
 │   │   ├── tailwind.config.ts            # Layout utilities only
 │   │   ├── tsconfig.json
@@ -1208,102 +1203,73 @@ nurox-erp/
 
 ## 5. Frontend Architecture Patterns
 
-### 5.1 NextAuth v5 Configuration
+### 5.1 Custom JWT Auth Helpers
 
 ```typescript
-// apps/web/auth.ts
-import NextAuth from "next-auth";
-import Credentials from "next-auth/providers/credentials";
-import Google from "next-auth/providers/google";
-import { loginSchema } from "@nurox/zod-schemas";
-import type { JWT } from "next-auth/jwt";
+// apps/web/lib/auth.ts
+import {
+  loginSchema,
+  type LoginDto,
+  type AuthResponseDto,
+} from "@repo/shared-schemas";
 
-async function refreshAccessToken(token: JWT): Promise<JWT> {
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+/**
+ * Login — sends credentials to NestJS backend, returns tokens + user.
+ * Access token is stored in Redux (memory). Refresh token is set as
+ * httpOnly cookie by the NestJS backend (never exposed to JS).
+ */
+export async function login(credentials: LoginDto): Promise<AuthResponseDto> {
+  const parsed = loginSchema.parse(credentials);
+  const res = await fetch(`${API_URL}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include", // sends/receives httpOnly cookies
+    body: JSON.stringify(parsed),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Login failed");
+  }
+  return res.json();
+}
+
+/**
+ * Refresh — calls backend with httpOnly refresh cookie.
+ * Backend validates the cookie and returns new access + refresh tokens.
+ */
+export async function refreshAccessToken(): Promise<{
+  accessToken: string;
+  expiresIn: number;
+} | null> {
   try {
-    const res = await fetch(`${process.env.API_URL}/api/v1/auth/refresh`, {
+    const res = await fetch(`${API_URL}/api/auth/refresh`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken: token.refreshToken }),
+      credentials: "include",
     });
-    if (!res.ok) throw new Error("Refresh failed");
-    const data = await res.json();
-    return {
-      ...token,
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken ?? token.refreshToken,
-      accessTokenExpiry: Date.now() + 14 * 60 * 1000,
-    };
+    if (!res.ok) return null;
+    return res.json();
   } catch {
-    return { ...token, error: "RefreshAccessTokenError" };
+    return null;
   }
 }
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  providers: [
-    Credentials({
-      async authorize(credentials) {
-        const parsed = loginSchema.safeParse(credentials);
-        if (!parsed.success) return null;
-        const res = await fetch(`${process.env.API_URL}/api/v1/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(parsed.data),
-        });
-        if (!res.ok) return null;
-        const data = await res.json();
-        return {
-          id: data.user.id,
-          email: data.user.email,
-          name: `${data.user.firstName} ${data.user.lastName}`,
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-          accessTokenExpiry: Date.now() + 14 * 60 * 1000,
-          permissions: data.permissions,
-          tenantId: data.tenantId,
-          role: data.role,
-        };
-      },
-    }),
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-  ],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        return {
-          ...token,
-          accessToken: (user as any).accessToken,
-          refreshToken: (user as any).refreshToken,
-          accessTokenExpiry: (user as any).accessTokenExpiry,
-          permissions: (user as any).permissions,
-          tenantId: (user as any).tenantId,
-          role: (user as any).role,
-        };
-      }
-      if (Date.now() < (token.accessTokenExpiry as number)) return token;
-      return refreshAccessToken(token);
-    },
-    async session({ session, token }) {
-      session.user.accessToken = token.accessToken as string;
-      session.user.permissions = token.permissions as string[];
-      session.user.tenantId = token.tenantId as string;
-      session.user.role = token.role as string;
-      session.error = token.error as string | undefined;
-      return session;
-    },
-  },
-  pages: { signIn: "/login", error: "/auth/error" },
-  session: { strategy: "jwt" },
-});
+/**
+ * Logout — invalidates refresh token on backend, clears httpOnly cookie.
+ */
+export async function logout(): Promise<void> {
+  await fetch(`${API_URL}/api/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
+}
 ```
 
-### 5.2 Next.js 16 Proxy (Route Protection)
+### 5.2 Next.js 16 Middleware (Route Protection via JWT Cookie)
 
 ```typescript
 // apps/web/middleware.ts
-import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -1312,23 +1278,22 @@ const PUBLIC_PATHS = [
   "/register",
   "/forgot-password",
   "/reset-password",
-  "/auth/error",
 ];
 
-export async function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (
     PUBLIC_PATHS.some((p) => pathname.startsWith(p)) ||
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api/auth")
+    pathname.startsWith("/_next")
   ) {
     return NextResponse.next();
   }
 
-  const session = await auth();
+  // Check for refresh token cookie (httpOnly, set by NestJS backend)
+  const refreshToken = request.cookies.get("nurox_refresh_token");
 
-  if (!session?.user?.accessToken) {
+  if (!refreshToken?.value) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
@@ -1337,19 +1302,13 @@ export async function proxy(request: NextRequest) {
   // Maintenance mode: set 'maintenance_mode' key in Redis via admin panel.
   // middleware.ts reads this flag via the NestJS health/settings endpoint
   // rather than importing Redis directly (keeps the frontend Redis-free).
-  // Example: GET /api/v1/settings/maintenance → { enabled: true }
-  // Return NextResponse with status 503 and a maintenance HTML page if enabled.
 
-  const headers = new Headers(request.headers);
-  headers.set("x-tenant-id", session.user.tenantId ?? "");
-  headers.set("x-user-role", session.user.role ?? "");
-
-  return NextResponse.next({ request: { headers } });
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/auth|.*\\.(?:svg|png|jpg|ico|webp)).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|ico|webp)).*)",
   ],
 };
 ```
@@ -1390,7 +1349,7 @@ export const baseApi = createApi({
 });
 ```
 
-### 5.4 Fetch Base Query (reads token from NextAuth session)
+### 5.4 Fetch Base Query (reads token from Redux store)
 
 ```typescript
 // apps/web/lib/api-client.ts
@@ -1400,32 +1359,49 @@ import type {
   FetchArgs,
   FetchBaseQueryError,
 } from "@reduxjs/toolkit/query";
-import { getSession, signOut } from "next-auth/react";
+import type { RootState } from "@/store";
+import { setAccessToken, clearAuth } from "@/store/slices/authSlice";
+import { refreshAccessToken } from "@/lib/auth";
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: process.env.NEXT_PUBLIC_API_URL + "/api/v1",
-  prepareHeaders: async (headers) => {
-    const session = await getSession();
-    if (session?.user?.accessToken)
-      headers.set("Authorization", `Bearer ${session.user.accessToken}`);
-    if (session?.user?.tenantId)
-      headers.set("x-tenant-id", session.user.tenantId);
+  baseUrl: process.env.NEXT_PUBLIC_API_URL + "/api",
+  credentials: "include", // sends httpOnly refresh cookie
+  prepareHeaders: (headers, { getState }) => {
+    const token = (getState() as RootState).auth.accessToken;
+    if (token) headers.set("Authorization", `Bearer ${token}`);
     return headers;
   },
 });
 
+/**
+ * Wrapper that intercepts 401s, attempts a silent token refresh via
+ * httpOnly cookie, and retries the original request once.
+ */
 export const nuroxBaseQuery: BaseQueryFn<
   string | FetchArgs,
   unknown,
   FetchBaseQueryError
 > = async (args, api, extraOptions) => {
-  const result = await baseQuery(args, api, extraOptions);
+  let result = await baseQuery(args, api, extraOptions);
+
   if (result.error?.status === 401) {
-    await signOut({ callbackUrl: "/login" });
+    const refreshResult = await refreshAccessToken();
+    if (refreshResult?.accessToken) {
+      api.dispatch(setAccessToken(refreshResult.accessToken));
+      result = await baseQuery(args, api, extraOptions);
+    } else {
+      api.dispatch(clearAuth());
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+    }
   }
+
   return result;
 };
 ```
+
+````
 
 ### 5.5 React Hook Form + Zod + Ant Design Pattern
 
@@ -1463,7 +1439,7 @@ export function RhfInput<T extends FieldValues>({
     />
   )
 }
-```
+````
 
 ### 5.6 antd Global Message Instance
 
@@ -1721,13 +1697,13 @@ export type UpdateEmployeeDto = z.infer<typeof updateEmployeeSchema>;
 
 ### Module 2: Authentication & Authorization
 
-- [ ] `auth.ts` — NextAuth v5 with Credentials + Google + Microsoft providers
-- [ ] `app/api/auth/[...nextauth]/route.ts` — NextAuth catch-all handler
+- [ ] `lib/auth.ts` — Custom JWT helpers (login, refresh, logout) calling NestJS backend
+- [ ] `AuthProvider.tsx` — Auth context storing access token in Redux (memory), refresh token as httpOnly cookie
 - [ ] NestJS: `POST /api/v1/auth/login` → returns `accessToken` (15 min RS256), `refreshToken` (7 days)
 - [ ] `jwt` callback: transparent access token refresh before expiry via `POST /api/v1/auth/refresh`
 - [ ] Refresh token rotation — new token on every refresh; family reuse triggers full invalidation
 - [ ] `signOut()` calls `POST /api/v1/auth/logout` to invalidate refresh token in Redis
-- [ ] OAuth 2.0: Google + Microsoft (`next-auth/providers/azure-ad`)
+- [ ] OAuth 2.0: Google + Microsoft via NestJS Passport strategies (provider endpoints on backend)
 - [ ] TOTP 2FA: `speakeasy` QR enrollment + 6-digit verify on NestJS
 - [ ] 2FA backup codes (hashed, one-time use)
 - [ ] Passwordless magic link (10 min JWT) via email
@@ -1738,9 +1714,8 @@ export type UpdateEmployeeDto = z.infer<typeof updateEmployeeSchema>;
 - [ ] Custom role builder with permission nodes per module (e.g., `hr:employees:write`)
 - [ ] `@Permissions('hr:employees:write')` decorator + `PermissionsGuard` on NestJS endpoints
 - [ ] middleware.ts route protection — unauthenticated → redirect to `/login?callbackUrl=...`
-- [ ] `usePermission(permission)` hook reads from `session.user.permissions`
+- [ ] `usePermission(permission)` hook reads from Redux auth slice permissions
 - [ ] Conditional UI rendering via `usePermission` (hide buttons/columns based on role)
-- [ ] NextAuth module augmentation in `packages/shared-types/src/next-auth.d.ts`
 
 ### Module 3: User & Organization Management
 
@@ -2009,14 +1984,15 @@ export type UpdateEmployeeDto = z.infer<typeof updateEmployeeSchema>;
 - [ ] Helmet.js: CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy
 - [ ] All DB queries via TypeORM QueryBuilder (parameterized — no raw string concat)
 - [ ] Input sanitization: `sanitize-html` on backend DTOs + DOMPurify on Tiptap frontend output
-- [ ] CSRF: NextAuth v5 built-in CSRF protection on all auth state-changing flows
+- [ ] CSRF: SameSite=Strict on httpOnly refresh cookie + CSRF token double-submit pattern on state-changing flows
 - [ ] File upload: MIME type + magic byte validation in NestJS interceptor + ClamAV hook
 - [ ] Auth rate limit: 5 failed attempts / 15 min per IP via Redis
 - [ ] Secrets: `@nestjs/config` + Joi at boot; HashiCorp Vault in production
 - [ ] `npm audit` + Snyk scan in CI — fail on critical CVEs
 - [ ] PII fields encrypted at rest: TypeORM `@Column` transformer with AES-256-GCM
 - [ ] PostgreSQL volume encryption (LUKS / provider-managed)
-- [ ] `AUTH_SECRET` — 32-byte random NextAuth cookie encryption key
+- [ ] `JWT_ACCESS_SECRET` — RS256 private key for access token signing
+- [ ] `JWT_REFRESH_SECRET` — Separate secret for refresh token signing
 - [ ] OWASP Top 10 test checklist per major release
 
 ### Module 22: DevOps & Deployment
@@ -2026,7 +2002,7 @@ export type UpdateEmployeeDto = z.infer<typeof updateEmployeeSchema>;
 - [ ] TypeORM migration auto-run as K8s init container before API pod starts
 - [ ] `husky` + `lint-staged`: ESLint + Prettier + Zod schema check pre-commit
 - [ ] Multi-stage Dockerfiles: builder → production (no dev deps)
-- [ ] `docker-compose.yml`: Next.js, NestJS, PostgreSQL 17, Redis, MinIO, MailHog, Bull Board
+- [ ] `docker-compose.yml`: Next.js, NestJS, PostgreSQL 18, Redis, MinIO, MailHog, Bull Board
 - [ ] Health check in Dockerfiles (`HEALTHCHECK CMD curl -f /health`)
 - [ ] Non-root user in all containers
 - [ ] Helm chart: deployment, service, ingress, HPA templates
@@ -2050,7 +2026,7 @@ export type UpdateEmployeeDto = z.infer<typeof updateEmployeeSchema>;
 ### Appendix A — Module Dependency Map
 
 ```
-Authentication (NextAuth v5 session ↔ NestJS JWT)
+Authentication (Custom JWT — Passport.js backend + Redux frontend)
     └── User & Org Management
             ├── HR ──────────────── Payroll ←── Attendance
             │       └── Recruitment            └── Leave
@@ -2088,13 +2064,9 @@ npx ts-node src/database/seeds/run-seeds.ts
 ```bash
 # ── apps/web/.env.local ───────────────────────────────────────────────
 
-# NextAuth v5
-AUTH_SECRET=                           # openssl rand -base64 32
-AUTH_URL=https://nurox.app
-
-# NestJS API URLs
-API_URL=http://localhost:3001          # Server-side (NextAuth authorize)
-NEXT_PUBLIC_API_URL=https://api.nurox.app  # Client-side (RTK Query fetchBaseQuery)
+# Auth
+NEXT_PUBLIC_API_URL=http://localhost:3001  # Client-side (RTK Query fetchBaseQuery)
+API_URL=http://localhost:3001              # Server-side calls (if needed)
 
 # OAuth providers
 GOOGLE_CLIENT_ID=
@@ -2258,6 +2230,6 @@ Admin
 ---
 
 _Nurox ERP Documentation — April 2026_
-_Stack: Next.js 16 · NestJS 11 · Ant Design 5 · TypeORM 0.3 · PostgreSQL 17 · Redux Toolkit + RTK Query · React Hook Form · Zod · NextAuth v5 · Redis · BullMQ · Docker · Kubernetes_
+_Stack: Next.js 16 · NestJS 11 · Ant Design 6 · TypeORM 0.3 · PostgreSQL 18 · Redux Toolkit + RTK Query · React Hook Form · Zod 4 · Custom JWT Auth (Passport.js) · Redis · BullMQ · Docker · Kubernetes_
 _Design System: Liquid Precision — "The Architectural Infinite" · Deep Space Palette · Space Grotesk + Manrope_
 _Total feature count: ~355 items across 22 modules_

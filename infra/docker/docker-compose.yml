@@ -1,9 +1,37 @@
 services:
   db:
-    image: postgres:16
+    image: postgres:18
+    container_name: nurox-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_USER: nurox
       POSTGRES_PASSWORD: nurox
       POSTGRES_DB: nurox_erp
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nurox -d nurox_erp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: nurox-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes
+
+volumes:
+  postgres_data:
+  redis_data:

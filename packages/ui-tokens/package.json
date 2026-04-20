@@ -1,0 +1,17 @@
+{
+  "name": "@repo/ui-tokens",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./colors": "./colors.ts",
+    "./typography": "./typography.ts",
+    "./spacing": "./spacing.ts",
+    "./antd-theme": "./antd-theme.ts"
+  },
+  "dependencies": {
+    "antd": "^6.3.6"
+  }
+}
