@@ -28,8 +28,10 @@ export class HrProcessor extends WorkerHost {
 
   private async handleProbationExpiry(data: { employeeId: string }) {
     const employee = await this.hrService.findEmployeeById(data.employeeId);
-    this.logger.log(`Checking probation for ${employee.firstName} ${employee.lastName}`);
-    
+    this.logger.log(
+      `Checking probation for ${employee.firstName} ${employee.lastName}`,
+    );
+
     // Send notification to HR/Manager
     await this.mailerService.sendMail({
       to: 'hr@nurox.app', // In real app, get HR manager email
@@ -41,8 +43,10 @@ export class HrProcessor extends WorkerHost {
 
   private async handleContractExpiry(data: { employeeId: string }) {
     const employee = await this.hrService.findEmployeeById(data.employeeId);
-    this.logger.log(`Checking contract for ${employee.firstName} ${employee.lastName}`);
-    
+    this.logger.log(
+      `Checking contract for ${employee.firstName} ${employee.lastName}`,
+    );
+
     // Similar notification logic
   }
 }

@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { RecruitmentService } from './recruitment.service';
 
 @Controller('recruitment')
@@ -23,7 +32,7 @@ export class RecruitmentController {
   @Put('jobs/:id/approve')
   approveJob(@Param('id') id: string, @Body('comment') comment: string) {
     // In a real app, we'd get userId from the request
-    const userId = 'system'; 
+    const userId = 'system';
     return this.recruitmentService.approveJob(id, userId, comment);
   }
 
@@ -43,7 +52,10 @@ export class RecruitmentController {
   }
 
   @Put('applications/:id/status')
-  updateApplicationStatus(@Param('id') id: string, @Body('status') status: any) {
+  updateApplicationStatus(
+    @Param('id') id: string,
+    @Body('status') status: any,
+  ) {
     return this.recruitmentService.updateApplicationStatus(id, status);
   }
 
@@ -78,7 +90,11 @@ export class RecruitmentController {
     @Body('fileName') fileName: string,
     @Body('contentType') contentType: string,
   ) {
-    return this.recruitmentService.getResumeUploadUrl(candidateId, fileName, contentType);
+    return this.recruitmentService.getResumeUploadUrl(
+      candidateId,
+      fileName,
+      contentType,
+    );
   }
 
   @Get('interviews')
@@ -97,7 +113,11 @@ export class RecruitmentController {
     @Body('feedback') feedback: string,
     @Body('rating') rating: number,
   ) {
-    return this.recruitmentService.updateInterviewFeedback(id, feedback, rating);
+    return this.recruitmentService.updateInterviewFeedback(
+      id,
+      feedback,
+      rating,
+    );
   }
 
   @Post('offers')
@@ -121,7 +141,11 @@ export class RecruitmentController {
     @Body('taskTitle') taskTitle: string,
     @Body('isCompleted') isCompleted: boolean,
   ) {
-    return this.recruitmentService.updateOnboardingTask(id, taskTitle, isCompleted);
+    return this.recruitmentService.updateOnboardingTask(
+      id,
+      taskTitle,
+      isCompleted,
+    );
   }
 
   @Get('onboarding/candidate/:candidateId')

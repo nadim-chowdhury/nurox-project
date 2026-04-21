@@ -6,20 +6,17 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, EntityManager } from 'typeorm';
-import { 
-  PayrollRun, 
-  Payslip, 
-  PayrollRunStatus 
+import {
+  PayrollRun,
+  Payslip,
+  PayrollRunStatus,
 } from './entities/payroll.entity';
-import { 
-  SalaryStructure, 
-  SalaryStructureComponent, 
-  EmployeeSalaryAssignment 
+import {
+  SalaryStructure,
+  SalaryStructureComponent,
+  EmployeeSalaryAssignment,
 } from './entities/salary-structure.entity';
-import { 
-  TaxConfiguration, 
-  TaxBracket 
-} from './entities/tax-bracket.entity';
+import { TaxConfiguration, TaxBracket } from './entities/tax-bracket.entity';
 import { Employee } from '../hr/entities/employee.entity';
 import { PayrollComputeService } from './payroll-compute.service';
 import { PdfService } from '../system/pdf.service';
@@ -59,11 +56,16 @@ export class PayrollService {
   }
 
   async assignStructure(employeeId: string, structureId: string) {
-    let assignment = await this.assignmentRepo.findOne({ where: { employeeId } });
+    let assignment = await this.assignmentRepo.findOne({
+      where: { employeeId },
+    });
     if (assignment) {
       assignment.salaryStructureId = structureId;
     } else {
-      assignment = this.assignmentRepo.create({ employeeId, salaryStructureId: structureId });
+      assignment = this.assignmentRepo.create({
+        employeeId,
+        salaryStructureId: structureId,
+      });
     }
     return this.assignmentRepo.save(assignment);
   }
@@ -72,7 +74,8 @@ export class PayrollService {
 
   async createRun(period: string): Promise<PayrollRun> {
     const existing = await this.runRepo.findOne({ where: { period } });
-    if (existing) throw new ConflictException(`Payroll run for ${period} already exists`);
+    if (existing)
+      throw new ConflictException(`Payroll run for ${period} already exists`);
 
     const runId = `PR-${period}`;
     const run = this.runRepo.create({
@@ -86,12 +89,16 @@ export class PayrollService {
   async processRun(runId: string) {
     const run = await this.runRepo.findOne({ where: { id: runId } });
     if (!run) throw new NotFoundException('Payroll run not found');
-    if (run.status !== PayrollRunStatus.DRAFT) throw new ConflictException('Run is already processed or cancelled');
+    if (run.status !== PayrollRunStatus.DRAFT)
+      throw new ConflictException('Run is already processed or cancelled');
 
-    const taxConfig = await this.taxRepo.findOne({ where: { isActive: true }, relations: ['brackets'] });
-    const assignments = await this.assignmentRepo.find({ 
+    const taxConfig = await this.taxRepo.findOne({
       where: { isActive: true },
-      relations: ['salaryStructure', 'salaryStructure.components', 'employee'] 
+      relations: ['brackets'],
+    });
+    const assignments = await this.assignmentRepo.find({
+      where: { isActive: true },
+      relations: ['salaryStructure', 'salaryStructure.components', 'employee'],
     });
 
     let totalGross = 0;
@@ -101,14 +108,15 @@ export class PayrollService {
     const payslips: Payslip[] = [];
 
     for (const assign of assignments) {
-      const { items, grossPay, totalDeductions, netPay } = this.computeService.calculatePayslipItems(
-        Number(assign.employee.salary),
-        assign.salaryStructure,
-        taxConfig,
-        0, // Overtime hours (mock)
-        0, // Overtime rate (mock)
-        0  // Bonus (mock)
-      );
+      const { items, grossPay, totalDeductions, netPay } =
+        this.computeService.calculatePayslipItems(
+          Number(assign.employee.salary),
+          assign.salaryStructure,
+          taxConfig,
+          0, // Overtime hours (mock)
+          0, // Overtime rate (mock)
+          0, // Bonus (mock)
+        );
 
       const payslip = this.payslipRepo.create({
         payrollRunId: run.id,
@@ -148,7 +156,7 @@ export class PayrollService {
   async finalizeRun(runId: string) {
     const run = await this.runRepo.findOne({ where: { id: runId } });
     if (!run) throw new NotFoundException('Payroll run not found');
-    
+
     run.status = PayrollRunStatus.PROCESSED;
     run.processedAt = new Date();
     await this.runRepo.save(run);
@@ -168,9 +176,9 @@ export class PayrollService {
   // ─── PAYSLIPS ──────────────────────────────────────────────
 
   async getPayslipPdf(payslipId: string): Promise<Buffer> {
-    const payslip = await this.payslipRepo.findOne({ 
+    const payslip = await this.payslipRepo.findOne({
       where: { id: payslipId },
-      relations: ['employee', 'payrollRun'] 
+      relations: ['employee', 'payrollRun'],
     });
     if (!payslip) throw new NotFoundException('Payslip not found');
 
@@ -244,11 +252,12 @@ export class PayrollService {
   async generateBeftnExport(runId: string): Promise<string> {
     const payslips = await this.payslipRepo.find({
       where: { payrollRunId: runId },
-      relations: ['employee']
+      relations: ['employee'],
     });
 
-    let content = 'Receiver Name\tReceiver Account\tAmount\tBank Name\tBranch Name\tRouting Number\n';
-    
+    let content =
+      'Receiver Name\tReceiver Account\tAmount\tBank Name\tBranch Name\tRouting Number\n';
+
     for (const p of payslips) {
       content += `${p.employee.firstName} ${p.employee.lastName}\t${p.employee.employeeId}_ACC\t${p.netPay}\tSample Bank\tMain Branch\t123456789\n`;
     }

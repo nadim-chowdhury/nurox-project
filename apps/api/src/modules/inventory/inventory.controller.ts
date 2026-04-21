@@ -3,88 +3,113 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
-  Delete,
   Query,
-  ParseUUIDPipe,
-  HttpCode,
-  HttpStatus,
-  UseGuards,
 } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Product } from './entities/product.entity';
-import { Warehouse } from './entities/warehouse.entity';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import {
+  ProductDto,
+  ProductVariantDto,
+  WarehouseDto,
+  ZoneDto,
+  RackDto,
+  BinDto,
+  StockMovementDto,
+  StockAdjustmentDto,
+} from '@repo/shared-schemas';
 
+@ApiTags('Inventory')
 @Controller('inventory')
-@UseGuards(JwtAuthGuard)
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
+  // ─── PRODUCTS ───────────────────────────────────────────────
+
   @Post('products')
-  createProduct(@Body() dto: Partial<Product>) {
-    return this.inventoryService.createProduct(dto);
+  @ApiOperation({ summary: 'Create a new product' })
+  createProduct(@Body() dto: ProductDto) {
+    return this.inventoryService.createProduct(dto as any);
   }
 
-  @Get('products')
-  findAllProducts(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('search') search?: string,
-  ) {
-    return this.inventoryService.findAllProducts(
-      Number(page) || 1,
-      Number(limit) || 20,
-      search,
-    );
+  @Post('variants')
+  @ApiOperation({ summary: 'Create a product variant' })
+  createVariant(@Body() dto: ProductVariantDto) {
+    return this.inventoryService.createVariant(dto as any);
   }
 
-  @Get('products/:id')
-  findProduct(@Param('id', ParseUUIDPipe) id: string) {
-    return this.inventoryService.findProductById(id);
-  }
-
-  @Patch('products/:id')
-  updateProduct(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: Partial<Product>,
-  ) {
-    return this.inventoryService.updateProduct(id, dto);
-  }
-
-  @Delete('products/:id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  removeProduct(@Param('id', ParseUUIDPipe) id: string) {
-    return this.inventoryService.removeProduct(id);
-  }
+  // ─── WAREHOUSES & HIERARCHY ─────────────────────────────────
 
   @Post('warehouses')
-  createWarehouse(@Body() dto: Partial<Warehouse>) {
-    return this.inventoryService.createWarehouse(dto);
+  createWarehouse(@Body() dto: WarehouseDto) {
+    return this.inventoryService.createWarehouse(dto as any);
   }
 
-  @Get('warehouses')
-  findAllWarehouses() {
-    return this.inventoryService.findAllWarehouses();
+  @Post('zones')
+  createZone(@Body() dto: ZoneDto) {
+    return this.inventoryService.createZone(dto as any);
   }
 
-  @Get('warehouses/:id')
-  findWarehouse(@Param('id', ParseUUIDPipe) id: string) {
-    return this.inventoryService.findWarehouseById(id);
+  @Post('racks')
+  createRack(@Body() dto: RackDto) {
+    return this.inventoryService.createRack(dto as any);
   }
 
-  @Patch('warehouses/:id')
-  updateWarehouse(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: Partial<Warehouse>,
+  @Post('bins')
+  createBin(@Body() dto: BinDto) {
+    return this.inventoryService.createBin(dto as any);
+  }
+
+  // ─── STOCK OPERATIONS ────────────────────────────────────────
+
+  @Post('stock/receive')
+  @ApiOperation({ summary: 'Receive stock' })
+  receiveStock(@Body() dto: any) {
+    return this.inventoryService.receiveStock(dto);
+  }
+
+  @Post('stock/issue')
+  @ApiOperation({ summary: 'Issue stock' })
+  issueStock(@Body() dto: any) {
+    return this.inventoryService.issueStock(dto);
+  }
+
+  @Post('stock/transfer')
+  @ApiOperation({ summary: 'Transfer stock between warehouses/bins' })
+  transferStock(@Body() dto: any) {
+    return this.inventoryService.transferStock(dto);
+  }
+
+  @Post('stock/adjust')
+  @ApiOperation({ summary: 'Adjust stock manually' })
+  adjustStock(@Body() dto: StockAdjustmentDto) {
+    return this.inventoryService.adjustStock(dto as any);
+  }
+
+  // ─── STOCK COUNT ────────────────────────────────────────────
+
+  @Post('stock/count/start')
+  startStockCount(@Body() dto: { warehouseId: string; notes?: string }) {
+    return this.inventoryService.startStockCount(dto.warehouseId, dto.notes);
+  }
+
+  @Post('stock/count/:id/complete')
+  completeStockCount(@Param('id') id: string) {
+    return this.inventoryService.completeStockCount(id);
+  }
+
+  // ─── ANALYTICS ──────────────────────────────────────────────
+
+  @Get('stock/levels')
+  getStockLevels(
+    @Query('productId') productId?: string,
+    @Query('warehouseId') warehouseId?: string,
   ) {
-    return this.inventoryService.updateWarehouse(id, dto);
+    return this.inventoryService.getStockLevels(productId, warehouseId);
   }
 
-  @Delete('warehouses/:id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  removeWarehouse(@Param('id', ParseUUIDPipe) id: string) {
-    return this.inventoryService.removeWarehouse(id);
+  @Get('stock/alerts')
+  checkAlerts() {
+    return this.inventoryService.checkReorderPoints();
   }
 }

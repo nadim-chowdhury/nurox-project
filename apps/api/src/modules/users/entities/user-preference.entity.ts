@@ -1,4 +1,11 @@
-import { Entity, Column, Index, ManyToOne, JoinColumn, PrimaryColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  Index,
+  ManyToOne,
+  JoinColumn,
+  PrimaryColumn,
+} from 'typeorm';
 import { User } from './user.entity';
 
 @Entity('user_preferences')

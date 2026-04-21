@@ -8,7 +8,13 @@ import { ProjectsModule } from '../projects/projects.module';
 import { InventoryModule } from '../inventory/inventory.module';
 
 @Module({
-  imports: [HrModule, FinanceModule, SalesModule, ProjectsModule, InventoryModule],
+  imports: [
+    HrModule,
+    FinanceModule,
+    SalesModule,
+    ProjectsModule,
+    InventoryModule,
+  ],
   controllers: [AnalyticsController],
   providers: [AnalyticsService],
   exports: [AnalyticsService],

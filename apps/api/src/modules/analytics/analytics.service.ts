@@ -55,11 +55,13 @@ export class AnalyticsService {
 
     // 1. Overdue Invoices
     // We access the repo directly for now as finance service doesn't have a specific method
-    const overdueInvoices = await (this.financeService as any).invoiceRepo.find({
-      where: { status: InvoiceStatus.OVERDUE },
-      take: 5,
-      order: { createdAt: 'DESC' },
-    });
+    const overdueInvoices = await (this.financeService as any).invoiceRepo.find(
+      {
+        where: { status: InvoiceStatus.OVERDUE },
+        take: 5,
+        order: { createdAt: 'DESC' },
+      },
+    );
 
     overdueInvoices.forEach((inv: any) => {
       alerts.push({

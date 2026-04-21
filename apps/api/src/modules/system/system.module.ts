@@ -15,7 +15,13 @@ import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Tenant, TenantModuleEntity, Branch, AuditLog, Holiday]),
+    TypeOrmModule.forFeature([
+      Tenant,
+      TenantModuleEntity,
+      Branch,
+      AuditLog,
+      Holiday,
+    ]),
     JwtModule,
   ],
   controllers: [SystemController],

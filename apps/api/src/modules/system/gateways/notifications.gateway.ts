@@ -15,7 +15,9 @@ import { WsJwtGuard } from '../../auth/guards/ws-jwt.guard';
   },
   namespace: 'notifications',
 })
-export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class NotificationsGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 

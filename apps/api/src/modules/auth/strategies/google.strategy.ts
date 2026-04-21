@@ -1,6 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { Strategy, VerifyCallback, Profile, StrategyOptions } from 'passport-google-oauth20';
+import {
+  Strategy,
+  VerifyCallback,
+  Profile,
+  StrategyOptions,
+} from 'passport-google-oauth20';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -10,9 +15,9 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   constructor(private configService: ConfigService) {
     const clientID = configService.get<string>('oauth.google.clientId');
     const clientSecret = configService.get<string>('oauth.google.clientSecret');
-    
+
     if (!clientID || !clientSecret) {
-      // Use dummy values if missing to allow startup. 
+      // Use dummy values if missing to allow startup.
       // Login will fail at runtime if triggered, which is fine.
     }
 
@@ -22,11 +27,13 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       callbackURL: configService.get<string>('oauth.google.callbackUrl')!,
       scope: ['email', 'profile'],
     };
-    
+
     super(options);
-    
+
     if (!clientID || !clientSecret) {
-      this.logger.warn('Google OAuth credentials are missing. Google login will not work.');
+      this.logger.warn(
+        'Google OAuth credentials are missing. Google login will not work.',
+      );
     }
   }
 

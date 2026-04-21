@@ -17,10 +17,13 @@ export class UserPreferencesService {
 
   async findAll(userId: string) {
     const prefs = await this.preferenceRepo.find({ where: { userId } });
-    return prefs.reduce((acc, curr) => {
-      acc[curr.key] = curr.value;
-      return acc;
-    }, {} as Record<string, any>);
+    return prefs.reduce(
+      (acc, curr) => {
+        acc[curr.key] = curr.value;
+        return acc;
+      },
+      {} as Record<string, any>,
+    );
   }
 
   async set(userId: string, key: string, value: any) {

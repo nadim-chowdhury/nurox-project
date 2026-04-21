@@ -6,7 +6,10 @@ import { Candidate } from './entities/candidate.entity';
 import { Application, ApplicationStatus } from './entities/application.entity';
 import { Interview, InterviewStatus } from './entities/interview.entity';
 import { OfferLetter } from './entities/offer-letter.entity';
-import { OnboardingChecklist, OnboardingStatus } from './entities/onboarding-checklist.entity';
+import {
+  OnboardingChecklist,
+  OnboardingStatus,
+} from './entities/onboarding-checklist.entity';
 import { TenantConnectionService } from '../../database/tenant-connection.service';
 import { StorageService } from '../system/storage.service';
 import { PdfService } from '../system/pdf.service';
@@ -48,7 +51,7 @@ export class RecruitmentService {
     const repo = await this.getRepo<JobRequisition>(JobRequisition);
     const job = await repo.findOne({ where: { id } as any });
     if (!job) throw new Error('Job requisition not found');
-    
+
     job.status = JobStatus.PENDING_APPROVAL;
     // In a real app, we'd trigger notifications to the first approver here
     return repo.save(job);
@@ -92,12 +95,12 @@ export class RecruitmentService {
 
   async updateApplicationStatus(id: string, status: ApplicationStatus) {
     const repo = await this.getRepo<Application>(Application);
-    const app = await repo.findOne({ 
+    const app = await repo.findOne({
       where: { id } as any,
-      relations: ['candidate', 'job'] 
+      relations: ['candidate', 'job'],
     });
     if (!app) throw new Error('Application not found');
-    
+
     app.status = status;
     const saved = await repo.save(app);
 
@@ -113,9 +116,9 @@ export class RecruitmentService {
 
   async findApplicationById(id: string) {
     const repo = await this.getRepo<Application>(Application);
-    return repo.findOne({ 
+    return repo.findOne({
       where: { id } as any,
-      relations: ['job', 'candidate', 'interviews', 'offerLetters'] 
+      relations: ['job', 'candidate', 'interviews', 'offerLetters'],
     });
   }
 
@@ -133,9 +136,9 @@ export class RecruitmentService {
 
   async findCandidateById(id: string) {
     const repo = await this.getRepo<Candidate>(Candidate);
-    return repo.findOne({ 
+    return repo.findOne({
       where: { id } as any,
-      relations: ['applications', 'applications.job'] 
+      relations: ['applications', 'applications.job'],
     });
   }
 
@@ -145,9 +148,16 @@ export class RecruitmentService {
     return this.findCandidateById(id);
   }
 
-  async getResumeUploadUrl(candidateId: string, fileName: string, contentType: string) {
+  async getResumeUploadUrl(
+    candidateId: string,
+    fileName: string,
+    contentType: string,
+  ) {
     const key = `recruitment/resumes/${candidateId}/${Date.now()}-${fileName}`;
-    const uploadUrl = await this.storageService.getUploadPresignedUrl(key, contentType);
+    const uploadUrl = await this.storageService.getUploadPresignedUrl(
+      key,
+      contentType,
+    );
     return { uploadUrl, key };
   }
 
@@ -156,22 +166,31 @@ export class RecruitmentService {
     const repo = await this.getRepo<Interview>(Interview);
     const interview = repo.create(data);
     const saved = await repo.save(interview);
-    
+
     // Auto-update application status to INTERVIEW if not already
-    await this.updateApplicationStatus(data.applicationId, ApplicationStatus.INTERVIEW);
-    
+    await this.updateApplicationStatus(
+      data.applicationId,
+      ApplicationStatus.INTERVIEW,
+    );
+
     return saved;
   }
 
   async updateInterviewFeedback(id: string, feedback: string, rating: number) {
     const repo = await this.getRepo<Interview>(Interview);
-    await repo.update(id, { feedback, rating, status: InterviewStatus.COMPLETED });
+    await repo.update(id, {
+      feedback,
+      rating,
+      status: InterviewStatus.COMPLETED,
+    });
     return repo.findOne({ where: { id } as any });
   }
 
   async findAllInterviews() {
     const repo = await this.getRepo<Interview>(Interview);
-    return repo.find({ relations: ['application', 'application.candidate', 'application.job'] });
+    return repo.find({
+      relations: ['application', 'application.candidate', 'application.job'],
+    });
   }
 
   // Offer Letters
@@ -180,15 +199,18 @@ export class RecruitmentService {
     const offer = repo.create(data);
     const saved = await repo.save(offer);
 
-    await this.updateApplicationStatus(data.applicationId, ApplicationStatus.OFFER);
+    await this.updateApplicationStatus(
+      data.applicationId,
+      ApplicationStatus.OFFER,
+    );
     return saved;
   }
 
   async generateOfferPdf(id: string) {
     const repo = await this.getRepo<OfferLetter>(OfferLetter);
-    const offer = await repo.findOne({ 
+    const offer = await repo.findOne({
       where: { id } as any,
-      relations: ['application', 'application.candidate', 'application.job'] 
+      relations: ['application', 'application.candidate', 'application.job'],
     });
     if (!offer) throw new Error('Offer letter not found');
 
@@ -234,11 +256,15 @@ export class RecruitmentService {
     };
 
     const pdfBuffer = await this.pdfService.generatePdf(templateHtml, data);
-    
+
     // Save to Storage
     const key = `recruitment/offers/${offer.id}.pdf`;
-    const publicUrl = await this.storageService.uploadBuffer(key, pdfBuffer, 'application/pdf');
-    
+    const publicUrl = await this.storageService.uploadBuffer(
+      key,
+      pdfBuffer,
+      'application/pdf',
+    );
+
     // Update offer with signed URL
     offer.signedUrl = publicUrl;
     await repo.save(offer);
@@ -252,11 +278,31 @@ export class RecruitmentService {
     const checklist = repo.create({
       candidateId,
       tasks: [
-        { title: 'Personal Information', description: 'NID, Date of Birth, etc.', isCompleted: false },
-        { title: 'Bank Details', description: 'Account number, Bank name', isCompleted: false },
-        { title: 'Educational Certificates', description: 'Degree, Transcript', isCompleted: false },
-        { title: 'Work Experience Documents', description: 'Experience letters', isCompleted: false },
-        { title: 'E-Signature', description: 'Sign the offer letter electronically', isCompleted: false },
+        {
+          title: 'Personal Information',
+          description: 'NID, Date of Birth, etc.',
+          isCompleted: false,
+        },
+        {
+          title: 'Bank Details',
+          description: 'Account number, Bank name',
+          isCompleted: false,
+        },
+        {
+          title: 'Educational Certificates',
+          description: 'Degree, Transcript',
+          isCompleted: false,
+        },
+        {
+          title: 'Work Experience Documents',
+          description: 'Experience letters',
+          isCompleted: false,
+        },
+        {
+          title: 'E-Signature',
+          description: 'Sign the offer letter electronically',
+          isCompleted: false,
+        },
       ],
       progress: 0,
       status: OnboardingStatus.NOT_STARTED,
@@ -264,26 +310,34 @@ export class RecruitmentService {
     return repo.save(checklist);
   }
 
-  async updateOnboardingTask(id: string, taskTitle: string, isCompleted: boolean) {
+  async updateOnboardingTask(
+    id: string,
+    taskTitle: string,
+    isCompleted: boolean,
+  ) {
     const repo = await this.getRepo<OnboardingChecklist>(OnboardingChecklist);
     const checklist = await repo.findOne({ where: { id } as any });
     if (!checklist) throw new Error('Onboarding checklist not found');
 
-    const task = checklist.tasks.find(t => t.title === taskTitle);
+    const task = checklist.tasks.find((t) => t.title === taskTitle);
     if (task) {
       task.isCompleted = isCompleted;
       if (isCompleted) task.completedAt = new Date();
     }
 
-    const completedTasks = checklist.tasks.filter(t => t.isCompleted).length;
-    checklist.progress = Math.round((completedTasks / checklist.tasks.length) * 100);
-    
+    const completedTasks = checklist.tasks.filter((t) => t.isCompleted).length;
+    checklist.progress = Math.round(
+      (completedTasks / checklist.tasks.length) * 100,
+    );
+
     if (checklist.progress === 100) {
       checklist.status = OnboardingStatus.COMPLETED;
-      
+
       // Auto-trigger: create user, assign roles, send credentials
-      const candidate = await (await this.getRepo<Candidate>(Candidate)).findOne({ 
-        where: { id: checklist.candidateId } as any 
+      const candidate = await (
+        await this.getRepo<Candidate>(Candidate)
+      ).findOne({
+        where: { id: checklist.candidateId } as any,
       });
       if (candidate) {
         await this.usersService.invite({
@@ -292,7 +346,9 @@ export class RecruitmentService {
           lastName: candidate.lastName,
           role: 'EMPLOYEE',
         });
-        this.logger.log(`Auto-invited candidate ${candidate.email} on onboarding completion`);
+        this.logger.log(
+          `Auto-invited candidate ${candidate.email} on onboarding completion`,
+        );
       }
     } else if (checklist.progress > 0) {
       checklist.status = OnboardingStatus.IN_PROGRESS;
@@ -303,9 +359,9 @@ export class RecruitmentService {
 
   async findOnboardingByCandidate(candidateId: string) {
     const repo = await this.getRepo<OnboardingChecklist>(OnboardingChecklist);
-    return repo.findOne({ 
+    return repo.findOne({
       where: { candidateId } as any,
-      relations: ['candidate']
+      relations: ['candidate'],
     });
   }
 }

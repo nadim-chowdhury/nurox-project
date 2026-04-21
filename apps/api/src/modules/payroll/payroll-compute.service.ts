@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { 
-  SalaryStructure, 
-  PayrollComponentType, 
-  AmountType 
+import {
+  SalaryStructure,
+  PayrollComponentType,
+  AmountType,
 } from './entities/salary-structure.entity';
 import { TaxConfiguration } from './entities/tax-bracket.entity';
 
@@ -19,17 +19,23 @@ export class PayrollComputeService {
     taxConfig: TaxConfiguration | null,
     overtimeHours: number = 0,
     overtimeRate: number = 0,
-    bonuses: number = 0
+    bonuses: number = 0,
   ) {
-    const items: Array<{ name: string; amount: number; type: 'EARNING' | 'DEDUCTION' | 'STATUTORY' }> = [];
-    
+    const items: Array<{
+      name: string;
+      amount: number;
+      type: 'EARNING' | 'DEDUCTION' | 'STATUTORY';
+    }> = [];
+
     // 1. Base Earning
     items.push({ name: 'Basic Salary', amount: baseSalary, type: 'EARNING' });
     let grossPay = baseSalary;
     let taxableAmount = baseSalary;
 
     // 2. Add Earnings from Structure
-    for (const comp of structure.components.filter(c => c.type === PayrollComponentType.EARNING)) {
+    for (const comp of structure.components.filter(
+      (c) => c.type === PayrollComponentType.EARNING,
+    )) {
       let amount = 0;
       if (comp.amountType === AmountType.FIXED) {
         amount = Number(comp.value);
@@ -37,7 +43,7 @@ export class PayrollComputeService {
         // Percentage of Base
         amount = (baseSalary * Number(comp.value)) / 100;
       }
-      
+
       items.push({ name: comp.name, amount, type: 'EARNING' });
       grossPay += amount;
       if (comp.isTaxable) taxableAmount += amount;
@@ -59,7 +65,9 @@ export class PayrollComputeService {
 
     // 4. Calculate Deductions (Non-statutory)
     let totalDeductions = 0;
-    for (const comp of structure.components.filter(c => c.type === PayrollComponentType.DEDUCTION)) {
+    for (const comp of structure.components.filter(
+      (c) => c.type === PayrollComponentType.DEDUCTION,
+    )) {
       let amount = 0;
       if (comp.amountType === AmountType.FIXED) {
         amount = Number(comp.value);
@@ -72,13 +80,20 @@ export class PayrollComputeService {
 
     // 5. Calculate Statutory (PF, Tax)
     // Provident Fund (Typically 10% of Basic)
-    const pfComponent = structure.components.find(c => c.name.includes('Provident Fund') || c.name.includes('PF'));
+    const pfComponent = structure.components.find(
+      (c) => c.name.includes('Provident Fund') || c.name.includes('PF'),
+    );
     if (pfComponent) {
-      const pfAmount = pfComponent.amountType === AmountType.FIXED 
-        ? Number(pfComponent.value) 
-        : (baseSalary * Number(pfComponent.value)) / 100;
-      
-      items.push({ name: 'Employee PF Contribution', amount: pfAmount, type: 'STATUTORY' });
+      const pfAmount =
+        pfComponent.amountType === AmountType.FIXED
+          ? Number(pfComponent.value)
+          : (baseSalary * Number(pfComponent.value)) / 100;
+
+      items.push({
+        name: 'Employee PF Contribution',
+        amount: pfAmount,
+        type: 'STATUTORY',
+      });
       totalDeductions += pfAmount;
     }
 
@@ -89,7 +104,11 @@ export class PayrollComputeService {
       const monthlyTax = annualTax / 12;
 
       if (monthlyTax > 0) {
-        items.push({ name: 'Income Tax', amount: monthlyTax, type: 'STATUTORY' });
+        items.push({
+          name: 'Income Tax',
+          amount: monthlyTax,
+          type: 'STATUTORY',
+        });
         totalDeductions += monthlyTax;
       }
     }
@@ -100,14 +119,17 @@ export class PayrollComputeService {
       items,
       grossPay,
       totalDeductions,
-      netPay
+      netPay,
     };
   }
 
   /**
    * BD TIN Compliant Tax Calculation logic.
    */
-  private calculateAnnualTax(taxableIncome: number, config: TaxConfiguration): number {
+  private calculateAnnualTax(
+    taxableIncome: number,
+    config: TaxConfiguration,
+  ): number {
     if (taxableIncome <= config.taxExemptThreshold) return 0;
 
     let remainingIncome = taxableIncome - config.taxExemptThreshold;
@@ -122,10 +144,11 @@ export class PayrollComputeService {
     let previousLimit = config.taxExemptThreshold;
 
     for (const bracket of sortedBrackets) {
-      const bracketRange = bracket.upperLimit === null 
-        ? remainingIncome 
-        : Math.min(remainingIncome, bracket.upperLimit - previousLimit);
-      
+      const bracketRange =
+        bracket.upperLimit === null
+          ? remainingIncome
+          : Math.min(remainingIncome, bracket.upperLimit - previousLimit);
+
       if (bracketRange <= 0) break;
 
       totalTax += (bracketRange * Number(bracket.rate)) / 100;

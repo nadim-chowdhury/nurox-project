@@ -188,7 +188,8 @@ export class FinanceController {
   async exportTrialBalanceExcel(@Res() res: Response) {
     const buffer = await this.financeService.exportTrialBalanceExcel();
     res.set({
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Type':
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': 'attachment; filename=trial-balance.xlsx',
       'Content-Length': buffer.length,
     });
@@ -210,6 +211,9 @@ export class FinanceController {
     @Param('transactionId', ParseUUIDPipe) transactionId: string,
     @Body('journalEntryId', ParseUUIDPipe) journalEntryId: string,
   ) {
-    return this.financeService.reconcileTransaction(transactionId, journalEntryId);
+    return this.financeService.reconcileTransaction(
+      transactionId,
+      journalEntryId,
+    );
   }
 }

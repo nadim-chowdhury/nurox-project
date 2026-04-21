@@ -1,5 +1,6 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, OneToMany } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
+import { Zone } from './zone.entity';
 
 @Entity('warehouses')
 export class Warehouse extends BaseEntity {
@@ -18,12 +19,9 @@ export class Warehouse extends BaseEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   country: string | null;
 
-  @Column({ type: 'int', default: 0 })
-  capacity: number;
-
-  @Column({ type: 'int', default: 0 })
-  currentStock: number;
-
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
+
+  @OneToMany(() => Zone, (zone) => zone.warehouse)
+  zones: Zone[];
 }

@@ -1,5 +1,6 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, OneToMany } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
+import { ProductVariant } from './product-variant.entity';
 
 export enum ProductStatus {
   ACTIVE = 'ACTIVE',
@@ -7,13 +8,23 @@ export enum ProductStatus {
   OUT_OF_STOCK = 'OUT_OF_STOCK',
 }
 
+export enum ValuationMethod {
+  FIFO = 'FIFO',
+  LIFO = 'LIFO',
+  WEIGHTED_AVERAGE = 'WEIGHTED_AVERAGE',
+  FEFO = 'FEFO',
+}
+
 @Entity('products')
 export class Product extends BaseEntity {
-  @Column({ type: 'varchar', length: 30, unique: true })
+  @Column({ type: 'varchar', length: 50, unique: true })
   sku: string;
 
   @Column({ type: 'varchar', length: 200 })
   name: string;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  barcode: string | null;
 
   @Column({ type: 'text', nullable: true })
   description: string | null;
@@ -21,24 +32,31 @@ export class Product extends BaseEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   category: string | null;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  unitPrice: number;
+  @Column({ type: 'varchar', length: 20, default: 'PCS' })
+  uom: string; // Unit of Measure
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  costPrice: number;
+  basePrice: number;
 
   @Column({ type: 'int', default: 0 })
-  stockQuantity: number;
+  reorderPoint: number;
 
-  @Column({ type: 'int', default: 10 })
-  reorderLevel: number;
-
-  @Column({ type: 'varchar', length: 50, nullable: true })
-  unit: string | null; // pcs, kg, litre
+  @Column({ type: 'uuid', nullable: true })
+  taxClassId: string | null;
 
   @Column({ type: 'enum', enum: ProductStatus, default: ProductStatus.ACTIVE })
   status: ProductStatus;
 
+  @Column({
+    type: 'enum',
+    enum: ValuationMethod,
+    default: ValuationMethod.FIFO,
+  })
+  valuationMethod: ValuationMethod;
+
   @Column({ type: 'varchar', length: 500, nullable: true })
   imageUrl: string | null;
+
+  @OneToMany(() => ProductVariant, (variant) => variant.product)
+  variants: ProductVariant[];
 }

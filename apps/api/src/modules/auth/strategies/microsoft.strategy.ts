@@ -19,7 +19,9 @@ export class MicrosoftStrategy extends PassportStrategy(Strategy, 'microsoft') {
 
   constructor(private configService: ConfigService) {
     const clientID = configService.get<string>('oauth.microsoft.clientId');
-    const clientSecret = configService.get<string>('oauth.microsoft.clientSecret');
+    const clientSecret = configService.get<string>(
+      'oauth.microsoft.clientSecret',
+    );
 
     super({
       clientID: clientID || 'MISSING_MICROSOFT_CLIENT_ID',

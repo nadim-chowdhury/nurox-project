@@ -9,11 +9,21 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThanOrEqual, MoreThanOrEqual, In } from 'typeorm';
 import { Account, AccountType } from './entities/account.entity';
 import { Invoice, InvoiceLine, InvoiceStatus } from './entities/invoice.entity';
-import { JournalEntry, JournalLine, JournalStatus } from './entities/journal.entity';
+import {
+  JournalEntry,
+  JournalLine,
+  JournalStatus,
+} from './entities/journal.entity';
 import { Bill, BillLine, BillStatus } from './entities/bill.entity';
 import { TaxRate } from './entities/tax-rate.entity';
-import { AccountingPeriod, PeriodStatus } from './entities/accounting-period.entity';
-import { BankTransaction, TransactionStatus } from './entities/bank-transaction.entity';
+import {
+  AccountingPeriod,
+  PeriodStatus,
+} from './entities/accounting-period.entity';
+import {
+  BankTransaction,
+  TransactionStatus,
+} from './entities/bank-transaction.entity';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { CreateJournalEntryDto } from './dto/create-journal.dto';
@@ -176,7 +186,7 @@ export class FinanceService {
   ): Promise<Invoice> {
     const invoice = await this.findInvoiceById(id);
     await this.invoiceRepo.update(id, { status });
-    
+
     if (status === InvoiceStatus.PAID) {
       // Trigger Auto-Journal: Debit Cash/Bank, Credit Accounts Receivable
       await this.createJournalEntry({
@@ -184,11 +194,17 @@ export class FinanceService {
         description: `Payment received for Invoice ${invoice.invoiceNumber}`,
         reference: invoice.invoiceNumber,
         lines: [
-          { accountId: 'CASH_ACCOUNT_ID', debit: invoice.totalAmount, credit: 0 }, // Placeholder IDs
+          {
+            accountId: 'CASH_ACCOUNT_ID',
+            debit: invoice.totalAmount,
+            credit: 0,
+          }, // Placeholder IDs
           { accountId: 'AR_ACCOUNT_ID', debit: 0, credit: invoice.totalAmount },
         ],
       });
-      this.logger.log(`Auto-journal posted for paid invoice: ${invoice.invoiceNumber}`);
+      this.logger.log(
+        `Auto-journal posted for paid invoice: ${invoice.invoiceNumber}`,
+      );
     }
 
     return this.findInvoiceById(id);
@@ -222,7 +238,9 @@ export class FinanceService {
     });
 
     if (!period) {
-      throw new BadRequestException(`No open accounting period found for date ${dto.entryDate}`);
+      throw new BadRequestException(
+        `No open accounting period found for date ${dto.entryDate}`,
+      );
     }
 
     const lines = dto.lines.map((l) => this.journalLineRepo.create(l));
@@ -238,7 +256,9 @@ export class FinanceService {
 
     // Update account balances
     for (const line of saved.lines) {
-      const account = await this.accountRepo.findOne({ where: { id: line.accountId } });
+      const account = await this.accountRepo.findOne({
+        where: { id: line.accountId },
+      });
       if (account) {
         const amount = Number(line.debit) - Number(line.credit);
         // Balance logic depends on account type
@@ -292,7 +312,10 @@ export class FinanceService {
       return line;
     });
 
-    const subtotal = lines.reduce((sum: number, l: any) => sum + Number(l.lineTotal), 0);
+    const subtotal = lines.reduce(
+      (sum: number, l: any) => sum + Number(l.lineTotal),
+      0,
+    );
     const taxAmount = subtotal * 0.1; // Default tax
     const totalAmount = subtotal + taxAmount;
 
@@ -310,7 +333,7 @@ export class FinanceService {
     // Trigger auto-journal for Bill
     // Debit Expense/Asset, Credit Accounts Payable
     // This requires pre-configured accounts (System Accounts)
-    
+
     return saved;
   }
 
@@ -341,7 +364,9 @@ export class FinanceService {
     if (status === BillStatus.APPROVED) {
       // Trigger journal entry: Debit Expense, Credit AP
       // Implementation of auto-journal logic...
-      this.logger.log(`Auto-journal triggered for approved bill: ${bill.billNumber}`);
+      this.logger.log(
+        `Auto-journal triggered for approved bill: ${bill.billNumber}`,
+      );
     }
 
     return saved;
@@ -351,8 +376,8 @@ export class FinanceService {
 
   async getTrialBalance() {
     const accounts = await this.accountRepo.find({ where: { isActive: true } });
-    
-    return accounts.map(acc => ({
+
+    return accounts.map((acc) => ({
       accountId: acc.id,
       code: acc.code,
       name: acc.name,
@@ -362,8 +387,13 @@ export class FinanceService {
     }));
   }
 
-  async getGeneralLedger(accountId: string, startDate?: string, endDate?: string) {
-    const qb = this.journalLineRepo.createQueryBuilder('line')
+  async getGeneralLedger(
+    accountId: string,
+    startDate?: string,
+    endDate?: string,
+  ) {
+    const qb = this.journalLineRepo
+      .createQueryBuilder('line')
       .innerJoinAndSelect('line.journalEntry', 'entry')
       .where('line.accountId = :accountId', { accountId });
 
@@ -378,7 +408,13 @@ export class FinanceService {
   async getARAgingReport() {
     const today = new Date();
     const invoices = await this.invoiceRepo.find({
-      where: { status: In([InvoiceStatus.SENT, InvoiceStatus.PARTIALLY_PAID, InvoiceStatus.OVERDUE]) } as any,
+      where: {
+        status: In([
+          InvoiceStatus.SENT,
+          InvoiceStatus.PARTIALLY_PAID,
+          InvoiceStatus.OVERDUE,
+        ]),
+      } as any,
     });
 
     const aging = {
@@ -389,9 +425,11 @@ export class FinanceService {
       '90_plus': 0,
     };
 
-    invoices.forEach(inv => {
+    invoices.forEach((inv) => {
       const dueDate = new Date(inv.dueDate);
-      const diffDays = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 3600 * 24));
+      const diffDays = Math.floor(
+        (today.getTime() - dueDate.getTime()) / (1000 * 3600 * 24),
+      );
       const amount = Number(inv.totalAmount) - Number(inv.paidAmount);
 
       if (diffDays <= 0) aging.current += amount;
@@ -420,9 +458,11 @@ export class FinanceService {
   }
 
   async reconcileTransaction(transactionId: string, journalEntryId: string) {
-    const trx = await this.bankTransactionRepo.findOne({ where: { id: transactionId } });
+    const trx = await this.bankTransactionRepo.findOne({
+      where: { id: transactionId },
+    });
     if (!trx) throw new NotFoundException('Transaction not found');
-    
+
     trx.status = TransactionStatus.RECONCILED;
     trx.matchedJournalEntryId = journalEntryId;
     return this.bankTransactionRepo.save(trx);
@@ -461,7 +501,7 @@ export class FinanceService {
     ];
 
     worksheet.addRows(data);
-    
+
     const buffer = await workbook.xlsx.writeBuffer();
     return Buffer.from(buffer);
   }

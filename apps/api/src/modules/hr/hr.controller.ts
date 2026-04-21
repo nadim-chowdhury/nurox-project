@@ -54,22 +54,49 @@ export class HrController {
   }
 
   @Post('attendance/check-in')
-  async checkIn(@Body() dto: { employeeId: string; method: AttendanceMethod; token?: string; location?: any }) {
+  async checkIn(
+    @Body()
+    dto: {
+      employeeId: string;
+      method: AttendanceMethod;
+      token?: string;
+      location?: any;
+    },
+  ) {
     if (dto.method === AttendanceMethod.QR && dto.token) {
       return this.attendanceService.checkInViaQr(dto.employeeId, dto.token);
     }
-    return this.attendanceService.recordAttendance(dto.employeeId, dto.method, 'IN', dto.location);
+    return this.attendanceService.recordAttendance(
+      dto.employeeId,
+      dto.method,
+      'IN',
+      dto.location,
+    );
   }
 
   @Post('attendance/check-out')
-  async checkOut(@Body() dto: { employeeId: string; method: AttendanceMethod; location?: any }) {
-    return this.attendanceService.recordAttendance(dto.employeeId, dto.method, 'OUT', dto.location);
+  async checkOut(
+    @Body()
+    dto: {
+      employeeId: string;
+      method: AttendanceMethod;
+      location?: any;
+    },
+  ) {
+    return this.attendanceService.recordAttendance(
+      dto.employeeId,
+      dto.method,
+      'OUT',
+      dto.location,
+    );
   }
 
   @Get('attendance/team')
   @RequirePermissions(Permission.HR_VIEW_EMPLOYEES)
   async getTeamAttendance(@Query('date') date: string) {
-    return this.attendanceService.getTeamAttendance(date || new Date().toISOString().split('T')[0]);
+    return this.attendanceService.getTeamAttendance(
+      date || new Date().toISOString().split('T')[0],
+    );
   }
 
   // ─── LEAVE MANAGEMENT ────────────────────────────────────────
@@ -80,7 +107,9 @@ export class HrController {
   }
 
   @Get('leaves/balances/:employeeId')
-  async getLeaveBalances(@Param('employeeId', ParseUUIDPipe) employeeId: string) {
+  async getLeaveBalances(
+    @Param('employeeId', ParseUUIDPipe) employeeId: string,
+  ) {
     return this.attendanceService.getLeaveBalances(employeeId);
   }
 
@@ -114,10 +143,7 @@ export class HrController {
 
   @Patch('employees/:id')
   @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
-  updateEmployee(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: any,
-  ) {
+  updateEmployee(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
     return this.hrService.updateEmployee(id, dto);
   }
 
@@ -140,7 +166,10 @@ export class HrController {
 
   @Post('employees/:id/training')
   @RequirePermissions(Permission.HR_MANAGE_TRAINING)
-  addTraining(@Param('id', ParseUUIDPipe) id: string, @Body() dto: TrainingDto) {
+  addTraining(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: TrainingDto,
+  ) {
     return this.hrService.addTraining(id, dto);
   }
 

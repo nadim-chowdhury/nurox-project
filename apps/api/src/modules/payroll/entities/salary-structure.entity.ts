@@ -24,7 +24,9 @@ export class SalaryStructure extends BaseEntity {
   @Column({ type: 'boolean', default: false })
   isDefault: boolean;
 
-  @OneToMany(() => SalaryStructureComponent, (c) => c.salaryStructure, { cascade: true })
+  @OneToMany(() => SalaryStructureComponent, (c) => c.salaryStructure, {
+    cascade: true,
+  })
   components: SalaryStructureComponent[];
 }
 
@@ -33,7 +35,9 @@ export class SalaryStructureComponent extends BaseEntity {
   @Column({ type: 'uuid' })
   salaryStructureId: string;
 
-  @ManyToOne(() => SalaryStructure, (s) => s.components, { onDelete: 'CASCADE' })
+  @ManyToOne(() => SalaryStructure, (s) => s.components, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'salaryStructureId' })
   salaryStructure: SalaryStructure;
 

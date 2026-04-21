@@ -1,4 +1,11 @@
-import { Entity, Column, OneToMany, Tree, TreeChildren, TreeParent } from 'typeorm';
+import {
+  Entity,
+  Column,
+  OneToMany,
+  Tree,
+  TreeChildren,
+  TreeParent,
+} from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { Employee } from './employee.entity';
 

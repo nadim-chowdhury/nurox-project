@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
@@ -11,7 +15,7 @@ export class StorageService {
 
   constructor(private configService: ConfigService) {
     this.bucket = this.configService.get<string>('s3.bucket')!;
-    
+
     this.client = new S3Client({
       endpoint: this.configService.get<string>('s3.endpoint'),
       region: this.configService.get<string>('s3.region'),
@@ -26,7 +30,10 @@ export class StorageService {
   /**
    * Generates a pre-signed URL for uploading a file directly to S3/MinIO.
    */
-  async getUploadPresignedUrl(key: string, contentType: string): Promise<string> {
+  async getUploadPresignedUrl(
+    key: string,
+    contentType: string,
+  ): Promise<string> {
     const command = new PutObjectCommand({
       Bucket: this.bucket,
       Key: key,
@@ -59,7 +66,11 @@ export class StorageService {
   /**
    * Directly uploads a buffer to S3/MinIO.
    */
-  async uploadBuffer(key: string, buffer: Buffer, contentType: string): Promise<string> {
+  async uploadBuffer(
+    key: string,
+    buffer: Buffer,
+    contentType: string,
+  ): Promise<string> {
     const command = new PutObjectCommand({
       Bucket: this.bucket,
       Key: key,

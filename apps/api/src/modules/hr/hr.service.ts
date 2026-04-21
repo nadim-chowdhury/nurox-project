@@ -11,11 +11,21 @@ import { Queue } from 'bullmq';
 import { Employee, EmployeeStatus } from './entities/employee.entity';
 import { Department } from './entities/department.entity';
 import { Designation } from './entities/designation.entity';
-import { PerformanceReview, PerformanceReviewStatus, KeyResult } from './entities/performance.entity';
-import { SalaryHistory, SalaryChangeReason } from './entities/salary-history.entity';
+import {
+  PerformanceReview,
+  PerformanceReviewStatus,
+  KeyResult,
+} from './entities/performance.entity';
+import {
+  SalaryHistory,
+  SalaryChangeReason,
+} from './entities/salary-history.entity';
 import { Training, TrainingStatus } from './entities/training.entity';
 import { Skill } from './entities/skill.entity';
-import { EmploymentHistory, EmploymentEvent } from './entities/employment-history.entity';
+import {
+  EmploymentHistory,
+  EmploymentEvent,
+} from './entities/employment-history.entity';
 import { PdfService } from '../system/pdf.service';
 import {
   CreateEmployeeDto,
@@ -69,7 +79,9 @@ export class HrService {
         employeeId: dto.employeeCode,
         salary: dto.baseSalary,
         joinDate: dto.joinDate.split('T')[0],
-        probationEndDate: dto.probationEndDate ? dto.probationEndDate.split('T')[0] : null,
+        probationEndDate: dto.probationEndDate
+          ? dto.probationEndDate.split('T')[0]
+          : null,
       });
       const saved = await manager.save(employee);
 
@@ -99,7 +111,11 @@ export class HrService {
       if (dto.probationEndDate) {
         const delay = new Date(dto.probationEndDate).getTime() - Date.now();
         if (delay > 0) {
-          await this.hrQueue.add('probation-expiry-check', { employeeId: saved.id }, { delay });
+          await this.hrQueue.add(
+            'probation-expiry-check',
+            { employeeId: saved.id },
+            { delay },
+          );
         }
       }
 
@@ -186,7 +202,12 @@ export class HrService {
     return this.findEmployeeById(id);
   }
 
-  async updateSalary(id: string, newSalary: number, reason: SalaryChangeReason, comments?: string): Promise<Employee> {
+  async updateSalary(
+    id: string,
+    newSalary: number,
+    reason: SalaryChangeReason,
+    comments?: string,
+  ): Promise<Employee> {
     const employee = await this.findEmployeeById(id);
     const previousSalary = employee.salary;
 
@@ -224,7 +245,7 @@ export class HrService {
       period: dto.period,
       status: dto.status as PerformanceReviewStatus,
       progress: dto.progress,
-      keyResults: dto.keyResults.map(kr => ({
+      keyResults: dto.keyResults.map((kr) => ({
         description: kr.description,
         targetValue: kr.targetValue,
         currentValue: kr.currentValue,
@@ -268,9 +289,12 @@ export class HrService {
       where: { id: trainingId },
       relations: ['employee'],
     });
-    if (!training) throw new NotFoundException(`Training "${trainingId}" not found`);
+    if (!training)
+      throw new NotFoundException(`Training "${trainingId}" not found`);
     if (training.status !== TrainingStatus.COMPLETED) {
-      throw new ConflictException('Certificate is only available for completed trainings');
+      throw new ConflictException(
+        'Certificate is only available for completed trainings',
+      );
     }
 
     const template = `
@@ -299,7 +323,6 @@ export class HrService {
   }
 
   async removeEmployee(id: string): Promise<void> {
-
     await this.findEmployeeById(id);
     await this.employeeRepo.softDelete(id);
     this.logger.log(`Employee soft-deleted: ${id}`);
@@ -314,7 +337,7 @@ export class HrService {
     if (existing)
       throw new ConflictException('Department name or code already exists');
 
-    const dept = this.departmentRepo.create(dto as any) as unknown as Department;
+    const dept = this.departmentRepo.create(dto) as unknown as Department;
 
     if (dto.parentId) {
       const parent = await this.findDepartmentById(dto.parentId);

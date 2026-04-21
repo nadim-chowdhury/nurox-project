@@ -21,7 +21,9 @@ export class TaxBracket extends BaseEntity {
   @Column({ type: 'uuid' })
   taxConfigurationId: string;
 
-  @ManyToOne(() => TaxConfiguration, (tc) => tc.brackets, { onDelete: 'CASCADE' })
+  @ManyToOne(() => TaxConfiguration, (tc) => tc.brackets, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'taxConfigurationId' })
   taxConfiguration: TaxConfiguration;
 

@@ -21,7 +21,11 @@ export class BankTransaction extends BaseEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   reference: string | null;
 
-  @Column({ type: 'enum', enum: TransactionStatus, default: TransactionStatus.UNRECONCILED })
+  @Column({
+    type: 'enum',
+    enum: TransactionStatus,
+    default: TransactionStatus.UNRECONCILED,
+  })
   status: TransactionStatus;
 
   @Column({ type: 'uuid', nullable: true })

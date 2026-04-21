@@ -1,8 +1,22 @@
-import { Injectable, NotFoundException, ConflictException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
-import { AttendanceRecord, AttendanceStatus, AttendanceMethod } from './entities/attendance.entity';
-import { LeaveRequest, LeaveBalance, LeaveRequestStatus, LeaveType } from './entities/leave.entity';
+import {
+  AttendanceRecord,
+  AttendanceStatus,
+  AttendanceMethod,
+} from './entities/attendance.entity';
+import {
+  LeaveRequest,
+  LeaveBalance,
+  LeaveRequestStatus,
+  LeaveType,
+} from './entities/leave.entity';
 import { Shift } from './entities/shift.entity';
 import { Employee } from './entities/employee.entity';
 import { JwtService } from '@nestjs/jwt';
@@ -31,7 +45,11 @@ export class AttendanceService {
    * Generates a signed QR code for an employee to scan at the entrance.
    */
   async generateCheckInQr(employeeId: string): Promise<string> {
-    const payload = { sub: employeeId, type: 'attendance_qr', timestamp: Date.now() };
+    const payload = {
+      sub: employeeId,
+      type: 'attendance_qr',
+      timestamp: Date.now(),
+    };
     return this.jwtService.sign(payload, { expiresIn: '1m' });
   }
 
@@ -55,17 +73,20 @@ export class AttendanceService {
    * Records attendance (IN or OUT) and calculates status/overtime.
    */
   async recordAttendance(
-    employeeId: string, 
-    method: AttendanceMethod, 
+    employeeId: string,
+    method: AttendanceMethod,
     type: 'IN' | 'OUT',
-    location?: { lat: number; lng: number; address?: string }
+    location?: { lat: number; lng: number; address?: string },
   ) {
     const today = new Date().toISOString().split('T')[0];
-    let record = await this.attendanceRepo.findOne({ where: { employeeId, date: today } });
+    let record = await this.attendanceRepo.findOne({
+      where: { employeeId, date: today },
+    });
 
     if (type === 'IN') {
-      if (record && record.checkIn) throw new ConflictException('Already checked in today');
-      
+      if (record && record.checkIn)
+        throw new ConflictException('Already checked in today');
+
       if (!record) {
         record = this.attendanceRepo.create({
           employeeId,
@@ -80,15 +101,17 @@ export class AttendanceService {
         record.method = method;
         record.location = location;
       }
-      
+
       // Auto-flag LATE if past shift start + grace period (Logic simplified for demo)
       // In production, fetch employee's shift and compare HH:mm
     } else {
-      if (!record || !record.checkIn) throw new ConflictException('No check-in record found for today');
-      if (record.checkOut) throw new ConflictException('Already checked out today');
+      if (!record || !record.checkIn)
+        throw new ConflictException('No check-in record found for today');
+      if (record.checkOut)
+        throw new ConflictException('Already checked out today');
 
       record.checkOut = new Date();
-      
+
       // Calculate Overtime (Example: if working > 9 hours)
       const diffMs = record.checkOut.getTime() - record.checkIn.getTime();
       const diffHrs = diffMs / (1000 * 60 * 60);
@@ -105,28 +128,38 @@ export class AttendanceService {
 
   async applyLeave(dto: any): Promise<LeaveRequest> {
     const { employeeId, leaveType, startDate, endDate, reason } = dto;
-    
+
     // Check balance
-    const balance = await this.leaveBalanceRepo.findOne({ 
-      where: { employeeId, leaveType, fiscalYear: '2025-26' } 
+    const balance = await this.leaveBalanceRepo.findOne({
+      where: { employeeId, leaveType, fiscalYear: '2025-26' },
     });
-    
+
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const totalDays =
+      Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
-    if (!balance || (balance.totalDays - balance.usedDays) < totalDays) {
+    if (!balance || balance.totalDays - balance.usedDays < totalDays) {
       throw new ConflictException('Insufficient leave balance');
     }
 
     // Check for clashes (already applied leave in same period)
     const clash = await this.leaveRequestRepo.findOne({
       where: [
-        { employeeId, startDate: Between(startDate, endDate), status: MoreThanOrEqual(LeaveRequestStatus.PENDING) as any },
-        { employeeId, endDate: Between(startDate, endDate), status: MoreThanOrEqual(LeaveRequestStatus.PENDING) as any },
-      ]
+        {
+          employeeId,
+          startDate: Between(startDate, endDate),
+          status: MoreThanOrEqual(LeaveRequestStatus.PENDING) as any,
+        },
+        {
+          employeeId,
+          endDate: Between(startDate, endDate),
+          status: MoreThanOrEqual(LeaveRequestStatus.PENDING) as any,
+        },
+      ],
     });
-    if (clash) throw new ConflictException('Leave already applied for this period');
+    if (clash)
+      throw new ConflictException('Leave already applied for this period');
 
     const request = this.leaveRequestRepo.create({
       employeeId,
@@ -141,14 +174,25 @@ export class AttendanceService {
     return this.leaveRequestRepo.save(request);
   }
 
-  async approveLeave(requestId: string, approvedById: string, status: LeaveRequestStatus) {
-    const request = await this.leaveRequestRepo.findOne({ where: { id: requestId }, relations: ['employee'] });
+  async approveLeave(
+    requestId: string,
+    approvedById: string,
+    status: LeaveRequestStatus,
+  ) {
+    const request = await this.leaveRequestRepo.findOne({
+      where: { id: requestId },
+      relations: ['employee'],
+    });
     if (!request) throw new NotFoundException('Leave request not found');
 
     if (status === LeaveRequestStatus.APPROVED) {
       // Update balance
-      const balance = await this.leaveBalanceRepo.findOne({ 
-        where: { employeeId: request.employeeId, leaveType: request.leaveType, fiscalYear: '2025-26' } 
+      const balance = await this.leaveBalanceRepo.findOne({
+        where: {
+          employeeId: request.employeeId,
+          leaveType: request.leaveType,
+          fiscalYear: '2025-26',
+        },
       });
       if (balance) {
         balance.usedDays = Number(balance.usedDays) + Number(request.totalDays);

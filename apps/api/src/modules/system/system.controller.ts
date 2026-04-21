@@ -54,7 +54,10 @@ export class SystemController {
     @Query('contentType') contentType: string,
   ) {
     const key = `uploads/${Date.now()}-${fileName}`;
-    const url = await this.storageService.getUploadPresignedUrl(key, contentType);
+    const url = await this.storageService.getUploadPresignedUrl(
+      key,
+      contentType,
+    );
     return { url, key };
   }
 

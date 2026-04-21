@@ -43,7 +43,9 @@ export class KeyResult extends BaseEntity {
   @Column({ type: 'uuid' })
   performanceReviewId: string;
 
-  @ManyToOne(() => PerformanceReview, (pr) => pr.keyResults, { onDelete: 'CASCADE' })
+  @ManyToOne(() => PerformanceReview, (pr) => pr.keyResults, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'performanceReviewId' })
   performanceReview: PerformanceReview;
 
