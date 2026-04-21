@@ -51,3 +51,25 @@ export const apiErrorSchema = z.object({
 });
 
 export type ApiErrorDto = z.infer<typeof apiErrorSchema>;
+
+export const auditLogSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid().nullable(),
+  action: z.string(),
+  module: z.string(),
+  description: z.string(),
+  metadata: z.record(z.string(), z.any()).nullable(),
+  ipAddress: z.string().nullable(),
+  userAgent: z.string().nullable(),
+  createdAt: z.string().datetime(),
+});
+
+export type AuditLogDto = z.infer<typeof auditLogSchema>;
+
+export const userPreferenceSchema = z.object({
+  userId: z.string().uuid(),
+  key: z.string(),
+  value: z.any(),
+});
+
+export type UserPreferenceDto = z.infer<typeof userPreferenceSchema>;

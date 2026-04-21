@@ -17,6 +17,15 @@ export class ProjectsService {
     private readonly taskRepo: Repository<Task>,
   ) {}
 
+  async getTaskStats() {
+    return this.taskRepo
+      .createQueryBuilder('task')
+      .select('task.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('task.status')
+      .getRawMany<{ status: string; count: string }>();
+  }
+
   async createProject(dto: CreateProjectDto): Promise<Project> {
     const project = this.projectRepo.create(dto);
     return this.projectRepo.save(project);

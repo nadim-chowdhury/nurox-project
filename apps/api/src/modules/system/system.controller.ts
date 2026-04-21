@@ -7,11 +7,13 @@ import {
   Body,
   Param,
   Headers,
+  Query,
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TenantProvisioningService } from './tenant-provisioning.service';
+import { AuditService } from './audit.service';
 import {
   companyProfileSchema,
   createBranchSchema,
@@ -38,6 +40,7 @@ export class SystemController {
     @InjectRepository(Branch)
     private readonly branchRepository: Repository<Branch>,
     private readonly tenantProvisioningService: TenantProvisioningService,
+    private readonly auditService: AuditService,
   ) {}
 
   @Get('settings')
@@ -59,6 +62,25 @@ export class SystemController {
       primaryColor: tenant.primaryColor,
       logoUrl: tenant.logoUrl || '/logo.png',
     };
+  }
+
+  @Get('audit-logs')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List all audit logs' })
+  async getAuditLogs(
+    @Query('userId') userId?: string,
+    @Query('module') module?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.auditService.findAll({
+      userId,
+      module,
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 50,
+    });
   }
 
   @Get('company')
@@ -107,7 +129,7 @@ export class SystemController {
   @ApiOperation({ summary: 'Create a new branch' })
   async createBranch(@Body() body: CreateBranchDto) {
     const parsed = createBranchSchema.parse(body);
-    const branch = this.branchRepository.create(parsed);
+    const branch = this.branchRepository.create(parsed as any);
     return this.branchRepository.save(branch);
   }
 
@@ -121,7 +143,7 @@ export class SystemController {
     @Body() body: UpdateBranchDto,
   ) {
     const parsed = updateBranchSchema.parse(body);
-    await this.branchRepository.update(id, parsed);
+    await this.branchRepository.update(id, parsed as any);
     return this.branchRepository.findOne({ where: { id } });
   }
 

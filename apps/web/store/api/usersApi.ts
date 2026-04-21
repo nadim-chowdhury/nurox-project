@@ -22,7 +22,7 @@ export interface PaginatedUsersResponse {
 export const usersApi = createApi({
   reducerPath: "usersApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["Users"],
+  tagTypes: ["Users", "Preferences"],
   endpoints: (builder) => ({
     getUsers: builder.query<PaginatedUsersResponse, UserListQueryDto>({
       query: (params) => ({
@@ -49,6 +49,20 @@ export const usersApi = createApi({
     getProfile: builder.query<UserResponseDto, void>({
       query: () => "/users/profile",
       providesTags: ["Users"],
+    }),
+
+    getPreferences: builder.query<Record<string, any>, void>({
+      query: () => "/users/preferences",
+      providesTags: ["Preferences"],
+    }),
+
+    setPreference: builder.mutation<void, { key: string; value: any }>({
+      query: ({ key, value }) => ({
+        url: `/users/preferences/${key}`,
+        method: "PATCH",
+        body: { value },
+      }),
+      invalidatesTags: ["Preferences"],
     }),
 
     inviteUser: builder.mutation<UserResponseDto, InviteUserDto>({
@@ -105,6 +119,8 @@ export const {
   useGetUsersQuery,
   useGetUserQuery,
   useGetProfileQuery,
+  useGetPreferencesQuery,
+  useSetPreferenceMutation,
   useInviteUserMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,

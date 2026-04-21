@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import {
@@ -26,6 +26,7 @@ import { FinanceModule } from './modules/finance/finance.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { ProjectsModule } from './modules/projects/projects.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { ProjectsModule } from './modules/projects/projects.module';
     InventoryModule,
     SalesModule,
     ProjectsModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
@@ -81,6 +83,7 @@ export class AppModule implements NestModule {
         { path: 'sales/(.*)', method: RequestMethod.ALL },
         { path: 'payroll/(.*)', method: RequestMethod.ALL },
         { path: 'system/(.*)', method: RequestMethod.ALL },
+        { path: 'analytics/(.*)', method: RequestMethod.ALL },
       );
   }
 }

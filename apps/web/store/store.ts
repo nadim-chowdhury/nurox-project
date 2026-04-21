@@ -8,6 +8,7 @@ import { hrApi } from "./api/hrApi";
 import { projectsApi } from "./api/projectsApi";
 import { salesApi } from "./api/salesApi";
 import { systemApi } from "./api/systemApi";
+import { analyticsApi } from "./api/analyticsApi";
 
 export const store = configureStore({
   reducer: {
@@ -20,6 +21,7 @@ export const store = configureStore({
     [projectsApi.reducerPath]: projectsApi.reducer,
     [salesApi.reducerPath]: salesApi.reducer,
     [systemApi.reducerPath]: systemApi.reducer,
+    [analyticsApi.reducerPath]: analyticsApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
@@ -28,7 +30,8 @@ export const store = configureStore({
       .concat(hrApi.middleware)
       .concat(projectsApi.middleware)
       .concat(salesApi.middleware)
-      .concat(systemApi.middleware),
+      .concat(systemApi.middleware)
+      .concat(analyticsApi.middleware),
   devTools: process.env.NODE_ENV !== "production",
 });
 

@@ -141,7 +141,7 @@ export class HrService {
     if (existing)
       throw new ConflictException('Department name or code already exists');
 
-    const dept = this.departmentRepo.create(dto);
+    const dept = this.departmentRepo.create(dto as any) as unknown as Department;
 
     if (dto.parentId) {
       const parent = await this.findDepartmentById(dto.parentId);
@@ -241,5 +241,9 @@ export class HrService {
   async removeDesignation(id: string): Promise<void> {
     await this.findDesignationById(id);
     await this.designationRepo.softDelete(id);
+  }
+
+  async getCount(): Promise<number> {
+    return this.employeeRepo.count({ where: { deletedAt: null } as any });
   }
 }

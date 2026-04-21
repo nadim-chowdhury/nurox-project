@@ -12,17 +12,16 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { UsersService } from './users.service';
+import { UserPreferencesService } from './user-preferences.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { Permission } from '../auth/enums/permissions.enum';
 import {
-  createUserSchema,
   updateUserSchema,
   inviteUserSchema,
   userListQuerySchema,
-  CreateUserDto,
   UpdateUserDto,
   InviteUserDto,
   UserListQueryDto,
@@ -32,7 +31,10 @@ import {
 @Controller('users')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly preferencesService: UserPreferencesService,
+  ) {}
 
   @Get()
   @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
@@ -47,6 +49,24 @@ export class UsersController {
   @ApiOperation({ summary: 'Get current user full profile' })
   async getProfile(@CurrentUser('id') userId: string) {
     return this.usersService.findByIdOrFail(userId);
+  }
+
+  @Get('preferences')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user preferences' })
+  async getPreferences(@CurrentUser('id') userId: string) {
+    return this.preferencesService.findAll(userId);
+  }
+
+  @Patch('preferences/:key')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Set a user preference' })
+  async setPreference(
+    @CurrentUser('id') userId: string,
+    @Param('key') key: string,
+    @Body() body: { value: any },
+  ) {
+    return this.preferencesService.set(userId, key, body.value);
   }
 
   @Post('invite')

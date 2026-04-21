@@ -17,6 +17,27 @@ export class SalesService {
     private readonly dealRepo: Repository<Deal>,
   ) {}
 
+  async getPipelineValue(): Promise<number> {
+    const result = await this.dealRepo
+      .createQueryBuilder('deal')
+      .select('SUM(deal.value)', 'total')
+      .where('deal.status = :status', { status: 'OPEN' })
+      .getRawOne<{ total: string }>();
+
+    return Number(result?.total) || 0;
+  }
+
+  async getPipelineStats() {
+    return this.dealRepo
+      .createQueryBuilder('deal')
+      .select('deal.stage', 'stage')
+      .addSelect('COUNT(*)', 'count')
+      .addSelect('SUM(deal.value)', 'value')
+      .where('deal.status = :status', { status: 'OPEN' })
+      .groupBy('deal.stage')
+      .getRawMany<{ stage: string; count: string; value: string }>();
+  }
+
   async createLead(dto: CreateLeadDto): Promise<Lead> {
     const lead = this.leadRepo.create(dto);
     return this.leadRepo.save(lead);

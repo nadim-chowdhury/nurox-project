@@ -31,6 +31,33 @@ export class FinanceService {
     private readonly journalLineRepo: Repository<JournalLine>,
   ) {}
 
+  async getRevenueMTD(): Promise<number> {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const result = await this.invoiceRepo
+      .createQueryBuilder('inv')
+      .select('SUM(inv.totalAmount)', 'total')
+      .where('inv.issueDate >= :start', {
+        start: startOfMonth.toISOString().split('T')[0],
+      })
+      .andWhere('inv.status = :status', { status: InvoiceStatus.PAID })
+      .getRawOne<{ total: string }>();
+
+    return Number(result?.total) || 0;
+  }
+
+  async getPendingInvoicesCount(): Promise<number> {
+    return this.invoiceRepo.count({
+      where: [
+        { status: InvoiceStatus.SENT },
+        { status: InvoiceStatus.PARTIALLY_PAID },
+        { status: InvoiceStatus.OVERDUE },
+      ],
+    });
+  }
+
   // ─── ACCOUNTS ───────────────────────────────────────────────
 
   async createAccount(dto: CreateAccountDto): Promise<Account> {
