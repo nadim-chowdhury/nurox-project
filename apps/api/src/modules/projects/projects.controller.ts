@@ -6,81 +6,82 @@ import {
   Patch,
   Param,
   Delete,
-  Query,
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
+import { CreateProjectDto } from './dto/create-project.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
+import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { Permission } from '../auth/enums/permissions.enum';
 
 @Controller('projects')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
+  // ─── PROJECTS ──────────────────────────────────────────────
+
   @Post()
-  createProject(@Body() dto: any) {
+  @RequirePermissions(Permission.PROJECTS_MANAGE)
+  createProject(@Body() dto: CreateProjectDto) {
     return this.projectsService.createProject(dto);
   }
 
   @Get()
-  findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.projectsService.findAllProjects(
-      Number(page) || 1,
-      Number(limit) || 20,
-    );
+  @RequirePermissions(Permission.PROJECTS_VIEW)
+  findAllProjects() {
+    return this.projectsService.findAllProjects();
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
+  @RequirePermissions(Permission.PROJECTS_VIEW)
+  findProject(@Param('id', ParseUUIDPipe) id: string) {
     return this.projectsService.findProjectById(id);
   }
 
   @Patch(':id')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+  @RequirePermissions(Permission.PROJECTS_MANAGE)
+  updateProject(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateProjectDto,
+  ) {
     return this.projectsService.updateProject(id, dto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id', ParseUUIDPipe) id: string) {
+  @RequirePermissions(Permission.PROJECTS_MANAGE)
+  removeProject(@Param('id', ParseUUIDPipe) id: string) {
     return this.projectsService.removeProject(id);
   }
 
-  // ─── TASKS ──────────────────────────────────────────────────
+  // ─── TASKS ────────────────────────────────────────────────
 
   @Post('tasks')
-  createTask(@Body() dto: any) {
+  @RequirePermissions(Permission.PROJECTS_MANAGE)
+  createTask(@Body() dto: CreateTaskDto) {
     return this.projectsService.createTask(dto);
   }
 
-  @Get('tasks')
-  findAllTasks(
-    @Query('projectId') projectId?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
-    return this.projectsService.findAllTasks(
-      projectId,
-      Number(page) || 1,
-      Number(limit) || 50,
-    );
-  }
-
-  @Get('tasks/:id')
-  findTask(@Param('id', ParseUUIDPipe) id: string) {
-    return this.projectsService.findTaskById(id);
-  }
-
   @Patch('tasks/:id')
-  updateTask(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+  @RequirePermissions(Permission.PROJECTS_MANAGE)
+  updateTask(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateTaskDto,
+  ) {
     return this.projectsService.updateTask(id, dto);
   }
 
   @Delete('tasks/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(Permission.PROJECTS_MANAGE)
   removeTask(@Param('id', ParseUUIDPipe) id: string) {
     return this.projectsService.removeTask(id);
   }

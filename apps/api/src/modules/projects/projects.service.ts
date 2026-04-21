@@ -1,13 +1,15 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Project } from './entities/project.entity';
-import { Task } from './entities/project.entity';
+import { Task } from './entities/task.entity';
+import { CreateProjectDto } from './dto/create-project.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
+import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
 
 @Injectable()
 export class ProjectsService {
-  private readonly logger = new Logger(ProjectsService.name);
-
   constructor(
     @InjectRepository(Project)
     private readonly projectRepo: Repository<Project>,
@@ -15,25 +17,16 @@ export class ProjectsService {
     private readonly taskRepo: Repository<Task>,
   ) {}
 
-  // ─── PROJECTS ───────────────────────────────────────────────
-
-  async createProject(dto: Partial<Project>): Promise<Project> {
+  async createProject(dto: CreateProjectDto): Promise<Project> {
     const project = this.projectRepo.create(dto);
-    const saved = await this.projectRepo.save(project);
-    this.logger.log(`Project created: ${saved.name}`);
-    return saved;
+    return this.projectRepo.save(project);
   }
 
-  async findAllProjects(page = 1, limit = 20) {
-    const [data, total] = await this.projectRepo.findAndCount({
+  async findAllProjects(): Promise<Project[]> {
+    return this.projectRepo.find({
+      relations: ['tasks'],
       order: { createdAt: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
     });
-    return {
-      data,
-      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
-    };
   }
 
   async findProjectById(id: string): Promise<Project> {
@@ -41,57 +34,60 @@ export class ProjectsService {
       where: { id },
       relations: ['tasks'],
     });
-    if (!project) throw new NotFoundException(`Project "${id}" not found`);
+    if (!project)
+      throw new NotFoundException(`Project with ID ${id} not found`);
     return project;
   }
 
-  async updateProject(id: string, dto: Partial<Project>): Promise<Project> {
-    await this.findProjectById(id);
-    await this.projectRepo.update(id, dto);
-    return this.findProjectById(id);
+  async updateProject(id: string, dto: UpdateProjectDto): Promise<Project> {
+    const project = await this.findProjectById(id);
+    Object.assign(project, dto);
+    return this.projectRepo.save(project);
   }
 
   async removeProject(id: string): Promise<void> {
-    await this.findProjectById(id);
-    await this.projectRepo.softDelete(id);
+    const result = await this.projectRepo.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Project with ID ${id} not found`);
+    }
   }
 
-  // ─── TASKS ──────────────────────────────────────────────────
-
-  async createTask(dto: Partial<Task>): Promise<Task> {
-    const task = this.taskRepo.create(dto);
-    const saved = await this.taskRepo.save(task);
-    this.logger.log(`Task created: ${saved.title}`);
-    return saved;
+  async createTask(dto: CreateTaskDto): Promise<Task> {
+    const project = await this.findProjectById(dto.projectId);
+    const task = this.taskRepo.create({ ...dto, project });
+    return this.taskRepo.save(task);
   }
 
-  async findAllTasks(projectId?: string, page = 1, limit = 50) {
-    const qb = this.taskRepo.createQueryBuilder('t');
-    if (projectId) qb.andWhere('t.projectId = :projectId', { projectId });
-    qb.orderBy('t.createdAt', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit);
-    const [data, total] = await qb.getManyAndCount();
-    return {
-      data,
-      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
-    };
-  }
+  async updateTask(id: string, dto: UpdateTaskDto): Promise<Task> {
+    const task = await this.taskRepo.findOneBy({ id });
+    if (!task) throw new NotFoundException(`Task with ID ${id} not found`);
 
-  async findTaskById(id: string): Promise<Task> {
-    const task = await this.taskRepo.findOne({ where: { id } });
-    if (!task) throw new NotFoundException(`Task "${id}" not found`);
+    Object.assign(task, dto);
+    await this.taskRepo.save(task);
+
+    // Trigger project progress dynamic update
+    await this.calculateProjectProgress(task.projectId);
+
     return task;
   }
 
-  async updateTask(id: string, dto: Partial<Task>): Promise<Task> {
-    await this.findTaskById(id);
-    await this.taskRepo.update(id, dto);
-    return this.findTaskById(id);
+  async removeTask(id: string): Promise<void> {
+    const task = await this.taskRepo.findOneBy({ id });
+    if (!task) throw new NotFoundException(`Task with ID ${id} not found`);
+
+    await this.taskRepo.delete(id);
+    await this.calculateProjectProgress(task.projectId);
   }
 
-  async removeTask(id: string): Promise<void> {
-    await this.findTaskById(id);
-    await this.taskRepo.softDelete(id);
+  private async calculateProjectProgress(projectId: string): Promise<void> {
+    const project = await this.findProjectById(projectId);
+    const tasks = project.tasks;
+    if (tasks.length === 0) return;
+
+    const completedTasks = tasks.filter((t) => t.status === 'COMPLETED').length;
+    const progress = Math.round((completedTasks / tasks.length) * 100);
+
+    project.progress = progress;
+    await this.projectRepo.save(project);
   }
 }

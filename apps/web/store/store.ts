@@ -5,7 +5,8 @@ import notificationReducer from "./slices/notificationSlice";
 import { authApi } from "./api/authApi";
 import { usersApi } from "./api/usersApi";
 import { employeeApi } from "./api/employeeApi";
-
+import { projectsApi } from "./api/projectsApi";
+import { salesApi } from "./api/salesApi";
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -14,12 +15,16 @@ export const store = configureStore({
     [authApi.reducerPath]: authApi.reducer,
     [usersApi.reducerPath]: usersApi.reducer,
     [employeeApi.reducerPath]: employeeApi.reducer,
+    [projectsApi.reducerPath]: projectsApi.reducer,
+    [salesApi.reducerPath]: salesApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
       .concat(authApi.middleware)
       .concat(usersApi.middleware)
-      .concat(employeeApi.middleware),
+      .concat(employeeApi.middleware)
+      .concat(projectsApi.middleware)
+      .concat(salesApi.middleware),
   devTools: process.env.NODE_ENV !== "production",
 });
 

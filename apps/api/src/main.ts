@@ -4,6 +4,8 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet = require('helmet');
 import cookieParser = require('cookie-parser');
 import { AppModule } from './app.module';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -16,6 +18,9 @@ async function bootstrap() {
   );
 
   app.setGlobalPrefix('api');
+
+  app.useGlobalFilters(new GlobalExceptionFilter());
+  app.useGlobalInterceptors(new TransformInterceptor());
 
   app.use((helmet as any)());
   app.use(cookieParser());

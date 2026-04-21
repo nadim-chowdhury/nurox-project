@@ -6,90 +6,90 @@ import {
   Patch,
   Param,
   Delete,
-  Query,
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
 import { SalesService } from './sales.service';
+import { CreateLeadDto } from './dto/create-lead.dto';
+import { UpdateLeadDto } from './dto/update-lead.dto';
+import { CreateDealDto } from './dto/create-deal.dto';
+import { UpdateDealDto } from './dto/update-deal.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { Permission } from '../auth/enums/permissions.enum';
 
 @Controller('sales')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}
 
-  // ─── LEADS ──────────────────────────────────────────────────
-
   @Post('leads')
-  createLead(@Body() dto: any) {
+  @RequirePermissions(Permission.SALES_MANAGE_LEADS)
+  createLead(@Body() dto: CreateLeadDto) {
     return this.salesService.createLead(dto);
   }
 
   @Get('leads')
-  findAllLeads(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('search') search?: string,
-    @Query('status') status?: string,
-  ) {
-    return this.salesService.findAllLeads(
-      Number(page) || 1,
-      Number(limit) || 20,
-      search,
-      status,
-    );
+  @RequirePermissions(Permission.SALES_VIEW_LEADS)
+  findAllLeads() {
+    return this.salesService.findAllLeads();
   }
 
   @Get('leads/:id')
+  @RequirePermissions(Permission.SALES_VIEW_LEADS)
   findLead(@Param('id', ParseUUIDPipe) id: string) {
     return this.salesService.findLeadById(id);
   }
 
   @Patch('leads/:id')
-  updateLead(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+  @RequirePermissions(Permission.SALES_MANAGE_LEADS)
+  updateLead(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateLeadDto,
+  ) {
     return this.salesService.updateLead(id, dto);
   }
 
   @Delete('leads/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(Permission.SALES_MANAGE_LEADS)
   removeLead(@Param('id', ParseUUIDPipe) id: string) {
     return this.salesService.removeLead(id);
   }
 
-  // ─── DEALS ──────────────────────────────────────────────────
-
   @Post('deals')
-  createDeal(@Body() dto: any) {
+  @RequirePermissions(Permission.SALES_MANAGE_DEALS)
+  createDeal(@Body() dto: CreateDealDto) {
     return this.salesService.createDeal(dto);
   }
 
   @Get('deals')
-  findAllDeals(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('status') status?: string,
-  ) {
-    return this.salesService.findAllDeals(
-      Number(page) || 1,
-      Number(limit) || 20,
-      status,
-    );
+  @RequirePermissions(Permission.SALES_VIEW_DEALS)
+  findAllDeals() {
+    return this.salesService.findAllDeals();
   }
 
   @Get('deals/:id')
+  @RequirePermissions(Permission.SALES_VIEW_DEALS)
   findDeal(@Param('id', ParseUUIDPipe) id: string) {
     return this.salesService.findDealById(id);
   }
 
   @Patch('deals/:id')
-  updateDeal(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+  @RequirePermissions(Permission.SALES_MANAGE_DEALS)
+  updateDeal(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateDealDto,
+  ) {
     return this.salesService.updateDeal(id, dto);
   }
 
   @Delete('deals/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(Permission.SALES_MANAGE_DEALS)
   removeDeal(@Param('id', ParseUUIDPipe) id: string) {
     return this.salesService.removeDeal(id);
   }

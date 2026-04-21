@@ -21,20 +21,23 @@ import { UpdateDepartmentDto } from './dto/update-department.dto';
 import { CreateDesignationDto } from './dto/create-designation.dto';
 import { UpdateDesignationDto } from './dto/update-designation.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { Permission } from '../auth/enums/permissions.enum';
 
 @Controller('hr')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class HrController {
   constructor(private readonly hrService: HrService) {}
 
-  // ─── EMPLOYEES ──────────────────────────────────────────────
-
   @Post('employees')
+  @RequirePermissions(Permission.HR_CREATE_EMPLOYEE)
   createEmployee(@Body() dto: CreateEmployeeDto) {
     return this.hrService.createEmployee(dto);
   }
 
   @Get('employees')
+  @RequirePermissions(Permission.HR_VIEW_EMPLOYEES)
   findAllEmployees(@Query() query: QueryEmployeeDto) {
     return this.hrService.findAllEmployees(query);
   }
@@ -45,6 +48,7 @@ export class HrController {
   }
 
   @Patch('employees/:id')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
   updateEmployee(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateEmployeeDto,
@@ -53,12 +57,11 @@ export class HrController {
   }
 
   @Delete('employees/:id')
+  @RequirePermissions(Permission.HR_DELETE_EMPLOYEE)
   @HttpCode(HttpStatus.NO_CONTENT)
   removeEmployee(@Param('id', ParseUUIDPipe) id: string) {
     return this.hrService.removeEmployee(id);
   }
-
-  // ─── DEPARTMENTS ────────────────────────────────────────────
 
   @Post('departments')
   createDepartment(@Body() dto: CreateDepartmentDto) {
@@ -88,8 +91,6 @@ export class HrController {
   removeDepartment(@Param('id', ParseUUIDPipe) id: string) {
     return this.hrService.removeDepartment(id);
   }
-
-  // ─── DESIGNATIONS ──────────────────────────────────────────
 
   @Post('designations')
   createDesignation(@Body() dto: CreateDesignationDto) {
