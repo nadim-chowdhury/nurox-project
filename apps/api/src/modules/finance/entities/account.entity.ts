@@ -1,4 +1,4 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 
 export enum AccountType {
@@ -25,6 +25,16 @@ export class Account extends BaseEntity {
 
   @Column({ type: 'uuid', nullable: true })
   parentId: string | null;
+
+  @ManyToOne(() => Account, (acc) => acc.children)
+  @JoinColumn({ name: 'parentId' })
+  parent: Account;
+
+  @OneToMany(() => Account, (acc) => acc.parent)
+  children: Account[];
+
+  @Column({ type: 'varchar', length: 10, default: 'USD' })
+  currency: string;
 
   @Column({ type: 'decimal', precision: 14, scale: 2, default: 0 })
   balance: number;
