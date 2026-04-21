@@ -12,20 +12,26 @@ import {
   HttpStatus,
   UseGuards,
   Res,
+  Headers,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { HrService } from './hr.service';
+import { AttendanceService } from './attendance.service';
 import {
   CreateEmployeeDto,
   OkrDto,
   TrainingDto,
   SkillDto,
+  AttendanceRecordDto,
+  LeaveRequestDto,
   createDepartmentSchema,
   updateDepartmentSchema,
   CreateDepartmentDto as CreateDepartmentSchemaDto,
   UpdateDepartmentDto as UpdateDepartmentSchemaDto,
 } from '@repo/shared-schemas';
 import { SalaryChangeReason } from './entities/salary-history.entity';
+import { LeaveRequestStatus } from './entities/leave.entity';
+import { AttendanceMethod } from './entities/attendance.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
@@ -34,9 +40,62 @@ import { Permission } from '../auth/enums/permissions.enum';
 @Controller('hr')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class HrController {
-  constructor(private readonly hrService: HrService) {}
+  constructor(
+    private readonly hrService: HrService,
+    private readonly attendanceService: AttendanceService,
+  ) {}
 
-  @Post('employees')
+  // ─── ATTENDANCE ─────────────────────────────────────────────
+
+  @Get('attendance/qr')
+  async getCheckInQr(@Body('employeeId') employeeId: string) {
+    const token = await this.attendanceService.generateCheckInQr(employeeId);
+    return { token };
+  }
+
+  @Post('attendance/check-in')
+  async checkIn(@Body() dto: { employeeId: string; method: AttendanceMethod; token?: string; location?: any }) {
+    if (dto.method === AttendanceMethod.QR && dto.token) {
+      return this.attendanceService.checkInViaQr(dto.employeeId, dto.token);
+    }
+    return this.attendanceService.recordAttendance(dto.employeeId, dto.method, 'IN', dto.location);
+  }
+
+  @Post('attendance/check-out')
+  async checkOut(@Body() dto: { employeeId: string; method: AttendanceMethod; location?: any }) {
+    return this.attendanceService.recordAttendance(dto.employeeId, dto.method, 'OUT', dto.location);
+  }
+
+  @Get('attendance/team')
+  @RequirePermissions(Permission.HR_VIEW_EMPLOYEES)
+  async getTeamAttendance(@Query('date') date: string) {
+    return this.attendanceService.getTeamAttendance(date || new Date().toISOString().split('T')[0]);
+  }
+
+  // ─── LEAVE MANAGEMENT ────────────────────────────────────────
+
+  @Post('leaves/apply')
+  async applyLeave(@Body() dto: any) {
+    return this.attendanceService.applyLeave(dto);
+  }
+
+  @Get('leaves/balances/:employeeId')
+  async getLeaveBalances(@Param('employeeId', ParseUUIDPipe) employeeId: string) {
+    return this.attendanceService.getLeaveBalances(employeeId);
+  }
+
+  @Patch('leaves/:id/approve')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  async approveLeave(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('status') status: LeaveRequestStatus,
+    @Body('approvedBy') approvedBy: string,
+  ) {
+    return this.attendanceService.approveLeave(id, approvedBy, status);
+  }
+
+  // ─── EMPLOYEES ──────────────────────────────────────────────
+
   @RequirePermissions(Permission.HR_CREATE_EMPLOYEE)
   createEmployee(@Body() dto: CreateEmployeeDto) {
     return this.hrService.createEmployee(dto);
