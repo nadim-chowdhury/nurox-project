@@ -10,6 +10,11 @@ export enum Permission {
   HR_VIEW_DEPARTMENTS = 'hr:view_departments',
   HR_MANAGE_DEPARTMENTS = 'hr:manage_departments',
 
+  HR_MANAGE_PERFORMANCE = 'hr:manage_performance',
+  HR_MANAGE_TRAINING = 'hr:manage_training',
+  HR_MANAGE_SKILLS = 'hr:manage_skills',
+  HR_VIEW_HISTORY = 'hr:view_history',
+
   // Finance
   FINANCE_VIEW_ACCOUNTS = 'finance:view_accounts',
   FINANCE_MANAGE_ACCOUNTS = 'finance:manage_accounts',
@@ -43,6 +48,10 @@ export const RolePermissions: Record<string, Permission[]> = {
     Permission.HR_DELETE_EMPLOYEE,
     Permission.HR_VIEW_DEPARTMENTS,
     Permission.HR_MANAGE_DEPARTMENTS,
+    Permission.HR_MANAGE_PERFORMANCE,
+    Permission.HR_MANAGE_TRAINING,
+    Permission.HR_MANAGE_SKILLS,
+    Permission.HR_VIEW_HISTORY,
   ],
   ACCOUNTANT: [
     Permission.FINANCE_VIEW_ACCOUNTS,

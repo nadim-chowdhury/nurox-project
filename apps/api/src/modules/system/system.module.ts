@@ -7,6 +7,7 @@ import { AuditLog } from './entities/audit-log.entity';
 import { TenantProvisioningService } from './tenant-provisioning.service';
 import { StorageService } from './storage.service';
 import { AuditService } from './audit.service';
+import { PdfService } from './pdf.service';
 import { SystemController } from './system.controller';
 import { NotificationsGateway } from './gateways/notifications.gateway';
 import { JwtModule } from '@nestjs/jwt';
@@ -21,12 +22,14 @@ import { JwtModule } from '@nestjs/jwt';
     TenantProvisioningService,
     StorageService,
     AuditService,
+    PdfService,
     NotificationsGateway,
   ],
   exports: [
     TenantProvisioningService,
     StorageService,
     AuditService,
+    PdfService,
     NotificationsGateway,
   ],
 })

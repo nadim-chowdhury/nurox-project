@@ -27,6 +27,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
   imports: [
@@ -45,6 +46,17 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
       validationOptions: {
         abortEarly: true, // fail on first missing var
       },
+    }),
+
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        connection: {
+          host: config.get<string>('redis.host'),
+          port: config.get<number>('redis.port'),
+        },
+      }),
+      inject: [ConfigService],
     }),
 
     DatabaseModule,

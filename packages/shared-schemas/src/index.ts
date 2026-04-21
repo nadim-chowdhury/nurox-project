@@ -4,3 +4,4 @@ export * from "./user.schema";
 export * from "./permissions.schema";
 export * from "./organization.schema";
 export * from "./department.schema";
+export * from "./hr.schema";

@@ -14,6 +14,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TenantProvisioningService } from './tenant-provisioning.service';
 import { AuditService } from './audit.service';
+import { StorageService } from './storage.service';
 import {
   companyProfileSchema,
   createBranchSchema,
@@ -41,7 +42,21 @@ export class SystemController {
     private readonly branchRepository: Repository<Branch>,
     private readonly tenantProvisioningService: TenantProvisioningService,
     private readonly auditService: AuditService,
+    private readonly storageService: StorageService,
   ) {}
+
+  @Get('upload-url')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get a pre-signed URL for uploading a file' })
+  async getUploadUrl(
+    @Query('fileName') fileName: string,
+    @Query('contentType') contentType: string,
+  ) {
+    const key = `uploads/${Date.now()}-${fileName}`;
+    const url = await this.storageService.getUploadPresignedUrl(key, contentType);
+    return { url, key };
+  }
 
   @Get('settings')
   async getSettings(@Headers('x-tenant-id') tenantId: string) {

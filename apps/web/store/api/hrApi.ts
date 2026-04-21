@@ -3,35 +3,22 @@ import { baseQueryWithReauth } from "@/lib/api-client";
 import type { 
   DepartmentDto, 
   CreateDepartmentDto, 
-  UpdateDepartmentDto 
+  UpdateDepartmentDto,
+  CreateEmployeeDto,
+  EmployeeResponseDto,
+  OkrDto,
+  TrainingDto,
+  SkillDto,
 } from "@repo/shared-schemas";
 
 /**
  * HR API — RTK Query endpoints for HR management (Employees, Departments).
  */
 
-export interface Employee {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  department: any; // Hierarchical department
+export interface Employee extends EmployeeResponseDto {
+  department: any;
   designation: any;
-  status: "ACTIVE" | "ON_LEAVE" | "PROBATION" | "SUSPENDED" | "TERMINATED";
-  joinDate: string;
-  dateOfBirth?: string;
-  gender?: string;
-  address?: string;
-  city?: string;
-  country?: string;
   salary?: number;
-  managerId?: string;
-  avatarUrl?: string;
-  emergencyContact?: string;
-  emergencyPhone?: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface EmployeeListParams {
@@ -57,7 +44,7 @@ export interface EmployeeListResponse {
 export const hrApi = createApi({
   reducerPath: "hrApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["Employee", "Department", "Designation"],
+  tagTypes: ["Employee", "Department", "Designation", "History", "Performance", "Training", "Skill"],
   endpoints: (builder) => ({
     // ─── EMPLOYEES ──────────────────────────────────────────────
     getEmployees: builder.query<EmployeeListResponse, EmployeeListParams>({
@@ -82,7 +69,7 @@ export const hrApi = createApi({
       providesTags: (_, __, id) => [{ type: "Employee", id }],
     }),
 
-    createEmployee: builder.mutation<Employee, any>({
+    createEmployee: builder.mutation<Employee, CreateEmployeeDto>({
       query: (body) => ({
         url: "/hr/employees",
         method: "POST",
@@ -109,6 +96,47 @@ export const hrApi = createApi({
         method: "DELETE",
       }),
       invalidatesTags: [{ type: "Employee", id: "LIST" }],
+    }),
+
+    updateSalary: builder.mutation<Employee, { id: string; newSalary: number; reason: string; comments?: string }>({
+      query: ({ id, ...body }) => ({
+        url: `/hr/employees/${id}/salary`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (_, __, { id }) => [{ type: "Employee", id }, { type: "History", id }],
+    }),
+
+    addOKR: builder.mutation<any, { id: string; data: OkrDto }>({
+      query: ({ id, data }) => ({
+        url: `/hr/employees/${id}/okr`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: (_, __, { id }) => [{ type: "Performance", id }],
+    }),
+
+    addTraining: builder.mutation<any, { id: string; data: TrainingDto }>({
+      query: ({ id, data }) => ({
+        url: `/hr/employees/${id}/training`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: (_, __, { id }) => [{ type: "Training", id }],
+    }),
+
+    addSkill: builder.mutation<any, { id: string; data: SkillDto }>({
+      query: ({ id, data }) => ({
+        url: `/hr/employees/${id}/skill`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: (_, __, { id }) => [{ type: "Skill", id }],
+    }),
+
+    getEmployeeHistory: builder.query<any[], string>({
+      query: (id) => `/hr/employees/${id}/history`,
+      providesTags: (_, __, id) => [{ type: "History", id }],
     }),
 
     // ─── DEPARTMENTS ────────────────────────────────────────────
@@ -159,6 +187,11 @@ export const {
   useCreateEmployeeMutation,
   useUpdateEmployeeMutation,
   useDeleteEmployeeMutation,
+  useUpdateSalaryMutation,
+  useAddOKRMutation,
+  useAddTrainingMutation,
+  useAddSkillMutation,
+  useGetEmployeeHistoryQuery,
   useGetDepartmentsQuery,
   useGetDepartmentQuery,
   useCreateDepartmentMutation,

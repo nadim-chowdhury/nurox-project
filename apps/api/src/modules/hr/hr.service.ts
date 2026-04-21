@@ -5,17 +5,25 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, TreeRepository } from 'typeorm';
-import { Employee } from './entities/employee.entity';
+import { Repository, TreeRepository, EntityManager } from 'typeorm';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { Employee, EmployeeStatus } from './entities/employee.entity';
 import { Department } from './entities/department.entity';
 import { Designation } from './entities/designation.entity';
-import { CreateEmployeeDto } from './dto/create-employee.dto';
-import { UpdateEmployeeDto } from './dto/update-employee.dto';
-import { QueryEmployeeDto } from './dto/query-employee.dto';
-import { CreateDepartmentDto } from './dto/create-department.dto';
-import { UpdateDepartmentDto } from './dto/update-department.dto';
-import { CreateDesignationDto } from './dto/create-designation.dto';
-import { UpdateDesignationDto } from './dto/update-designation.dto';
+import { PerformanceReview, PerformanceReviewStatus, KeyResult } from './entities/performance.entity';
+import { SalaryHistory, SalaryChangeReason } from './entities/salary-history.entity';
+import { Training, TrainingStatus } from './entities/training.entity';
+import { Skill } from './entities/skill.entity';
+import { EmploymentHistory, EmploymentEvent } from './entities/employment-history.entity';
+import { PdfService } from '../system/pdf.service';
+import {
+  CreateEmployeeDto,
+  EmployeeResponseDto,
+  OkrDto,
+  TrainingDto,
+  SkillDto,
+} from '@repo/shared-schemas';
 
 @Injectable()
 export class HrService {
@@ -28,26 +36,78 @@ export class HrService {
     private readonly departmentRepo: TreeRepository<Department>,
     @InjectRepository(Designation)
     private readonly designationRepo: Repository<Designation>,
+    @InjectRepository(PerformanceReview)
+    private readonly performanceRepo: Repository<PerformanceReview>,
+    @InjectRepository(SalaryHistory)
+    private readonly salaryHistoryRepo: Repository<SalaryHistory>,
+    @InjectRepository(Training)
+    private readonly trainingRepo: Repository<Training>,
+    @InjectRepository(Skill)
+    private readonly skillRepo: Repository<Skill>,
+    @InjectRepository(EmploymentHistory)
+    private readonly employmentHistoryRepo: Repository<EmploymentHistory>,
+    private readonly pdfService: PdfService,
+    @InjectQueue('hr') private hrQueue: Queue,
   ) {}
 
   // ─── EMPLOYEES ──────────────────────────────────────────────
 
   async createEmployee(dto: CreateEmployeeDto): Promise<Employee> {
     const existing = await this.employeeRepo.findOne({
-      where: [{ email: dto.email }, { employeeId: dto.employeeId }],
+      where: [{ email: dto.email }, { employeeId: dto.employeeCode }],
     });
     if (existing) {
       throw new ConflictException(
-        'Employee with this email or ID already exists',
+        'Employee with this email or code already exists',
       );
     }
 
-    const employee = this.employeeRepo.create(dto);
-    const saved = await this.employeeRepo.save(employee);
-    this.logger.log(
-      `Employee created: ${saved.employeeId} — ${saved.firstName} ${saved.lastName}`,
-    );
-    return this.findEmployeeById(saved.id);
+    return await this.employeeRepo.manager.transaction(async (manager) => {
+      // Create Employee
+      const employee = manager.create(Employee, {
+        ...dto,
+        employeeId: dto.employeeCode,
+        salary: dto.baseSalary,
+        joinDate: dto.joinDate.split('T')[0],
+        probationEndDate: dto.probationEndDate ? dto.probationEndDate.split('T')[0] : null,
+      });
+      const saved = await manager.save(employee);
+
+      // Save initial Salary History
+      const salaryHistory = manager.create(SalaryHistory, {
+        employeeId: saved.id,
+        previousSalary: 0,
+        newSalary: dto.baseSalary,
+        effectiveDate: dto.joinDate.split('T')[0],
+        reason: SalaryChangeReason.INITIAL_OFFER,
+        comments: 'Initial salary on hiring',
+      });
+      await manager.save(salaryHistory);
+
+      // Save initial Employment History
+      const employmentHistory = manager.create(EmploymentHistory, {
+        employeeId: saved.id,
+        event: EmploymentEvent.HIRED,
+        effectiveDate: dto.joinDate.split('T')[0],
+        departmentId: dto.departmentId,
+        designationId: (dto as any).designationId || null, // Designation might come from somewhere else in future
+        comments: 'Employee hired',
+      });
+      await manager.save(employmentHistory);
+
+      // Schedule probation expiry check
+      if (dto.probationEndDate) {
+        const delay = new Date(dto.probationEndDate).getTime() - Date.now();
+        if (delay > 0) {
+          await this.hrQueue.add('probation-expiry-check', { employeeId: saved.id }, { delay });
+        }
+      }
+
+      this.logger.log(
+        `Employee created: ${saved.employeeId} — ${saved.firstName} ${saved.lastName}`,
+      );
+      return saved;
+    });
   }
 
   async findAllEmployees(query: QueryEmployeeDto) {
@@ -119,14 +179,127 @@ export class HrService {
     return employee;
   }
 
-  async updateEmployee(id: string, dto: UpdateEmployeeDto): Promise<Employee> {
+  async updateEmployee(id: string, dto: any): Promise<Employee> {
     await this.findEmployeeById(id);
     await this.employeeRepo.update(id, dto);
     this.logger.log(`Employee updated: ${id}`);
     return this.findEmployeeById(id);
   }
 
+  async updateSalary(id: string, newSalary: number, reason: SalaryChangeReason, comments?: string): Promise<Employee> {
+    const employee = await this.findEmployeeById(id);
+    const previousSalary = employee.salary;
+
+    return await this.employeeRepo.manager.transaction(async (manager) => {
+      employee.salary = newSalary;
+      await manager.save(employee);
+
+      const history = manager.create(SalaryHistory, {
+        employeeId: id,
+        previousSalary,
+        newSalary,
+        effectiveDate: new Date().toISOString().split('T')[0],
+        reason,
+        comments,
+      });
+      await manager.save(history);
+
+      const employmentEvent = manager.create(EmploymentHistory, {
+        employeeId: id,
+        event: EmploymentEvent.SALARY_REVISION,
+        effectiveDate: new Date().toISOString().split('T')[0],
+        comments: `Salary revised from ${previousSalary} to ${newSalary}`,
+      });
+      await manager.save(employmentEvent);
+
+      return employee;
+    });
+  }
+
+  async addOKR(id: string, dto: OkrDto): Promise<PerformanceReview> {
+    await this.findEmployeeById(id);
+    const review = this.performanceRepo.create({
+      employeeId: id,
+      objective: dto.objective,
+      period: dto.period,
+      status: dto.status as PerformanceReviewStatus,
+      progress: dto.progress,
+      keyResults: dto.keyResults.map(kr => ({
+        description: kr.description,
+        targetValue: kr.targetValue,
+        currentValue: kr.currentValue,
+        weight: kr.weight,
+      })),
+    });
+    return this.performanceRepo.save(review);
+  }
+
+  async addTraining(id: string, dto: TrainingDto): Promise<Training> {
+    await this.findEmployeeById(id);
+    const training = this.trainingRepo.create({
+      employeeId: id,
+      ...dto,
+      status: dto.status as TrainingStatus,
+    });
+    return this.trainingRepo.save(training);
+  }
+
+  async addSkill(id: string, dto: SkillDto): Promise<Skill> {
+    await this.findEmployeeById(id);
+    const skill = this.skillRepo.create({
+      employeeId: id,
+      ...dto,
+      lastAssessed: dto.lastAssessed ? dto.lastAssessed.split('T')[0] : null,
+    });
+    return this.skillRepo.save(skill);
+  }
+
+  async getEmployeeHistory(id: string): Promise<EmploymentHistory[]> {
+    await this.findEmployeeById(id);
+    return this.employmentHistoryRepo.find({
+      where: { employeeId: id },
+      order: { effectiveDate: 'DESC', createdAt: 'DESC' },
+      relations: ['department', 'designation'],
+    });
+  }
+
+  async getTrainingCertificate(trainingId: string): Promise<Buffer> {
+    const training = await this.trainingRepo.findOne({
+      where: { id: trainingId },
+      relations: ['employee'],
+    });
+    if (!training) throw new NotFoundException(`Training "${trainingId}" not found`);
+    if (training.status !== TrainingStatus.COMPLETED) {
+      throw new ConflictException('Certificate is only available for completed trainings');
+    }
+
+    const template = `
+      <div style="text-align: center; border: 10px solid #c3f5ff; padding: 50px; font-family: 'Manrope', sans-serif; background-color: #0c1324; color: #e8eaf0;">
+        <h1 style="color: #c3f5ff; font-family: 'Space Grotesk', sans-serif;">CERTIFICATE OF COMPLETION</h1>
+        <p>This is to certify that</p>
+        <h2 style="color: #c3f5ff;">{{firstName}} {{lastName}}</h2>
+        <p>has successfully completed the training</p>
+        <h3 style="color: #c3f5ff;">{{trainingTitle}}</h3>
+        <p>on {{completionDate}}</p>
+        <div style="margin-top: 50px;">
+          <p>__________________________</p>
+          <p>Nurox ERP Training Department</p>
+        </div>
+      </div>
+    `;
+
+    const data = {
+      firstName: training.employee.firstName,
+      lastName: training.employee.lastName,
+      trainingTitle: training.title,
+      completionDate: training.completionDate,
+    };
+
+    return this.pdfService.generatePdf(template, data);
+  }
+
   async removeEmployee(id: string): Promise<void> {
+
     await this.findEmployeeById(id);
     await this.employeeRepo.softDelete(id);
     this.logger.log(`Employee soft-deleted: ${id}`);

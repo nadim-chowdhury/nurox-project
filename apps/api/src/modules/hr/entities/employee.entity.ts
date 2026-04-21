@@ -1,7 +1,12 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, OneToMany } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { Department } from './department.entity';
 import { Designation } from './designation.entity';
+import { PerformanceReview } from './performance.entity';
+import { SalaryHistory } from './salary-history.entity';
+import { Training } from './training.entity';
+import { Skill } from './skill.entity';
+import { EmploymentHistory } from './employment-history.entity';
 
 export enum EmployeeStatus {
   ACTIVE = 'ACTIVE',
@@ -75,6 +80,9 @@ export class Employee extends BaseEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   salary: number;
 
+  @Column({ type: 'date', nullable: true })
+  probationEndDate: string | null;
+
   @Column({ type: 'varchar', length: 255, nullable: true })
   address: string | null;
 
@@ -111,6 +119,28 @@ export class Employee extends BaseEntity {
   @ManyToOne(() => Designation, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'designationId' })
   designation: Designation;
+
+  @Column({ type: 'uuid', nullable: true })
+  managerId: string | null;
+
+  @ManyToOne(() => Employee, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'managerId' })
+  manager: Employee;
+
+  @OneToMany(() => PerformanceReview, (pr) => pr.employee)
+  performanceReviews: PerformanceReview[];
+
+  @OneToMany(() => SalaryHistory, (sh) => sh.employee)
+  salaryHistory: SalaryHistory[];
+
+  @OneToMany(() => Training, (t) => t.employee)
+  trainings: Training[];
+
+  @OneToMany(() => Skill, (s) => s.employee)
+  skills: Skill[];
+
+  @OneToMany(() => EmploymentHistory, (eh) => eh.employee)
+  employmentHistory: EmploymentHistory[];
 
   // Optional link to auth user
   @Column({ type: 'uuid', nullable: true, unique: true })

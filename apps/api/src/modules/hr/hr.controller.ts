@@ -11,19 +11,21 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { HrService } from './hr.service';
-import { CreateEmployeeDto } from './dto/create-employee.dto';
-import { UpdateEmployeeDto } from './dto/update-employee.dto';
-import { QueryEmployeeDto } from './dto/query-employee.dto';
-import { CreateDesignationDto } from './dto/create-designation.dto';
-import { UpdateDesignationDto } from './dto/update-designation.dto';
 import {
+  CreateEmployeeDto,
+  OkrDto,
+  TrainingDto,
+  SkillDto,
   createDepartmentSchema,
   updateDepartmentSchema,
   CreateDepartmentDto as CreateDepartmentSchemaDto,
   UpdateDepartmentDto as UpdateDepartmentSchemaDto,
 } from '@repo/shared-schemas';
+import { SalaryChangeReason } from './entities/salary-history.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
@@ -55,9 +57,59 @@ export class HrController {
   @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
   updateEmployee(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateEmployeeDto,
+    @Body() dto: any,
   ) {
     return this.hrService.updateEmployee(id, dto);
+  }
+
+  @Post('employees/:id/salary')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  updateSalary(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('newSalary') newSalary: number,
+    @Body('reason') reason: SalaryChangeReason,
+    @Body('comments') comments?: string,
+  ) {
+    return this.hrService.updateSalary(id, newSalary, reason, comments);
+  }
+
+  @Post('employees/:id/okr')
+  @RequirePermissions(Permission.HR_MANAGE_PERFORMANCE)
+  addOKR(@Param('id', ParseUUIDPipe) id: string, @Body() dto: OkrDto) {
+    return this.hrService.addOKR(id, dto);
+  }
+
+  @Post('employees/:id/training')
+  @RequirePermissions(Permission.HR_MANAGE_TRAINING)
+  addTraining(@Param('id', ParseUUIDPipe) id: string, @Body() dto: TrainingDto) {
+    return this.hrService.addTraining(id, dto);
+  }
+
+  @Post('employees/:id/skill')
+  @RequirePermissions(Permission.HR_MANAGE_SKILLS)
+  addSkill(@Param('id', ParseUUIDPipe) id: string, @Body() dto: SkillDto) {
+    return this.hrService.addSkill(id, dto);
+  }
+
+  @Get('employees/:id/history')
+  @RequirePermissions(Permission.HR_VIEW_HISTORY)
+  getEmployeeHistory(@Param('id', ParseUUIDPipe) id: string) {
+    return this.hrService.getEmployeeHistory(id);
+  }
+
+  @Get('trainings/:id/certificate')
+  @RequirePermissions(Permission.HR_MANAGE_TRAINING)
+  async getTrainingCertificate(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ) {
+    const buffer = await this.hrService.getTrainingCertificate(id);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename=certificate-${id}.pdf`,
+      'Content-Length': buffer.length,
+    });
+    res.end(buffer);
   }
 
   @Delete('employees/:id')
