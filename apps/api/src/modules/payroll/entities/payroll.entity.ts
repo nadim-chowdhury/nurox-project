@@ -1,11 +1,12 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
+import { Employee } from '../../hr/entities/employee.entity';
 
 export enum PayrollRunStatus {
   DRAFT = 'DRAFT',
-  PROCESSING = 'PROCESSING',
+  REVIEW = 'REVIEW',
   APPROVED = 'APPROVED',
-  PAID = 'PAID',
+  PROCESSED = 'PROCESSED',
   CANCELLED = 'CANCELLED',
 }
 
@@ -15,10 +16,10 @@ export class PayrollRun extends BaseEntity {
   runId: string; // e.g. PR-2026-04
 
   @Column({ type: 'varchar', length: 20 })
-  period: string; // e.g. April 2026
+  period: string; // e.g. "2026-04"
 
-  @Column({ type: 'date' })
-  payDate: string;
+  @Column({ type: 'date', nullable: true })
+  payDate: string | null;
 
   @Column({ type: 'int', default: 0 })
   employeeCount: number;
@@ -38,6 +39,15 @@ export class PayrollRun extends BaseEntity {
     default: PayrollRunStatus.DRAFT,
   })
   status: PayrollRunStatus;
+
+  @Column({ type: 'timestamp', nullable: true })
+  processedAt: Date | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  processedById: string | null;
+
+  @OneToMany(() => Payslip, (p) => p.payrollRun)
+  payslips: Payslip[];
 }
 
 @Entity('payslips')
@@ -45,27 +55,36 @@ export class Payslip extends BaseEntity {
   @Column({ type: 'uuid' })
   payrollRunId: string;
 
+  @ManyToOne(() => PayrollRun, (pr) => pr.payslips, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'payrollRunId' })
+  payrollRun: PayrollRun;
+
   @Column({ type: 'uuid' })
   employeeId: string;
 
-  @Column({ type: 'varchar', length: 150 })
-  employeeName: string;
-
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  basicSalary: number;
-
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  allowances: number;
+  @ManyToOne(() => Employee)
+  @JoinColumn({ name: 'employeeId' })
+  employee: Employee;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   grossPay: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  tax: number;
-
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  otherDeductions: number;
-
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   netPay: number;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  totalDeductions: number;
+
+  @Column({ type: 'jsonb', default: [] })
+  items: Array<{
+    name: string;
+    amount: number;
+    type: 'EARNING' | 'DEDUCTION' | 'STATUTORY';
+  }>;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  pdfUrl: string | null;
+
+  @Column({ type: 'boolean', default: false })
+  isPublished: boolean;
 }
