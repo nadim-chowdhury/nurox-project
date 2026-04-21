@@ -11,18 +11,35 @@ export class UsersService {
   ) {}
 
   /**
-   * Find user by email. Optionally include passwordHash for auth validation.
+   * Find user by email with optional field inclusion.
    */
   async findByEmail(
     email: string,
-    includePassword = false,
+    options: {
+      includePassword?: boolean;
+      includeResetFields?: boolean;
+      includeTwoFactor?: boolean;
+    } = {},
   ): Promise<User | null> {
     const qb = this.usersRepo
       .createQueryBuilder('user')
       .where('user.email = :email', { email: email.toLowerCase() });
 
-    if (includePassword) {
+    if (options.includePassword) {
       qb.addSelect('user.passwordHash');
+    }
+    if (options.includeResetFields) {
+      qb.addSelect([
+        'user.resetPasswordTokenHash',
+        'user.resetPasswordExpires',
+      ]);
+    }
+    if (options.includeTwoFactor) {
+      qb.addSelect([
+        'user.twoFactorSecret',
+        'user.isTwoFactorEnabled',
+        'user.twoFactorBackupCodes',
+      ]);
     }
 
     return qb.getOne();

@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Project } from './entities/project.entity';
-import { Task } from './entities/task.entity';
+import { Task, TaskStatus } from './entities/task.entity';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -84,7 +84,9 @@ export class ProjectsService {
     const tasks = project.tasks;
     if (tasks.length === 0) return;
 
-    const completedTasks = tasks.filter((t) => t.status === 'COMPLETED').length;
+    const completedTasks = tasks.filter(
+      (t) => t.status === TaskStatus.COMPLETED,
+    ).length;
     const progress = Math.round((completedTasks / tasks.length) * 100);
 
     project.progress = progress;

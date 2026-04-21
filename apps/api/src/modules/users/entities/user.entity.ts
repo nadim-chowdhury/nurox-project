@@ -54,4 +54,19 @@ export class User extends BaseEntity {
 
   @Column({ type: 'varchar', length: 255, nullable: true, select: false })
   refreshTokenHash: string | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true, select: false })
+  twoFactorSecret: string | null;
+
+  @Column({ type: 'boolean', default: false })
+  isTwoFactorEnabled: boolean;
+
+  @Column({ type: 'text', nullable: true, select: false })
+  twoFactorBackupCodes: string | null; // JSON string of hashed backup codes
+
+  @Column({ type: 'varchar', length: 255, nullable: true, select: false })
+  resetPasswordTokenHash: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true, select: false })
+  resetPasswordExpires: Date | null;
 }

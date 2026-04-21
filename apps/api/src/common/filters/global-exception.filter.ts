@@ -29,15 +29,20 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     // In production, we don't want to leak internal error details
     const isProduction = process.env.NODE_ENV === 'production';
+    const messageText =
+      typeof message === 'object' && message !== null && 'message' in message
+        ? (message as { message: string }).message
+        : message;
+
     const errorResponse = {
       statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
       method: request.method,
       message:
-        status === HttpStatus.INTERNAL_SERVER_ERROR && isProduction
+        status === (HttpStatus.INTERNAL_SERVER_ERROR as number) && isProduction
           ? 'Internal server error'
-          : (message as any)?.message || message,
+          : messageText,
     };
 
     // Log the error

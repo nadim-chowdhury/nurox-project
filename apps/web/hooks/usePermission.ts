@@ -1,7 +1,9 @@
 import { useAppSelector } from "./useRedux";
 import type { AuthUser } from "@/store/slices/authSlice";
+import { Permission, RolePermissions } from "@repo/shared-schemas";
 
 type UserRole = AuthUser["role"];
+type ExtendedAuthUser = AuthUser & { permissions?: Permission[] };
 
 /**
  * Permission check hook.
@@ -9,8 +11,8 @@ type UserRole = AuthUser["role"];
  * and provides helpers for role-based access control.
  *
  * @example
- * const { hasRole, isAdmin, canAccess } = usePermission();
- * if (!canAccess(["ADMIN", "HR_MANAGER"])) return <Forbidden />;
+ * const { hasRole, isAdmin, canAccess, canPerform, Permission } = usePermission();
+ * if (!canPerform(Permission.HR_VIEW_EMPLOYEES)) return <Forbidden />;
  */
 export function usePermission() {
   const user = useAppSelector((state) => state.auth.user);
@@ -32,5 +34,24 @@ export function usePermission() {
 
     /** Convenience: is authenticated */
     isAuthenticated: !!user,
+
+    /** Check if user can perform a specific action */
+    canPerform: (permission: Permission): boolean => {
+      if (!user) return false;
+
+      const extendedUser = user as ExtendedAuthUser;
+      // Use permissions from user object if available (dynamic roles)
+      if (extendedUser.permissions) {
+        return extendedUser.permissions.includes(permission);
+      }
+
+      // Fallback to hardcoded mapping
+      if (!role) return false;
+      const userPermissions = RolePermissions[role] || [];
+      return userPermissions.includes(permission);
+    },
+
+    /** Permission constants for easy access */
+    Permission,
   };
 }

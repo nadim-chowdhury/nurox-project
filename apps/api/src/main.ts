@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import helmet = require('helmet');
-import cookieParser = require('cookie-parser');
+import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -22,14 +22,14 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor());
 
-  app.use((helmet as any)());
+  app.use(helmet());
   app.use(cookieParser());
 
   app.enableCors({
     origin: corsOrigin,
     credentials: true, // required for httpOnly cookies
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-tenant-id'],
   });
 
   if (config.get<string>('app.nodeEnv') !== 'production') {
@@ -48,4 +48,4 @@ async function bootstrap() {
   console.log(`🚀 Nurox API running on http://localhost:${port}/api`);
   console.log(`📚 Swagger docs at http://localhost:${port}/api/docs`);
 }
-bootstrap();
+void bootstrap();

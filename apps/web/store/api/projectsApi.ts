@@ -7,30 +7,52 @@ export interface UnifiedResponse<T> {
   timestamp: string;
 }
 
+export interface Project {
+  id: string;
+  name: string;
+  client: string;
+  progress: number;
+  status: string;
+  team: string[];
+  tasks: { total: number; done: number };
+}
+
+export interface Task {
+  id: string;
+  projectId: string;
+  title: string;
+  description?: string;
+  status: string;
+  priority: string;
+  dueDate?: string;
+}
+
 export const projectsApi = createApi({
   reducerPath: "projectsApi",
   baseQuery: fetchBaseQuery({
     baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api",
-    prepareHeaders: (headers, { getState }) => {
+    prepareHeaders: (headers) => {
       // In a real app, attach JWT here if not relying entirely on httpOnly cookies
       return headers;
     },
   }),
   tagTypes: ["Project", "Task"],
   endpoints: (builder) => ({
-    getProjects: builder.query<UnifiedResponse<any[]>, void>({
+    getProjects: builder.query<UnifiedResponse<Project[]>, void>({
       query: () => "/projects",
       providesTags: ["Project"],
     }),
-    createProject: builder.mutation<UnifiedResponse<any>, Partial<any>>({
-      query: (body) => ({
-        url: "/projects",
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: ["Project"],
-    }),
-    createTask: builder.mutation<UnifiedResponse<any>, Partial<any>>({
+    createProject: builder.mutation<UnifiedResponse<Project>, Partial<Project>>(
+      {
+        query: (body) => ({
+          url: "/projects",
+          method: "POST",
+          body,
+        }),
+        invalidatesTags: ["Project"],
+      },
+    ),
+    createTask: builder.mutation<UnifiedResponse<Task>, Partial<Task>>({
       query: (body) => ({
         url: "/projects/tasks",
         method: "POST",

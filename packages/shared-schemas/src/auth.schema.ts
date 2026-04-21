@@ -69,6 +69,7 @@ export const forgotPasswordSchema = z.object({
 export type ForgotPasswordDto = z.infer<typeof forgotPasswordSchema>;
 
 export const resetPasswordSchema = z.object({
+  email: z.string().email("Invalid email address").toLowerCase().trim(),
   token: z.string().min(1, "Reset token is required"),
   newPassword: z
     .string()
@@ -81,6 +82,19 @@ export const resetPasswordSchema = z.object({
 });
 
 export type ResetPasswordDto = z.infer<typeof resetPasswordSchema>;
+
+export const verify2FASchema = z.object({
+  userId: z.string().uuid("Invalid user ID"),
+  token: z.string().length(6, "2FA token must be 6 digits"),
+});
+
+export type Verify2FADto = z.infer<typeof verify2FASchema>;
+
+export const enable2FASchema = z.object({
+  token: z.string().length(6, "2FA token must be 6 digits"),
+});
+
+export type Enable2FADto = z.infer<typeof enable2FASchema>;
 
 export const tokenPairSchema = z.object({
   accessToken: z.string(),
@@ -102,3 +116,33 @@ export const authResponseSchema = z.object({
 });
 
 export type AuthResponseDto = z.infer<typeof authResponseSchema>;
+
+export const userSessionSchema = z.object({
+  id: z.string().uuid(),
+  userAgent: z.string().nullable(),
+  ipAddress: z.string().nullable(),
+  deviceType: z.string().nullable(),
+  lastActiveAt: z.string().datetime(),
+  expiresAt: z.string().datetime(),
+  isCurrent: z.boolean().optional(),
+});
+
+export type UserSessionDto = z.infer<typeof userSessionSchema>;
+
+export const revokeSessionSchema = z.object({
+  sessionId: z.string().uuid("Invalid session ID"),
+});
+
+export type RevokeSessionDto = z.infer<typeof revokeSessionSchema>;
+
+export const magicLinkRequestSchema = z.object({
+  email: z.string().email("Invalid email address").toLowerCase().trim(),
+});
+
+export type MagicLinkRequestDto = z.infer<typeof magicLinkRequestSchema>;
+
+export const magicLinkLoginSchema = z.object({
+  token: z.string().min(1, "Magic link token is required"),
+});
+
+export type MagicLinkLoginDto = z.infer<typeof magicLinkLoginSchema>;

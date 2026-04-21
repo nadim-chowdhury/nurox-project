@@ -2,11 +2,9 @@ import {
   IsString,
   IsOptional,
   IsEnum,
-  IsNumber,
   IsUUID,
   IsBoolean,
   MaxLength,
-  Min,
 } from 'class-validator';
 import { AccountType } from '../entities/account.entity';
 

@@ -157,7 +157,7 @@ export class HrService {
       .addSelect('COUNT(*)', 'count')
       .where('emp.deletedAt IS NULL')
       .groupBy('emp.departmentId')
-      .getRawMany();
+      .getRawMany<{ departmentId: string; count: string }>();
 
     const countMap = new Map(
       counts.map((c) => [c.departmentId, parseInt(c.count)]),
@@ -213,7 +213,7 @@ export class HrService {
       .addSelect('COUNT(*)', 'count')
       .where('emp.deletedAt IS NULL')
       .groupBy('emp.designationId')
-      .getRawMany();
+      .getRawMany<{ designationId: string; count: string }>();
 
     const countMap = new Map(
       counts.map((c) => [c.designationId, parseInt(c.count)]),

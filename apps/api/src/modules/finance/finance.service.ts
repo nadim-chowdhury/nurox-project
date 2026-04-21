@@ -8,7 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Account } from './entities/account.entity';
-import { Invoice, InvoiceLine } from './entities/invoice.entity';
+import { Invoice, InvoiceLine, InvoiceStatus } from './entities/invoice.entity';
 import { JournalEntry, JournalLine } from './entities/journal.entity';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
@@ -126,9 +126,12 @@ export class FinanceService {
     return inv;
   }
 
-  async updateInvoiceStatus(id: string, status: string): Promise<Invoice> {
+  async updateInvoiceStatus(
+    id: string,
+    status: InvoiceStatus,
+  ): Promise<Invoice> {
     await this.findInvoiceById(id);
-    await this.invoiceRepo.update(id, { status: status as any });
+    await this.invoiceRepo.update(id, { status });
     return this.findInvoiceById(id);
   }
 

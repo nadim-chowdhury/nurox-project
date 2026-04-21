@@ -1,0 +1,54 @@
+.nurox-cmd-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
+}
+
+.nurox-cmd-content {
+  background: var(--color-surface);
+  border: 1px solid var(--ghost-border);
+  border-radius: 8px;
+  width: 100%;
+  max-width: 600px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+}
+
+.nurox-cmd-content [cmdk-input] {
+  width: 100%;
+  padding: 16px;
+  font-size: 16px;
+  border: none;
+  background: transparent;
+  color: var(--color-on-surface);
+  border-bottom: 1px solid var(--ghost-border);
+  outline: none;
+  font-family: var(--font-body);
+}
+
+.nurox-cmd-content [cmdk-group-heading] {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.nurox-cmd-content [cmdk-item] {
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--color-on-surface);
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.nurox-cmd-content [cmdk-item][data-selected="true"] {
+  background: var(--color-primary);
+  color: #fff;
+}

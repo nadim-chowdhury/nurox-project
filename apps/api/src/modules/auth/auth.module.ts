@@ -1,15 +1,28 @@
-import { Module } from '@nestjs/common';
+import { Module, Global } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
+import { RolesService } from './roles.service';
 import { AuthController } from './auth.controller';
+import { RolesController } from './roles.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
+import { MicrosoftStrategy } from './strategies/microsoft.strategy';
 import { UsersModule } from '../users/users.module';
+import { MailerModule } from '../mailer/mailer.module';
 
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserSession } from './entities/user-session.entity';
+import { Role } from './entities/role.entity';
+import { PermissionsGuard } from './guards/permissions.guard';
+
+@Global()
 @Module({
   imports: [
     UsersModule,
+    MailerModule,
+    TypeOrmModule.forFeature([UserSession, Role]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -22,8 +35,15 @@ import { UsersModule } from '../users/users.module';
       }),
     }),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService],
+  controllers: [AuthController, RolesController],
+  providers: [
+    AuthService,
+    RolesService,
+    JwtStrategy,
+    GoogleStrategy,
+    MicrosoftStrategy,
+    PermissionsGuard,
+  ],
+  exports: [AuthService, RolesService, PermissionsGuard, TypeOrmModule],
 })
 export class AuthModule {}

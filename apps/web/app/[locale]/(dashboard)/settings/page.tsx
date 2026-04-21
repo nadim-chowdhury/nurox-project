@@ -24,10 +24,20 @@ import {
   GlobalOutlined,
   TeamOutlined,
   ApiOutlined,
+  MonitorOutlined,
 } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Avatar } from "@/components/common/Avatar";
 import { useAppSelector } from "@/hooks/useRedux";
+import {
+  useGetSessionsQuery,
+  useRevokeSessionMutation,
+  useGetRolesQuery,
+} from "@/store/api/authApi";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+dayjs.extend(relativeTime);
 
 const labelStyle = { color: "var(--color-on-surface-variant)", fontSize: 13 };
 const cardStyle = {
@@ -301,6 +311,218 @@ function SecurityTab() {
   );
 }
 
+function SessionsTab() {
+  const { data: sessions, isLoading, refetch } = useGetSessionsQuery();
+  const [revoke] = useRevokeSessionMutation();
+
+  const handleRevoke = async (id: string) => {
+    try {
+      await revoke(id).unwrap();
+      message.success("Session revoked");
+      refetch();
+    } catch {
+      message.error("Failed to revoke session");
+    }
+  };
+
+  return (
+    <Card style={cardStyle} styles={{ body: { padding: 32 } }}>
+      <h3
+        style={{
+          fontFamily: "var(--font-display)",
+          color: "var(--color-on-surface)",
+          marginBottom: 24,
+        }}
+      >
+        Active Sessions
+      </h3>
+      <p
+        style={{
+          color: "var(--color-on-surface-variant)",
+          fontSize: 13,
+          marginBottom: 24,
+        }}
+      >
+        These are the devices that are currently logged into your account. You
+        can revoke any session to log out from that device.
+      </p>
+
+      {isLoading ? (
+        <div style={{ padding: 24, textAlign: "center" }}>Loading...</div>
+      ) : (
+        sessions?.map((session) => (
+          <div
+            key={session.id}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "16px 0",
+              borderBottom: "1px solid var(--ghost-border)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  background: "var(--ghost-bg)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 20,
+                  color: "var(--color-primary)",
+                }}
+              >
+                <MonitorOutlined />
+              </div>
+              <div>
+                <div
+                  style={{
+                    color: "var(--color-on-surface)",
+                    fontSize: 14,
+                    fontWeight: 500,
+                  }}
+                >
+                  {session.userAgent || "Unknown Device"}{" "}
+                  {session.isCurrent && (
+                    <span
+                      style={{
+                        background: "var(--color-primary)",
+                        color: "white",
+                        fontSize: 10,
+                        padding: "2px 6px",
+                        borderRadius: 10,
+                        marginLeft: 8,
+                      }}
+                    >
+                      Current
+                    </span>
+                  )}
+                </div>
+                <div
+                  style={{
+                    color: "var(--color-on-surface-variant)",
+                    fontSize: 12,
+                  }}
+                >
+                  {session.ipAddress} • Last active{" "}
+                  {dayjs(session.lastActiveAt).fromNow()}
+                </div>
+              </div>
+            </div>
+            {!session.isCurrent && (
+              <Button
+                type="text"
+                danger
+                size="small"
+                onClick={() => handleRevoke(session.id)}
+              >
+                Revoke
+              </Button>
+            )}
+          </div>
+        ))
+      )}
+    </Card>
+  );
+}
+
+function RolesTab() {
+  const { data: roles, isLoading } = useGetRolesQuery();
+
+  return (
+    <Card style={cardStyle} styles={{ body: { padding: 32 } }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 24,
+        }}
+      >
+        <h3
+          style={{
+            fontFamily: "var(--font-display)",
+            color: "var(--color-on-surface)",
+            margin: 0,
+          }}
+        >
+          Roles & Permissions
+        </h3>
+        <Button type="primary" size="small">
+          Create Role
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div style={{ padding: 24, textAlign: "center" }}>Loading...</div>
+      ) : (
+        roles?.map((role) => (
+          <div
+            key={role.id}
+            style={{
+              padding: "16px 0",
+              borderBottom: "1px solid var(--ghost-border)",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div
+                style={{ fontWeight: 500, color: "var(--color-on-surface)" }}
+              >
+                {role.name}
+              </div>
+              {role.isSystem && (
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: "var(--color-on-surface-variant)",
+                  }}
+                >
+                  System Role
+                </span>
+              )}
+            </div>
+            <div
+              style={{
+                fontSize: 12,
+                color: "var(--color-on-surface-variant)",
+                marginTop: 4,
+              }}
+            >
+              {role.description || "No description"}
+            </div>
+            <div
+              style={{
+                marginTop: 12,
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 4,
+              }}
+            >
+              {role.permissions.map((p) => (
+                <span
+                  key={p}
+                  style={{
+                    fontSize: 10,
+                    background: "var(--ghost-bg)",
+                    color: "var(--color-on-surface-variant)",
+                    padding: "2px 8px",
+                    borderRadius: 4,
+                  }}
+                >
+                  {p}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))
+      )}
+    </Card>
+  );
+}
+
 function NotificationsTab() {
   return (
     <Card style={cardStyle} styles={{ body: { padding: 32 } }}>
@@ -473,6 +695,24 @@ export default function SettingsPage() {
               </span>
             ),
             children: <SecurityTab />,
+          },
+          {
+            key: "sessions",
+            label: (
+              <span>
+                <MonitorOutlined /> Sessions
+              </span>
+            ),
+            children: <SessionsTab />,
+          },
+          {
+            key: "roles",
+            label: (
+              <span>
+                <TeamOutlined /> Roles
+              </span>
+            ),
+            children: <RolesTab />,
           },
           {
             key: "notifications",

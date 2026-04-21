@@ -4,6 +4,7 @@ import React from "react";
 import { Layout } from "antd";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
+import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { useAppSelector } from "@/hooks/useRedux";
 
 const { Content } = Layout;
@@ -27,6 +28,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             minHeight: "calc(100vh - 64px)",
           }}
         >
+          <Breadcrumbs />
           {children}
         </Content>
       </Layout>

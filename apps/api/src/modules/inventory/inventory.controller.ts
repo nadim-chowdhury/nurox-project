@@ -14,6 +14,8 @@ import {
 } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Product } from './entities/product.entity';
+import { Warehouse } from './entities/warehouse.entity';
 
 @Controller('inventory')
 @UseGuards(JwtAuthGuard)
@@ -21,7 +23,7 @@ export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
   @Post('products')
-  createProduct(@Body() dto: any) {
+  createProduct(@Body() dto: Partial<Product>) {
     return this.inventoryService.createProduct(dto);
   }
 
@@ -44,7 +46,10 @@ export class InventoryController {
   }
 
   @Patch('products/:id')
-  updateProduct(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+  updateProduct(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Partial<Product>,
+  ) {
     return this.inventoryService.updateProduct(id, dto);
   }
 
@@ -55,7 +60,7 @@ export class InventoryController {
   }
 
   @Post('warehouses')
-  createWarehouse(@Body() dto: any) {
+  createWarehouse(@Body() dto: Partial<Warehouse>) {
     return this.inventoryService.createWarehouse(dto);
   }
 
@@ -70,7 +75,10 @@ export class InventoryController {
   }
 
   @Patch('warehouses/:id')
-  updateWarehouse(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+  updateWarehouse(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Partial<Warehouse>,
+  ) {
     return this.inventoryService.updateWarehouse(id, dto);
   }
 

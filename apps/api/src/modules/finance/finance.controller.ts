@@ -17,6 +17,7 @@ import { CreateAccountDto } from './dto/create-account.dto';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { CreateJournalEntryDto } from './dto/create-journal.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { InvoiceStatus } from './entities/invoice.entity';
 
 @Controller('finance')
 @UseGuards(JwtAuthGuard)
@@ -80,7 +81,7 @@ export class FinanceController {
   @Patch('invoices/:id/status')
   updateInvoiceStatus(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body('status') status: string,
+    @Body('status') status: InvoiceStatus,
   ) {
     return this.financeService.updateInvoiceStatus(id, status);
   }

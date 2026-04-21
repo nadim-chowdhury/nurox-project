@@ -1,7 +1,13 @@
 "use client";
+
 import React from "react";
 import { Form, Input, Button, Typography, Divider, Alert, Space } from "antd";
-import { MailOutlined, LockOutlined } from "@ant-design/icons";
+import {
+  MailOutlined,
+  LockOutlined,
+  GoogleOutlined,
+  WindowsOutlined,
+} from "@ant-design/icons";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLoginMutation } from "@/store/api/authApi";
@@ -186,9 +192,39 @@ export default function LoginPage() {
           <Text
             style={{ color: "var(--color-on-surface-variant)", fontSize: 12 }}
           >
-            OR
+            OR CONTINUE WITH
           </Text>
         </Divider>
+
+        <Space direction="vertical" style={{ width: "100%" }} size="middle">
+          <Button
+            block
+            icon={<GoogleOutlined />}
+            style={{ height: 44 }}
+            onClick={() => {
+              window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"}/auth/google`;
+            }}
+          >
+            Google
+          </Button>
+          <Button
+            block
+            icon={<WindowsOutlined />}
+            style={{ height: 44 }}
+            onClick={() => {
+              window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"}/auth/microsoft`;
+            }}
+          >
+            Microsoft
+          </Button>
+        </Space>
+
+        <Divider
+          style={{
+            borderColor: "var(--ghost-border)",
+            margin: "16px 0",
+          }}
+        />
 
         <div style={{ textAlign: "center" }}>
           <Text

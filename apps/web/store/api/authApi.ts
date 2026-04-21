@@ -1,10 +1,17 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "@/lib/api-client";
-import { setCredentials, clearAuth } from "@/store/slices/authSlice";
+import { setCredentials, clearAuth, setUser } from "@/store/slices/authSlice";
 import type { AuthUser } from "@/store/slices/authSlice";
+import type {
+  UserSessionDto,
+  RoleDto,
+  CreateRoleDto,
+  MagicLinkLoginDto,
+  ResetPasswordDto,
+} from "@repo/shared-schemas";
 
 export interface AuthResponse {
-  user: AuthUser;
+  user: AuthUser & { isTwoFactorEnabled: boolean };
   tokens: {
     accessToken: string;
     expiresIn: number;
@@ -83,8 +90,76 @@ export const authApi = createApi({
       },
     }),
 
-    getMe: builder.query<{ id: string; email: string; role: string }, void>({
+    getMe: builder.query<AuthUser, void>({
       query: () => "/auth/me",
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(setUser(data));
+        } catch {
+          // Error handled by component
+        }
+      },
+    }),
+
+    getSessions: builder.query<UserSessionDto[], void>({
+      query: () => "/auth/sessions",
+    }),
+
+    revokeSession: builder.mutation<{ message: string }, string>({
+      query: (sessionId) => ({
+        url: `/auth/sessions/${sessionId}`,
+        method: "DELETE",
+      }),
+    }),
+
+    getRoles: builder.query<RoleDto[], void>({
+      query: () => "/roles",
+    }),
+
+    createRole: builder.mutation<RoleDto, CreateRoleDto>({
+      query: (body) => ({
+        url: "/roles",
+        method: "POST",
+        body,
+      }),
+    }),
+
+    magicLinkLogin: builder.mutation<AuthResponse, MagicLinkLoginDto>({
+      query: (body) => ({
+        url: "/auth/magic-link/login",
+        method: "POST",
+        body,
+      }),
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(
+            setCredentials({
+              user: data.user,
+              accessToken: data.tokens.accessToken,
+            }),
+          );
+        } catch {
+          // Error handled by component
+        }
+      },
+    }),
+
+    forgotPassword: builder.mutation<{ message: string }, { email: string }>({
+      query: (body) => ({
+        url: "/auth/forgot-password",
+        method: "POST",
+        body,
+      }),
+    }),
+
+    resetPassword: builder.mutation<{ message: string }, ResetPasswordDto>({
+      query: (body) => ({
+        url: "/auth/reset-password",
+        method: "POST",
+        body,
+      }),
     }),
   }),
 });
@@ -94,4 +169,11 @@ export const {
   useRegisterMutation,
   useLogoutMutation,
   useGetMeQuery,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
+  useGetSessionsQuery,
+  useRevokeSessionMutation,
+  useGetRolesQuery,
+  useCreateRoleMutation,
+  useMagicLinkLoginMutation,
 } = authApi;

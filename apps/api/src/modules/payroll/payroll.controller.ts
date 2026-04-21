@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { PayrollService } from './payroll.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PayrollRun, Payslip } from './entities/payroll.entity';
 
 @Controller('payroll')
 @UseGuards(JwtAuthGuard)
@@ -21,7 +22,7 @@ export class PayrollController {
   constructor(private readonly payrollService: PayrollService) {}
 
   @Post('runs')
-  createRun(@Body() dto: any) {
+  createRun(@Body() dto: Partial<PayrollRun>) {
     return this.payrollService.createRun(dto);
   }
 
@@ -39,7 +40,10 @@ export class PayrollController {
   }
 
   @Patch('runs/:id')
-  updateRun(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+  updateRun(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Partial<PayrollRun>,
+  ) {
     return this.payrollService.updateRun(id, dto);
   }
 
@@ -50,7 +54,7 @@ export class PayrollController {
   }
 
   @Post('payslips')
-  createPayslip(@Body() dto: any) {
+  createPayslip(@Body() dto: Partial<Payslip>) {
     return this.payrollService.createPayslip(dto);
   }
 

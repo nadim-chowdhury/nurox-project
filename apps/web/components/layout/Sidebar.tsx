@@ -32,7 +32,7 @@ const menuItems = [
     label: "Dashboard",
   },
   {
-    key: "/hr",
+    key: "hr-menu",
     icon: <TeamOutlined />,
     label: "HR",
     children: [
@@ -44,7 +44,7 @@ const menuItems = [
     ],
   },
   {
-    key: "/attendance",
+    key: "attendance-menu",
     icon: <ClockCircleOutlined />,
     label: "Attendance",
     children: [
@@ -54,7 +54,7 @@ const menuItems = [
     ],
   },
   {
-    key: "/leave",
+    key: "leave-menu",
     icon: <CalendarOutlined />,
     label: "Leave",
     children: [
@@ -65,7 +65,7 @@ const menuItems = [
     ],
   },
   {
-    key: "/payroll",
+    key: "payroll-menu",
     icon: <DollarOutlined />,
     label: "Payroll",
     children: [
@@ -75,7 +75,7 @@ const menuItems = [
     ],
   },
   {
-    key: "/finance",
+    key: "finance-menu",
     icon: <BankOutlined />,
     label: "Finance",
     children: [
@@ -88,7 +88,7 @@ const menuItems = [
     ],
   },
   {
-    key: "/procurement",
+    key: "procurement-menu",
     icon: <ShoppingOutlined />,
     label: "Procurement",
     children: [
@@ -98,7 +98,7 @@ const menuItems = [
     ],
   },
   {
-    key: "/inventory",
+    key: "inventory-menu",
     icon: <InboxOutlined />,
     label: "Inventory",
     children: [
@@ -108,7 +108,7 @@ const menuItems = [
     ],
   },
   {
-    key: "/sales",
+    key: "sales-menu",
     icon: <ShoppingCartOutlined />,
     label: "Sales & CRM",
     children: [
@@ -123,7 +123,7 @@ const menuItems = [
     ],
   },
   {
-    key: "/projects",
+    key: "projects-menu",
     icon: <ProjectOutlined />,
     label: "Projects",
     children: [
@@ -220,7 +220,11 @@ export function Sidebar() {
         selectedKeys={[pathname]}
         defaultOpenKeys={[]}
         items={menuItems}
-        onClick={({ key }) => router.push(key)}
+        onClick={({ key }) => {
+          if (key.startsWith("/")) {
+            router.push(key);
+          }
+        }}
         style={{ border: "none", marginTop: 8 }}
       />
     </Sider>

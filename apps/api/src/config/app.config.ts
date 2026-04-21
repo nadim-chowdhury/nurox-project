@@ -16,6 +16,9 @@ export const jwtConfig = registerAs('jwt', () => ({
   accessExpiry: process.env.JWT_ACCESS_EXPIRY || '15m',
   refreshSecret: process.env.JWT_REFRESH_SECRET,
   refreshExpiry: process.env.JWT_REFRESH_EXPIRY || '7d',
+  magicLinkSecret:
+    process.env.JWT_MAGIC_LINK_SECRET || process.env.JWT_REFRESH_SECRET,
+  magicLinkExpiry: process.env.JWT_MAGIC_LINK_EXPIRY || '10m',
 }));
 
 export const redisConfig = registerAs('redis', () => ({
@@ -27,4 +30,29 @@ export const appConfig = registerAs('app', () => ({
   nodeEnv: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '3001', 10),
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+}));
+
+export const mailConfig = registerAs('mail', () => ({
+  host: process.env.MAIL_HOST,
+  port: parseInt(process.env.MAIL_PORT || '587', 10),
+  user: process.env.MAIL_USER,
+  password: process.env.MAIL_PASSWORD,
+  from: process.env.MAIL_FROM || '"Nurox ERP" <noreply@nurox.app>',
+}));
+
+export const oauthConfig = registerAs('oauth', () => ({
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackUrl:
+      process.env.GOOGLE_CALLBACK_URL ||
+      'http://localhost:3001/api/auth/google/callback',
+  },
+  microsoft: {
+    clientId: process.env.MICROSOFT_CLIENT_ID,
+    clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
+    callbackUrl:
+      process.env.MICROSOFT_CALLBACK_URL ||
+      'http://localhost:3001/api/auth/microsoft/callback',
+  },
 }));

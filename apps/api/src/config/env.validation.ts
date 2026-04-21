@@ -28,4 +28,18 @@ export const envValidationSchema = Joi.object({
   JWT_REFRESH_EXPIRY: Joi.string().default('7d'),
 
   CORS_ORIGIN: Joi.string().default('http://localhost:3000'),
+
+  MAIL_HOST: Joi.string().optional(),
+  MAIL_PORT: Joi.number().optional(),
+  MAIL_USER: Joi.string().optional(),
+  MAIL_PASSWORD: Joi.string().optional(),
+  MAIL_FROM: Joi.string().optional(),
+
+  GOOGLE_CLIENT_ID: Joi.string().optional(),
+  GOOGLE_CLIENT_SECRET: Joi.string().optional(),
+  GOOGLE_CALLBACK_URL: Joi.string().optional(),
+
+  MICROSOFT_CLIENT_ID: Joi.string().optional(),
+  MICROSOFT_CLIENT_SECRET: Joi.string().optional(),
+  MICROSOFT_CALLBACK_URL: Joi.string().optional(),
 });

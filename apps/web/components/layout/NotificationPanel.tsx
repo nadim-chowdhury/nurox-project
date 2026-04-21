@@ -172,11 +172,13 @@ export function NotificationPanel() {
       trigger="click"
       placement="bottomRight"
       arrow={false}
-      overlayInnerStyle={{
-        background: "var(--color-surface)",
-        border: "1px solid var(--ghost-border)",
-        borderRadius: 4,
-        padding: 0,
+      styles={{
+        body: {
+          background: "var(--color-surface)",
+          border: "1px solid var(--ghost-border)",
+          borderRadius: 4,
+          padding: 0,
+        },
       }}
     >
       <Badge count={unreadCount} size="small" offset={[-2, 2]}>

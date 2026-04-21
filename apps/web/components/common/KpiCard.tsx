@@ -1,13 +1,14 @@
 "use client";
 
 import React from "react";
-import { Card, Statistic, type StatisticProps } from "antd";
+import { Card, Statistic, type StatisticProps, Skeleton } from "antd";
 import { ArrowUpOutlined, ArrowDownOutlined } from "@ant-design/icons";
 
 interface KpiCardProps extends StatisticProps {
   trend?: "up" | "down";
   trendValue?: string;
   trendLabel?: string;
+  loading?: boolean;
 }
 
 /**
@@ -18,8 +19,17 @@ export function KpiCard({
   trend,
   trendValue,
   trendLabel = "vs last month",
+  loading,
   ...props
 }: KpiCardProps) {
+  if (loading) {
+    return (
+      <Card style={{ padding: 4 }}>
+        <Skeleton active paragraph={{ rows: 2 }} />
+      </Card>
+    );
+  }
+
   return (
     <Card className="kpi-card" style={{ padding: 4 }}>
       <Statistic {...props} />

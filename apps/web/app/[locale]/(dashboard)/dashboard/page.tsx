@@ -40,10 +40,6 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 
 const { Title, Text } = Typography;
 
-/* ------------------------------------------------------------------ */
-/* DATA                                                                */
-/* ------------------------------------------------------------------ */
-
 const kpiData = [
   {
     title: "Total Employees",

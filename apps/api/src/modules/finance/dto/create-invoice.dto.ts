@@ -6,7 +6,6 @@ import {
   IsArray,
   ValidateNested,
   IsNumber,
-  IsUUID,
   MaxLength,
   Min,
 } from 'class-validator';
