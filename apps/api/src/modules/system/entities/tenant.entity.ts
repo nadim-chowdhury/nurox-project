@@ -23,6 +23,21 @@ export class Tenant {
   @Column({ type: 'varchar', length: 255, nullable: true })
   logoUrl: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  address: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  taxRegistrationNumber: string;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  phoneNumber: string;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  email: string;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  website: string;
+
   @Column({ type: 'varchar', length: 7, default: '#00b96b' })
   primaryColor: string;
 

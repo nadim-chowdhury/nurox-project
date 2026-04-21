@@ -2,3 +2,5 @@ export * from "./common.schema";
 export * from "./auth.schema";
 export * from "./user.schema";
 export * from "./permissions.schema";
+export * from "./organization.schema";
+export * from "./department.schema";

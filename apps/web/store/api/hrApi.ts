@@ -1,9 +1,13 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "@/lib/api-client";
+import type { 
+  DepartmentDto, 
+  CreateDepartmentDto, 
+  UpdateDepartmentDto 
+} from "@repo/shared-schemas";
 
 /**
- * Employee API — RTK Query endpoints for HR employee management.
- * Handles list (with pagination/filters), get by ID, create, update, delete.
+ * HR API — RTK Query endpoints for HR management (Employees, Departments).
  */
 
 export interface Employee {
@@ -12,8 +16,8 @@ export interface Employee {
   lastName: string;
   email: string;
   phone?: string;
-  department: string;
-  designation: string;
+  department: any; // Hierarchical department
+  designation: any;
   status: "ACTIVE" | "ON_LEAVE" | "PROBATION" | "SUSPENDED" | "TERMINATED";
   joinDate: string;
   dateOfBirth?: string;
@@ -31,10 +35,10 @@ export interface Employee {
 }
 
 export interface EmployeeListParams {
-  skip?: number;
-  take?: number;
+  page?: number;
+  limit?: number;
   search?: string;
-  department?: string;
+  departmentId?: string;
   status?: string;
   sortBy?: string;
   sortOrder?: "ASC" | "DESC";
@@ -45,39 +49,17 @@ export interface EmployeeListResponse {
   meta: {
     total: number;
     page: number;
-    pageSize: number;
+    limit: number;
     totalPages: number;
   };
 }
 
-export interface CreateEmployeeDto {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  department: string;
-  designation: string;
-  joinDate: string;
-  dateOfBirth?: string;
-  gender?: string;
-  address?: string;
-  city?: string;
-  country?: string;
-  salary?: number;
-  managerId?: string;
-  emergencyContact?: string;
-  emergencyPhone?: string;
-}
-
-export interface UpdateEmployeeDto extends Partial<CreateEmployeeDto> {
-  status?: Employee["status"];
-}
-
-export const employeeApi = createApi({
-  reducerPath: "employeeApi",
+export const hrApi = createApi({
+  reducerPath: "hrApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["Employee"],
+  tagTypes: ["Employee", "Department", "Designation"],
   endpoints: (builder) => ({
+    // ─── EMPLOYEES ──────────────────────────────────────────────
     getEmployees: builder.query<EmployeeListResponse, EmployeeListParams>({
       query: (params) => ({
         url: "/hr/employees",
@@ -100,7 +82,7 @@ export const employeeApi = createApi({
       providesTags: (_, __, id) => [{ type: "Employee", id }],
     }),
 
-    createEmployee: builder.mutation<Employee, CreateEmployeeDto>({
+    createEmployee: builder.mutation<Employee, any>({
       query: (body) => ({
         url: "/hr/employees",
         method: "POST",
@@ -109,10 +91,7 @@ export const employeeApi = createApi({
       invalidatesTags: [{ type: "Employee", id: "LIST" }],
     }),
 
-    updateEmployee: builder.mutation<
-      Employee,
-      { id: string; data: UpdateEmployeeDto }
-    >({
+    updateEmployee: builder.mutation<Employee, { id: string; data: any }>({
       query: ({ id, data }) => ({
         url: `/hr/employees/${id}`,
         method: "PATCH",
@@ -131,6 +110,46 @@ export const employeeApi = createApi({
       }),
       invalidatesTags: [{ type: "Employee", id: "LIST" }],
     }),
+
+    // ─── DEPARTMENTS ────────────────────────────────────────────
+    getDepartments: builder.query<DepartmentDto[], void>({
+      query: () => "/hr/departments",
+      providesTags: ["Department"],
+    }),
+
+    getDepartment: builder.query<DepartmentDto, string>({
+      query: (id) => `/hr/departments/${id}`,
+      providesTags: (_, __, id) => [{ type: "Department", id }],
+    }),
+
+    createDepartment: builder.mutation<DepartmentDto, CreateDepartmentDto>({
+      query: (body) => ({
+        url: "/hr/departments",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Department"],
+    }),
+
+    updateDepartment: builder.mutation<DepartmentDto, { id: string; data: UpdateDepartmentDto }>({
+      query: ({ id, data }) => ({
+        url: `/hr/departments/${id}`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: (_, __, { id }) => [
+        { type: "Department", id },
+        { type: "Department", id: "LIST" },
+      ],
+    }),
+
+    deleteDepartment: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/hr/departments/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Department"],
+    }),
   }),
 });
 
@@ -140,4 +159,9 @@ export const {
   useCreateEmployeeMutation,
   useUpdateEmployeeMutation,
   useDeleteEmployeeMutation,
-} = employeeApi;
+  useGetDepartmentsQuery,
+  useGetDepartmentQuery,
+  useCreateDepartmentMutation,
+  useUpdateDepartmentMutation,
+  useDeleteDepartmentMutation,
+} = hrApi;

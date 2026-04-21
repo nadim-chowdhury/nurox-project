@@ -41,10 +41,22 @@ export class User extends BaseEntity {
 
   @Column({
     type: 'enum',
-    enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'PENDING_VERIFICATION'],
+    enum: [
+      'ACTIVE',
+      'INACTIVE',
+      'SUSPENDED',
+      'PENDING_VERIFICATION',
+      'PENDING_INVITE',
+    ],
     default: 'PENDING_VERIFICATION',
   })
   status: string;
+
+  @Column({ type: 'boolean', default: false })
+  forcePasswordChange: boolean;
+
+  @Column({ type: 'uuid', nullable: true })
+  branchId: string | null;
 
   @Column({ type: 'varchar', length: 20, nullable: true })
   phone: string | null;

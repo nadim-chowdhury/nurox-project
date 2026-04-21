@@ -16,10 +16,14 @@ import { HrService } from './hr.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { QueryEmployeeDto } from './dto/query-employee.dto';
-import { CreateDepartmentDto } from './dto/create-department.dto';
-import { UpdateDepartmentDto } from './dto/update-department.dto';
 import { CreateDesignationDto } from './dto/create-designation.dto';
 import { UpdateDesignationDto } from './dto/update-designation.dto';
+import {
+  createDepartmentSchema,
+  updateDepartmentSchema,
+  CreateDepartmentDto as CreateDepartmentSchemaDto,
+  UpdateDepartmentDto as UpdateDepartmentSchemaDto,
+} from '@repo/shared-schemas';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
@@ -64,29 +68,36 @@ export class HrController {
   }
 
   @Post('departments')
-  createDepartment(@Body() dto: CreateDepartmentDto) {
-    return this.hrService.createDepartment(dto);
+  @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
+  createDepartment(@Body() dto: CreateDepartmentSchemaDto) {
+    const parsed = createDepartmentSchema.parse(dto);
+    return this.hrService.createDepartment(parsed);
   }
 
   @Get('departments')
+  @RequirePermissions(Permission.HR_VIEW_DEPARTMENTS)
   findAllDepartments() {
     return this.hrService.findAllDepartments();
   }
 
   @Get('departments/:id')
+  @RequirePermissions(Permission.HR_VIEW_DEPARTMENTS)
   findDepartment(@Param('id', ParseUUIDPipe) id: string) {
     return this.hrService.findDepartmentById(id);
   }
 
   @Patch('departments/:id')
+  @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
   updateDepartment(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateDepartmentDto,
+    @Body() dto: UpdateDepartmentSchemaDto,
   ) {
-    return this.hrService.updateDepartment(id, dto);
+    const parsed = updateDepartmentSchema.parse(dto);
+    return this.hrService.updateDepartment(id, parsed);
   }
 
   @Delete('departments/:id')
+  @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
   @HttpCode(HttpStatus.NO_CONTENT)
   removeDepartment(@Param('id', ParseUUIDPipe) id: string) {
     return this.hrService.removeDepartment(id);

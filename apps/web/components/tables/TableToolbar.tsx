@@ -40,6 +40,8 @@ interface TableToolbarProps {
   onFilterSelect?: (key: string) => void;
   /** Extra elements to render on the right */
   extra?: React.ReactNode;
+  /** Loading state for actions */
+  loading?: boolean;
 }
 
 export function TableToolbar({
@@ -55,6 +57,7 @@ export function TableToolbar({
   filterItems,
   onFilterSelect,
   extra,
+  loading,
 }: TableToolbarProps) {
   return (
     <div
@@ -106,7 +109,7 @@ export function TableToolbar({
 
         {showRefresh && (
           <Tooltip title="Refresh">
-            <Button icon={<ReloadOutlined />} onClick={onRefresh} />
+            <Button icon={<ReloadOutlined />} onClick={onRefresh} loading={loading} />
           </Tooltip>
         )}
 

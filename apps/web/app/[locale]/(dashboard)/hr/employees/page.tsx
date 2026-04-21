@@ -17,114 +17,25 @@ import { Avatar } from "@/components/common/Avatar";
 import { confirmModal } from "@/components/common/ConfirmModal";
 import { formatDate } from "@/lib/utils";
 import type { ColumnsType } from "antd/es/table";
-
-interface Employee {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  department: string;
-  designation: string;
-  status: string;
-  joinDate: string;
-}
-
-// Mock data — will be replaced by useGetEmployeesQuery
-const mockEmployees: Employee[] = [
-  {
-    id: "1",
-    firstName: "Sarah",
-    lastName: "Ahmed",
-    email: "sarah.ahmed@nurox.com",
-    department: "Engineering",
-    designation: "Sr. Frontend Developer",
-    status: "ACTIVE",
-    joinDate: "2023-03-15",
-  },
-  {
-    id: "2",
-    firstName: "James",
-    lastName: "Wilson",
-    email: "james.wilson@nurox.com",
-    department: "Engineering",
-    designation: "Backend Developer",
-    status: "ACTIVE",
-    joinDate: "2023-06-01",
-  },
-  {
-    id: "3",
-    firstName: "Fatima",
-    lastName: "Khan",
-    email: "fatima.khan@nurox.com",
-    department: "Human Resources",
-    designation: "HR Manager",
-    status: "ACTIVE",
-    joinDate: "2022-11-20",
-  },
-  {
-    id: "4",
-    firstName: "Michael",
-    lastName: "Chen",
-    email: "michael.chen@nurox.com",
-    department: "Finance",
-    designation: "Financial Analyst",
-    status: "ACTIVE",
-    joinDate: "2024-01-10",
-  },
-  {
-    id: "5",
-    firstName: "Priya",
-    lastName: "Sharma",
-    email: "priya.sharma@nurox.com",
-    department: "Sales & Marketing",
-    designation: "Sales Executive",
-    status: "ON_LEAVE",
-    joinDate: "2023-09-08",
-  },
-  {
-    id: "6",
-    firstName: "David",
-    lastName: "Miller",
-    email: "david.miller@nurox.com",
-    department: "Operations",
-    designation: "Operations Lead",
-    status: "ACTIVE",
-    joinDate: "2022-07-25",
-  },
-  {
-    id: "7",
-    firstName: "Aisha",
-    lastName: "Rahman",
-    email: "aisha.rahman@nurox.com",
-    department: "Engineering",
-    designation: "QA Engineer",
-    status: "ACTIVE",
-    joinDate: "2024-02-14",
-  },
-  {
-    id: "8",
-    firstName: "Robert",
-    lastName: "Taylor",
-    email: "robert.taylor@nurox.com",
-    department: "Finance",
-    designation: "Accountant",
-    status: "SUSPENDED",
-    joinDate: "2023-04-03",
-  },
-];
+import { useGetEmployeesQuery, useDeleteEmployeeMutation, type Employee } from "@/store/api/hrApi";
+import { usePagination } from "@/hooks/usePagination";
+import { message } from "antd";
+// Employee data is fetched via RTK Query
 
 export default function EmployeesPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const { tablePagination, queryParams } = usePagination();
 
-  const filtered = mockEmployees.filter(
-    (e) =>
-      `${e.firstName} ${e.lastName}`
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      e.email.toLowerCase().includes(search.toLowerCase()) ||
-      e.department.toLowerCase().includes(search.toLowerCase()),
-  );
+  const { data, isLoading, isFetching } = useGetEmployeesQuery({
+    page: queryParams.page,
+    limit: queryParams.limit,
+    search: search || undefined,
+    sortBy: "firstName",
+    sortOrder: "ASC",
+  });
+
+  const [deleteEmployee] = useDeleteEmployeeMutation();
 
   const handleDelete = (emp: Employee) => {
     confirmModal({
@@ -132,7 +43,12 @@ export default function EmployeesPage() {
       content:
         "This will permanently remove the employee record. This action cannot be undone.",
       onOk: async () => {
-        // Will be: await deleteEmployee(emp.id).unwrap()
+        try {
+          await deleteEmployee(emp.id).unwrap();
+          message.success("Employee deleted successfully");
+        } catch {
+          message.error("Failed to delete employee");
+        }
       },
     });
   };
@@ -169,9 +85,12 @@ export default function EmployeesPage() {
       dataIndex: "department",
       key: "department",
       width: 180,
-      filters: [...new Set(mockEmployees.map((e) => e.department))].map(
-        (d) => ({ text: d, value: d }),
-      ),
+      filters: data
+        ? [...new Set(data.data.map((e) => e.department))].map((d) => ({
+            text: String(d),
+            value: String(d),
+          }))
+        : [],
       onFilter: (value, record) => record.department === value,
       render: (dept: string) => (
         <span
@@ -265,7 +184,7 @@ export default function EmployeesPage() {
     <div className="animate-fade-in-up">
       <PageHeader
         title="Employees"
-        subtitle={`${filtered.length} employees found`}
+        subtitle={`${data?.meta?.total || 0} employees found`}
         breadcrumbs={[
           { label: "Home", href: "/dashboard" },
           { label: "HR", href: "/hr" },
@@ -288,12 +207,18 @@ export default function EmployeesPage() {
         searchPlaceholder="Search by name, email, or department..."
         showExport
         showRefresh
+        loading={isLoading || isFetching}
       />
 
       <DataTable<Employee>
         columns={columns}
-        dataSource={filtered}
+        dataSource={data?.data || []}
         rowKey="id"
+        loading={isLoading || isFetching}
+        pagination={{
+          ...tablePagination,
+          total: data?.meta?.total || 0,
+        }}
       />
     </div>
   );

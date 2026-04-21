@@ -22,8 +22,8 @@ export interface UsePaginationReturn {
     pageSizeOptions: string[];
     onChange: (page: number, pageSize: number) => void;
   };
-  /** API query params (0-indexed offset) */
-  queryParams: { skip: number; take: number };
+  /** API query params */
+  queryParams: { skip: number; take: number; page: number; limit: number };
   /** Reset to page 1 (useful after filter changes) */
   reset: () => void;
 }
@@ -69,6 +69,8 @@ export function usePagination(
     () => ({
       skip: (pagination.current - 1) * pagination.pageSize,
       take: pagination.pageSize,
+      page: pagination.current,
+      limit: pagination.pageSize,
     }),
     [pagination],
   );

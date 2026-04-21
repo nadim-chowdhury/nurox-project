@@ -88,4 +88,24 @@ export class MailerService {
       `,
     });
   }
+
+  async sendInviteEmail(email: string, token: string, firstName: string) {
+    const inviteUrl = `${this.configService.get('app.corsOrigin')}/register?token=${token}`;
+    await this.sendMail({
+      to: email,
+      subject: 'You have been invited to join Nurox ERP',
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
+          <h2 style="color: #00b96b;">Welcome to Nurox ERP, ${firstName}!</h2>
+          <p>You have been invited to join your organization's ERP system. Click the button below to complete your registration and set your password.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${inviteUrl}" style="background-color: #00b96b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Join Now</a>
+          </div>
+          <p>This invitation link will expire in 48 hours.</p>
+          <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+          <p style="font-size: 12px; color: #666;">This is an automated message, please do not reply.</p>
+        </div>
+      `,
+    });
+  }
 }

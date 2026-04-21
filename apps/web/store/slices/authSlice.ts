@@ -6,6 +6,8 @@ export interface AuthUser {
   firstName: string;
   lastName: string;
   role: string;
+  avatarUrl?: string | null;
+  phone?: string | null;
 }
 
 export interface AuthState {

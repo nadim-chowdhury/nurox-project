@@ -1,34 +1,22 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "@/lib/api-client";
+import type { 
+  UserResponseDto, 
+  InviteUserDto, 
+  UpdateUserDto, 
+  UserListQueryDto 
+} from "@repo/shared-schemas";
 
-export interface Employee {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
-  status: string;
-  department?: string;
-  designation?: string;
-  joinDate?: string;
-  createdAt: string;
-}
-
-export interface EmployeesResponse {
-  data: Employee[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
-export interface CreateEmployeeRequest {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  role?: string;
-  department?: string;
-  designation?: string;
+export interface PaginatedUsersResponse {
+  data: UserResponseDto[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
 }
 
 export const usersApi = createApi({
@@ -36,13 +24,10 @@ export const usersApi = createApi({
   baseQuery: baseQueryWithReauth,
   tagTypes: ["Users"],
   endpoints: (builder) => ({
-    getEmployees: builder.query<
-      EmployeesResponse,
-      { page?: number; limit?: number; search?: string }
-    >({
-      query: ({ page = 1, limit = 25, search }) => ({
+    getUsers: builder.query<PaginatedUsersResponse, UserListQueryDto>({
+      query: (params) => ({
         url: "/users",
-        params: { page, limit, ...(search ? { search } : {}) },
+        params,
       }),
       providesTags: (result) =>
         result
@@ -56,23 +41,28 @@ export const usersApi = createApi({
           : [{ type: "Users", id: "LIST" }],
     }),
 
-    getEmployee: builder.query<Employee, string>({
+    getUser: builder.query<UserResponseDto, string>({
       query: (id) => `/users/${id}`,
       providesTags: (_result, _error, id) => [{ type: "Users", id }],
     }),
 
-    createEmployee: builder.mutation<Employee, CreateEmployeeRequest>({
+    getProfile: builder.query<UserResponseDto, void>({
+      query: () => "/users/profile",
+      providesTags: ["Users"],
+    }),
+
+    inviteUser: builder.mutation<UserResponseDto, InviteUserDto>({
       query: (body) => ({
-        url: "/users",
+        url: "/users/invite",
         method: "POST",
         body,
       }),
       invalidatesTags: [{ type: "Users", id: "LIST" }],
     }),
 
-    updateEmployee: builder.mutation<
-      Employee,
-      { id: string; data: Partial<CreateEmployeeRequest> }
+    updateUser: builder.mutation<
+      UserResponseDto,
+      { id: string; data: UpdateUserDto }
     >({
       query: ({ id, data }) => ({
         url: `/users/${id}`,
@@ -85,20 +75,39 @@ export const usersApi = createApi({
       ],
     }),
 
-    deleteEmployee: builder.mutation<void, string>({
+    deleteUser: builder.mutation<{ success: boolean }, string>({
       query: (id) => ({
         url: `/users/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: [{ type: "Users", id: "LIST" }],
     }),
+
+    bulkCreateUsers: builder.mutation<UserResponseDto[], any[]>({
+      query: (body) => ({
+        url: "/users/bulk",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [{ type: "Users", id: "LIST" }],
+    }),
+
+    getAvatarUploadUrl: builder.query<{ uploadUrl: string; key: string }, string>({
+      query: (contentType) => ({
+        url: "/users/avatar-upload-url",
+        params: { contentType },
+      }),
+    }),
   }),
 });
 
 export const {
-  useGetEmployeesQuery,
-  useGetEmployeeQuery,
-  useCreateEmployeeMutation,
-  useUpdateEmployeeMutation,
-  useDeleteEmployeeMutation,
+  useGetUsersQuery,
+  useGetUserQuery,
+  useGetProfileQuery,
+  useInviteUserMutation,
+  useUpdateUserMutation,
+  useDeleteUserMutation,
+  useBulkCreateUsersMutation,
+  useLazyGetAvatarUploadUrlQuery,
 } = usersApi;

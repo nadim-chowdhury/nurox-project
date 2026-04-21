@@ -132,6 +132,15 @@ const menuItems = [
     ],
   },
   {
+    key: "system-menu",
+    icon: <SettingOutlined />,
+    label: "System",
+    children: [
+      { key: "/system/users", label: "Users & Invites" },
+      { key: "/settings", label: "Global Settings" },
+    ],
+  },
+  {
     key: "/documents",
     icon: <FileOutlined />,
     label: "Documents",

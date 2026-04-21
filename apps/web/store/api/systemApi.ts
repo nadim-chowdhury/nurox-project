@@ -1,4 +1,11 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { baseQueryWithReauth } from "@/lib/api-client";
+import type { 
+  CompanyProfileDto, 
+  BranchDto, 
+  CreateBranchDto, 
+  UpdateBranchDto 
+} from "@repo/shared-schemas";
 
 export interface TenantSettings {
   name: string;
@@ -8,25 +15,67 @@ export interface TenantSettings {
 
 export const systemApi = createApi({
   reducerPath: "systemApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api",
-    prepareHeaders: (headers) => {
-      // Tenant ID is injected by middleware into the request,
-      // but for client-side fetches we might need to extract it from hostname
-      const hostname = window.location.hostname;
-      let tenantId = "public";
-      if (hostname.includes("localhost") && hostname.split(".").length > 1) {
-        tenantId = hostname.split(".")[0] || "public";
-      }
-      headers.set("x-tenant-id", tenantId);
-      return headers;
-    },
-  }),
+  baseQuery: baseQueryWithReauth,
+  tagTypes: ["System", "Branches"],
   endpoints: (builder) => ({
     getSettings: builder.query<TenantSettings, void>({
       query: () => "/system/settings",
+      providesTags: ["System"],
+    }),
+
+    getCompanyProfile: builder.query<CompanyProfileDto, void>({
+      query: () => "/system/company",
+      providesTags: ["System"],
+    }),
+
+    updateCompanyProfile: builder.mutation<CompanyProfileDto, CompanyProfileDto>({
+      query: (body) => ({
+        url: "/system/company",
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["System"],
+    }),
+
+    getBranches: builder.query<BranchDto[], void>({
+      query: () => "/system/branches",
+      providesTags: ["Branches"],
+    }),
+
+    createBranch: builder.mutation<BranchDto, CreateBranchDto>({
+      query: (body) => ({
+        url: "/system/branches",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Branches"],
+    }),
+
+    updateBranch: builder.mutation<BranchDto, { id: string; data: UpdateBranchDto }>({
+      query: ({ id, data }) => ({
+        url: `/system/branches/${id}`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["Branches"],
+    }),
+
+    deleteBranch: builder.mutation<{ success: boolean }, string>({
+      query: (id) => ({
+        url: `/system/branches/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Branches"],
     }),
   }),
 });
 
-export const { useGetSettingsQuery } = systemApi;
+export const { 
+  useGetSettingsQuery,
+  useGetCompanyProfileQuery,
+  useUpdateCompanyProfileMutation,
+  useGetBranchesQuery,
+  useCreateBranchMutation,
+  useUpdateBranchMutation,
+  useDeleteBranchMutation,
+} = systemApi;

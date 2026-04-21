@@ -37,7 +37,7 @@ export default function proxy(request: NextRequest) {
     hostname.includes(".nurox.app") ||
     (hostname.includes("localhost") && hostname.split(".").length > 1)
   ) {
-    tenantId = hostname.split(".")[0];
+    tenantId = hostname.split(".")[0] || "public";
   }
 
   // 2. Localization Middleware

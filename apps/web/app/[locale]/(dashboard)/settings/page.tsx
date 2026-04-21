@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Tabs,
   Form,
@@ -14,6 +14,8 @@ import {
   Divider,
   Switch,
   message,
+  Space,
+  Modal,
 } from "antd";
 import {
   SaveOutlined,
@@ -25,15 +27,38 @@ import {
   TeamOutlined,
   ApiOutlined,
   MonitorOutlined,
+  EnvironmentOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  UserAddOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Avatar } from "@/components/common/Avatar";
+import { confirmModal } from "@/components/common/ConfirmModal";
+import { StatusTag } from "@/components/common/StatusTag";
 import { useAppSelector } from "@/hooks/useRedux";
+import {
+  useGetUsersQuery,
+  useInviteUserMutation,
+  useDeleteUserMutation,
+  useLazyGetAvatarUploadUrlQuery,
+  useUpdateUserMutation,
+} from "@/store/api/usersApi";
 import {
   useGetSessionsQuery,
   useRevokeSessionMutation,
   useGetRolesQuery,
 } from "@/store/api/authApi";
+import {
+  useGetBranchesQuery,
+  useCreateBranchMutation,
+  useUpdateBranchMutation,
+  useDeleteBranchMutation,
+  useGetCompanyProfileQuery,
+  useUpdateCompanyProfileMutation,
+} from "@/store/api/systemApi";
+import { BulkUserImport } from "@/components/modules/system/BulkUserImport";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 
@@ -48,6 +73,43 @@ const cardStyle = {
 
 function ProfileTab() {
   const user = useAppSelector((s) => s.auth.user);
+  const [updateUser] = useUpdateUserMutation();
+  const [getUploadUrl] = useLazyGetAvatarUploadUrlQuery();
+
+  const handleUpload = async (options: any) => {
+    const { file, onSuccess, onError } = options;
+    try {
+      const { uploadUrl, key } = await getUploadUrl(file.type).unwrap();
+      
+      const response = await fetch(uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+
+      if (response.ok) {
+        const avatarUrl = `${process.env.NEXT_PUBLIC_S3_PUBLIC_URL || 'http://localhost:9000/nurox-erp'}/${key}`;
+        await updateUser({ id: user!.id, data: { avatarUrl } }).unwrap();
+        message.success("Avatar updated");
+        onSuccess("ok");
+      } else {
+        throw new Error("Upload failed");
+      }
+    } catch (err) {
+      message.error("Failed to upload avatar");
+      onError(err);
+    }
+  };
+
+  const onFinish = async (values: any) => {
+    try {
+      await updateUser({ id: user!.id, data: values }).unwrap();
+      message.success("Profile updated");
+    } catch {
+      message.error("Failed to update profile");
+    }
+  };
+
   return (
     <Card style={cardStyle} styles={{ body: { padding: 32 } }}>
       <div
@@ -60,6 +122,7 @@ function ProfileTab() {
       >
         <Avatar
           name={`${user?.firstName || "N"} ${user?.lastName || "U"}`}
+          src={user?.avatarUrl || undefined}
           size={72}
         />
         <div>
@@ -81,7 +144,7 @@ function ProfileTab() {
           >
             {user?.email}
           </p>
-          <Upload showUploadList={false}>
+          <Upload customRequest={handleUpload} showUploadList={false}>
             <Button icon={<UploadOutlined />} size="small">
               Change Photo
             </Button>
@@ -92,10 +155,12 @@ function ProfileTab() {
         layout="vertical"
         requiredMark={false}
         size="large"
+        onFinish={onFinish}
         initialValues={{
           firstName: user?.firstName,
           lastName: user?.lastName,
           email: user?.email,
+          phone: user?.phone,
         }}
       >
         <Row gutter={[24, 0]}>
@@ -103,6 +168,7 @@ function ProfileTab() {
             <Form.Item
               name="firstName"
               label={<span style={labelStyle}>First Name</span>}
+              rules={[{ required: true }]}
             >
               <Input />
             </Form.Item>
@@ -111,6 +177,7 @@ function ProfileTab() {
             <Form.Item
               name="lastName"
               label={<span style={labelStyle}>Last Name</span>}
+              rules={[{ required: true }]}
             >
               <Input />
             </Form.Item>
@@ -135,7 +202,7 @@ function ProfileTab() {
         <Button
           type="primary"
           icon={<SaveOutlined />}
-          onClick={() => message.success("Profile updated")}
+          htmlType="submit"
         >
           Save Changes
         </Button>
@@ -145,33 +212,45 @@ function ProfileTab() {
 }
 
 function CompanyTab() {
+  const { data: profile, isLoading } = useGetCompanyProfileQuery();
+  const [updateProfile] = useUpdateCompanyProfileMutation();
+  const [form] = Form.useForm();
+
+  const onFinish = async (values: any) => {
+    try {
+      await updateProfile(values).unwrap();
+      message.success("Company settings saved");
+    } catch {
+      message.error("Failed to save company settings");
+    }
+  };
+
+  if (isLoading) return <Card style={cardStyle} loading />;
+
   return (
     <Card style={cardStyle} styles={{ body: { padding: 32 } }}>
       <Form
+        form={form}
         layout="vertical"
         requiredMark={false}
         size="large"
-        initialValues={{
-          company: "Nurox Technologies",
-          industry: "Technology",
-          website: "https://nurox.com",
-          timezone: "America/New_York",
-          currency: "USD",
-        }}
+        onFinish={onFinish}
+        initialValues={profile}
       >
         <Row gutter={[24, 0]}>
           <Col xs={24} sm={12}>
             <Form.Item
-              name="company"
+              name="name"
               label={<span style={labelStyle}>Company Name</span>}
+              rules={[{ required: true }]}
             >
               <Input />
             </Form.Item>
           </Col>
           <Col xs={24} sm={12}>
             <Form.Item
-              name="industry"
-              label={<span style={labelStyle}>Industry</span>}
+              name="taxRegistrationNumber"
+              label={<span style={labelStyle}>Tax Registration (TRN/TIN)</span>}
             >
               <Input />
             </Form.Item>
@@ -186,58 +265,342 @@ function CompanyTab() {
           </Col>
           <Col xs={24} sm={12}>
             <Form.Item
-              name="timezone"
-              label={<span style={labelStyle}>Timezone</span>}
+              name="email"
+              label={<span style={labelStyle}>Business Email</span>}
             >
-              <Select
-                options={[
-                  { value: "America/New_York", label: "Eastern (ET)" },
-                  { value: "America/Chicago", label: "Central (CT)" },
-                  { value: "America/Los_Angeles", label: "Pacific (PT)" },
-                  { value: "Europe/London", label: "GMT" },
-                  { value: "Asia/Dhaka", label: "BST (Dhaka)" },
-                ]}
-              />
+              <Input />
             </Form.Item>
           </Col>
-          <Col xs={24} sm={12}>
+          <Col xs={24}>
             <Form.Item
-              name="currency"
-              label={<span style={labelStyle}>Default Currency</span>}
+              name="address"
+              label={<span style={labelStyle}>Headquarters Address</span>}
             >
-              <Select
-                options={[
-                  { value: "USD", label: "USD ($)" },
-                  { value: "EUR", label: "EUR (€)" },
-                  { value: "GBP", label: "GBP (£)" },
-                  { value: "BDT", label: "BDT (৳)" },
-                ]}
-              />
-            </Form.Item>
-          </Col>
-          <Col xs={24} sm={12}>
-            <Form.Item
-              name="fiscalYear"
-              label={<span style={labelStyle}>Fiscal Year Start</span>}
-            >
-              <Select
-                options={[
-                  { value: "jan", label: "January" },
-                  { value: "apr", label: "April" },
-                  { value: "jul", label: "July" },
-                ]}
-              />
+              <Input.TextArea rows={2} />
             </Form.Item>
           </Col>
         </Row>
         <Button
           type="primary"
           icon={<SaveOutlined />}
-          onClick={() => message.success("Company settings saved")}
+          htmlType="submit"
         >
           Save
         </Button>
       </Form>
+    </Card>
+  );
+}
+
+function BranchesTab() {
+  const { data: branches, isLoading, refetch } = useGetBranchesQuery();
+  const [createBranch] = useCreateBranchMutation();
+  const [updateBranch] = useUpdateBranchMutation();
+  const [deleteBranch] = useDeleteBranchMutation();
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingBranch, setEditingBranch] = useState<any>(null);
+  const [form] = Form.useForm();
+
+  const handleAdd = () => {
+    setEditingBranch(null);
+    form.resetFields();
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (branch: any) => {
+    setEditingBranch(branch);
+    form.setFieldsValue(branch);
+    setIsModalOpen(true);
+  };
+
+  const onFinish = async (values: any) => {
+    try {
+      if (editingBranch) {
+        await updateBranch({ id: editingBranch.id, data: values }).unwrap();
+        message.success("Branch updated");
+      } else {
+        await createBranch(values).unwrap();
+        message.success("Branch created");
+      }
+      setIsModalOpen(false);
+      refetch();
+    } catch {
+      message.error("Failed to save branch");
+    }
+  };
+
+  const handleDelete = (id: string, name: string) => {
+    confirmModal({
+      title: `Delete Branch: ${name}?`,
+      content: "This action cannot be undone.",
+      onOk: async () => {
+        try {
+          await deleteBranch(id).unwrap();
+          message.success("Branch deleted");
+          refetch();
+        } catch {
+          message.error("Failed to delete branch");
+        }
+      },
+    });
+  };
+
+  return (
+    <Card style={cardStyle} styles={{ body: { padding: 32 } }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 24,
+        }}
+      >
+        <h3
+          style={{
+            fontFamily: "var(--font-display)",
+            color: "var(--color-on-surface)",
+            margin: 0,
+          }}
+        >
+          Branches
+        </h3>
+        <Button type="primary" size="small" onClick={handleAdd}>
+          Add Branch
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div style={{ padding: 24, textAlign: "center" }}>Loading...</div>
+      ) : (
+        branches?.map((branch) => (
+          <div
+            key={branch.id}
+            style={{
+              padding: "16px 0",
+              borderBottom: "1px solid var(--ghost-border)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 500, color: "var(--color-on-surface)" }}>
+                {branch.name} ({branch.code})
+              </div>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: "var(--color-on-surface-variant)",
+                }}
+              >
+                {branch.address || "No address"} • {branch.timezone}
+              </div>
+            </div>
+            <Space>
+              <Button type="text" size="small" icon={<EditOutlined />} onClick={() => handleEdit(branch)} />
+              <Button
+                type="text"
+                danger
+                size="small"
+                icon={<DeleteOutlined />}
+                onClick={() => handleDelete(branch.id!, branch.name)}
+              />
+            </Space>
+          </div>
+        ))
+      )}
+
+      <Modal
+        title={editingBranch ? "Edit Branch" : "Add Branch"}
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        onOk={() => form.submit()}
+        destroyOnClose
+      >
+        <Form form={form} layout="vertical" onFinish={onFinish}>
+          <Row gutter={16}>
+            <Col span={16}>
+              <Form.Item name="name" label="Branch Name" rules={[{ required: true }]}>
+                <Input placeholder="Main Office" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="code" label="Code" rules={[{ required: true }]}>
+                <Input placeholder="HQ" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="timezone" label="Timezone" initialValue="UTC">
+            <Select options={[{ value: 'UTC', label: 'UTC' }, { value: 'EST', label: 'Eastern' }]} />
+          </Form.Item>
+          <Form.Item name="address" label="Address">
+            <Input.TextArea rows={2} />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </Card>
+  );
+}
+
+function UsersTab() {
+  const {
+    data: users,
+    isLoading,
+    refetch,
+  } = useGetUsersQuery({
+    page: 1,
+    limit: 100,
+    sortBy: "createdAt",
+    sortOrder: "DESC",
+  });
+  const { data: roles } = useGetRolesQuery();
+  const [inviteUser] = useInviteUserMutation();
+  const [deleteUser] = useDeleteUserMutation();
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [form] = Form.useForm();
+
+  const handleInvite = async (values: any) => {
+    try {
+      await inviteUser(values).unwrap();
+      message.success("Invitation sent successfully");
+      setIsModalOpen(false);
+      refetch();
+    } catch {
+      message.error("Failed to send invitation");
+    }
+  };
+
+  const handleDelete = (id: string, name: string) => {
+    confirmModal({
+      title: `Delete User: ${name}?`,
+      content:
+        "This will permanently disable their login. This action cannot be undone.",
+      onOk: async () => {
+        try {
+          await deleteUser(id).unwrap();
+          message.success("User deleted");
+          refetch();
+        } catch {
+          message.error("Failed to delete user");
+        }
+      },
+    });
+  };
+
+  return (
+    <Card style={cardStyle} styles={{ body: { padding: 32 } }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 24,
+        }}
+      >
+        <h3
+          style={{
+            fontFamily: "var(--font-display)",
+            color: "var(--color-on-surface)",
+            margin: 0,
+          }}
+        >
+          Users & Invites
+        </h3>
+        <Space>
+          <Button icon={<FileTextOutlined />} onClick={() => setIsBulkImportOpen(true)}>
+            Bulk Import
+          </Button>
+          <Button type="primary" icon={<UserAddOutlined />} size="small" onClick={() => setIsModalOpen(true)}>
+            Invite User
+          </Button>
+        </Space>
+      </div>
+
+      {isLoading ? (
+        <div style={{ padding: 24, textAlign: "center" }}>Loading...</div>
+      ) : (
+        users?.data?.map((user) => (
+          <div
+            key={user.id}
+            style={{
+              padding: "16px 0",
+              borderBottom: "1px solid var(--ghost-border)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <Avatar name={`${user.firstName} ${user.lastName}`} src={user.avatarUrl || undefined} size={36} />
+              <div>
+                <div
+                  style={{ fontWeight: 500, color: "var(--color-on-surface)" }}
+                >
+                  {user.firstName} {user.lastName}
+                </div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "var(--color-on-surface-variant)",
+                  }}
+                >
+                  {user.email} • {user.role}
+                </div>
+              </div>
+            </div>
+            <Space>
+              <StatusTag status={user.status} />
+              <Button
+                type="text"
+                danger
+                size="small"
+                icon={<DeleteOutlined />}
+                onClick={() =>
+                  handleDelete(user.id, `${user.firstName} ${user.lastName}`)
+                }
+              />
+            </Space>
+          </div>
+        ))
+      )}
+
+      <Modal
+        title="Invite New User"
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        onOk={() => form.submit()}
+        destroyOnClose
+      >
+        <Form form={form} layout="vertical" onFinish={handleInvite}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="firstName" label="First Name" rules={[{ required: true }]}>
+                <Input placeholder="John" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="lastName" label="Last Name" rules={[{ required: true }]}>
+                <Input placeholder="Doe" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="email" label="Email Address" rules={[{ required: true, type: 'email' }]}>
+            <Input placeholder="john.doe@company.com" />
+          </Form.Item>
+          <Form.Item name="role" label="Assign Role" rules={[{ required: true }]}>
+            <Select options={roles?.map(r => ({ label: r.name, value: r.name }))} />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <BulkUserImport 
+        open={isBulkImportOpen} 
+        onClose={() => setIsBulkImportOpen(false)} 
+        onSuccess={refetch} 
+      />
     </Card>
   );
 }
@@ -686,6 +1049,24 @@ export default function SettingsPage() {
               </span>
             ),
             children: <CompanyTab />,
+          },
+          {
+            key: "branches",
+            label: (
+              <span>
+                <EnvironmentOutlined /> Branches
+              </span>
+            ),
+            children: <BranchesTab />,
+          },
+          {
+            key: "users",
+            label: (
+              <span>
+                <UserAddOutlined /> Users
+              </span>
+            ),
+            children: <UsersTab />,
           },
           {
             key: "security",

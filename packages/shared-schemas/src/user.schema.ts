@@ -18,6 +18,7 @@ export const userStatusEnum = z.enum([
   "INACTIVE",
   "SUSPENDED",
   "PENDING_VERIFICATION",
+  "PENDING_INVITE",
 ]);
 
 export type UserStatus = z.infer<typeof userStatusEnum>;
@@ -38,6 +39,8 @@ export const createUserSchema = z.object({
   role: userRoleEnum.default("EMPLOYEE"),
   phone: z.string().max(20).trim().optional(),
   avatarUrl: z.string().url("Invalid URL").optional(),
+  branchId: z.string().uuid().optional(),
+  forcePasswordChange: z.boolean().optional().default(false),
 });
 
 export type CreateUserDto = z.infer<typeof createUserSchema>;
@@ -57,6 +60,8 @@ export const userResponseSchema = z.object({
   status: userStatusEnum,
   phone: z.string().nullable(),
   avatarUrl: z.string().nullable(),
+  branchId: z.string().uuid().nullable(),
+  forcePasswordChange: z.boolean(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -76,6 +81,16 @@ export const userListQuerySchema = z.object({
 });
 
 export type UserListQueryDto = z.infer<typeof userListQuerySchema>;
+
+export const inviteUserSchema = z.object({
+  email: z.string().email("Invalid email address").toLowerCase().trim(),
+  firstName: z.string().min(1, "First name is required").max(100).trim(),
+  lastName: z.string().min(1, "Last name is required").max(100).trim(),
+  role: userRoleEnum.default("EMPLOYEE"),
+  branchId: z.string().uuid().optional(),
+});
+
+export type InviteUserDto = z.infer<typeof inviteUserSchema>;
 
 export const paginatedResponseSchema = <T extends z.ZodType>(itemSchema: T) =>
   z.object({

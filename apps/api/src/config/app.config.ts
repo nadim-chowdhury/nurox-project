@@ -56,3 +56,12 @@ export const oauthConfig = registerAs('oauth', () => ({
       'http://localhost:3001/api/auth/microsoft/callback',
   },
 }));
+
+export const s3Config = registerAs('s3', () => ({
+  endpoint: process.env.S3_ENDPOINT || 'http://localhost:9000',
+  region: process.env.S3_REGION || 'us-east-1',
+  accessKeyId: process.env.S3_ACCESS_KEY_ID || 'minioadmin',
+  secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || 'minioadmin',
+  bucket: process.env.S3_BUCKET || 'nurox-erp',
+  publicUrl: process.env.S3_PUBLIC_URL || 'http://localhost:9000/nurox-erp',
+}));

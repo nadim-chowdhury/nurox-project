@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, TreeRepository } from 'typeorm';
 import { Employee } from './entities/employee.entity';
 import { Department } from './entities/department.entity';
 import { Designation } from './entities/designation.entity';
@@ -25,7 +25,7 @@ export class HrService {
     @InjectRepository(Employee)
     private readonly employeeRepo: Repository<Employee>,
     @InjectRepository(Department)
-    private readonly departmentRepo: Repository<Department>,
+    private readonly departmentRepo: TreeRepository<Department>,
     @InjectRepository(Designation)
     private readonly designationRepo: Repository<Designation>,
   ) {}
@@ -134,7 +134,7 @@ export class HrService {
 
   // ─── DEPARTMENTS ────────────────────────────────────────────
 
-  async createDepartment(dto: CreateDepartmentDto): Promise<Department> {
+  async createDepartment(dto: any): Promise<Department> {
     const existing = await this.departmentRepo.findOne({
       where: [{ name: dto.name }, { code: dto.code }],
     });
@@ -142,46 +142,44 @@ export class HrService {
       throw new ConflictException('Department name or code already exists');
 
     const dept = this.departmentRepo.create(dto);
+
+    if (dto.parentId) {
+      const parent = await this.findDepartmentById(dto.parentId);
+      dept.parent = parent;
+    }
+
     return this.departmentRepo.save(dept);
   }
 
   async findAllDepartments() {
-    const departments = await this.departmentRepo.find({
-      order: { name: 'ASC' },
+    return this.departmentRepo.findTrees({
+      relations: ['employees'],
     });
-
-    // Get employee counts per department
-    const counts = await this.employeeRepo
-      .createQueryBuilder('emp')
-      .select('emp.departmentId', 'departmentId')
-      .addSelect('COUNT(*)', 'count')
-      .where('emp.deletedAt IS NULL')
-      .groupBy('emp.departmentId')
-      .getRawMany<{ departmentId: string; count: string }>();
-
-    const countMap = new Map(
-      counts.map((c) => [c.departmentId, parseInt(c.count)]),
-    );
-
-    return departments.map((d) => ({
-      ...d,
-      employeeCount: countMap.get(d.id) || 0,
-    }));
   }
 
   async findDepartmentById(id: string): Promise<Department> {
-    const dept = await this.departmentRepo.findOne({ where: { id } });
+    const dept = await this.departmentRepo.findOne({
+      where: { id },
+      relations: ['parent', 'children'],
+    });
     if (!dept) throw new NotFoundException(`Department "${id}" not found`);
     return dept;
   }
 
-  async updateDepartment(
-    id: string,
-    dto: UpdateDepartmentDto,
-  ): Promise<Department> {
-    await this.findDepartmentById(id);
-    await this.departmentRepo.update(id, dto);
-    return this.findDepartmentById(id);
+  async updateDepartment(id: string, dto: any): Promise<Department> {
+    const dept = await this.findDepartmentById(id);
+
+    if (dto.parentId !== undefined) {
+      if (dto.parentId === null) {
+        dept.parent = null as any;
+      } else {
+        const parent = await this.findDepartmentById(dto.parentId);
+        dept.parent = parent;
+      }
+    }
+
+    Object.assign(dept, dto);
+    return this.departmentRepo.save(dept);
   }
 
   async removeDepartment(id: string): Promise<void> {

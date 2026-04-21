@@ -173,7 +173,7 @@ export function NotificationPanel() {
       placement="bottomRight"
       arrow={false}
       styles={{
-        body: {
+        content: {
           background: "var(--color-surface)",
           border: "1px solid var(--ghost-border)",
           borderRadius: 4,

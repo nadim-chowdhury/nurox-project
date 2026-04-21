@@ -9,6 +9,7 @@ import {
   appConfig,
   mailConfig,
   oauthConfig,
+  s3Config,
 } from './config/app.config';
 import { envValidationSchema } from './config/env.validation';
 import { DatabaseModule } from './database/database.module';
@@ -37,6 +38,7 @@ import { ProjectsModule } from './modules/projects/projects.module';
         appConfig,
         mailConfig,
         oauthConfig,
+        s3Config,
       ],
       validationSchema: envValidationSchema,
       validationOptions: {
