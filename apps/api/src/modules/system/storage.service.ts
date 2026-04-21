@@ -55,4 +55,19 @@ export class StorageService {
     const publicBase = this.configService.get<string>('s3.publicUrl');
     return `${publicBase}/${key}`;
   }
+
+  /**
+   * Directly uploads a buffer to S3/MinIO.
+   */
+  async uploadBuffer(key: string, buffer: Buffer, contentType: string): Promise<string> {
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      Body: buffer,
+      ContentType: contentType,
+    });
+
+    await this.client.send(command);
+    return this.getPublicUrl(key);
+  }
 }

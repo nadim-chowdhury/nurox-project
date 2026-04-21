@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button, Space, Row, Col } from "antd";
+import { Button, Space, Row, Col, Tabs } from "antd";
 import {
   PlusOutlined,
   EyeOutlined,
@@ -17,6 +17,7 @@ import { StatusTag } from "@/components/common/StatusTag";
 import { Avatar } from "@/components/common/Avatar";
 import { formatDate } from "@/lib/utils";
 import type { ColumnsType } from "antd/es/table";
+import { AtsKanban } from "@/components/modules/hr/recruitment/AtsKanban";
 
 interface Job {
   id: string;
@@ -94,11 +95,21 @@ const mockJobs: Job[] = [
 
 export default function RecruitmentPage() {
   const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState("1");
+
   const filtered = mockJobs.filter((j) =>
     j.title.toLowerCase().includes(search.toLowerCase()),
   );
   const activeJobs = mockJobs.filter((j) => j.status === "active").length;
   const totalApplicants = mockJobs.reduce((a, b) => a + b.applicants, 0);
+
+  const mockApplications = [
+    { id: "1", candidateName: "John Doe", jobTitle: "Senior Backend Developer", status: "APPLIED" },
+    { id: "2", candidateName: "Jane Smith", jobTitle: "Product Designer", status: "SCREENED" },
+    { id: "3", candidateName: "Robert Brown", jobTitle: "Senior Backend Developer", status: "INTERVIEW" },
+    { id: "4", candidateName: "Emily Davis", jobTitle: "Financial Controller", status: "OFFER" },
+    { id: "5", candidateName: "Michael Wilson", jobTitle: "DevOps Engineer", status: "HIRED" },
+  ];
 
   const columns: ColumnsType<Job> = [
     {
@@ -254,12 +265,31 @@ export default function RecruitmentPage() {
         </Col>
       </Row>
 
-      <TableToolbar
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Search positions..."
+      <Tabs
+        activeKey={activeTab}
+        onChange={setActiveTab}
+        items={[
+          {
+            key: "1",
+            label: "Job Openings",
+            children: (
+              <>
+                <TableToolbar
+                  searchValue={search}
+                  onSearchChange={setSearch}
+                  searchPlaceholder="Search positions..."
+                />
+                <DataTable<Job> columns={columns} dataSource={filtered} rowKey="id" />
+              </>
+            ),
+          },
+          {
+            key: "2",
+            label: "ATS Kanban",
+            children: <AtsKanban initialApplications={mockApplications} />,
+          },
+        ]}
       />
-      <DataTable<Job> columns={columns} dataSource={filtered} rowKey="id" />
     </div>
   );
 }

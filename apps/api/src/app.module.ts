@@ -21,6 +21,7 @@ import { TenantMiddleware } from './common/middlewares/tenant.middleware';
 import { MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
 import { UsersModule } from './modules/users/users.module';
 import { HrModule } from './modules/hr/hr.module';
+import { RecruitmentModule } from './modules/recruitment/recruitment.module';
 import { PayrollModule } from './modules/payroll/payroll.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
@@ -68,6 +69,7 @@ import { BullModule } from '@nestjs/bullmq';
     UsersModule,
 
     HrModule,
+    RecruitmentModule,
     PayrollModule,
     FinanceModule,
     InventoryModule,
@@ -89,6 +91,7 @@ export class AppModule implements NestModule {
       // Apply the middleware to all feature modules enforcing multi-tenancy
       .forRoutes(
         { path: 'hr/(.*)', method: RequestMethod.ALL },
+        { path: 'recruitment/(.*)', method: RequestMethod.ALL },
         { path: 'finance/(.*)', method: RequestMethod.ALL },
         { path: 'inventory/(.*)', method: RequestMethod.ALL },
         { path: 'projects/(.*)', method: RequestMethod.ALL },
