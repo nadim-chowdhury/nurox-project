@@ -1,221 +1,76 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button, Space } from "antd";
-import { PlusOutlined, EditOutlined, EyeOutlined } from "@ant-design/icons";
+import { Table, Button, Tag, Space, Modal, Form, Input, InputNumber, Select, message } from "antd";
+import { PlusOutlined, TeamOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
-import { DataTable } from "@/components/tables/DataTable";
-import { TableToolbar } from "@/components/tables/TableToolbar";
-import { StatusTag } from "@/components/common/StatusTag";
+import { useGetVendorsQuery, useCreateVendorMutation } from "@/store/api/procurementApi";
 import { formatCurrency } from "@/lib/utils";
-import type { ColumnsType } from "antd/es/table";
-
-interface Vendor {
-  id: string;
-  name: string;
-  contact: string;
-  email: string;
-  category: string;
-  totalOrders: number;
-  totalSpend: number;
-  rating: number;
-  status: string;
-}
-
-const mockVendors: Vendor[] = [
-  {
-    id: "1",
-    name: "Dell Technologies",
-    contact: "John Smith",
-    email: "sales@dell.com",
-    category: "IT Hardware",
-    totalOrders: 15,
-    totalSpend: 285000,
-    rating: 4.5,
-    status: "active",
-  },
-  {
-    id: "2",
-    name: "AWS",
-    contact: "Cloud Team",
-    email: "enterprise@aws.com",
-    category: "Cloud Services",
-    totalOrders: 12,
-    totalSpend: 54240,
-    rating: 4.8,
-    status: "active",
-  },
-  {
-    id: "3",
-    name: "Staples",
-    contact: "Lisa Wong",
-    email: "orders@staples.com",
-    category: "Office Supplies",
-    totalOrders: 24,
-    totalSpend: 18500,
-    rating: 4.0,
-    status: "active",
-  },
-  {
-    id: "4",
-    name: "WeWork",
-    contact: "Membership",
-    email: "billing@wework.com",
-    category: "Real Estate",
-    totalOrders: 12,
-    totalSpend: 102000,
-    rating: 3.8,
-    status: "active",
-  },
-  {
-    id: "5",
-    name: "Cisco Systems",
-    contact: "Enterprise Sales",
-    email: "sales@cisco.com",
-    category: "Networking",
-    totalOrders: 5,
-    totalSpend: 72000,
-    rating: 4.2,
-    status: "active",
-  },
-  {
-    id: "6",
-    name: "Old Vendor Co",
-    contact: "N/A",
-    email: "info@old.com",
-    category: "General",
-    totalOrders: 2,
-    totalSpend: 3200,
-    rating: 2.5,
-    status: "inactive",
-  },
-];
 
 export default function VendorsPage() {
-  const [search, setSearch] = useState("");
-  const filtered = mockVendors.filter((v) =>
-    v.name.toLowerCase().includes(search.toLowerCase()),
-  );
+  const { data: vendors, isLoading } = useGetVendorsQuery();
+  const [createVendor] = useCreateVendorMutation();
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [form] = Form.useForm();
 
-  const columns: ColumnsType<Vendor> = [
+  const handleCreate = async (values: any) => {
+    try {
+      await createVendor(values).unwrap();
+      message.success("Vendor created successfully");
+      setIsModalVisible(false);
+      form.resetFields();
+    } catch (error) {
+      message.error("Failed to create vendor");
+    }
+  };
+
+  const columns = [
     {
       title: "Vendor",
-      dataIndex: "name",
-      key: "name",
-      width: 200,
-      render: (v: string) => (
-        <span
-          style={{
-            color: "var(--color-on-surface)",
-            fontWeight: 500,
-            fontSize: 13,
-          }}
-        >
-          {v}
-        </span>
+      key: "vendor",
+      render: (_: any, record: any) => (
+        <Space direction="vertical" size={0}>
+          <span style={{ fontWeight: 600 }}>{record.name}</span>
+          <span style={{ fontSize: 12, color: "var(--color-on-surface-variant)" }}>{record.code}</span>
+        </Space>
       ),
     },
     {
       title: "Contact",
-      dataIndex: "contact",
       key: "contact",
-      width: 140,
-      render: (v: string) => (
-        <span
-          style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
-        >
-          {v}
-        </span>
-      ),
-    },
-    {
-      title: "Category",
-      dataIndex: "category",
-      key: "category",
-      width: 140,
-      render: (v: string) => (
-        <span
-          style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
-        >
-          {v}
-        </span>
-      ),
-    },
-    {
-      title: "Orders",
-      dataIndex: "totalOrders",
-      key: "orders",
-      width: 80,
-      sorter: (a, b) => a.totalOrders - b.totalOrders,
-      render: (v: number) => (
-        <span style={{ fontFamily: "var(--font-display)", fontWeight: 600 }}>
-          {v}
-        </span>
-      ),
-    },
-    {
-      title: "Total Spend",
-      dataIndex: "totalSpend",
-      key: "spend",
-      width: 140,
-      sorter: (a, b) => a.totalSpend - b.totalSpend,
-      render: (v: number) => (
-        <span
-          style={{
-            fontFamily: "var(--font-display)",
-            color: "var(--color-primary)",
-            fontWeight: 600,
-          }}
-        >
-          {formatCurrency(v)}
-        </span>
-      ),
-    },
-    {
-      title: "Rating",
-      dataIndex: "rating",
-      key: "rating",
-      width: 80,
-      sorter: (a, b) => a.rating - b.rating,
-      render: (v: number) => (
-        <span
-          style={{
-            fontFamily: "var(--font-display)",
-            color: v >= 4 ? "#6dd58c" : v >= 3 ? "#ffb347" : "#ffb4ab",
-            fontWeight: 600,
-          }}
-        >
-          {v.toFixed(1)} ★
-        </span>
-      ),
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      width: 100,
-      render: (s: string) => <StatusTag status={s} />,
-    },
-    {
-      title: "",
-      key: "actions",
-      width: 80,
-      align: "right" as const,
-      render: () => (
-        <Space size={4}>
-          <Button
-            type="text"
-            size="small"
-            icon={<EyeOutlined />}
-            style={{ color: "var(--color-on-surface-variant)" }}
-          />
-          <Button
-            type="text"
-            size="small"
-            icon={<EditOutlined />}
-            style={{ color: "var(--color-on-surface-variant)" }}
-          />
+      render: (_: any, record: any) => (
+        <Space direction="vertical" size={0}>
+          <span><MailOutlined style={{ fontSize: 12, marginRight: 4 }} />{record.email || "N/A"}</span>
+          <span><PhoneOutlined style={{ fontSize: 12, marginRight: 4 }} />{record.phone || "N/A"}</span>
         </Space>
+      ),
+    },
+    {
+      title: "Currency",
+      dataIndex: "currency",
+      key: "currency",
+    },
+    {
+      title: "Credit Limit",
+      dataIndex: "creditLimit",
+      key: "creditLimit",
+      render: (val: number) => formatCurrency(val),
+    },
+    {
+      title: "KYC Status",
+      dataIndex: "kycStatus",
+      key: "kycStatus",
+      render: (status: string) => (
+        <Tag color={status === "VERIFIED" ? "green" : "orange"}>
+          {status}
+        </Tag>
+      ),
+    },
+    {
+      title: "Action",
+      key: "action",
+      render: (_: any, record: any) => (
+        <Button type="link" size="small">View Profile</Button>
       ),
     },
   ];
@@ -224,25 +79,71 @@ export default function VendorsPage() {
     <div className="animate-fade-in-up">
       <PageHeader
         title="Vendors"
-        subtitle={`${filtered.length} vendors`}
+        subtitle="Manage supplier relationships and KYC"
         breadcrumbs={[
           { label: "Home", href: "/dashboard" },
           { label: "Procurement", href: "/procurement" },
           { label: "Vendors" },
         ]}
-        extra={
-          <Button type="primary" icon={<PlusOutlined />}>
+        extra={[
+          <Button
+            key="add"
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setIsModalVisible(true)}
+          >
             Add Vendor
-          </Button>
-        }
+          </Button>,
+        ]}
       />
-      <TableToolbar
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Search vendors..."
-        showExport
+
+      <Table
+        dataSource={vendors}
+        columns={columns}
+        loading={isLoading}
+        rowKey="id"
+        pagination={{ pageSize: 10 }}
       />
-      <DataTable<Vendor> columns={columns} dataSource={filtered} rowKey="id" />
+
+      <Modal
+        title="Add New Vendor"
+        open={isModalVisible}
+        onCancel={() => setIsModalVisible(false)}
+        onOk={() => form.submit()}
+      >
+        <Form form={form} layout="vertical" onFinish={handleCreate}>
+          <Form.Item name="name" label="Vendor Name" rules={[{ required: true }]}>
+            <Input placeholder="e.g. Acme Corp" />
+          </Form.Item>
+          <Form.Item name="code" label="Vendor Code" rules={[{ required: true }]}>
+            <Input placeholder="e.g. VEND001" />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="email" label="Email">
+                <Input prefix={<MailOutlined />} placeholder="vendor@example.com" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="phone" label="Phone">
+                <Input prefix={<PhoneOutlined />} placeholder="+1 234 567 890" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="currency" label="Currency" initialValue="USD">
+                <Select options={[{ label: "USD", value: "USD" }, { label: "EUR", value: "EUR" }, { label: "GBP", value: "GBP" }]} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="creditLimit" label="Credit Limit" initialValue={0}>
+                <InputNumber style={{ width: "100%" }} min={0} />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
     </div>
   );
 }

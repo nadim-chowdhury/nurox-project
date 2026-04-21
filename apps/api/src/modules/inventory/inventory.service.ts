@@ -147,7 +147,29 @@ export class InventoryService implements OnModuleInit {
       }
       await manager.save(batch);
 
-      // 2. Create Stock Movement
+      // 2. Update Moving Average Cost if using Weighted Average
+      const product = await manager.findOne(Product, { where: { id: dto.productId } });
+      if (product && product.valuationMethod === ValuationMethod.WEIGHTED_AVERAGE) {
+        const totalStockResult = await manager.createQueryBuilder(Batch, 'b')
+          .where('b.productId = :pid', { pid: dto.productId })
+          .select('SUM(b.remainingQuantity)', 'total')
+          .addSelect('SUM(b.remainingQuantity * b.unitCost)', 'value')
+          .getRawOne();
+        
+        const currentQty = Number(totalStockResult?.total || 0);
+        const currentValue = Number(totalStockResult?.value || 0);
+        
+        const newTotalQty = currentQty + dto.quantity;
+        const newTotalValue = currentValue + (dto.quantity * dto.unitCost);
+        
+        if (newTotalQty > 0) {
+          product.basePrice = newTotalValue / newTotalQty;
+          await manager.save(product);
+          this.logger.log(`Updated Weighted Average Cost for ${product.sku}: ${product.basePrice}`);
+        }
+      }
+
+      // 3. Create Stock Movement
       const movement = manager.create(StockMovement, {
         productId: dto.productId,
         variantId: dto.variantId,
@@ -404,10 +426,12 @@ export class InventoryService implements OnModuleInit {
         relations: ['items'],
       });
       if (!count) throw new NotFoundException('Stock count not found');
-      if (count.status === ('COMPLETED' as any)) throw new BadRequestException('Already completed');
+      if (count.status === ('COMPLETED' as any))
+        throw new BadRequestException('Already completed');
 
       for (const item of count.items) {
-        const diff = Number(item.actualQuantity) - Number(item.expectedQuantity);
+        const diff =
+          Number(item.actualQuantity) - Number(item.expectedQuantity);
         if (diff !== 0) {
           // Create adjustment
           await this.adjustStock({
@@ -430,6 +454,29 @@ export class InventoryService implements OnModuleInit {
     });
   }
 
+  async getInventoryAging() {
+    const batches = await this.batchRepo.find({
+      where: { remainingQuantity: In([0]) }, // TypeORM dummy, I'll use query builder
+    });
+
+    // We'll use QueryBuilder for a more efficient aging bucket report
+    const now = new Date();
+    const result = await this.batchRepo.createQueryBuilder('b')
+      .select('b.productId', 'productId')
+      .addSelect("SUM(CASE WHEN b.receivedDate > :thirtyDays THEN b.remainingQuantity ELSE 0 END)", '0_30_days')
+      .addSelect("SUM(CASE WHEN b.receivedDate <= :thirtyDays AND b.receivedDate > :sixtyDays THEN b.remainingQuantity ELSE 0 END)", '31_60_days')
+      .addSelect("SUM(CASE WHEN b.receivedDate <= :sixtyDays AND b.receivedDate > :ninetyDays THEN b.remainingQuantity ELSE 0 END)", '61_90_days')
+      .addSelect("SUM(CASE WHEN b.receivedDate <= :ninetyDays THEN b.remainingQuantity ELSE 0 END)", 'over_90_days')
+      .setParameters({
+        thirtyDays: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
+        sixtyDays: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000),
+        ninetyDays: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000),
+      })
+      .groupBy('b.productId')
+      .getRawMany();
+
+    return result;
+  }
 
   async checkReorderPoints() {
     const products = await this.productRepo.find();

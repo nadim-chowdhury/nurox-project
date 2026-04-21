@@ -1,165 +1,154 @@
 "use client";
 
-import React from "react";
-import { Card, Tag, Button } from "antd";
-import { PlusOutlined, HomeOutlined } from "@ant-design/icons";
+import React, { useState } from "react";
+import { Table, Button, Space, Modal, Form, Input, message, Tree, Card, Row, Col } from "antd";
+import { PlusOutlined, ShopOutlined, PartitionOutlined, BuildOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
-import { DataTable } from "@/components/tables/DataTable";
-import type { ColumnsType } from "antd/es/table";
-
-interface Warehouse {
-  id: string;
-  code: string;
-  name: string;
-  location: string;
-  capacity: number;
-  utilized: number;
-  status: string;
-}
-
-const mockWarehouses: Warehouse[] = [
-  {
-    id: "1",
-    code: "WH-01",
-    name: "Main Warehouse",
-    location: "Dhaka, Bangladesh",
-    capacity: 5000,
-    utilized: 3200,
-    status: "ACTIVE",
-  },
-  {
-    id: "2",
-    code: "WH-02",
-    name: "East Distribution",
-    location: "Chittagong, Bangladesh",
-    capacity: 3000,
-    utilized: 2100,
-    status: "ACTIVE",
-  },
-  {
-    id: "3",
-    code: "WH-03",
-    name: "North Storage",
-    location: "Rajshahi, Bangladesh",
-    capacity: 2000,
-    utilized: 800,
-    status: "ACTIVE",
-  },
-  {
-    id: "4",
-    code: "WH-04",
-    name: "Overflow Unit",
-    location: "Dhaka, Bangladesh",
-    capacity: 1000,
-    utilized: 950,
-    status: "NEAR_FULL",
-  },
-];
-
-const statusMap: Record<string, string> = {
-  ACTIVE: "success",
-  NEAR_FULL: "warning",
-  INACTIVE: "default",
-};
-
-const columns: ColumnsType<Warehouse> = [
-  {
-    title: "Code",
-    dataIndex: "code",
-    width: 100,
-    render: (v: string) => (
-      <span className="font-display" style={{ color: "var(--color-primary)" }}>
-        {v}
-      </span>
-    ),
-  },
-  {
-    title: "Warehouse",
-    dataIndex: "name",
-    render: (v: string) => (
-      <span style={{ color: "var(--color-on-surface)", fontWeight: 500 }}>
-        {v}
-      </span>
-    ),
-  },
-  {
-    title: "Location",
-    dataIndex: "location",
-    render: (v: string) => (
-      <span style={{ color: "var(--color-on-surface-variant)" }}>{v}</span>
-    ),
-  },
-  {
-    title: "Capacity",
-    dataIndex: "capacity",
-    align: "right" as const,
-    render: (v: number) => (
-      <span style={{ color: "var(--color-on-surface-variant)" }}>
-        {v.toLocaleString()} units
-      </span>
-    ),
-  },
-  {
-    title: "Utilized",
-    dataIndex: "utilized",
-    align: "right" as const,
-    render: (v: number, r) => {
-      const pct = Math.round((v / r.capacity) * 100);
-      return (
-        <span
-          className="font-display"
-          style={{
-            color:
-              pct > 90
-                ? "var(--color-error)"
-                : pct > 70
-                  ? "var(--color-warning)"
-                  : "var(--color-success)",
-          }}
-        >
-          {pct}%
-        </span>
-      );
-    },
-  },
-  {
-    title: "Status",
-    dataIndex: "status",
-    render: (s: string) => (
-      <Tag color={statusMap[s] || "default"}>{s.replace("_", " ")}</Tag>
-    ),
-  },
-];
+import { useGetWarehousesQuery, useCreateWarehouseMutation } from "@/store/api/inventoryApi";
 
 export default function WarehousesPage() {
+  const { data: warehouses, isLoading } = useGetWarehousesQuery();
+  const [createWarehouse] = useCreateWarehouseMutation();
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [form] = Form.useForm();
+
+  const handleCreate = async (values: any) => {
+    try {
+      await createWarehouse(values).unwrap();
+      message.success("Warehouse registered");
+      setIsModalVisible(false);
+      form.resetFields();
+    } catch (error) {
+      message.error("Failed to register warehouse");
+    }
+  };
+
+  const columns = [
+    {
+      title: "Warehouse Name",
+      dataIndex: "name",
+      key: "name",
+      render: (val: string) => <span style={{ fontWeight: 600 }}>{val}</span>,
+    },
+    {
+      title: "Code",
+      dataIndex: "code",
+      key: "code",
+    },
+    {
+      title: "Location",
+      key: "location",
+      render: (_: any, record: any) => `${record.city || ""}, ${record.country || ""}`,
+    },
+    {
+      title: "Action",
+      key: "action",
+      render: (_: any, record: any) => (
+        <Space>
+          <Button icon={<PartitionOutlined />} size="small">Layout</Button>
+          <Button type="link" size="small">Details</Button>
+        </Space>
+      ),
+    },
+  ];
+
   return (
     <div className="animate-fade-in-up">
       <PageHeader
         title="Warehouses"
-        subtitle="Manage warehouse locations and capacity"
+        subtitle="Manage storage locations and bin hierarchy"
         breadcrumbs={[
           { label: "Home", href: "/dashboard" },
           { label: "Inventory", href: "/inventory" },
           { label: "Warehouses" },
         ]}
-        extra={
-          <Button type="primary" icon={<PlusOutlined />}>
-            Add Warehouse
-          </Button>
-        }
+        extra={[
+          <Button
+            key="add"
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setIsModalVisible(true)}
+          >
+            New Warehouse
+          </Button>,
+        ]}
       />
-      <Card
-        style={{
-          background: "var(--color-surface)",
-          borderColor: "var(--ghost-border)",
-        }}
+
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={16}>
+          <Table
+            dataSource={warehouses}
+            columns={columns}
+            loading={isLoading}
+            rowKey="id"
+          />
+        </Col>
+        <Col xs={24} lg={8}>
+          <Card title="Storage Hierarchy (Structure)">
+            <p style={{ fontSize: 12, color: "gray", marginBottom: 16 }}>
+              Visual map of Zone → Rack → Bin assignments.
+            </p>
+            <Tree
+              showIcon
+              defaultExpandAll
+              treeData={[
+                {
+                  title: "Warehouse Alpha",
+                  key: "wh-1",
+                  icon: <ShopOutlined />,
+                  children: [
+                    {
+                      title: "Cold Zone (Z1)",
+                      key: "z-1",
+                      icon: <PartitionOutlined />,
+                      children: [
+                        { title: "Rack A1", key: "r-1", icon: <BuildOutlined /> },
+                        { title: "Rack A2", key: "r-2", icon: <BuildOutlined /> },
+                      ],
+                    },
+                    {
+                      title: "Ambient Zone (Z2)",
+                      key: "z-2",
+                      icon: <PartitionOutlined />,
+                    },
+                  ],
+                },
+              ]}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      <Modal
+        title="Register Warehouse"
+        open={isModalVisible}
+        onCancel={() => setIsModalVisible(false)}
+        onOk={() => form.submit()}
       >
-        <DataTable<Warehouse>
-          columns={columns}
-          dataSource={mockWarehouses}
-          rowKey="id"
-        />
-      </Card>
+        <Form form={form} layout="vertical" onFinish={handleCreate}>
+          <Form.Item name="name" label="Warehouse Name" rules={[{ required: true }]}>
+            <Input placeholder="e.g. Central Distribution Center" />
+          </Form.Item>
+          <Form.Item name="code" label="Code" rules={[{ required: true }]}>
+            <Input placeholder="CDC-01" />
+          </Form.Item>
+          <Form.Item name="address" label="Address">
+            <Input />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="city" label="City">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="country" label="Country">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
     </div>
   );
 }

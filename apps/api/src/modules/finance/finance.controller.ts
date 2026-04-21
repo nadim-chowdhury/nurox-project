@@ -39,6 +39,11 @@ export class FinanceController {
     return this.financeService.findAllAccounts();
   }
 
+  @Get('accounts/tree')
+  findAllAccountsTree() {
+    return this.financeService.findAllAccountsTree();
+  }
+
   @Get('accounts/:id')
   findAccount(@Param('id', ParseUUIDPipe) id: string) {
     return this.financeService.findAccountById(id);
@@ -164,13 +169,57 @@ export class FinanceController {
     return this.financeService.getARAgingReport();
   }
 
+  @Get('reports/income-statement')
+  getIncomeStatement(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ) {
+    return this.financeService.getIncomeStatement(startDate, endDate);
+  }
+
+  @Get('reports/balance-sheet')
+  getBalanceSheet(@Query('asOfDate') asOfDate: string) {
+    return this.financeService.getBalanceSheet(asOfDate);
+  }
+
+  @Get('reports/cash-flow')
+  getCashFlow(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ) {
+    return this.financeService.getCashFlowReport(startDate, endDate);
+  }
+
+  @Get('reports/budget-vs-actual')
+  getBudgetVsActual(@Query('period') period: string) {
+    return this.financeService.getBudgetVsActualReport(period);
+  }
+
+  @Post('reminders/schedule')
+  scheduleReminders() {
+    return this.financeService.scheduleARReminders();
+  }
+
+  @Post('periods/:id/close')
+  closePeriod(@Param('id', ParseUUIDPipe) id: string) {
+    return this.financeService.closePeriod(id);
+  }
+
   @Get('reports/general-ledger/:accountId')
   getGeneralLedger(
     @Param('accountId', ParseUUIDPipe) accountId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    return this.financeService.getGeneralLedger(accountId, startDate, endDate);
+    return this.financeService.getGeneralLedger(
+      accountId,
+      Number(page) || 1,
+      Number(limit) || 20,
+      startDate,
+      endDate,
+    );
   }
 
   @Get('reports/export/trial-balance/pdf')
@@ -215,5 +264,25 @@ export class FinanceController {
       transactionId,
       journalEntryId,
     );
+  }
+
+  // ─── TAX RATES ──────────────────────────────────────────────
+
+  @Post('tax-rates')
+  createTaxRate(@Body() dto: any) {
+    return this.financeService.createTaxRate(dto);
+  }
+
+  @Get('tax-rates')
+  findAllTaxRates() {
+    return this.financeService.findAllTaxRates();
+  }
+
+  @Patch('tax-rates/:id')
+  updateTaxRate(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: any,
+  ) {
+    return this.financeService.updateTaxRate(id, dto);
   }
 }

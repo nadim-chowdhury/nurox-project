@@ -28,6 +28,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { ProcurementModule } from './modules/procurement/procurement.module';
 import { BullModule } from '@nestjs/bullmq';
 
 @Module({
@@ -73,6 +74,7 @@ import { BullModule } from '@nestjs/bullmq';
     PayrollModule,
     FinanceModule,
     InventoryModule,
+    ProcurementModule,
     SalesModule,
     ProjectsModule,
     AnalyticsModule,
@@ -94,6 +96,7 @@ export class AppModule implements NestModule {
         { path: 'recruitment/(.*)', method: RequestMethod.ALL },
         { path: 'finance/(.*)', method: RequestMethod.ALL },
         { path: 'inventory/(.*)', method: RequestMethod.ALL },
+        { path: 'procurement/(.*)', method: RequestMethod.ALL },
         { path: 'projects/(.*)', method: RequestMethod.ALL },
         { path: 'sales/(.*)', method: RequestMethod.ALL },
         { path: 'payroll/(.*)', method: RequestMethod.ALL },

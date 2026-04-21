@@ -1,196 +1,176 @@
 "use client";
 
-import React from "react";
-import { Card, Tag, Button, Space } from "antd";
-import { PlusOutlined, BarcodeOutlined } from "@ant-design/icons";
+import React, { useState } from "react";
+import { Table, Tag, Button, Space, Card, Modal, Form, Input, Select, InputNumber, message, Avatar } from "antd";
+import { PlusOutlined, InboxOutlined, BarcodeOutlined, ExperimentOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
-import { DataTable } from "@/components/tables/DataTable";
-import type { ColumnsType } from "antd/es/table";
-
-interface Product {
-  id: string;
-  sku: string;
-  name: string;
-  category: string;
-  quantity: number;
-  reorderLevel: number;
-  unitPrice: number;
-  status: string;
-}
-
-const mockProducts: Product[] = [
-  {
-    id: "1",
-    sku: "WDG-001",
-    name: "Steel Widget A",
-    category: "Widgets",
-    quantity: 450,
-    reorderLevel: 100,
-    unitPrice: 24.99,
-    status: "IN_STOCK",
-  },
-  {
-    id: "2",
-    sku: "WDG-002",
-    name: "Steel Widget B",
-    category: "Widgets",
-    quantity: 82,
-    reorderLevel: 100,
-    unitPrice: 34.5,
-    status: "LOW_STOCK",
-  },
-  {
-    id: "3",
-    sku: "GDG-001",
-    name: "Gadget Pro X",
-    category: "Gadgets",
-    quantity: 210,
-    reorderLevel: 50,
-    unitPrice: 149.99,
-    status: "IN_STOCK",
-  },
-  {
-    id: "4",
-    sku: "CMP-001",
-    name: "Component Alpha",
-    category: "Components",
-    quantity: 0,
-    reorderLevel: 200,
-    unitPrice: 8.75,
-    status: "OUT_OF_STOCK",
-  },
-  {
-    id: "5",
-    sku: "CMP-002",
-    name: "Component Beta",
-    category: "Components",
-    quantity: 1200,
-    reorderLevel: 300,
-    unitPrice: 5.2,
-    status: "IN_STOCK",
-  },
-  {
-    id: "6",
-    sku: "GDG-002",
-    name: "Gadget Lite",
-    category: "Gadgets",
-    quantity: 45,
-    reorderLevel: 50,
-    unitPrice: 89.99,
-    status: "LOW_STOCK",
-  },
-];
-
-const statusMap: Record<string, string> = {
-  IN_STOCK: "success",
-  LOW_STOCK: "warning",
-  OUT_OF_STOCK: "error",
-};
-
-const columns: ColumnsType<Product> = [
-  {
-    title: "SKU",
-    dataIndex: "sku",
-    width: 120,
-    render: (v: string) => (
-      <span className="font-display" style={{ color: "var(--color-primary)" }}>
-        {v}
-      </span>
-    ),
-  },
-  {
-    title: "Product",
-    dataIndex: "name",
-    render: (v: string) => (
-      <span style={{ color: "var(--color-on-surface)", fontWeight: 500 }}>
-        {v}
-      </span>
-    ),
-  },
-  {
-    title: "Category",
-    dataIndex: "category",
-    filters: [
-      { text: "Widgets", value: "Widgets" },
-      { text: "Gadgets", value: "Gadgets" },
-      { text: "Components", value: "Components" },
-    ],
-    onFilter: (value, record) => record.category === value,
-    render: (v: string) => (
-      <span style={{ color: "var(--color-on-surface-variant)" }}>{v}</span>
-    ),
-  },
-  {
-    title: "Qty",
-    dataIndex: "quantity",
-    sorter: (a, b) => a.quantity - b.quantity,
-    align: "right" as const,
-    render: (v: number, r) => (
-      <span
-        className="font-display"
-        style={{
-          color:
-            v <= r.reorderLevel
-              ? "var(--color-warning)"
-              : "var(--color-on-surface)",
-        }}
-      >
-        {v.toLocaleString()}
-      </span>
-    ),
-  },
-  {
-    title: "Unit Price",
-    dataIndex: "unitPrice",
-    sorter: (a, b) => a.unitPrice - b.unitPrice,
-    align: "right" as const,
-    render: (v: number) => (
-      <span
-        className="font-display"
-        style={{ color: "var(--color-on-surface)" }}
-      >
-        ${v.toFixed(2)}
-      </span>
-    ),
-  },
-  {
-    title: "Status",
-    dataIndex: "status",
-    render: (s: string) => (
-      <Tag color={statusMap[s] || "default"}>{s.replace(/_/g, " ")}</Tag>
-    ),
-  },
-];
+import { useGetProductsQuery, useCreateProductMutation } from "@/store/api/inventoryApi";
+import { formatCurrency } from "@/lib/utils";
 
 export default function ProductsPage() {
+  const { data: products, isLoading } = useGetProductsQuery({});
+  const [createProduct] = useCreateProductMutation();
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [form] = Form.useForm();
+
+  const handleCreate = async (values: any) => {
+    try {
+      await createProduct(values).unwrap();
+      message.success("Product added to catalog");
+      setIsModalVisible(false);
+      form.resetFields();
+    } catch (error) {
+      message.error("Failed to add product");
+    }
+  };
+
+  const columns = [
+    {
+      title: "Product",
+      key: "product",
+      render: (_: any, record: any) => (
+        <Space>
+          <Avatar 
+            shape="square" 
+            size={40} 
+            src={record.imageUrl} 
+            icon={<InboxOutlined />} 
+            style={{ backgroundColor: "var(--color-surface-variant)" }}
+          />
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{ fontWeight: 600 }}>{record.name}</span>
+            <span style={{ fontSize: 12, color: "gray" }}>SKU: {record.sku}</span>
+          </div>
+        </Space>
+      ),
+    },
+    {
+      title: "Category",
+      dataIndex: "category",
+      key: "category",
+      render: (cat: string) => <Tag>{cat || "General"}</Tag>,
+    },
+    {
+      title: "UOM",
+      dataIndex: "uom",
+      key: "uom",
+    },
+    {
+      title: "Base Price",
+      dataIndex: "basePrice",
+      key: "price",
+      render: (val: number) => formatCurrency(val),
+    },
+    {
+      title: "Reorder Point",
+      dataIndex: "reorderPoint",
+      key: "reorder",
+      render: (val: number) => (
+        <span style={{ color: val > 0 ? "orange" : "inherit" }}>{val}</span>
+      ),
+    },
+    {
+      title: "Valuation",
+      dataIndex: "valuationMethod",
+      key: "valuation",
+      render: (method: string) => <Tag color="blue">{method}</Tag>,
+    },
+    {
+      title: "Action",
+      key: "action",
+      render: (_: any, record: any) => (
+        <Space>
+          <Button icon={<ExperimentOutlined />} size="small">Variants</Button>
+          <Button type="link" size="small">Edit</Button>
+        </Space>
+      ),
+    },
+  ];
+
   return (
     <div className="animate-fade-in-up">
       <PageHeader
-        title="Products"
-        subtitle="Product catalog and stock levels"
+        title="Product Catalog"
+        subtitle="Manage SKUs, variants, and stock thresholds"
         breadcrumbs={[
           { label: "Home", href: "/dashboard" },
           { label: "Inventory", href: "/inventory" },
           { label: "Products" },
         ]}
-        extra={
-          <Button type="primary" icon={<PlusOutlined />}>
+        extra={[
+          <Button
+            key="add"
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setIsModalVisible(true)}
+          >
             Add Product
-          </Button>
-        }
+          </Button>,
+        ]}
       />
-      <Card
-        style={{
-          background: "var(--color-surface)",
-          borderColor: "var(--ghost-border)",
-        }}
+
+      <Table
+        dataSource={products}
+        columns={columns}
+        loading={isLoading}
+        rowKey="id"
+      />
+
+      <Modal
+        title="Add New Product"
+        open={isModalVisible}
+        onCancel={() => setIsModalVisible(false)}
+        onOk={() => form.submit()}
+        width={600}
       >
-        <DataTable<Product>
-          columns={columns}
-          dataSource={mockProducts}
-          rowKey="id"
-        />
-      </Card>
+        <Form form={form} layout="vertical" onFinish={handleCreate}>
+          <Row gutter={16}>
+            <Col span={16}>
+              <Form.Item name="name" label="Product Name" rules={[{ required: true }]}>
+                <Input placeholder="e.g. Industrial Drill" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="sku" label="SKU" rules={[{ required: true }]}>
+                <Input placeholder="DRL-001" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item name="uom" label="UOM" initialValue="PCS">
+                <Select options={[{ label: "Pieces", value: "PCS" }, { label: "KG", value: "KG" }, { label: "Litre", value: "L" }]} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="basePrice" label="Base Price" initialValue={0}>
+                <InputNumber style={{ width: "100%" }} min={0} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="reorderPoint" label="Reorder Point" initialValue={10}>
+                <InputNumber style={{ width: "100%" }} min={0} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item name="valuationMethod" label="Valuation Method" initialValue="FIFO">
+            <Select options={[
+              { label: "First-In First-Out (FIFO)", value: "FIFO" },
+              { label: "Last-In First-Out (LIFO)", value: "LIFO" },
+              { label: "First-Expired First-Out (FEFO)", value: "FEFO" },
+            ]} />
+          </Form.Item>
+          
+          <Form.Item name="description" label="Description">
+            <Input.TextArea rows={3} />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }
+
+// Importing Row/Col which were missing from initial check
+import { Row, Col } from "antd";

@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import {
@@ -111,5 +104,10 @@ export class InventoryController {
   @Get('stock/alerts')
   checkAlerts() {
     return this.inventoryService.checkReorderPoints();
+  }
+
+  @Get('stock/aging')
+  getAging() {
+    return this.inventoryService.getInventoryAging();
   }
 }

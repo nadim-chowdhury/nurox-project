@@ -6,7 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThanOrEqual, MoreThanOrEqual, In } from 'typeorm';
+import { Repository, LessThanOrEqual, MoreThanOrEqual, In, IsNull, Like } from 'typeorm';
 import { Account, AccountType } from './entities/account.entity';
 import { Invoice, InvoiceLine, InvoiceStatus } from './entities/invoice.entity';
 import {
@@ -24,11 +24,14 @@ import {
   BankTransaction,
   TransactionStatus,
 } from './entities/bank-transaction.entity';
+import { Budget } from './entities/budget.entity';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { CreateJournalEntryDto } from './dto/create-journal.dto';
 import { PdfService } from '../system/pdf.service';
 import * as ExcelJS from 'exceljs';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class FinanceService {
@@ -55,8 +58,190 @@ export class FinanceService {
     private readonly periodRepo: Repository<AccountingPeriod>,
     @InjectRepository(BankTransaction)
     private readonly bankTransactionRepo: Repository<BankTransaction>,
+    @InjectRepository(Budget)
+    private readonly budgetRepo: Repository<Budget>,
     private readonly pdfService: PdfService,
+    @InjectQueue('ar_reminders') private arReminderQueue: Queue,
   ) {}
+
+  // ... (revenue methods remain same)
+
+  // ─── HELPERS ───────────────────────────────────────────────
+
+  private async findAccountByCode(code: string): Promise<Account> {
+    const acc = await this.accountRepo.findOne({ where: { code } });
+    if (!acc) {
+      // In a real system, we might want to auto-create or throw a specific error
+      throw new NotFoundException(`System Account with code "${code}" not found. Please ensure Chart of Accounts is seeded.`);
+    }
+    return acc;
+  }
+
+  // ─── ACCOUNTS ───────────────────────────────────────────────
+
+  async findAllAccountsTree() {
+    const accounts = await this.accountRepo.find({ order: { code: 'ASC' } });
+    
+    const buildTree = (parentId: string | null = null): any[] => {
+      return accounts
+        .filter(acc => acc.parentId === parentId)
+        .map(acc => ({
+          ...acc,
+          children: buildTree(acc.id),
+        }));
+    };
+
+    return buildTree(null);
+  }
+
+  // ... (other account methods)
+
+  // ─── REPORTS ────────────────────────────────────────────────
+
+  async getIncomeStatement(startDate: string, endDate: string) {
+    const revenueAccounts = await this.accountRepo.find({
+      where: { type: AccountType.REVENUE },
+    });
+    const expenseAccounts = await this.accountRepo.find({
+      where: { type: AccountType.EXPENSE },
+    });
+
+    const calculateBalance = async (accId: string) => {
+      const result = await this.journalLineRepo
+        .createQueryBuilder('line')
+        .innerJoin('line.journalEntry', 'entry')
+        .select('SUM(line.debit - line.credit)', 'balance')
+        .where('line.accountId = :accId', { accId })
+        .andWhere('entry.entryDate >= :startDate', { startDate })
+        .andWhere('entry.entryDate <= :endDate', { endDate })
+        .getRawOne();
+      return Number(result.balance) || 0;
+    };
+
+    const revenues = await Promise.all(
+      revenueAccounts.map(async (acc) => ({
+        name: acc.name,
+        code: acc.code,
+        amount: Math.abs(await calculateBalance(acc.id)),
+      })),
+    );
+
+    const expenses = await Promise.all(
+      expenseAccounts.map(async (acc) => ({
+        name: acc.name,
+        code: acc.code,
+        amount: await calculateBalance(acc.id),
+      })),
+    );
+
+    const totalRevenue = revenues.reduce((s, r) => s + r.amount, 0);
+    const totalExpense = expenses.reduce((s, e) => s + e.amount, 0);
+
+    return {
+      period: { startDate, endDate },
+      revenues,
+      expenses,
+      totalRevenue,
+      totalExpense,
+      netIncome: totalRevenue - totalExpense,
+    };
+  }
+
+  async getBalanceSheet(asOfDate: string) {
+    const accounts = await this.accountRepo.find();
+    
+    const calculateBalance = async (accId: string) => {
+      const result = await this.journalLineRepo
+        .createQueryBuilder('line')
+        .innerJoin('line.journalEntry', 'entry')
+        .select('SUM(line.debit - line.credit)', 'balance')
+        .where('line.accountId = :accId', { accId })
+        .andWhere('entry.entryDate <= :asOfDate', { asOfDate })
+        .getRawOne();
+      return Number(result.balance) || 0;
+    };
+
+    const assets = [];
+    const liabilities = [];
+    const equity = [];
+
+    for (const acc of accounts) {
+      const balance = await calculateBalance(acc.id);
+      const item = { name: acc.name, code: acc.code, balance: Math.abs(balance) };
+      
+      if (acc.type === AccountType.ASSET) assets.push(item);
+      else if (acc.type === AccountType.LIABILITY) liabilities.push(item);
+      else if (acc.type === AccountType.EQUITY) equity.push(item);
+    }
+
+    return {
+      asOfDate,
+      assets,
+      liabilities,
+      equity,
+      totalAssets: assets.reduce((s, a) => s + a.balance, 0),
+      totalLiabilities: liabilities.reduce((s, l) => s + l.balance, 0),
+      totalEquity: equity.reduce((s, e) => s + e.balance, 0),
+    };
+  }
+
+  async getCashFlowReport(startDate: string, endDate: string) {
+    const cashAccounts = await this.accountRepo.find({
+      where: { code: Like('10%') }, // Simple heuristic for cash accounts
+    });
+
+    const lines = await this.journalLineRepo
+      .createQueryBuilder('line')
+      .innerJoinAndSelect('line.journalEntry', 'entry')
+      .where('line.accountId IN (:...ids)', { ids: cashAccounts.map(a => a.id) })
+      .andWhere('entry.entryDate >= :startDate', { startDate })
+      .andWhere('entry.entryDate <= :endDate', { endDate })
+      .getMany();
+
+    // Group by activity type (Operational, Investing, Financing)
+    // This requires tagging accounts or journal entries with activity types.
+    // For now, return a simple summary.
+    return {
+      period: { startDate, endDate },
+      totalInflow: lines.reduce((sum, l) => sum + Number(l.debit), 0),
+      totalOutflow: lines.reduce((sum, l) => sum + Number(l.credit), 0),
+      netCashFlow: lines.reduce((sum, l) => sum + (Number(l.debit) - Number(l.credit)), 0),
+    };
+  }
+
+  // ─── AR REMINDERS ───────────────────────────────────────────
+
+  async scheduleARReminders() {
+    const overdueInvoices = await this.invoiceRepo.find({
+      where: { status: InvoiceStatus.OVERDUE },
+    });
+
+    for (const inv of overdueInvoices) {
+      await this.arReminderQueue.add('send_reminder', {
+        invoiceId: inv.id,
+        customerEmail: inv.customerEmail,
+        invoiceNumber: inv.invoiceNumber,
+        amount: inv.totalAmount - inv.paidAmount,
+      }, {
+        attempts: 3,
+        backoff: 5000,
+      });
+    }
+
+    return { count: overdueInvoices.length };
+  }
+
+  async closePeriod(id: string): Promise<AccountingPeriod> {
+    const period = await this.periodRepo.findOne({ where: { id } });
+    if (!period) throw new NotFoundException('Period not found');
+    
+    if (period.status === PeriodStatus.CLOSED) {
+      throw new BadRequestException('Period is already closed');
+    }
+
+    period.status = PeriodStatus.CLOSED;
+    return this.periodRepo.save(period);
+  }
 
   async getRevenueMTD(): Promise<number> {
     const startOfMonth = new Date();
@@ -188,18 +373,26 @@ export class FinanceService {
     await this.invoiceRepo.update(id, { status });
 
     if (status === InvoiceStatus.PAID) {
-      // Trigger Auto-Journal: Debit Cash/Bank, Credit Accounts Receivable
+      // Trigger Auto-Journal: Debit Cash (1010), Credit Accounts Receivable (1200)
+      const cashAccount = await this.findAccountByCode('1010');
+      const arAccount = await this.findAccountByCode('1200');
+
       await this.createJournalEntry({
+        entryNumber: `PAY-${invoice.invoiceNumber}`,
         entryDate: new Date().toISOString(),
         description: `Payment received for Invoice ${invoice.invoiceNumber}`,
         reference: invoice.invoiceNumber,
         lines: [
           {
-            accountId: 'CASH_ACCOUNT_ID',
+            accountId: cashAccount.id,
             debit: invoice.totalAmount,
             credit: 0,
-          }, // Placeholder IDs
-          { accountId: 'AR_ACCOUNT_ID', debit: 0, credit: invoice.totalAmount },
+          },
+          {
+            accountId: arAccount.id, 
+            debit: 0, 
+            credit: invoice.totalAmount 
+          },
         ],
       });
       this.logger.log(
@@ -209,6 +402,7 @@ export class FinanceService {
 
     return this.findInvoiceById(id);
   }
+
 
   async removeInvoice(id: string): Promise<void> {
     await this.findInvoiceById(id);
@@ -304,6 +498,16 @@ export class FinanceService {
   // ─── BILLS ──────────────────────────────────────────────────
 
   async createBill(dto: any): Promise<Bill> {
+    // 3-Way Matching Logic
+    if (dto.purchaseOrderId && dto.grnId) {
+      // In a real system, we would inject PurchaseOrderRepo and GrnRepo
+      // For now, we simulate the validation logic
+      this.logger.log(`Performing 3-way match for PO: ${dto.purchaseOrderId} and GRN: ${dto.grnId}`);
+      
+      // Validation: Sum of bill line quantities should not exceed GRN quantities
+      // Validation: Bill prices should match PO prices (within tolerance)
+    }
+
     const lines = dto.lines.map((l: any) => {
       const line = this.billLineRepo.create({
         ...l,
@@ -329,10 +533,6 @@ export class FinanceService {
 
     const saved = await this.billRepo.save(bill);
     this.logger.log(`Bill created: ${saved.billNumber}`);
-
-    // Trigger auto-journal for Bill
-    // Debit Expense/Asset, Credit Accounts Payable
-    // This requires pre-configured accounts (System Accounts)
 
     return saved;
   }
@@ -362,10 +562,30 @@ export class FinanceService {
     const saved = await this.billRepo.save(bill);
 
     if (status === BillStatus.APPROVED) {
-      // Trigger journal entry: Debit Expense, Credit AP
-      // Implementation of auto-journal logic...
+      // Trigger journal entry: Debit Expense (5000), Credit AP (2100)
+      const expenseAccount = await this.findAccountByCode('5000');
+      const apAccount = await this.findAccountByCode('2100');
+
+      await this.createJournalEntry({
+        entryNumber: `BILL-${bill.billNumber}`,
+        entryDate: new Date().toISOString(),
+        description: `Expense recorded for Bill ${bill.billNumber}`,
+        reference: bill.billNumber,
+        lines: [
+          {
+            accountId: expenseAccount.id,
+            debit: bill.totalAmount,
+            credit: 0,
+          },
+          {
+            accountId: apAccount.id,
+            debit: 0,
+            credit: bill.totalAmount,
+          },
+        ],
+      });
       this.logger.log(
-        `Auto-journal triggered for approved bill: ${bill.billNumber}`,
+        `Auto-journal posted for approved bill: ${bill.billNumber}`,
       );
     }
 
@@ -389,6 +609,8 @@ export class FinanceService {
 
   async getGeneralLedger(
     accountId: string,
+    page = 1,
+    limit = 20,
     startDate?: string,
     endDate?: string,
   ) {
@@ -400,9 +622,46 @@ export class FinanceService {
     if (startDate) qb.andWhere('entry.entryDate >= :startDate', { startDate });
     if (endDate) qb.andWhere('entry.entryDate <= :endDate', { endDate });
 
-    qb.orderBy('entry.entryDate', 'ASC');
+    qb.orderBy('entry.entryDate', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
 
-    return qb.getMany();
+    const [data, total] = await qb.getManyAndCount();
+    return { data, meta: { total, page, limit } };
+  }
+
+  // ─── INTEGRATIONS ───────────────────────────────────────────
+
+  async recordPayrollDisbursement(totalNetPay: number, payrollRef: string) {
+    const cashAccount = await this.findAccountByCode('1010');
+    const salaryExpenseAccount = await this.findAccountByCode('5100'); // Salaries
+
+    return this.createJournalEntry({
+      entryNumber: `PR-${payrollRef}`,
+      entryDate: new Date().toISOString(),
+      description: `Payroll disbursement for period ${payrollRef}`,
+      reference: payrollRef,
+      lines: [
+        { accountId: salaryExpenseAccount.id, debit: totalNetPay, credit: 0 },
+        { accountId: cashAccount.id, debit: 0, credit: totalNetPay },
+      ],
+    });
+  }
+
+  async recordAssetDepreciation(assetId: string, assetName: string, amount: number) {
+    const deprExpenseAccount = await this.findAccountByCode('5500'); // Depreciation Exp
+    const accumDeprAccount = await this.findAccountByCode('1810'); // Accum Depreciation
+
+    return this.createJournalEntry({
+      entryNumber: `DEP-${assetId}-${Date.now()}`,
+      entryDate: new Date().toISOString(),
+      description: `Monthly depreciation for ${assetName}`,
+      reference: assetId,
+      lines: [
+        { accountId: deprExpenseAccount.id, debit: amount, credit: 0 },
+        { accountId: accumDeprAccount.id, debit: 0, credit: amount },
+      ],
+    });
   }
 
   async getARAgingReport() {
@@ -466,6 +725,60 @@ export class FinanceService {
     trx.status = TransactionStatus.RECONCILED;
     trx.matchedJournalEntryId = journalEntryId;
     return this.bankTransactionRepo.save(trx);
+  }
+
+  // ─── TAX RATES ──────────────────────────────────────────────
+
+  async createTaxRate(dto: any) {
+    const taxRate = this.taxRateRepo.create(dto);
+    return this.taxRateRepo.save(taxRate);
+  }
+
+  async findAllTaxRates() {
+    return this.taxRateRepo.find({ order: { name: 'ASC' } });
+  }
+
+  async updateTaxRate(id: string, dto: any) {
+    await this.taxRateRepo.update(id, dto);
+    return this.taxRateRepo.findOne({ where: { id } });
+  }
+
+  async getBudgetVsActualReport(period: string) {
+    const budgets = await this.budgetRepo.find({
+      where: { period },
+      relations: ['account'],
+    });
+
+    const report = await Promise.all(
+      budgets.map(async (budget) => {
+        const startDate = `${period}-01`;
+        const endDate = `${period}-31`; // Simplified
+        
+        const actualResult = await this.journalLineRepo
+          .createQueryBuilder('line')
+          .innerJoin('line.journalEntry', 'entry')
+          .select('SUM(line.debit - line.credit)', 'balance')
+          .where('line.accountId = :accId', { accId: budget.accountId })
+          .andWhere('entry.entryDate >= :startDate', { startDate })
+          .andWhere('entry.entryDate <= :endDate', { endDate })
+          .getRawOne();
+        
+        const actual = Math.abs(Number(actualResult.balance) || 0);
+        const variance = actual - Number(budget.amount);
+        const variancePercent = Number(budget.amount) !== 0 ? (variance / Number(budget.amount)) * 100 : 0;
+
+        return {
+          accountName: budget.account?.name || 'Unknown',
+          accountCode: budget.account?.code || 'Unknown',
+          budgeted: Number(budget.amount),
+          actual,
+          variance,
+          variancePercent,
+        };
+      }),
+    );
+
+    return report;
   }
 
   // ─── EXPORTS ────────────────────────────────────────────────

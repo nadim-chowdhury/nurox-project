@@ -67,6 +67,32 @@ export const invoiceSchema = z.object({
 
 export type InvoiceDto = z.infer<typeof invoiceSchema>;
 
+export const billStatusEnum = z.enum(["DRAFT", "PENDING_APPROVAL", "APPROVED", "PARTIALLY_PAID", "PAID", "OVERDUE", "VOID"]);
+export type BillStatus = z.infer<typeof billStatusEnum>;
+
+export const billLineSchema = z.object({
+  description: z.string().min(1),
+  quantity: z.number().min(1),
+  unitPrice: z.number().min(0),
+  accountId: z.string().uuid().optional().nullable(),
+});
+
+export const billSchema = z.object({
+  id: z.string().uuid().optional(),
+  billNumber: z.string().min(1),
+  vendorName: z.string().min(1),
+  vendorId: z.string().uuid().optional().nullable(),
+  issueDate: z.string().datetime(),
+  dueDate: z.string().datetime(),
+  status: billStatusEnum.default("DRAFT"),
+  lines: z.array(billLineSchema).min(1),
+  notes: z.string().optional().nullable(),
+  purchaseOrderId: z.string().uuid().optional().nullable(),
+  grnId: z.string().uuid().optional().nullable(),
+});
+
+export type BillDto = z.infer<typeof billSchema>;
+
 export const taxRateSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().min(1),
