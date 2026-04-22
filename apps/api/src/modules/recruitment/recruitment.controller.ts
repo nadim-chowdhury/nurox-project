@@ -36,7 +36,10 @@ export class RecruitmentController {
 
   @Put('jobs/:id/submit')
   @ApiOperation({ summary: 'Submit job for approval' })
-  submitForApproval(@Param('id') id: string, @Body('approverIds') approverIds: string[]) {
+  submitForApproval(
+    @Param('id') id: string,
+    @Body('approverIds') approverIds: string[],
+  ) {
     return this.recruitmentService.submitForApproval(id, approverIds);
   }
 
@@ -175,7 +178,10 @@ export class RecruitmentController {
 
   @Post('offers/:id/sign')
   @ApiOperation({ summary: 'Sign an offer letter' })
-  signOfferLetter(@Param('id') id: string, @Body('signature') signature: string) {
+  signOfferLetter(
+    @Param('id') id: string,
+    @Body('signature') signature: string,
+  ) {
     return this.recruitmentService.signOfferLetter(id, signature);
   }
 

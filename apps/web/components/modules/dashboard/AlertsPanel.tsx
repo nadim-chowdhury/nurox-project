@@ -14,10 +14,15 @@ import relativeTime from "dayjs/plugin/relativeTime";
 
 dayjs.extend(relativeTime);
 
-const { Text } = Typography;
+interface Props {
+  dateRange: [dayjs.Dayjs, dayjs.Dayjs];
+}
 
-export function AlertsPanel() {
-  const { data, isLoading } = useGetAlertsQuery(undefined, {
+export function AlertsPanel({ dateRange }: Props) {
+  const { data, isLoading } = useGetAlertsQuery({
+    startDate: dateRange[0].toISOString(),
+    endDate: dateRange[1].toISOString(),
+  }, {
     pollingInterval: 60000, // Poll every 60 seconds
   });
 
@@ -31,7 +36,7 @@ export function AlertsPanel() {
             fontWeight: 600,
           }}
         >
-          <BellOutlined style={{ color: "#ffb347", marginRight: 8 }} />
+          <BellOutlined style={{ color: "var(--color-warning)", marginRight: 8 }} />
           Priority Alerts
         </span>
       }
@@ -59,9 +64,9 @@ export function AlertsPanel() {
             >
               <div style={{ marginTop: 2 }}>
                 {alert.type === 'error' ? (
-                  <ExclamationCircleOutlined style={{ color: '#ffb4ab' }} />
+                  <ExclamationCircleOutlined style={{ color: 'var(--color-error)' }} />
                 ) : (
-                  <WarningOutlined style={{ color: '#ffb347' }} />
+                  <WarningOutlined style={{ color: 'var(--color-warning)' }} />
                 )}
               </div>
               <div style={{ flex: 1 }}>

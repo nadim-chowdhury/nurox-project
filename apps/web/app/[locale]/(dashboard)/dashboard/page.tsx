@@ -1,12 +1,7 @@
 import React from "react";
-import { Typography } from "antd";
 import { PageHeader } from "@/components/common/PageHeader";
-import { DashboardGrid } from "@/components/modules/dashboard/DashboardGrid";
+import { DashboardShell } from "@/components/modules/dashboard/DashboardShell";
 import { QuickActionButton } from "@/components/modules/dashboard/QuickActionButton";
-import { AlertsPanel } from "@/components/modules/dashboard/AlertsPanel";
-import { Row, Col } from "antd";
-
-const { Title, Text } = Typography;
 
 export default async function DashboardPage({
   params,
@@ -23,14 +18,7 @@ export default async function DashboardPage({
         breadcrumbs={[{ label: "Home", href: "/dashboard" }, { label: "Dashboard" }]}
       />
 
-      <Row gutter={[24, 24]}>
-        <Col xs={24} xl={18}>
-          <DashboardGrid />
-        </Col>
-        <Col xs={24} xl={6}>
-          <AlertsPanel />
-        </Col>
-      </Row>
+      <DashboardShell />
 
       <QuickActionButton />
     </div>

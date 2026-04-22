@@ -106,7 +106,7 @@ export default function JournalEntries() {
                 render={({ field }) => (
                   <DatePicker 
                     className="w-full" 
-                    value={dayjs(field.value)} 
+                    value={field.value ? dayjs(field.value) : null} 
                     onChange={(date) => field.onChange(date?.toISOString())} 
                   />
                 )}
@@ -117,7 +117,7 @@ export default function JournalEntries() {
               <Controller
                 name="description"
                 control={control}
-                render={({ field }) => <Input {...field} />}
+                render={({ field }) => <Input {...field} value={field.value ?? ""} />}
               />
             </div>
             <div>
@@ -125,7 +125,7 @@ export default function JournalEntries() {
               <Controller
                 name="reference"
                 control={control}
-                render={({ field }) => <Input {...field} />}
+                render={({ field }) => <Input {...field} value={field.value ?? ""} />}
               />
             </div>
           </div>
@@ -150,6 +150,7 @@ export default function JournalEntries() {
                       render={({ field }) => (
                         <Select
                           {...field}
+                          value={field.value || undefined}
                           className="w-full"
                           showSearch
                           options={accounts?.map(a => ({ label: `${a.code} - ${a.name}`, value: a.id }))}
@@ -161,21 +162,21 @@ export default function JournalEntries() {
                     <Controller
                       name={`lines.${index}.description`}
                       control={control}
-                      render={({ field }) => <Input {...field} />}
+                      render={({ field }) => <Input {...field} value={field.value ?? ""} />}
                     />
                   </td>
                   <td className="py-2 pr-2">
                     <Controller
                       name={`lines.${index}.debit`}
                       control={control}
-                      render={({ field }) => <InputNumber {...field} className="w-full" min={0} precision={2} />}
+                      render={({ field }) => <InputNumber {...field} value={field.value ?? 0} className="w-full" min={0} precision={2} />}
                     />
                   </td>
                   <td className="py-2 pr-2">
                     <Controller
                       name={`lines.${index}.credit`}
                       control={control}
-                      render={({ field }) => <InputNumber {...field} className="w-full" min={0} precision={2} />}
+                      render={({ field }) => <InputNumber {...field} value={field.value ?? 0} className="w-full" min={0} precision={2} />}
                     />
                   </td>
                   <td className="py-2">

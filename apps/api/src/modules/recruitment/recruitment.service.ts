@@ -30,7 +30,9 @@ export class RecruitmentService {
   ) {}
 
   // Helper to get repository for current tenant
-  private async getRepo<T extends ObjectLiteral>(entity: any): Promise<Repository<T>> {
+  private async getRepo<T extends ObjectLiteral>(
+    entity: any,
+  ): Promise<Repository<T>> {
     const manager = await this.tenantConnectionService.getTenantManager();
     return manager.getRepository(entity);
   }
@@ -212,7 +214,7 @@ export class RecruitmentService {
 
     // Simulated Google Calendar Webhook / Integration
     this.logger.log(
-      `[PROTOTYPE] Triggering Google Calendar invite for ${saved.startTime} to ${saved.endTime}`,
+      `[PROTOTYPE] Triggering Google Calendar invite for ${(saved as any).startTime} to ${(saved as any).endTime}`,
     );
     // TODO: Implement actual Google Calendar API call or webhook trigger here
 
@@ -346,7 +348,7 @@ export class RecruitmentService {
 
     // In a real Puppeteer implementation, we'd re-generate the PDF with the signature image.
     // For this prototype, we'll update the PDF data and re-generate.
-    
+
     const templateHtml = `
       <html>
         <head>
@@ -420,11 +422,31 @@ export class RecruitmentService {
     const checklist = repo.create({
       candidateId,
       tasks: [
-        { title: 'Personal Information', description: 'NID, TIN, Date of Birth, etc.', isCompleted: false },
-        { title: 'Bank Details', description: 'Account number, Bank name, Routing info', isCompleted: false },
-        { title: 'Educational Certificates', description: 'Degree, Transcript', isCompleted: false },
-        { title: 'Work Experience Documents', description: 'Experience letters', isCompleted: false },
-        { title: 'E-Signature', description: 'Sign the offer letter electronically', isCompleted: true },
+        {
+          title: 'Personal Information',
+          description: 'NID, TIN, Date of Birth, etc.',
+          isCompleted: false,
+        },
+        {
+          title: 'Bank Details',
+          description: 'Account number, Bank name, Routing info',
+          isCompleted: false,
+        },
+        {
+          title: 'Educational Certificates',
+          description: 'Degree, Transcript',
+          isCompleted: false,
+        },
+        {
+          title: 'Work Experience Documents',
+          description: 'Experience letters',
+          isCompleted: false,
+        },
+        {
+          title: 'E-Signature',
+          description: 'Sign the offer letter electronically',
+          isCompleted: true,
+        },
       ],
       progress: 20,
       status: OnboardingStatus.IN_PROGRESS,

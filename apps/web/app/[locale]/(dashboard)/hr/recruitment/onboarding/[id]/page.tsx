@@ -45,8 +45,10 @@ export default function OnboardingPortalPage() {
 
   const handleTaskToggle = (index: number) => {
     const newTasks = [...tasks];
-    newTasks[index].completed = !newTasks[index].completed;
-    setTasks(newTasks);
+    if (newTasks[index]) {
+      newTasks[index].completed = !newTasks[index].completed;
+      setTasks(newTasks);
+    }
   };
 
   return (

@@ -1,6 +1,6 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "@/lib/api-client";
-import type { 
+import type {
   SalaryStructureDto,
   PayrollRunDto,
   PayslipDto,
@@ -11,7 +11,6 @@ export const payrollApi = createApi({
   baseQuery: baseQueryWithReauth,
   tagTypes: ["PayrollRun", "Payslip", "SalaryStructure", "TaxConfig"],
   endpoints: (builder) => ({
-    // ─── SALARY STRUCTURES ──────────────────────────────────────
     getStructures: builder.query<SalaryStructureDto[], void>({
       query: () => "/payroll/structures",
       providesTags: ["SalaryStructure"],
@@ -26,7 +25,10 @@ export const payrollApi = createApi({
       invalidatesTags: ["SalaryStructure"],
     }),
 
-    assignStructure: builder.mutation<void, { employeeId: string; structureId: string }>({
+    assignStructure: builder.mutation<
+      void,
+      { employeeId: string; structureId: string }
+    >({
       query: (body) => ({
         url: "/payroll/assignments",
         method: "POST",
@@ -34,7 +36,6 @@ export const payrollApi = createApi({
       }),
     }),
 
-    // ─── PAYROLL RUNS ──────────────────────────────────────────
     getPayrollRuns: builder.query<PayrollRunDto[], void>({
       query: () => "/payroll/runs",
       providesTags: ["PayrollRun"],
@@ -81,7 +82,6 @@ export const payrollApi = createApi({
       invalidatesTags: ["PayrollRun", "Payslip"],
     }),
 
-    // ─── PAYSLIPS ──────────────────────────────────────────────
     getPayslipsByRun: builder.query<PayslipDto[], string>({
       query: (runId) => `/payroll/payslips/run/${runId}`,
       providesTags: ["Payslip"],
@@ -99,7 +99,6 @@ export const payrollApi = createApi({
       query: (id) => `/payroll/payslips/${id}/download`,
     }),
 
-    // ─── TAX CONFIGURATION ──────────────────────────────────────
     getTaxConfigs: builder.query<any[], void>({
       query: () => "/payroll/tax-configs",
       providesTags: ["TaxConfig"],

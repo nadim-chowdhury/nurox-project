@@ -24,6 +24,7 @@ import { ActivityFeed } from "./ActivityFeed";
 import { HolderOutlined } from "@ant-design/icons";
 import { useGetPreferencesQuery, useSetPreferenceMutation } from "@/store/api/usersApi";
 import { Spin } from "antd";
+import dayjs from "dayjs";
 
 interface WidgetProps {
   id: string;
@@ -78,7 +79,11 @@ function SortableWidget({ id, children }: WidgetProps) {
 
 const DEFAULT_LAYOUT = ["kpis", "charts", "activity"];
 
-export function DashboardGrid() {
+interface DashboardGridProps {
+  dateRange: [dayjs.Dayjs, dayjs.Dayjs];
+}
+
+export function DashboardGrid({ dateRange }: DashboardGridProps) {
   const { data: preferences, isLoading: isPrefsLoading } = useGetPreferencesQuery();
   const [setPreference] = useSetPreferenceMutation();
   const [items, setItems] = useState<string[]>(DEFAULT_LAYOUT);
@@ -121,11 +126,11 @@ export function DashboardGrid() {
   const renderWidget = (id: string) => {
     switch (id) {
       case "kpis":
-        return <KpiCards />;
+        return <KpiCards dateRange={dateRange} />;
       case "charts":
-        return <AnalyticsCharts />;
+        return <AnalyticsCharts dateRange={dateRange} />;
       case "activity":
-        return <ActivityFeed />;
+        return <ActivityFeed dateRange={dateRange} />;
       default:
         return null;
     }

@@ -16,6 +16,7 @@ import {
   message,
   Space,
   Modal,
+  Checkbox,
 } from "antd";
 import {
   SaveOutlined,
@@ -49,6 +50,10 @@ import {
   useGetSessionsQuery,
   useRevokeSessionMutation,
   useGetRolesQuery,
+  useCreateRoleMutation,
+  useSetup2FAMutation,
+  useEnable2FAMutation,
+  useChangePasswordMutation,
 } from "@/store/api/authApi";
 import {
   useGetBranchesQuery,
@@ -59,6 +64,7 @@ import {
   useUpdateCompanyProfileMutation,
 } from "@/store/api/systemApi";
 import { BulkUserImport } from "@/components/modules/system/BulkUserImport";
+import { Permission } from "@repo/shared-schemas";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 
@@ -606,6 +612,59 @@ function UsersTab() {
 }
 
 function SecurityTab() {
+  const user = useAppSelector((s) => s.auth.user);
+  const [setup2FA] = useSetup2FAMutation();
+  const [enable2FA] = useEnable2FAMutation();
+  const [changePassword] = useChangePasswordMutation();
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [qrData, setQrData] = useState<{ qrCodeDataURL: string; secret: string } | null>(null);
+  const [token, setToken] = useState("");
+  const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [form] = Form.useForm();
+
+  const handleToggle2FA = async (checked: boolean) => {
+    if (checked) {
+      try {
+        const resp = await setup2FA().unwrap();
+        setQrData(resp);
+        setIsModalOpen(true);
+      } catch {
+        message.error("Failed to initiate 2FA setup");
+      }
+    } else {
+      message.info("Disabling 2FA is currently administrative only");
+    }
+  };
+
+  const handleVerify = async () => {
+    if (!token) return;
+    setIsVerifying(true);
+    try {
+      const resp = await enable2FA({ token }).unwrap();
+      setBackupCodes(resp.backupCodes);
+      message.success("2FA enabled successfully");
+    } catch {
+      message.error("Invalid verification token");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handlePasswordChange = async (values: any) => {
+    try {
+      await changePassword({
+        currentPassword: values.current,
+        newPassword: values.newPassword,
+      }).unwrap();
+      message.success("Password updated successfully");
+      form.resetFields();
+    } catch (err: any) {
+      message.error(err.data?.message || "Failed to update password");
+    }
+  };
+
   return (
     <Card style={cardStyle} styles={{ body: { padding: 32 } }}>
       <h3
@@ -618,10 +677,12 @@ function SecurityTab() {
         Change Password
       </h3>
       <Form
+        form={form}
         layout="vertical"
         requiredMark={false}
         size="large"
         style={{ maxWidth: 400 }}
+        onFinish={handlePasswordChange}
       >
         <Form.Item
           name="current"
@@ -640,14 +701,25 @@ function SecurityTab() {
         <Form.Item
           name="confirm"
           label={<span style={labelStyle}>Confirm Password</span>}
-          rules={[{ required: true }]}
+          dependencies={['newPassword']}
+          rules={[
+            { required: true },
+            ({ getFieldValue }) => ({
+              validator(_, value) {
+                if (!value || getFieldValue('newPassword') === value) {
+                  return Promise.resolve();
+                }
+                return Promise.reject(new Error('Passwords do not match'));
+              },
+            }),
+          ]}
         >
           <Input.Password />
         </Form.Item>
         <Button
           type="primary"
           icon={<LockOutlined />}
-          onClick={() => message.success("Password changed")}
+          htmlType="submit"
         >
           Update Password
         </Button>
@@ -663,13 +735,75 @@ function SecurityTab() {
         Two-Factor Authentication
       </h3>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <Switch />
+        <Switch 
+          checked={user?.isTwoFactorEnabled} 
+          onChange={handleToggle2FA} 
+          disabled={user?.isTwoFactorEnabled}
+        />
         <span
           style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
         >
-          Enable 2FA for login
+          {user?.isTwoFactorEnabled ? "2FA is active" : "Enable 2FA for login"}
         </span>
       </div>
+
+      <Modal
+        title="Setup Two-Factor Authentication"
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        footer={null}
+        destroyOnClose
+      >
+        {backupCodes ? (
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ color: 'var(--color-success)', fontWeight: 600, marginBottom: 16 }}>
+              2FA Enabled Successfully!
+            </p>
+            <p style={{ fontSize: 13, color: 'var(--color-on-surface-variant)', marginBottom: 16 }}>
+              Please save these backup codes in a safe place. Each code can be used once if you lose access to your authenticator app.
+            </p>
+            <div style={{ 
+              background: 'var(--color-surface-container-high)', 
+              padding: 16, 
+              borderRadius: 4, 
+              display: 'grid', 
+              gridTemplateColumns: '1fr 1fr',
+              gap: 8,
+              fontFamily: 'monospace',
+              marginBottom: 24
+            }}>
+              {backupCodes.map(code => <div key={code}>{code}</div>)}
+            </div>
+            <Button type="primary" block onClick={() => setIsModalOpen(false)}>Done</Button>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: 13, color: 'var(--color-on-surface-variant)', marginBottom: 24 }}>
+              Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
+            </p>
+            {qrData && (
+              <img 
+                src={qrData.qrCodeDataURL} 
+                alt="2FA QR Code" 
+                style={{ width: 200, height: 200, marginBottom: 24, border: '4px solid white' }} 
+              />
+            )}
+            <div style={{ marginBottom: 24 }}>
+              <p style={{ fontSize: 12, opacity: 0.7, marginBottom: 4 }}>Or enter this secret manually:</p>
+              <code style={{ fontSize: 14, color: 'var(--color-primary)', fontWeight: 600 }}>{qrData?.secret}</code>
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Input 
+                placeholder="6-digit token" 
+                value={token} 
+                onChange={e => setToken(e.target.value)} 
+                maxLength={6}
+              />
+              <Button type="primary" loading={isVerifying} onClick={handleVerify}>Verify</Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </Card>
   );
 }
@@ -793,7 +927,59 @@ function SessionsTab() {
 }
 
 function RolesTab() {
-  const { data: roles, isLoading } = useGetRolesQuery();
+  const { data: roles, isLoading, refetch } = useGetRolesQuery();
+  const [createRole, { isLoading: isCreating }] = useCreateRoleMutation();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form] = Form.useForm();
+
+  const handleCreate = async (values: any) => {
+    try {
+      await createRole(values).unwrap();
+      message.success("Role created successfully");
+      setIsModalOpen(false);
+      form.resetFields();
+      refetch();
+    } catch {
+      message.error("Failed to create role");
+    }
+  };
+
+  const permissionGroups = [
+    {
+      title: "Human Resources",
+      permissions: [
+        { label: "View Employees", value: Permission.HR_VIEW_EMPLOYEES },
+        { label: "Create Employee", value: Permission.HR_CREATE_EMPLOYEE },
+        { label: "Update Employee", value: Permission.HR_UPDATE_EMPLOYEE },
+        { label: "Delete Employee", value: Permission.HR_DELETE_EMPLOYEE },
+        { label: "Manage Performance", value: Permission.HR_MANAGE_PERFORMANCE },
+      ],
+    },
+    {
+      title: "Finance",
+      permissions: [
+        { label: "View Invoices", value: Permission.FINANCE_VIEW_INVOICES },
+        { label: "Manage Invoices", value: Permission.FINANCE_MANAGE_INVOICES },
+        { label: "View Accounts", value: Permission.FINANCE_VIEW_ACCOUNTS },
+        { label: "Manage Accounts", value: Permission.FINANCE_MANAGE_ACCOUNTS },
+      ],
+    },
+    {
+      title: "Sales",
+      permissions: [
+        { label: "View Deals", value: Permission.SALES_VIEW_DEALS },
+        { label: "Manage Deals", value: Permission.SALES_MANAGE_DEALS },
+        { label: "View Leads", value: Permission.SALES_VIEW_LEADS },
+        { label: "Manage Leads", value: Permission.SALES_MANAGE_LEADS },
+      ],
+    },
+    {
+        title: "System",
+        permissions: [
+            { label: "Admin Access", value: Permission.SYSTEM_ADMIN_ACCESS },
+        ]
+    }
+  ];
 
   return (
     <Card style={cardStyle} styles={{ body: { padding: 32 } }}>
@@ -814,7 +1000,7 @@ function RolesTab() {
         >
           Roles & Permissions
         </h3>
-        <Button type="primary" size="small">
+        <Button type="primary" size="small" onClick={() => setIsModalOpen(true)}>
           Create Role
         </Button>
       </div>
@@ -882,6 +1068,46 @@ function RolesTab() {
           </div>
         ))
       )}
+
+      <Modal
+        title="Create Custom Role"
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        onOk={() => form.submit()}
+        confirmLoading={isCreating}
+        width={600}
+        destroyOnClose
+      >
+        <Form form={form} layout="vertical" onFinish={handleCreate}>
+          <Form.Item name="name" label="Role Name" rules={[{ required: true }]}>
+            <Input placeholder="e.g. Senior Recruiter" />
+          </Form.Item>
+          <Form.Item name="description" label="Description">
+            <Input.TextArea rows={2} />
+          </Form.Item>
+          <Divider orientation="left">Permissions</Divider>
+          <Form.Item name="permissions" rules={[{ required: true, message: 'Please select at least one permission' }]}>
+            <div style={{ maxHeight: 400, overflow: 'auto' }}>
+              <Checkbox.Group style={{ width: '100%' }}>
+                {permissionGroups.map(group => (
+                  <div key={group.title} style={{ marginBottom: 16 }}>
+                    <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 8, color: 'var(--color-primary)' }}>
+                      {group.title.toUpperCase()}
+                    </div>
+                    <Row>
+                      {group.permissions.map(p => (
+                        <Col span={12} key={p.value} style={{ marginBottom: 4 }}>
+                          <Checkbox value={p.value}>{p.label}</Checkbox>
+                        </Col>
+                      ))}
+                    </Row>
+                  </div>
+                ))}
+              </Checkbox.Group>
+            </div>
+          </Form.Item>
+        </Form>
+      </Modal>
     </Card>
   );
 }

@@ -17,6 +17,7 @@ import { confirmModal } from "@/components/common/ConfirmModal";
 import { useGetUsersQuery, useDeleteUserMutation, useInviteUserMutation } from "@/store/api/usersApi";
 import { useGetRolesQuery } from "@/store/api/authApi";
 import { usePagination } from "@/hooks/usePagination";
+import { usePermission } from "@/hooks/usePermission";
 import { BulkUserImport } from "@/components/modules/system/BulkUserImport";
 import type { ColumnsType } from "antd/es/table";
 import type { UserResponseDto } from "@repo/shared-schemas";
@@ -26,6 +27,7 @@ export default function UsersPage() {
   const { tablePagination, queryParams } = usePagination();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const { canPerform, Permission, isAdmin } = usePermission();
   const [form] = Form.useForm();
 
   const { data, isLoading, isFetching, refetch } = useGetUsersQuery({
@@ -114,14 +116,16 @@ export default function UsersPage() {
       align: "right",
       render: (_, record) => (
         <Space size={4}>
-          <Button type="text" size="small" icon={<EditOutlined />} />
-          <Button 
-            type="text" 
-            danger 
-            size="small" 
-            icon={<DeleteOutlined />} 
-            onClick={() => handleDelete(record)}
-          />
+          {isAdmin && <Button type="text" size="small" icon={<EditOutlined />} />}
+          {isAdmin && (
+            <Button 
+              type="text" 
+              danger 
+              size="small" 
+              icon={<DeleteOutlined />} 
+              onClick={() => handleDelete(record)}
+            />
+          )}
         </Space>
       ),
     },
@@ -139,16 +143,20 @@ export default function UsersPage() {
         ]}
         extra={
           <Space>
-            <Button icon={<FileTextOutlined />} onClick={() => setIsBulkImportOpen(true)}>
-              Bulk Import
-            </Button>
-            <Button 
-              type="primary" 
-              icon={<UserAddOutlined />} 
-              onClick={() => setIsInviteModalOpen(true)}
-            >
-              Invite User
-            </Button>
+            {isAdmin && (
+              <Button icon={<FileTextOutlined />} onClick={() => setIsBulkImportOpen(true)}>
+                Bulk Import
+              </Button>
+            )}
+            {isAdmin && (
+              <Button 
+                type="primary" 
+                icon={<UserAddOutlined />} 
+                onClick={() => setIsInviteModalOpen(true)}
+              >
+                Invite User
+              </Button>
+            )}
           </Space>
         }
       />

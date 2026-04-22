@@ -41,9 +41,9 @@ export default function FinanceSettings() {
 
   const taxRateColumns = [
     { title: "Name", dataIndex: "name" },
-    { title: "Rate (%)", dataIndex: "rate", render: (val) => `${val}%` },
+    { title: "Rate (%)", dataIndex: "rate", render: (val: number) => `${val}%` },
     { title: "Description", dataIndex: "description" },
-    { title: "Active", dataIndex: "isActive", render: (val) => <Switch checked={val} disabled /> },
+    { title: "Active", dataIndex: "isActive", render: (val: boolean) => <Switch checked={val} disabled /> },
   ];
 
   const settingsTabs = [

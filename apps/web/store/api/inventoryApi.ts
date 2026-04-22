@@ -1,11 +1,11 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "@/lib/api-client";
-import type { 
-  ProductDto, 
-  WarehouseDto, 
-  ZoneDto, 
-  RackDto, 
-  BinDto, 
+import type {
+  ProductDto,
+  WarehouseDto,
+  ZoneDto,
+  RackDto,
+  BinDto,
   StockMovementDto,
   StockAdjustmentDto,
   StockCountDto,
@@ -16,7 +16,6 @@ export const inventoryApi = createApi({
   baseQuery: baseQueryWithReauth,
   tagTypes: ["Product", "Warehouse", "Stock", "StockCount"],
   endpoints: (builder) => ({
-    // ─── PRODUCTS ──────────────────────────────────────────────
     getProducts: builder.query<any, any>({
       query: (params) => ({
         url: "/inventory/products",
@@ -34,7 +33,6 @@ export const inventoryApi = createApi({
       invalidatesTags: ["Product"],
     }),
 
-    // ─── WAREHOUSES ────────────────────────────────────────────
     getWarehouses: builder.query<WarehouseDto[], void>({
       query: () => "/inventory/warehouses",
       providesTags: ["Warehouse"],
@@ -49,7 +47,6 @@ export const inventoryApi = createApi({
       invalidatesTags: ["Warehouse"],
     }),
 
-    // ─── STOCK OPERATIONS ────────────────────────────────────────
     receiveStock: builder.mutation<any, any>({
       query: (body) => ({
         url: "/inventory/stock/receive",
@@ -86,8 +83,10 @@ export const inventoryApi = createApi({
       invalidatesTags: ["Stock"],
     }),
 
-    // ─── ANALYTICS ──────────────────────────────────────────────
-    getStockLevels: builder.query<any[], { productId?: string; warehouseId?: string }>({
+    getStockLevels: builder.query<
+      any[],
+      { productId?: string; warehouseId?: string }
+    >({
       query: (params) => ({
         url: "/inventory/stock/levels",
         params,

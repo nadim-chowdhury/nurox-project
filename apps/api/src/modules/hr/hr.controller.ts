@@ -12,7 +12,6 @@ import {
   HttpStatus,
   UseGuards,
   Res,
-  Headers,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { HrService } from './hr.service';
@@ -22,12 +21,14 @@ import {
   OkrDto,
   TrainingDto,
   SkillDto,
-  AttendanceRecordDto,
-  LeaveRequestDto,
   createDepartmentSchema,
   updateDepartmentSchema,
   CreateDepartmentDto as CreateDepartmentSchemaDto,
   UpdateDepartmentDto as UpdateDepartmentSchemaDto,
+  TransferEmployeeDto,
+  TerminationDto,
+  PipDto,
+  ThreeSixtyReviewDto,
 } from '@repo/shared-schemas';
 import { SalaryChangeReason } from './entities/salary-history.entity';
 import { LeaveRequestStatus } from './entities/leave.entity';
@@ -36,6 +37,9 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { Permission } from '../auth/enums/permissions.enum';
+import { QueryEmployeeDto } from './dto/query-employee.dto';
+import { CreateDesignationDto } from './dto/create-designation.dto';
+import { UpdateDesignationDto } from './dto/update-designation.dto';
 
 @Controller('hr')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -44,8 +48,6 @@ export class HrController {
     private readonly hrService: HrService,
     private readonly attendanceService: AttendanceService,
   ) {}
-
-  // ─── ATTENDANCE ─────────────────────────────────────────────
 
   @Get('attendance/qr')
   async getCheckInQr(@Body('employeeId') employeeId: string) {
@@ -119,14 +121,10 @@ export class HrController {
     return this.attendanceService.generateMonthlyReport(month, year, res);
   }
 
-  // ─── LEAVE MANAGEMENT ────────────────────────────────────────
-
   @Get('leaves')
   @RequirePermissions(Permission.HR_VIEW_EMPLOYEES)
   async getLeaveRequests() {
-      // Logic would be in AttendanceService
-      // For now using existing repo via service if possible or adding method
-      return this.attendanceService.findAllLeaveRequests();
+    return this.attendanceService.findAllLeaveRequests();
   }
 
   @Post('leaves/apply')
@@ -151,8 +149,7 @@ export class HrController {
     return this.attendanceService.approveLeave(id, approvedBy, status);
   }
 
-  // ─── EMPLOYEES ──────────────────────────────────────────────
-
+  @Post('employees')
   @RequirePermissions(Permission.HR_CREATE_EMPLOYEE)
   createEmployee(@Body() dto: CreateEmployeeDto) {
     return this.hrService.createEmployee(dto);
@@ -177,25 +174,34 @@ export class HrController {
 
   @Post('employees/:id/transfer')
   @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
-  transferEmployee(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+  transferEmployee(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: TransferEmployeeDto,
+  ) {
     return this.hrService.transferEmployee(id, dto);
   }
 
   @Post('employees/:id/terminate')
   @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
-  terminateEmployee(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+  terminateEmployee(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: TerminationDto,
+  ) {
     return this.hrService.terminateEmployee(id, dto);
   }
 
   @Post('employees/:id/360-review')
   @RequirePermissions(Permission.HR_MANAGE_PERFORMANCE)
-  submit360Review(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+  submit360Review(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ThreeSixtyReviewDto,
+  ) {
     return this.hrService.submit360Review(id, dto);
   }
 
   @Post('employees/:id/pip')
   @RequirePermissions(Permission.HR_MANAGE_PERFORMANCE)
-  initiatePIP(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+  initiatePIP(@Param('id', ParseUUIDPipe) id: string, @Body() dto: PipDto) {
     return this.hrService.initiatePIP(id, dto);
   }
 
@@ -211,8 +217,7 @@ export class HrController {
     return this.hrService.getSkillMatrix();
   }
 
-  @Delete('employees/:id')
-
+  @Patch('employees/:id/salary')
   @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
   updateSalary(
     @Param('id', ParseUUIDPipe) id: string,
@@ -248,6 +253,12 @@ export class HrController {
   @RequirePermissions(Permission.HR_VIEW_HISTORY)
   getEmployeeHistory(@Param('id', ParseUUIDPipe) id: string) {
     return this.hrService.getEmployeeHistory(id);
+  }
+
+  @Get('employees/:id/salary-history')
+  @RequirePermissions(Permission.HR_VIEW_HISTORY)
+  getSalaryHistory(@Param('id', ParseUUIDPipe) id: string) {
+    return this.hrService.getSalaryHistory(id);
   }
 
   @Get('trainings/:id/certificate')
@@ -307,6 +318,7 @@ export class HrController {
   removeDepartment(@Param('id', ParseUUIDPipe) id: string) {
     return this.hrService.removeDepartment(id);
   }
+
 
   @Post('designations')
   createDesignation(@Body() dto: CreateDesignationDto) {

@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Patch,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch } from '@nestjs/common';
 import { ProcurementService } from './procurement.service';
 import { ApiTags } from '@nestjs/swagger';
 import {
@@ -73,7 +66,10 @@ export class ProcurementController {
   }
 
   @Post('grns/:id/landed-costs')
-  allocateLandedCost(@Param('id') id: string, @Body() costs: { type: string; amount: number }[]) {
+  allocateLandedCost(
+    @Param('id') id: string,
+    @Body() costs: { type: string; amount: number }[],
+  ) {
     return this.procurementService.allocateLandedCost(id, costs);
   }
 

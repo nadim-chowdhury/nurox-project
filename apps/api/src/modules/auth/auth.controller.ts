@@ -28,6 +28,7 @@ import {
   enable2FASchema,
   magicLinkRequestSchema,
   magicLinkLoginSchema,
+  changePasswordSchema,
   type RegisterDto,
   type LoginDto,
   type ForgotPasswordDto,
@@ -36,6 +37,7 @@ import {
   type Enable2FADto,
   type MagicLinkRequestDto,
   type MagicLinkLoginDto,
+  type ChangePasswordDto,
 } from '@repo/shared-schemas';
 
 const REFRESH_COOKIE_NAME = 'nurox_refresh_token';
@@ -354,5 +356,18 @@ export class AuthController {
   ) {
     await this.authService.revokeSession(userId, sessionId);
     return { message: 'Session revoked successfully' };
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change user password' })
+  async changePassword(
+    @CurrentUser('id') userId: string,
+    @Body() body: ChangePasswordDto,
+  ) {
+    const parsed = changePasswordSchema.parse(body);
+    await this.authService.changePassword(userId, parsed);
+    return { message: 'Password changed successfully' };
   }
 }

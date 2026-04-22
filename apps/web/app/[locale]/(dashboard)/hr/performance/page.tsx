@@ -9,49 +9,28 @@ import {
     Progress, 
     Tabs, 
     Table, 
-    Modal, 
-    Form, 
-    Input, 
-    Select, 
-    Rate, 
-    InputNumber, 
-    message,
     Typography
 } from "antd";
-import { PlusOutlined, UserOutlined, FileTextOutlined, WarningOutlined } from "@ant-design/icons";
+import { PlusOutlined, UserOutlined, WarningOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
-import { 
-    useGetEmployeesQuery, 
-    useAddOKRMutation,
-    useTransferEmployeeMutation // This is not needed here but maybe other hooks
-} from "@/store/api/hrApi";
+import { useGetEmployeesQuery } from "@/store/api/hrApi";
+import { AddOkrModal } from "@/components/modules/hr/performance/AddOkrModal";
+import { AddThreeSixtyReviewModal } from "@/components/modules/hr/performance/AddThreeSixtyReviewModal";
+import { InitiatePipModal } from "@/components/modules/hr/performance/InitiatePipModal";
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 export default function PerformancePage() {
-  const { data: employees } = useGetEmployeesQuery({});
-  const [addOKR] = useAddOKRMutation();
-  
-  const [isOkrModalOpen, setIsOkrModalOpen] = useState(false);
-  const [form] = Form.useForm();
-
-  const handleOkrFinish = async (values: any) => {
-      try {
-          await addOKR({ id: values.employeeId, data: values }).unwrap();
-          message.success("OKR added successfully");
-          setIsOkrModalOpen(false);
-          form.resetFields();
-      } catch (err: any) {
-          message.error(err.data?.message || "Failed to add OKR");
-      }
-  };
+  const [okrVisible, setOkrVisible] = useState(false);
+  const [threeSixtyVisible, setThreeSixtyVisible] = useState(false);
+  const [pipVisible, setPipVisible] = useState(false);
 
   const okrColumns = [
     {
       title: "Employee",
       dataIndex: "employee",
       key: "employee",
-      render: (emp: any) => `${emp?.firstName} ${emp?.lastName}`,
+      render: (emp: any) => emp ? `${emp.firstName} ${emp.lastName}` : "N/A",
     },
     {
       title: "Objective",
@@ -98,7 +77,7 @@ export default function PerformancePage() {
                <Title level={4}>360° Feedback Cycles</Title>
                <Text type="secondary">Implement multi-rater feedback for comprehensive employee evaluation.</Text>
                <div style={{ marginTop: 24 }}>
-                   <Button type="primary">Start Feedback Cycle</Button>
+                   <Button type="primary" onClick={() => setThreeSixtyVisible(true)}>Start Feedback Cycle</Button>
                </div>
            </div>
         </Card>
@@ -116,7 +95,9 @@ export default function PerformancePage() {
                        <Title level={4} style={{ margin: 0 }}>Active PIPs</Title>
                    </div>
                    <Table columns={[]} dataSource={[]} />
-                   <Button type="primary" danger ghost icon={<PlusOutlined />}>Initiate PIP</Button>
+                   <Button type="primary" danger ghost icon={<PlusOutlined />} onClick={() => setPipVisible(true)}>
+                       Initiate PIP
+                   </Button>
                </Space>
            </div>
         </Card>
@@ -135,7 +116,7 @@ export default function PerformancePage() {
           { label: "Performance" },
         ]}
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsOkrModalOpen(true)}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setOkrVisible(true)}>
             New OKR
           </Button>
         }
@@ -143,37 +124,9 @@ export default function PerformancePage() {
 
       <Tabs items={items} />
 
-      <Modal
-        title="Create New OKR"
-        open={isOkrModalOpen}
-        onCancel={() => setIsOkrModalOpen(false)}
-        onOk={() => form.submit()}
-      >
-        <Form form={form} layout="vertical" onFinish={handleOkrFinish}>
-          <Form.Item name="employeeId" label="Employee" rules={[{ required: true }]}>
-            <Select 
-                showSearch
-                placeholder="Select employee"
-                options={employees?.data.map(e => ({ value: e.id, label: `${e.firstName} ${e.lastName}` }))}
-                filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
-            />
-          </Form.Item>
-          <Form.Item name="objective" label="Objective" rules={[{ required: true }]}>
-            <Input placeholder="e.g. Scale engineering team output by 20%" />
-          </Form.Item>
-          <Form.Item name="period" label="Period" rules={[{ required: true }]}>
-            <Select options={[
-                { value: "Q1 2026", label: "Q1 2026" },
-                { value: "Q2 2026", label: "Q2 2026" },
-                { value: "Q3 2026", label: "Q3 2026" },
-                { value: "Q4 2026", label: "Q4 2026" },
-            ]} />
-          </Form.Item>
-          {/* Key Results would go here in a dynamic form list */}
-        </Form>
-      </Modal>
+      <AddOkrModal visible={okrVisible} onClose={() => setOkrVisible(false)} />
+      <AddThreeSixtyReviewModal visible={threeSixtyVisible} onClose={() => setThreeSixtyVisible(false)} />
+      <InitiatePipModal visible={pipVisible} onClose={() => setPipVisible(false)} />
     </div>
   );
 }
-
-const Title = Typography.Title;

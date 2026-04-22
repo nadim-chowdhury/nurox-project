@@ -10,6 +10,12 @@ export interface DashboardData {
   };
   pipelineStats: { stage: string; count: number; value: number }[];
   taskStats: { status: string; count: number }[];
+  revenueGrowth: { name: string; value: number }[];
+}
+
+export interface AnalyticsParams {
+  startDate?: string;
+  endDate?: string;
 }
 
 export const analyticsApi = createApi({
@@ -17,12 +23,18 @@ export const analyticsApi = createApi({
   baseQuery: baseQueryWithReauth,
   tagTypes: ["Dashboard"],
   endpoints: (builder) => ({
-    getDashboard: builder.query<DashboardData, void>({
-      query: () => "/analytics/dashboard",
+    getDashboard: builder.query<DashboardData, AnalyticsParams>({
+      query: (params) => ({
+        url: "/analytics/dashboard",
+        params,
+      }),
       providesTags: ["Dashboard"],
     }),
-    getKPIs: builder.query<DashboardData["kpis"], void>({
-      query: () => "/analytics/kpis",
+    getKPIs: builder.query<DashboardData["kpis"], AnalyticsParams>({
+      query: (params) => ({
+        url: "/analytics/kpis",
+        params,
+      }),
       providesTags: ["Dashboard"],
     }),
     getAuditLogs: builder.query<any, any>({
@@ -31,8 +43,11 @@ export const analyticsApi = createApi({
         params,
       }),
     }),
-    getAlerts: builder.query<any[], void>({
-      query: () => "/analytics/alerts",
+    getAlerts: builder.query<any[], AnalyticsParams | void>({
+      query: (params) => ({
+        url: "/analytics/alerts",
+        params: params || undefined,
+      }),
     }),
   }),
 });

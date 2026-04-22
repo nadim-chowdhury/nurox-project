@@ -12,11 +12,22 @@ import {
 import { useGetKPIsQuery, analyticsApi } from "@/store/api/analyticsApi";
 import { getSocket } from "@/lib/socket";
 import { useAppSelector, useAppDispatch } from "@/hooks/useRedux";
+import dayjs from "dayjs";
 
-export function KpiCards() {
+interface Props {
+  dateRange: [dayjs.Dayjs, dayjs.Dayjs];
+}
+
+export function KpiCards({ dateRange }: Props) {
   const dispatch = useAppDispatch();
   const token = useAppSelector((state) => state.auth.accessToken);
-  const { data: kpis, isLoading } = useGetKPIsQuery();
+  
+  const params = {
+    startDate: dateRange[0].toISOString(),
+    endDate: dateRange[1].toISOString(),
+  };
+
+  const { data: kpis, isLoading } = useGetKPIsQuery(params);
 
   useEffect(() => {
     if (!token) return;
@@ -25,9 +36,8 @@ export function KpiCards() {
     if (!socket) return;
 
     socket.on("kpi_update", (updatedKpis) => {
-      // Manually update the RTK Query cache
       dispatch(
-        analyticsApi.util.updateQueryData("getKPIs", undefined, (draft) => {
+        analyticsApi.util.updateQueryData("getKPIs", params, (draft) => {
           Object.assign(draft, updatedKpis);
         })
       );
@@ -36,34 +46,34 @@ export function KpiCards() {
     return () => {
       socket.off("kpi_update");
     };
-  }, [token, dispatch]);
+  }, [token, dispatch, params]);
 
   const data = [
     {
       title: "Total Employees",
       value: kpis?.totalEmployees || 0,
       icon: <TeamOutlined />,
-      color: "#c3f5ff",
+      color: "var(--color-primary)", // Electric Cyan
     },
     {
-      title: "Revenue (MTD)",
+      title: "Revenue (Period)",
       value: kpis?.revenueMTD || 0,
       icon: <RiseOutlined />,
-      color: "#6dd58c",
+      color: "var(--color-success)",
       prefix: "$",
     },
     {
       title: "Pipeline Value",
       value: kpis?.pipelineValue || 0,
       icon: <DollarOutlined />,
-      color: "#80d8ff",
+      color: "var(--color-primary-fixed-dim)",
       prefix: "$",
     },
     {
       title: "Pending Invoices",
       value: kpis?.pendingInvoices || 0,
       icon: <FileTextOutlined />,
-      color: "#ffb347",
+      color: "var(--color-warning)",
     },
   ];
 
@@ -96,10 +106,12 @@ export function KpiCards() {
               }}
             />
             <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <ArrowUpOutlined style={{ color: '#6dd58c', fontSize: 10 }} />
-              <span style={{ color: '#6dd58c', fontSize: 11, fontWeight: 600 }}>+4.4%</span>
-              <span style={{ color: 'var(--color-on-surface-variant)', fontSize: 11 }}>vs last month</span>
+              <ArrowUpOutlined style={{ color: 'var(--color-success)', fontSize: 10 }} />
+              <span style={{ color: 'var(--color-success)', fontSize: 11, fontWeight: 600 }}>+4.4%</span>
+              <span style={{ color: 'var(--color-on-surface-variant)', fontSize: 11 }}>vs prev. period</span>
             </div>
+            {/* Electric Cyan Accent bottom line */}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: 'var(--color-primary)', opacity: 0.3 }} />
           </Card>
         </Col>
       ))}

@@ -15,7 +15,9 @@ export class ARReminderProcessor extends WorkerHost {
     const { customerEmail, invoiceNumber, amount } = job.data;
 
     if (!customerEmail) {
-      this.logger.warn(`No email found for invoice ${invoiceNumber}, skipping reminder.`);
+      this.logger.warn(
+        `No email found for invoice ${invoiceNumber}, skipping reminder.`,
+      );
       return;
     }
 
@@ -30,9 +32,13 @@ export class ARReminderProcessor extends WorkerHost {
           <p>Please make the payment as soon as possible.</p>
         `,
       });
-      this.logger.log(`Reminder sent for invoice ${invoiceNumber} to ${customerEmail}`);
+      this.logger.log(
+        `Reminder sent for invoice ${invoiceNumber} to ${customerEmail}`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to send reminder for invoice ${invoiceNumber}: ${error.message}`);
+      this.logger.error(
+        `Failed to send reminder for invoice ${invoiceNumber}: ${error.message}`,
+      );
       throw error;
     }
   }

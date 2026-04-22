@@ -81,7 +81,7 @@ const columns: ColumnsType<any> = [
     dataIndex: "method",
     key: "method",
     width: 100,
-    render: (m: string) => <Tag size="small">{m}</Tag>,
+    render: (m: string) => <Tag>{m}</Tag>,
   },
   {
     title: "Status",

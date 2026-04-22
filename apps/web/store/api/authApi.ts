@@ -8,10 +8,11 @@ import type {
   CreateRoleDto,
   MagicLinkLoginDto,
   ResetPasswordDto,
+  ChangePasswordDto,
 } from "@repo/shared-schemas";
 
 export interface AuthResponse {
-  user: AuthUser & { isTwoFactorEnabled: boolean };
+  user: AuthUser & { isTwoFactorEnabled: boolean; forcePasswordChange?: boolean };
   tokens: {
     accessToken: string;
     expiresIn: number;
@@ -28,6 +29,7 @@ export interface RegisterRequest {
   lastName: string;
   email: string;
   password: string;
+  token?: string;
 }
 
 export const authApi = createApi({
@@ -74,6 +76,14 @@ export const authApi = createApi({
           // Error handled by component
         }
       },
+    }),
+
+    changePassword: builder.mutation<{ message: string }, ChangePasswordDto>({
+      query: (body) => ({
+        url: "/auth/change-password",
+        method: "POST",
+        body,
+      }),
     }),
 
     logout: builder.mutation<{ message: string }, void>({
@@ -161,12 +171,25 @@ export const authApi = createApi({
         body,
       }),
     }),
+
+    setup2FA: builder.mutation<{ qrCodeDataURL: string; secret: string }, void>({
+      query: () => "/auth/2fa/setup",
+    }),
+
+    enable2FA: builder.mutation<{ backupCodes: string[] }, { token: string }>({
+      query: (body) => ({
+        url: "/auth/2fa/enable",
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 });
 
 export const {
   useLoginMutation,
   useRegisterMutation,
+  useChangePasswordMutation,
   useLogoutMutation,
   useGetMeQuery,
   useForgotPasswordMutation,
@@ -176,4 +199,6 @@ export const {
   useGetRolesQuery,
   useCreateRoleMutation,
   useMagicLinkLoginMutation,
+  useSetup2FAMutation,
+  useEnable2FAMutation,
 } = authApi;

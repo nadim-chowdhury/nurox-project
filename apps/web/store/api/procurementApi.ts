@@ -1,6 +1,6 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "@/lib/api-client";
-import type { 
+import type {
   VendorDto,
   PurchaseRequestDto,
   RfqDto,
@@ -14,7 +14,6 @@ export const procurementApi = createApi({
   baseQuery: baseQueryWithReauth,
   tagTypes: ["Vendor", "PR", "RFQ", "PO", "GRN"],
   endpoints: (builder) => ({
-    // ─── VENDORS ────────────────────────────────────────────────
     getVendors: builder.query<any[], void>({
       query: () => "/procurement/vendors",
       providesTags: ["Vendor"],
@@ -34,7 +33,6 @@ export const procurementApi = createApi({
       providesTags: ["Vendor"],
     }),
 
-    // ─── PURCHASE REQUESTS ─────────────────────────────────────
     createPR: builder.mutation<any, PurchaseRequestDto>({
       query: (body) => ({
         url: "/procurement/purchase-requests",
@@ -44,7 +42,6 @@ export const procurementApi = createApi({
       invalidatesTags: ["PR"],
     }),
 
-    // ─── RFQ ────────────────────────────────────────────────────
     createRFQ: builder.mutation<any, RfqDto>({
       query: (body) => ({
         url: "/procurement/rfqs",
@@ -68,7 +65,6 @@ export const procurementApi = createApi({
       invalidatesTags: ["RFQ"],
     }),
 
-    // ─── PURCHASE ORDERS ────────────────────────────────────────
     createPO: builder.mutation<any, PurchaseOrderDto>({
       query: (body) => ({
         url: "/procurement/purchase-orders",
@@ -91,7 +87,6 @@ export const procurementApi = createApi({
       providesTags: ["PO"],
     }),
 
-    // ─── GRN ────────────────────────────────────────────────────
     createGRN: builder.mutation<any, GrnDto>({
       query: (body) => ({
         url: "/procurement/grns",

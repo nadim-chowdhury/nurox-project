@@ -1,10 +1,10 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "@/lib/api-client";
-import type { 
-  AccountDto, 
-  JournalEntryDto, 
-  InvoiceDto, 
-  TaxRateDto 
+import type {
+  AccountDto,
+  JournalEntryDto,
+  InvoiceDto,
+  TaxRateDto,
 } from "@repo/shared-schemas";
 
 export interface Account extends AccountDto {
@@ -17,7 +17,6 @@ export const financeApi = createApi({
   baseQuery: baseQueryWithReauth,
   tagTypes: ["Account", "Journal", "Invoice", "Bill", "Tax", "Report"],
   endpoints: (builder) => ({
-    // ─── ACCOUNTS ──────────────────────────────────────────────
     getAccounts: builder.query<Account[], void>({
       query: () => "/finance/accounts",
       providesTags: ["Account"],
@@ -37,7 +36,6 @@ export const financeApi = createApi({
       invalidatesTags: ["Account"],
     }),
 
-    // ─── JOURNALS ──────────────────────────────────────────────
     getJournals: builder.query<any, { page?: number; limit?: number }>({
       query: (params) => ({
         url: "/finance/journals",
@@ -55,7 +53,6 @@ export const financeApi = createApi({
       invalidatesTags: ["Journal", "Account"],
     }),
 
-    // ─── INVOICES ──────────────────────────────────────────────
     getInvoices: builder.query<any, { page?: number; limit?: number }>({
       query: (params) => ({
         url: "/finance/invoices",
@@ -82,7 +79,6 @@ export const financeApi = createApi({
       invalidatesTags: ["Invoice", "Journal", "Account"],
     }),
 
-    // ─── TAX RATES ──────────────────────────────────────────────
     getTaxRates: builder.query<TaxRateDto[], void>({
       query: () => "/finance/tax-rates",
       providesTags: ["Tax"],
@@ -97,7 +93,6 @@ export const financeApi = createApi({
       invalidatesTags: ["Tax"],
     }),
 
-    // ─── PERIODS ───────────────────────────────────────────────
     closePeriod: builder.mutation<any, string>({
       query: (id) => ({
         url: `/finance/periods/${id}/close`,
@@ -106,13 +101,15 @@ export const financeApi = createApi({
       invalidatesTags: ["Report"],
     }),
 
-    // ─── REPORTS ───────────────────────────────────────────────
     getTrialBalance: builder.query<any[], void>({
       query: () => "/finance/reports/trial-balance",
       providesTags: ["Report"],
     }),
 
-    getIncomeStatement: builder.query<any, { startDate: string; endDate: string }>({
+    getIncomeStatement: builder.query<
+      any,
+      { startDate: string; endDate: string }
+    >({
       query: (params) => ({
         url: "/finance/reports/income-statement",
         params,
@@ -149,7 +146,16 @@ export const financeApi = createApi({
       providesTags: ["Report"],
     }),
 
-    getGeneralLedger: builder.query<any, { accountId: string; page?: number; limit?: number; startDate?: string; endDate?: string }>({
+    getGeneralLedger: builder.query<
+      any,
+      {
+        accountId: string;
+        page?: number;
+        limit?: number;
+        startDate?: string;
+        endDate?: string;
+      }
+    >({
       query: ({ accountId, ...params }) => ({
         url: `/finance/reports/general-ledger/${accountId}`,
         params,

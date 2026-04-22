@@ -16,6 +16,7 @@ import {
   Space,
   message,
   Divider,
+  Upload,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -26,6 +27,7 @@ import {
   SafetyOutlined,
   DollarOutlined,
   FileTextOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -36,12 +38,17 @@ import {
   useGetEmployeesQuery 
 } from "@/store/api/hrApi";
 import dayjs from "dayjs";
+import { 
+  employeePersonalSchema, 
+  employmentDetailsSchema, 
+  compensationDetailsSchema 
+} from "@repo/shared-schemas";
 
 const STEPS = [
-  { title: "Personal", icon: <UserOutlined /> },
-  { title: "Employment", icon: <BankOutlined /> },
-  { title: "Compensation", icon: <DollarOutlined /> },
-  { title: "Documents", icon: <FileTextOutlined /> },
+  { title: "Personal", icon: <UserOutlined />, schema: employeePersonalSchema },
+  { title: "Employment", icon: <BankOutlined />, schema: employmentDetailsSchema },
+  { title: "Compensation", icon: <DollarOutlined />, schema: compensationDetailsSchema },
+  { title: "Documents", icon: <FileTextOutlined />, schema: null },
 ];
 
 const labelStyle = { color: "var(--color-on-surface-variant)", fontSize: 13 };
@@ -52,19 +59,46 @@ export default function NewEmployeePage() {
   const [form] = Form.useForm();
   const [allValues, setAllValues] = useState<Record<string, any>>({});
   const [done, setDone] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const [createEmployee, { isLoading }] = useCreateEmployeeMutation();
   const { data: departments } = useGetDepartmentsQuery();
   const { data: designations } = useGetDesignationsQuery();
   const { data: managers } = useGetEmployeesQuery({});
 
+  const validateStep = async (stepIndex: number, values: any) => {
+    const step = STEPS[stepIndex];
+    if (!step || !step.schema) return true;
+
+    // Pre-process values for Zod (e.g. format dates)
+    const processedValues = { ...values };
+    if (processedValues.dateOfBirth) processedValues.dateOfBirth = dayjs(processedValues.dateOfBirth).toISOString();
+    if (processedValues.joinDate) processedValues.joinDate = dayjs(processedValues.joinDate).toISOString();
+    if (processedValues.probationEndDate) processedValues.probationEndDate = dayjs(processedValues.probationEndDate).toISOString();
+    if (processedValues.contractExpiryDate) processedValues.contractExpiryDate = dayjs(processedValues.contractExpiryDate).toISOString();
+
+    const result = step.schema.safeParse(processedValues);
+    if (!result.success) {
+      const fieldErrors = result.error.issues.map(err => ({
+        name: err.path,
+        errors: [err.message],
+      }));
+      form.setFields(fieldErrors);
+      return false;
+    }
+    return true;
+  };
+
   const next = async () => {
     try {
       const values = await form.validateFields();
+      const isValid = await validateStep(current, values);
+      if (!isValid) return;
+
       setAllValues((prev) => ({ ...prev, ...values }));
       setCurrent((c) => c + 1);
     } catch {
-      // Validation failed
+      // Ant Design internal validation failed
     }
   };
 
@@ -82,7 +116,7 @@ export default function NewEmployeePage() {
           joinDate: dayjs(finalData.joinDate).toISOString(),
           probationEndDate: finalData.probationEndDate ? dayjs(finalData.probationEndDate).toISOString() : undefined,
           contractExpiryDate: finalData.contractExpiryDate ? dayjs(finalData.contractExpiryDate).toISOString() : undefined,
-          branchId: "b8f6e696-e137-4d7a-8f55-7c050002f23b", // Mock branch ID, should come from context
+          branchId: "b8f6e696-e137-4d7a-8f55-7c050002f23b", // Mock branch ID
       };
 
       await createEmployee(formattedData).unwrap();
@@ -90,6 +124,35 @@ export default function NewEmployeePage() {
       message.success("Employee created successfully");
     } catch (err: any) {
       message.error(err.data?.message || "Failed to create employee");
+    }
+  };
+
+  const customRequest = async (options: any) => {
+    const { file, onSuccess, onError } = options;
+    setUploading(true);
+    try {
+      // 1. Get pre-signed URL
+      const resp = await fetch(`/api/system/upload-url?fileName=${file.name}&contentType=${file.type}`);
+      const { url, key } = await resp.json();
+
+      // 2. Upload to S3/MinIO
+      await fetch(url, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+
+      // 3. Set field value to the key/URL
+      const publicUrl = `http://localhost:9000/nurox/${key}`; // Mock public URL
+      form.setFieldValue("contractUrl", publicUrl);
+      
+      onSuccess(null, file);
+      message.success(`${file.name} uploaded successfully`);
+    } catch (err) {
+      onError(err);
+      message.error(`${file.name} upload failed`);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -227,6 +290,7 @@ export default function NewEmployeePage() {
                       { value: "PART_TIME", label: "Part Time" },
                       { value: "CONTRACT", label: "Contract" },
                       { value: "INTERN", label: "Intern" },
+                      { value: "PROBATION", label: "Probation" },
                   ]} />
                 </Form.Item>
               </Col>
@@ -304,8 +368,17 @@ export default function NewEmployeePage() {
             </h3>
             <Row gutter={[24, 0]}>
               <Col xs={24} sm={12}>
-                <Form.Item name="contractUrl" label={<span style={labelStyle}>Contract URL</span>}>
-                  <Input placeholder="Link to signed contract" />
+                <Form.Item name="contractUrl" label={<span style={labelStyle}>Contract Upload</span>}>
+                  <Upload 
+                    customRequest={customRequest} 
+                    maxCount={1}
+                    showUploadList={{ showRemoveIcon: true }}
+                  >
+                    <Button icon={<UploadOutlined />} loading={uploading}>Click to Upload Contract</Button>
+                  </Upload>
+                </Form.Item>
+                <Form.Item name="contractUrl" noStyle>
+                    <Input type="hidden" />
                 </Form.Item>
               </Col>
               <Col xs={24} sm={12}>
@@ -314,7 +387,7 @@ export default function NewEmployeePage() {
                 </Form.Item>
               </Col>
               <Col xs={24}>
-                <Divider orientation="left">Emergency Contact</Divider>
+                <Divider>Emergency Contact</Divider>
               </Col>
               <Col xs={24} sm={12}>
                 <Form.Item name="emergencyContactName" label={<span style={labelStyle}>Contact Name</span>}>

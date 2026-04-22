@@ -35,6 +35,7 @@ export enum EmploymentType {
   PART_TIME = 'PART_TIME',
   CONTRACT = 'CONTRACT',
   INTERN = 'INTERN',
+  PROBATION = 'PROBATION',
 }
 
 /**

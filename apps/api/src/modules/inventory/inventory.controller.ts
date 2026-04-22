@@ -17,8 +17,6 @@ import {
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
-  // ─── PRODUCTS ───────────────────────────────────────────────
-
   @Post('products')
   @ApiOperation({ summary: 'Create a new product' })
   createProduct(@Body() dto: ProductDto) {
@@ -30,8 +28,6 @@ export class InventoryController {
   createVariant(@Body() dto: ProductVariantDto) {
     return this.inventoryService.createVariant(dto as any);
   }
-
-  // ─── WAREHOUSES & HIERARCHY ─────────────────────────────────
 
   @Post('warehouses')
   createWarehouse(@Body() dto: WarehouseDto) {
@@ -52,8 +48,6 @@ export class InventoryController {
   createBin(@Body() dto: BinDto) {
     return this.inventoryService.createBin(dto as any);
   }
-
-  // ─── STOCK OPERATIONS ────────────────────────────────────────
 
   @Post('stock/receive')
   @ApiOperation({ summary: 'Receive stock' })
@@ -79,8 +73,6 @@ export class InventoryController {
     return this.inventoryService.adjustStock(dto as any);
   }
 
-  // ─── STOCK COUNT ────────────────────────────────────────────
-
   @Post('stock/count/start')
   startStockCount(@Body() dto: { warehouseId: string; notes?: string }) {
     return this.inventoryService.startStockCount(dto.warehouseId, dto.notes);
@@ -90,8 +82,6 @@ export class InventoryController {
   completeStockCount(@Param('id') id: string) {
     return this.inventoryService.completeStockCount(id);
   }
-
-  // ─── ANALYTICS ──────────────────────────────────────────────
 
   @Get('stock/levels')
   getStockLevels(

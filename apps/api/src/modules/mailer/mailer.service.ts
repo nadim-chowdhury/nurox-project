@@ -24,7 +24,7 @@ export class MailerService {
     subject: string;
     text?: string;
     html?: string;
-    attachments?: nodemailer.Attachment[];
+    attachments?: any[];
   }): Promise<any> {
     const from = this.configService.get<string>('mail.from');
     try {

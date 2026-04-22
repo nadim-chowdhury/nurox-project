@@ -53,21 +53,56 @@ export class AuthService {
     lastName: string;
     email: string;
     password: string;
+    token?: string;
   }) {
-    const existing = await this.usersService.findByEmail(data.email);
-    if (existing) {
-      throw new ConflictException('Email already registered');
+    let existingUser: any = null;
+
+    if (data.token) {
+      // Validate invitation token
+      let payload: any;
+      try {
+        payload = await this.jwtService.verifyAsync(data.token, {
+          secret: this.config.get<string>('jwt.refreshSecret'),
+        });
+      } catch {
+        throw new UnauthorizedException('Invalid or expired invitation token');
+      }
+
+      if (payload.purpose !== 'invite') {
+        throw new UnauthorizedException('Invalid token purpose');
+      }
+
+      existingUser = await this.usersService.findById(payload.sub);
+      if (!existingUser || existingUser.status !== 'PENDING_INVITE') {
+        throw new UnauthorizedException('Invitation already used or invalid');
+      }
+    } else {
+      const existing = await this.usersService.findByEmail(data.email);
+      if (existing) {
+        throw new ConflictException('Email already registered');
+      }
     }
 
     const passwordHash = await bcrypt.hash(data.password, SALT_ROUNDS);
 
-    const user = await this.usersService.create({
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email.toLowerCase(),
-      passwordHash,
-      status: 'ACTIVE',
-    });
+    let user;
+    if (existingUser) {
+      user = await this.usersService.update(existingUser.id, {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        passwordHash,
+        status: 'ACTIVE',
+        forcePasswordChange: false, // User just set their password
+      });
+    } else {
+      user = await this.usersService.create({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email.toLowerCase(),
+        passwordHash,
+        status: 'ACTIVE',
+      });
+    }
 
     const tokens = await this.generateTokens(user.id, user.email, user.role);
     await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
@@ -108,6 +143,12 @@ export class AuthService {
     if (!user) {
       await this.incrementLockout(lockoutKey);
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (user.status === 'PENDING_INVITE') {
+      throw new UnauthorizedException(
+        'Please complete your registration using the link sent to your email',
+      );
     }
 
     const passwordValid = await bcrypt.compare(password, user.passwordHash);
@@ -152,9 +193,39 @@ export class AuthService {
         lastName: user.lastName,
         role: user.role,
         isTwoFactorEnabled: user.isTwoFactorEnabled,
+        forcePasswordChange: user.forcePasswordChange,
       },
       tokens,
     };
+  }
+
+  /**
+   * Change user password.
+   */
+  async changePassword(
+    userId: string,
+    dto: { currentPassword?: string; newPassword: string; force?: boolean },
+  ) {
+    const user = await this.usersService.findById(userId);
+    const fullUser = await this.usersService.findByEmail(user!.email, {
+      includePassword: true,
+    });
+
+    if (!dto.force && dto.currentPassword) {
+      const isMatch = await bcrypt.compare(
+        dto.currentPassword,
+        fullUser!.passwordHash,
+      );
+      if (!isMatch) {
+        throw new UnauthorizedException('Current password does not match');
+      }
+    }
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, SALT_ROUNDS);
+    await this.usersService.update(userId, {
+      passwordHash,
+      forcePasswordChange: false,
+    });
   }
 
   private async incrementLockout(key: string) {

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Card, List, Typography, Space, Spin, Empty } from "antd";
+import { Card, Typography, Spin, Empty } from "antd";
 import { HistoryOutlined, ClockCircleOutlined } from "@ant-design/icons";
 import { useGetAuditLogsQuery } from "@/store/api/analyticsApi";
 import dayjs from "dayjs";
@@ -9,16 +9,23 @@ import relativeTime from "dayjs/plugin/relativeTime";
 
 dayjs.extend(relativeTime);
 
-const { Text } = Typography;
+interface Props {
+  dateRange: [dayjs.Dayjs, dayjs.Dayjs];
+}
 
-export function ActivityFeed() {
-  const { data, isLoading } = useGetAuditLogsQuery({ page: 1, limit: 10 });
+export function ActivityFeed({ dateRange }: Props) {
+  const { data, isLoading } = useGetAuditLogsQuery({ 
+    page: 1, 
+    limit: 10,
+    startDate: dateRange[0].toISOString(),
+    endDate: dateRange[1].toISOString(),
+  });
 
   const getTypeColor = (action: string) => {
-    if (action.includes('CREATE')) return '#6dd58c';
-    if (action.includes('UPDATE')) return '#80d8ff';
-    if (action.includes('DELETE')) return '#ffb4ab';
-    return '#c3f5ff';
+    if (action.includes('CREATE')) return 'var(--color-success)';
+    if (action.includes('UPDATE')) return 'var(--color-primary-fixed-dim)';
+    if (action.includes('DELETE')) return 'var(--color-error)';
+    return 'var(--color-primary)';
   };
 
   return (
@@ -31,7 +38,7 @@ export function ActivityFeed() {
             fontWeight: 600,
           }}
         >
-          <HistoryOutlined style={{ color: "#e3eeff", marginRight: 8 }} />
+          <HistoryOutlined style={{ color: "var(--color-tertiary)", marginRight: 8 }} />
           Recent Activity
         </span>
       }

@@ -9,7 +9,7 @@ import { Employee } from './entities/employee.entity';
 import { Department } from './entities/department.entity';
 import { Designation } from './entities/designation.entity';
 import { PerformanceReview, KeyResult } from './entities/performance.entity';
-import { SalaryHistory } from './salary-history.entity';
+import { SalaryHistory } from './entities/salary-history.entity';
 import { Training } from './entities/training.entity';
 import { Skill } from './entities/skill.entity';
 import { EmploymentHistory } from './entities/employment-history.entity';

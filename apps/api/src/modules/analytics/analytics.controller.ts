@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -13,21 +13,30 @@ export class AnalyticsController {
   @Get('dashboard')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get main dashboard stats' })
-  async getDashboard() {
-    return this.analyticsService.getDashboard();
+  async getDashboard(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.analyticsService.getDashboard(startDate, endDate);
   }
 
   @Get('kpis')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get real-time KPIs' })
-  async getKPIs() {
-    return this.analyticsService.getKPIs();
+  async getKPIs(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.analyticsService.getKPIs(startDate, endDate);
   }
 
   @Get('alerts')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get system alerts' })
-  async getAlerts() {
-    return this.analyticsService.getAlerts();
+  async getAlerts(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.analyticsService.getAlerts(startDate, endDate);
   }
 }

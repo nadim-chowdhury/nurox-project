@@ -6,15 +6,14 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, TreeRepository, EntityManager } from 'typeorm';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
-import { Employee, EmployeeStatus } from './entities/employee.entity';
+import { Employee, EmployeeStatus, Gender } from './entities/employee.entity';
 import { Department } from './entities/department.entity';
 import { Designation } from './entities/designation.entity';
 import {
   PerformanceReview,
   PerformanceReviewStatus,
   KeyResult,
+  PerformanceReviewType,
 } from './entities/performance.entity';
 import {
   SalaryHistory,
@@ -33,7 +32,16 @@ import {
   OkrDto,
   TrainingDto,
   SkillDto,
+  TransferEmployeeDto,
+  TerminationDto,
+  PipDto,
+  ThreeSixtyReviewDto,
 } from '@repo/shared-schemas';
+import { QueryEmployeeDto } from './dto/query-employee.dto';
+import { CreateDesignationDto } from './dto/create-designation.dto';
+import { UpdateDesignationDto } from './dto/update-designation.dto';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class HrService {
@@ -57,63 +65,44 @@ export class HrService {
     @InjectRepository(EmploymentHistory)
     private readonly employmentHistoryRepo: Repository<EmploymentHistory>,
     private readonly pdfService: PdfService,
-    @InjectQueue('hr') private hrQueue: Queue,
+    @InjectQueue('hr')
+    private readonly hrQueue: Queue,
   ) {}
 
-  // ─── EMPLOYEES ──────────────────────────────────────────────
-
   async createEmployee(dto: CreateEmployeeDto): Promise<Employee> {
-    const existing = await this.employeeRepo.findOne({
-      where: [{ email: dto.email }, { employeeId: dto.employeeCode }],
-    });
-    if (existing) {
-      throw new ConflictException(
-        'Employee with this email or code already exists',
-      );
-    }
-
     return await this.employeeRepo.manager.transaction(async (manager) => {
-      // Create Employee
+      const { baseSalary, ...rest } = dto;
       const employee = manager.create(Employee, {
-        ...dto,
-        employeeId: dto.employeeCode,
-        salary: dto.baseSalary,
-        joinDate: dto.joinDate.split('T')[0],
-        probationEndDate: dto.probationEndDate
-          ? dto.probationEndDate.split('T')[0]
-          : null,
-        contractUrl: dto.contractUrl || null,
-        contractExpiryDate: dto.contractExpiryDate
-          ? dto.contractExpiryDate.split('T')[0]
-          : null,
+        ...(rest as any),
+        salary: baseSalary,
+        gender: dto.gender as Gender,
+        employeeId:
+          dto.employeeCode || `EMP-${Date.now().toString().slice(-4)}`,
+        status: EmployeeStatus.ACTIVE,
       });
+
       const saved = await manager.save(employee);
 
-      // Save initial Salary History
+      const history = manager.create(EmploymentHistory, {
+        employeeId: saved.id,
+        event: EmploymentEvent.HIRED,
+        effectiveDate: saved.joinDate,
+        comments: 'Initial onboarding',
+      });
+      await manager.save(history);
+
       const salaryHistory = manager.create(SalaryHistory, {
         employeeId: saved.id,
         previousSalary: 0,
-        newSalary: dto.baseSalary,
-        effectiveDate: dto.joinDate.split('T')[0],
+        newSalary: saved.salary,
+        effectiveDate: saved.joinDate,
         reason: SalaryChangeReason.INITIAL_OFFER,
-        comments: 'Initial salary on hiring',
+        comments: 'Starting salary',
       });
       await manager.save(salaryHistory);
 
-      // Save initial Employment History
-      const employmentHistory = manager.create(EmploymentHistory, {
-        employeeId: saved.id,
-        event: EmploymentEvent.HIRED,
-        effectiveDate: dto.joinDate.split('T')[0],
-        departmentId: dto.departmentId,
-        designationId: dto.designationId || null,
-        comments: 'Employee hired',
-      });
-      await manager.save(employmentHistory);
-
-      // Schedule probation expiry check
-      if (dto.probationEndDate) {
-        const delay = new Date(dto.probationEndDate).getTime() - Date.now();
+      if (saved.probationEndDate) {
+        const delay = new Date(saved.probationEndDate).getTime() - Date.now();
         if (delay > 0) {
           await this.hrQueue.add(
             'probation-expiry-check',
@@ -123,176 +112,114 @@ export class HrService {
         }
       }
 
-      // Schedule contract expiry check (30 days before)
-      if (dto.contractExpiryDate) {
-        const expiryDate = new Date(dto.contractExpiryDate);
-        const notificationDate = new Date(expiryDate.getTime() - 30 * 24 * 60 * 60 * 1000);
-        const delay = notificationDate.getTime() - Date.now();
+      if (saved.contractExpiryDate) {
+        const delay = new Date(saved.contractExpiryDate).getTime() - Date.now();
         if (delay > 0) {
-            await this.hrQueue.add(
-                'contract-expiry-check',
-                { employeeId: saved.id },
-                { delay }
-            );
+          await this.hrQueue.add(
+            'contract-expiry-check',
+            { employeeId: saved.id },
+            { delay },
+          );
         }
       }
 
-      this.logger.log(
-        `Employee created: ${saved.employeeId} — ${saved.firstName} ${saved.lastName}`,
-      );
+      this.logger.log(`Employee created: ${saved.employeeId}`);
       return saved;
     });
   }
 
-  async transferEmployee(id: string, dto: TransferEmployeeDto): Promise<Employee> {
-    const employee = await this.findEmployeeById(id);
-    
-    return await this.employeeRepo.manager.transaction(async (manager) => {
-        const oldDeptId = employee.departmentId;
-        const oldDesigId = employee.designationId;
-
-        employee.departmentId = dto.departmentId;
-        employee.designationId = dto.designationId;
-        await manager.save(employee);
-
-        const history = manager.create(EmploymentHistory, {
-            employeeId: id,
-            event: EmploymentEvent.TRANSFERRED,
-            effectiveDate: dto.effectiveDate.split('T')[0],
-            departmentId: dto.departmentId,
-            designationId: dto.designationId,
-            comments: dto.comments || `Transferred from ${oldDeptId} to ${dto.departmentId}`,
-        });
-        await manager.save(history);
-
-        return employee;
-    });
-  }
-
-  async terminateEmployee(id: string, dto: TerminationDto): Promise<Employee> {
-    const employee = await this.findEmployeeById(id);
-    
-    return await this.employeeRepo.manager.transaction(async (manager) => {
-        employee.status = dto.reason === 'RESIGNED' ? EmployeeStatus.INACTIVE : EmployeeStatus.TERMINATED;
-        employee.endDate = dto.endDate.split('T')[0];
-        await manager.save(employee);
-
-        const event = dto.reason === 'RESIGNED' ? EmploymentEvent.RESIGNED : EmploymentEvent.TERMINATED;
-
-        const history = manager.create(EmploymentHistory, {
-            employeeId: id,
-            event: event,
-            effectiveDate: dto.endDate.split('T')[0],
-            comments: dto.comments || `Employee ${dto.reason.toLowerCase()}`,
-        });
-        await manager.save(history);
-
-        return employee;
-    });
-  }
-
-  async submit360Review(id: string, dto: ThreeSixtyReviewDto): Promise<PerformanceReview> {
-    await this.findEmployeeById(id);
-    const review = this.performanceRepo.create({
-        employeeId: id,
-        type: PerformanceReviewType.THREE_SIXTY,
-        objective: dto.objective,
-        period: dto.period,
-        selfRating: dto.selfRating,
-        peerRating: dto.peerRating || null,
-        managerRating: dto.managerRating || null,
-        status: PerformanceReviewStatus.COMPLETED,
-    });
-    return this.performanceRepo.save(review);
-  }
-
-  async initiatePIP(id: string, dto: PipDto): Promise<PerformanceReview> {
-    await this.findEmployeeById(id);
-    const pip = this.performanceRepo.create({
-        employeeId: id,
-        type: PerformanceReviewType.PIP,
-        objective: dto.objective,
-        period: dto.period,
-        documentationUrl: dto.documentationUrl || null,
-        status: PerformanceReviewStatus.ACTIVE,
-    });
-    return this.performanceRepo.save(pip);
-  }
-
   async findAllEmployees(query: QueryEmployeeDto) {
-    const {
-      page = 1,
-      limit = 20,
-      search,
-      status,
-      employmentType,
-      departmentId,
-      designationId,
-      sortBy = 'createdAt',
-      sortOrder = 'DESC',
-    } = query;
-
+    const { page = 1, limit = 25, search, departmentId, status } = query;
     const qb = this.employeeRepo
-      .createQueryBuilder('emp')
-      .leftJoinAndSelect('emp.department', 'dept')
-      .leftJoinAndSelect('emp.designation', 'desig');
+      .createQueryBuilder('employee')
+      .leftJoinAndSelect('employee.department', 'department')
+      .leftJoinAndSelect('employee.designation', 'designation')
+      .where('employee.deletedAt IS NULL');
 
     if (search) {
       qb.andWhere(
-        '(emp.firstName ILIKE :s OR emp.lastName ILIKE :s OR emp.email ILIKE :s OR emp.employeeId ILIKE :s)',
+        '(employee.firstName ILIKE :s OR employee.lastName ILIKE :s OR employee.email ILIKE :s OR employee.employeeId ILIKE :s)',
         { s: `%${search}%` },
       );
     }
+    if (departmentId) {
+      qb.andWhere('employee.departmentId = :deptId', { departmentId });
+    }
+    if (status) {
+      qb.andWhere('employee.status = :status', { status });
+    }
 
-    if (status) qb.andWhere('emp.status = :status', { status });
-    if (employmentType)
-      qb.andWhere('emp.employmentType = :employmentType', { employmentType });
-    if (departmentId)
-      qb.andWhere('emp.departmentId = :departmentId', { departmentId });
-    if (designationId)
-      qb.andWhere('emp.designationId = :designationId', { designationId });
+    const [data, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .orderBy('employee.createdAt', 'DESC')
+      .getManyAndCount();
 
-    const allowedSort = [
-      'createdAt',
-      'firstName',
-      'lastName',
-      'joinDate',
-      'salary',
-      'employeeId',
-    ];
-    const safeSort = allowedSort.includes(sortBy) ? sortBy : 'createdAt';
-    qb.orderBy(`emp.${safeSort}`, sortOrder === 'ASC' ? 'ASC' : 'DESC');
-
-    const skip = (page - 1) * limit;
-    qb.skip(skip).take(limit);
-
-    const [data, total] = await qb.getManyAndCount();
-
-    return {
-      data,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    return { data, meta: { total, page, limit } };
   }
 
   async findEmployeeById(id: string): Promise<Employee> {
     const employee = await this.employeeRepo.findOne({
       where: { id },
-      relations: ['department', 'designation'],
+      relations: ['department', 'designation', 'manager', 'shift'],
     });
-    if (!employee) throw new NotFoundException(`Employee "${id}" not found`);
+    if (!employee) throw new NotFoundException('Employee not found');
     return employee;
   }
 
   async updateEmployee(id: string, dto: any): Promise<Employee> {
     await this.findEmployeeById(id);
     await this.employeeRepo.update(id, dto);
-    this.logger.log(`Employee updated: ${id}`);
     return this.findEmployeeById(id);
+  }
+
+  async removeEmployee(id: string): Promise<void> {
+    await this.findEmployeeById(id);
+    await this.employeeRepo.softDelete(id);
+  }
+
+  async transferEmployee(id: string, dto: TransferEmployeeDto) {
+    const employee = await this.findEmployeeById(id);
+    return await this.employeeRepo.manager.transaction(async (manager) => {
+      const history = manager.create(EmploymentHistory, {
+        employeeId: id,
+        event: EmploymentEvent.TRANSFERRED,
+        oldDepartmentId: employee.departmentId,
+        newDepartmentId: dto.departmentId,
+        oldDesignationId: employee.designationId,
+        newDesignationId: dto.designationId,
+        effectiveDate: dto.effectiveDate,
+        comments: dto.comments,
+      });
+      await manager.save(history);
+
+      await manager.update(Employee, id, {
+        departmentId: dto.departmentId,
+        designationId: dto.designationId,
+      });
+
+      return this.findEmployeeById(id);
+    });
+  }
+
+  async terminateEmployee(id: string, dto: TerminationDto) {
+    await this.findEmployeeById(id);
+    return await this.employeeRepo.manager.transaction(async (manager) => {
+      const history = manager.create(EmploymentHistory, {
+        employeeId: id,
+        event: EmploymentEvent.TERMINATED,
+        effectiveDate: dto.endDate,
+        comments: `${dto.reason}: ${dto.comments}`,
+      });
+      await manager.save(history);
+
+      await manager.update(Employee, id, {
+        status: EmployeeStatus.TERMINATED,
+        endDate: dto.endDate,
+      });
+
+      return { success: true };
+    });
   }
 
   async updateSalary(
@@ -300,98 +227,107 @@ export class HrService {
     newSalary: number,
     reason: SalaryChangeReason,
     comments?: string,
-  ): Promise<Employee> {
+  ) {
     const employee = await this.findEmployeeById(id);
-    const previousSalary = employee.salary;
-
     return await this.employeeRepo.manager.transaction(async (manager) => {
-      employee.salary = newSalary;
-      await manager.save(employee);
-
       const history = manager.create(SalaryHistory, {
         employeeId: id,
-        previousSalary,
+        previousSalary: employee.salary,
         newSalary,
-        effectiveDate: new Date().toISOString().split('T')[0],
+        effectiveDate: new Date().toISOString(), // Default to now
         reason,
         comments,
       });
       await manager.save(history);
 
-      const employmentEvent = manager.create(EmploymentHistory, {
-        employeeId: id,
-        event: EmploymentEvent.SALARY_REVISION,
-        effectiveDate: new Date().toISOString().split('T')[0],
-        comments: `Salary revised from ${previousSalary} to ${newSalary}`,
-      });
-      await manager.save(employmentEvent);
+      await manager.update(Employee, id, { salary: newSalary });
 
-      return employee;
+      // Also log a promotion if reason is promotion
+      if (reason === SalaryChangeReason.PROMOTION) {
+        const empHistory = manager.create(EmploymentHistory, {
+          employeeId: id,
+          event: EmploymentEvent.PROMOTED,
+          effectiveDate: new Date().toISOString(),
+          comments: 'Salary promotion update',
+        });
+        await manager.save(empHistory);
+      }
+
+      return { success: true };
     });
   }
 
-  async addOKR(id: string, dto: OkrDto): Promise<PerformanceReview> {
-    await this.findEmployeeById(id);
+  async addOKR(id: string, dto: OkrDto) {
     const review = this.performanceRepo.create({
       employeeId: id,
+      type: PerformanceReviewType.OKR,
       objective: dto.objective,
       period: dto.period,
-      status: dto.status as PerformanceReviewStatus,
-      progress: dto.progress,
-      keyResults: dto.keyResults.map((kr) => ({
-        description: kr.description,
-        targetValue: kr.targetValue,
-        currentValue: kr.currentValue,
-        weight: kr.weight,
-      })),
+      status: PerformanceReviewStatus.DRAFT,
+      keyResults: dto.keyResults as any[],
     });
     return this.performanceRepo.save(review);
   }
 
-  async addTraining(id: string, dto: TrainingDto): Promise<Training> {
-    await this.findEmployeeById(id);
+  async submit360Review(id: string, dto: ThreeSixtyReviewDto) {
+    const review = this.performanceRepo.create({
+      employeeId: id,
+      type: PerformanceReviewType.THREE_SIXTY,
+      objective: dto.objective,
+      period: dto.period,
+      selfRating: dto.selfRating,
+      status: PerformanceReviewStatus.ACTIVE,
+    });
+    return this.performanceRepo.save(review);
+  }
+
+  async initiatePIP(id: string, dto: PipDto) {
+    const review = this.performanceRepo.create({
+      employeeId: id,
+      type: PerformanceReviewType.PIP,
+      objective: dto.objective,
+      period: dto.period,
+      status: PerformanceReviewStatus.ACTIVE,
+      documentationUrl: dto.documentationUrl,
+    });
+    return this.performanceRepo.save(review);
+  }
+
+  async addTraining(id: string, dto: TrainingDto) {
     const training = this.trainingRepo.create({
       employeeId: id,
       ...dto,
-      status: dto.status as TrainingStatus,
+      status: TrainingStatus.ENROLLED,
     });
     return this.trainingRepo.save(training);
   }
 
-  async addSkill(id: string, dto: SkillDto): Promise<Skill> {
-    await this.findEmployeeById(id);
+  async findAllTrainings() {
+    return this.trainingRepo.find({
+      relations: ['employee'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async addSkill(id: string, dto: SkillDto) {
     const skill = this.skillRepo.create({
       employeeId: id,
       ...dto,
-      lastAssessed: dto.lastAssessed ? dto.lastAssessed.split('T')[0] : null,
     });
     return this.skillRepo.save(skill);
   }
 
-  async findAllTrainings(): Promise<Training[]> {
-    return this.trainingRepo.find({
-        order: { title: 'ASC' },
-        relations: ['employee'],
-    });
-  }
-
   async getSkillMatrix() {
-    const skills = await this.skillRepo.find({
-        relations: ['employee'],
-    });
-
+    const skills = await this.skillRepo.find({ relations: ['employee'] });
     // Group by skill name
-    const matrix: Record<string, any[]> = {};
-    skills.forEach(s => {
-        if (!matrix[s.skillName]) matrix[s.skillName] = [];
-        matrix[s.skillName].push({
-            employeeId: s.employeeId,
-            employeeName: `${s.employee.firstName} ${s.employee.lastName}`,
-            proficiency: s.proficiency,
-            lastAssessed: s.lastAssessed,
-        });
+    const matrix = {};
+    skills.forEach((s) => {
+      if (!matrix[s.skillName]) matrix[s.skillName] = [];
+      matrix[s.skillName].push({
+        employeeName: `${s.employee.firstName} ${s.employee.lastName}`,
+        proficiency: s.proficiency,
+      });
     });
-
     return matrix;
   }
 
@@ -404,98 +340,55 @@ export class HrService {
     });
   }
 
+  async getSalaryHistory(id: string): Promise<SalaryHistory[]> {
+    await this.findEmployeeById(id);
+    return this.salaryHistoryRepo.find({
+      where: { employeeId: id },
+      order: { effectiveDate: 'DESC', createdAt: 'DESC' },
+    });
+  }
+
   async getTrainingCertificate(trainingId: string): Promise<Buffer> {
     const training = await this.trainingRepo.findOne({
       where: { id: trainingId },
       relations: ['employee'],
     });
-    if (!training)
-      throw new NotFoundException(`Training "${trainingId}" not found`);
-    if (training.status !== TrainingStatus.COMPLETED) {
-      throw new ConflictException(
-        'Certificate is only available for completed trainings',
-      );
+    if (!training || training.status !== TrainingStatus.COMPLETED) {
+      throw new NotFoundException('Completed training not found');
     }
 
     const template = `
-      <div style="text-align: center; border: 10px solid #c3f5ff; padding: 50px; font-family: 'Manrope', sans-serif; background-color: #0c1324; color: #e8eaf0;">
-        <h1 style="color: #c3f5ff; font-family: 'Space Grotesk', sans-serif;">CERTIFICATE OF COMPLETION</h1>
+      <div style="text-align: center; border: 10px solid #c3f5ff; padding: 50px;">
+        <h1>CERTIFICATE OF COMPLETION</h1>
         <p>This is to certify that</p>
-        <h2 style="color: #c3f5ff;">{{firstName}} {{lastName}}</h2>
+        <h2>${training.employee.firstName} ${training.employee.lastName}</h2>
         <p>has successfully completed the training</p>
-        <h3 style="color: #c3f5ff;">{{trainingTitle}}</h3>
-        <p>on {{completionDate}}</p>
-        <div style="margin-top: 50px;">
-          <p>__________________________</p>
-          <p>Nurox ERP Training Department</p>
-        </div>
+        <h3>${training.title}</h3>
+        <p>on ${new Date().toLocaleDateString()}</p>
       </div>
     `;
-
-    const data = {
-      firstName: training.employee.firstName,
-      lastName: training.employee.lastName,
-      trainingTitle: training.title,
-      completionDate: training.completionDate,
-    };
-
-    return this.pdfService.generatePdf(template, data);
+    return this.pdfService.generatePdf(template, {});
   }
-
-  async removeEmployee(id: string): Promise<void> {
-    await this.findEmployeeById(id);
-    await this.employeeRepo.softDelete(id);
-    this.logger.log(`Employee soft-deleted: ${id}`);
-  }
-
-  // ─── DEPARTMENTS ────────────────────────────────────────────
 
   async createDepartment(dto: any): Promise<Department> {
-    const existing = await this.departmentRepo.findOne({
-      where: [{ name: dto.name }, { code: dto.code }],
-    });
-    if (existing)
-      throw new ConflictException('Department name or code already exists');
-
-    const dept = this.departmentRepo.create(dto) as unknown as Department;
-
-    if (dto.parentId) {
-      const parent = await this.findDepartmentById(dto.parentId);
-      dept.parent = parent;
-    }
-
-    return this.departmentRepo.save(dept);
+    const dept = this.departmentRepo.create(dto);
+    return this.departmentRepo.save(dept) as any;
   }
 
-  async findAllDepartments() {
-    return this.departmentRepo.findTrees({
-      relations: ['employees'],
-    });
+  async findAllDepartments(): Promise<Department[]> {
+    return this.departmentRepo.findTrees();
   }
 
   async findDepartmentById(id: string): Promise<Department> {
-    const dept = await this.departmentRepo.findOne({
-      where: { id },
-      relations: ['parent', 'children'],
-    });
-    if (!dept) throw new NotFoundException(`Department "${id}" not found`);
+    const dept = await this.departmentRepo.findOne({ where: { id } });
+    if (!dept) throw new NotFoundException('Department not found');
     return dept;
   }
 
   async updateDepartment(id: string, dto: any): Promise<Department> {
-    const dept = await this.findDepartmentById(id);
-
-    if (dto.parentId !== undefined) {
-      if (dto.parentId === null) {
-        dept.parent = null as any;
-      } else {
-        const parent = await this.findDepartmentById(dto.parentId);
-        dept.parent = parent;
-      }
-    }
-
-    Object.assign(dept, dto);
-    return this.departmentRepo.save(dept);
+    await this.findDepartmentById(id);
+    await this.departmentRepo.update(id, dto);
+    return this.findDepartmentById(id);
   }
 
   async removeDepartment(id: string): Promise<void> {
@@ -503,45 +396,18 @@ export class HrService {
     await this.departmentRepo.softDelete(id);
   }
 
-  // ─── DESIGNATIONS ──────────────────────────────────────────
-
   async createDesignation(dto: CreateDesignationDto): Promise<Designation> {
-    const existing = await this.designationRepo.findOne({
-      where: { title: dto.title },
-    });
-    if (existing)
-      throw new ConflictException('Designation title already exists');
-
     const desig = this.designationRepo.create(dto);
     return this.designationRepo.save(desig);
   }
 
-  async findAllDesignations() {
-    const designations = await this.designationRepo.find({
-      order: { level: 'ASC', title: 'ASC' },
-    });
-
-    const counts = await this.employeeRepo
-      .createQueryBuilder('emp')
-      .select('emp.designationId', 'designationId')
-      .addSelect('COUNT(*)', 'count')
-      .where('emp.deletedAt IS NULL')
-      .groupBy('emp.designationId')
-      .getRawMany<{ designationId: string; count: string }>();
-
-    const countMap = new Map(
-      counts.map((c) => [c.designationId, parseInt(c.count)]),
-    );
-
-    return designations.map((d) => ({
-      ...d,
-      employeeCount: countMap.get(d.id) || 0,
-    }));
+  async findAllDesignations(): Promise<Designation[]> {
+    return this.designationRepo.find();
   }
 
   async findDesignationById(id: string): Promise<Designation> {
     const desig = await this.designationRepo.findOne({ where: { id } });
-    if (!desig) throw new NotFoundException(`Designation "${id}" not found`);
+    if (!desig) throw new NotFoundException('Designation not found');
     return desig;
   }
 

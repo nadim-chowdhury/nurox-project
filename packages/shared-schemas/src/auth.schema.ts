@@ -31,6 +31,7 @@ export const registerSchema = z.object({
     .max(200, "Organization name must be 200 characters or fewer")
     .trim()
     .optional(),
+  token: z.string().optional(),
 });
 
 export type RegisterDto = z.infer<typeof registerSchema>;

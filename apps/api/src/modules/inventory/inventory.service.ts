@@ -7,7 +7,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, In, IsNull } from 'typeorm';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { Product, ValuationMethod } from './entities/product.entity';
@@ -66,8 +66,6 @@ export class InventoryService implements OnModuleInit {
     this.logger.log('Scheduled daily reorder point checks');
   }
 
-  // ─── PRODUCTS & VARIANTS ──────────────────────────────────────
-
   async createProduct(dto: Partial<Product>): Promise<Product> {
     const exists = await this.productRepo.findOne({ where: { sku: dto.sku } });
     if (exists) throw new ConflictException(`SKU "${dto.sku}" already exists`);
@@ -82,8 +80,6 @@ export class InventoryService implements OnModuleInit {
     const variant = this.variantRepo.create(dto);
     return this.variantRepo.save(variant);
   }
-
-  // ─── WAREHOUSE HIERARCHY ─────────────────────────────────────
 
   async createWarehouse(dto: Partial<Warehouse>): Promise<Warehouse> {
     const wh = this.warehouseRepo.create(dto);
@@ -105,8 +101,6 @@ export class InventoryService implements OnModuleInit {
     return this.binRepo.save(bin);
   }
 
-  // ─── STOCK OPERATIONS ────────────────────────────────────────
-
   /**
    * Receive stock into a warehouse/bin. Creates a new batch.
    */
@@ -126,7 +120,7 @@ export class InventoryService implements OnModuleInit {
       let batch = await manager.findOne(Batch, {
         where: {
           productId: dto.productId,
-          variantId: dto.variantId || null,
+          variantId: dto.variantId || IsNull(),
           batchNumber: dto.batchNumber,
         },
       });
@@ -148,24 +142,32 @@ export class InventoryService implements OnModuleInit {
       await manager.save(batch);
 
       // 2. Update Moving Average Cost if using Weighted Average
-      const product = await manager.findOne(Product, { where: { id: dto.productId } });
-      if (product && product.valuationMethod === ValuationMethod.WEIGHTED_AVERAGE) {
-        const totalStockResult = await manager.createQueryBuilder(Batch, 'b')
+      const product = await manager.findOne(Product, {
+        where: { id: dto.productId },
+      });
+      if (
+        product &&
+        product.valuationMethod === ValuationMethod.WEIGHTED_AVERAGE
+      ) {
+        const totalStockResult = await manager
+          .createQueryBuilder(Batch, 'b')
           .where('b.productId = :pid', { pid: dto.productId })
           .select('SUM(b.remainingQuantity)', 'total')
           .addSelect('SUM(b.remainingQuantity * b.unitCost)', 'value')
           .getRawOne();
-        
+
         const currentQty = Number(totalStockResult?.total || 0);
         const currentValue = Number(totalStockResult?.value || 0);
-        
+
         const newTotalQty = currentQty + dto.quantity;
-        const newTotalValue = currentValue + (dto.quantity * dto.unitCost);
-        
+        const newTotalValue = currentValue + dto.quantity * dto.unitCost;
+
         if (newTotalQty > 0) {
           product.basePrice = newTotalValue / newTotalQty;
           await manager.save(product);
-          this.logger.log(`Updated Weighted Average Cost for ${product.sku}: ${product.basePrice}`);
+          this.logger.log(
+            `Updated Weighted Average Cost for ${product.sku}: ${product.basePrice}`,
+          );
         }
       }
 
@@ -379,13 +381,9 @@ export class InventoryService implements OnModuleInit {
     });
   }
 
-  // ─── ANALYTICS & REPORTS ─────────────────────────────────────
-
   async getStockLevels(productId?: string, warehouseId?: string) {
     // ... (existing code)
   }
-
-  // ─── PHYSICAL STOCK COUNT ────────────────────────────────────
 
   async startStockCount(warehouseId: string, notes?: string) {
     return this.dataSource.transaction(async (manager) => {
@@ -461,12 +459,25 @@ export class InventoryService implements OnModuleInit {
 
     // We'll use QueryBuilder for a more efficient aging bucket report
     const now = new Date();
-    const result = await this.batchRepo.createQueryBuilder('b')
+    const result = await this.batchRepo
+      .createQueryBuilder('b')
       .select('b.productId', 'productId')
-      .addSelect("SUM(CASE WHEN b.receivedDate > :thirtyDays THEN b.remainingQuantity ELSE 0 END)", '0_30_days')
-      .addSelect("SUM(CASE WHEN b.receivedDate <= :thirtyDays AND b.receivedDate > :sixtyDays THEN b.remainingQuantity ELSE 0 END)", '31_60_days')
-      .addSelect("SUM(CASE WHEN b.receivedDate <= :sixtyDays AND b.receivedDate > :ninetyDays THEN b.remainingQuantity ELSE 0 END)", '61_90_days')
-      .addSelect("SUM(CASE WHEN b.receivedDate <= :ninetyDays THEN b.remainingQuantity ELSE 0 END)", 'over_90_days')
+      .addSelect(
+        'SUM(CASE WHEN b.receivedDate > :thirtyDays THEN b.remainingQuantity ELSE 0 END)',
+        '0_30_days',
+      )
+      .addSelect(
+        'SUM(CASE WHEN b.receivedDate <= :thirtyDays AND b.receivedDate > :sixtyDays THEN b.remainingQuantity ELSE 0 END)',
+        '31_60_days',
+      )
+      .addSelect(
+        'SUM(CASE WHEN b.receivedDate <= :sixtyDays AND b.receivedDate > :ninetyDays THEN b.remainingQuantity ELSE 0 END)',
+        '61_90_days',
+      )
+      .addSelect(
+        'SUM(CASE WHEN b.receivedDate <= :ninetyDays THEN b.remainingQuantity ELSE 0 END)',
+        'over_90_days',
+      )
       .setParameters({
         thirtyDays: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
         sixtyDays: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000),
@@ -480,7 +491,7 @@ export class InventoryService implements OnModuleInit {
 
   async checkReorderPoints() {
     const products = await this.productRepo.find();
-    const alerts = [];
+    const alerts: any[] = [];
 
     for (const product of products) {
       const stock = await this.batchRepo

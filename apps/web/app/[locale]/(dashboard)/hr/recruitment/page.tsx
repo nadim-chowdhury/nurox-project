@@ -183,7 +183,7 @@ export default function RecruitmentPage() {
         dataIndex: "skills",
         render: (skills: string[]) => (
             <Space size={[0, 4]} wrap>
-                {skills?.map(s => <Tag key={s} size="small">{s}</Tag>)}
+                {skills?.map(s => <Tag key={s}>{s}</Tag>)}
             </Space>
         )
     },

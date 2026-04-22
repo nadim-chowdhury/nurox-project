@@ -26,8 +26,6 @@ import { Permission } from '../auth/enums/permissions.enum';
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
-  // ─── PROJECTS ──────────────────────────────────────────────
-
   @Post()
   @RequirePermissions(Permission.PROJECTS_MANAGE)
   createProject(@Body() dto: CreateProjectDto) {
@@ -61,8 +59,6 @@ export class ProjectsController {
   removeProject(@Param('id', ParseUUIDPipe) id: string) {
     return this.projectsService.removeProject(id);
   }
-
-  // ─── TASKS ────────────────────────────────────────────────
 
   @Post('tasks')
   @RequirePermissions(Permission.PROJECTS_MANAGE)

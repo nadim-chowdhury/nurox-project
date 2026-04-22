@@ -4,23 +4,31 @@ import React from "react";
 import { Form, Input, Button, Typography, Divider, Alert } from "antd";
 import { UserOutlined, MailOutlined, LockOutlined } from "@ant-design/icons";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useRegisterMutation } from "@/store/api/authApi";
+import { jwtDecode } from "jwt-decode";
 
 const { Title, Text } = Typography;
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
+  
   const [register, { isLoading, error }] = useRegisterMutation();
 
-  const onFinish = async (values: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    password: string;
-  }) => {
+  const inviteData = React.useMemo(() => {
+    if (!token) return null;
     try {
-      await register(values).unwrap();
+      return jwtDecode<{ email: string; firstName?: string; lastName?: string }>(token);
+    } catch {
+      return null;
+    }
+  }, [token]);
+
+  const onFinish = async (values: any) => {
+    try {
+      await register({ ...values, token: token || undefined }).unwrap();
       router.push("/dashboard");
     } catch {
       // Error state handled by RTK Query
@@ -47,7 +55,7 @@ export default function RegisterPage() {
         <Text
           style={{ color: "var(--color-on-surface-variant)", fontSize: 14 }}
         >
-          Create your account
+          {token ? "Complete your registration" : "Create your account"}
         </Text>
       </div>
 
@@ -69,7 +77,7 @@ export default function RegisterPage() {
             marginBottom: 4,
           }}
         >
-          Get started
+          {token ? "Welcome!" : "Get started"}
         </Title>
         <Text
           style={{
@@ -79,7 +87,9 @@ export default function RegisterPage() {
             marginBottom: 24,
           }}
         >
-          Fill in your details to create a new workspace account
+          {token 
+            ? "Set your details and password to join your organization."
+            : "Fill in your details to create a new workspace account"}
         </Text>
 
         {apiError?.data?.message && (
@@ -97,6 +107,11 @@ export default function RegisterPage() {
           onFinish={onFinish}
           requiredMark={false}
           size="large"
+          initialValues={{
+            firstName: inviteData?.firstName,
+            lastName: inviteData?.lastName,
+            email: inviteData?.email,
+          }}
         >
           <div style={{ display: "flex", gap: 12 }}>
             <Form.Item
@@ -168,6 +183,7 @@ export default function RegisterPage() {
               }
               placeholder="you@company.com"
               autoComplete="email"
+              disabled={!!inviteData?.email}
             />
           </Form.Item>
 
@@ -243,37 +259,41 @@ export default function RegisterPage() {
               block
               style={{ height: 44, fontWeight: 600 }}
             >
-              Create Account
+              {token ? "Join Workspace" : "Create Account"}
             </Button>
           </Form.Item>
         </Form>
 
-        <Divider
-          style={{
-            borderColor: "var(--ghost-border)",
-            margin: "16px 0",
-          }}
-        >
-          <Text
-            style={{ color: "var(--color-on-surface-variant)", fontSize: 12 }}
-          >
-            OR
-          </Text>
-        </Divider>
-
-        <div style={{ textAlign: "center" }}>
-          <Text
-            style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
-          >
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              style={{ color: "var(--color-primary)", fontWeight: 500 }}
+        {!token && (
+          <>
+            <Divider
+              style={{
+                borderColor: "var(--ghost-border)",
+                margin: "16px 0",
+              }}
             >
-              Sign in
-            </Link>
-          </Text>
-        </div>
+              <Text
+                style={{ color: "var(--color-on-surface-variant)", fontSize: 12 }}
+              >
+                OR
+              </Text>
+            </Divider>
+
+            <div style={{ textAlign: "center" }}>
+              <Text
+                style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
+              >
+                Already have an account?{" "}
+                <Link
+                  href="/login"
+                  style={{ color: "var(--color-primary)", fontWeight: 500 }}
+                >
+                  Sign in
+                </Link>
+              </Text>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Footer */}

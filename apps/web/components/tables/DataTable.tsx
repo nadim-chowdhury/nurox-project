@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Table, type TableProps } from "antd";
+import { SkeletonTable } from "../common/SkeletonTable";
 
 interface DataTableProps<T> extends TableProps<T> {
   loading?: boolean;
@@ -18,6 +19,10 @@ export function DataTable<T extends object>({
   loading,
   ...props
 }: DataTableProps<T>) {
+  if (loading && (!props.dataSource || props.dataSource.length === 0)) {
+    return <SkeletonTable columns={props.columns?.length || 5} rows={10} />;
+  }
+
   return (
     <Table
       {...props}

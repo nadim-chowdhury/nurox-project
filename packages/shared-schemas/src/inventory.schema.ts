@@ -32,7 +32,7 @@ export const productVariantSchema = z.object({
   productId: z.string().uuid(),
   sku: z.string().min(1),
   name: z.string().min(1),
-  attributeValues: z.record(z.string()).optional(), // e.g. { size: 'L', color: 'Blue' }
+  attributeValues: z.record(z.string(), z.string()).optional(), // e.g. { size: 'L', color: 'Blue' }
   priceAdjustment: z.number().default(0),
   isActive: z.boolean().default(true),
 });

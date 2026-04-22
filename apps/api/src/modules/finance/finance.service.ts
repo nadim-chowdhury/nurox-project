@@ -5,8 +5,16 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThanOrEqual, MoreThanOrEqual, In, IsNull, Like } from 'typeorm';
+import {
+  Repository,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  In,
+  IsNull,
+  Like,
+} from 'typeorm';
 import { Account, AccountType } from './entities/account.entity';
 import { Invoice, InvoiceLine, InvoiceStatus } from './entities/invoice.entity';
 import {
@@ -66,26 +74,24 @@ export class FinanceService {
 
   // ... (revenue methods remain same)
 
-  // ─── HELPERS ───────────────────────────────────────────────
-
   private async findAccountByCode(code: string): Promise<Account> {
     const acc = await this.accountRepo.findOne({ where: { code } });
     if (!acc) {
       // In a real system, we might want to auto-create or throw a specific error
-      throw new NotFoundException(`System Account with code "${code}" not found. Please ensure Chart of Accounts is seeded.`);
+      throw new NotFoundException(
+        `System Account with code "${code}" not found. Please ensure Chart of Accounts is seeded.`,
+      );
     }
     return acc;
   }
 
-  // ─── ACCOUNTS ───────────────────────────────────────────────
-
   async findAllAccountsTree() {
     const accounts = await this.accountRepo.find({ order: { code: 'ASC' } });
-    
+
     const buildTree = (parentId: string | null = null): any[] => {
       return accounts
-        .filter(acc => acc.parentId === parentId)
-        .map(acc => ({
+        .filter((acc) => acc.parentId === parentId)
+        .map((acc) => ({
           ...acc,
           children: buildTree(acc.id),
         }));
@@ -95,8 +101,6 @@ export class FinanceService {
   }
 
   // ... (other account methods)
-
-  // ─── REPORTS ────────────────────────────────────────────────
 
   async getIncomeStatement(startDate: string, endDate: string) {
     const revenueAccounts = await this.accountRepo.find({
@@ -149,7 +153,7 @@ export class FinanceService {
 
   async getBalanceSheet(asOfDate: string) {
     const accounts = await this.accountRepo.find();
-    
+
     const calculateBalance = async (accId: string) => {
       const result = await this.journalLineRepo
         .createQueryBuilder('line')
@@ -161,14 +165,18 @@ export class FinanceService {
       return Number(result.balance) || 0;
     };
 
-    const assets = [];
-    const liabilities = [];
-    const equity = [];
+    const assets: { name: string; code: string; balance: number }[] = [];
+    const liabilities: { name: string; code: string; balance: number }[] = [];
+    const equity: { name: string; code: string; balance: number }[] = [];
 
     for (const acc of accounts) {
       const balance = await calculateBalance(acc.id);
-      const item = { name: acc.name, code: acc.code, balance: Math.abs(balance) };
-      
+      const item = {
+        name: acc.name,
+        code: acc.code,
+        balance: Math.abs(balance),
+      };
+
       if (acc.type === AccountType.ASSET) assets.push(item);
       else if (acc.type === AccountType.LIABILITY) liabilities.push(item);
       else if (acc.type === AccountType.EQUITY) equity.push(item);
@@ -193,7 +201,9 @@ export class FinanceService {
     const lines = await this.journalLineRepo
       .createQueryBuilder('line')
       .innerJoinAndSelect('line.journalEntry', 'entry')
-      .where('line.accountId IN (:...ids)', { ids: cashAccounts.map(a => a.id) })
+      .where('line.accountId IN (:...ids)', {
+        ids: cashAccounts.map((a) => a.id),
+      })
       .andWhere('entry.entryDate >= :startDate', { startDate })
       .andWhere('entry.entryDate <= :endDate', { endDate })
       .getMany();
@@ -205,11 +215,12 @@ export class FinanceService {
       period: { startDate, endDate },
       totalInflow: lines.reduce((sum, l) => sum + Number(l.debit), 0),
       totalOutflow: lines.reduce((sum, l) => sum + Number(l.credit), 0),
-      netCashFlow: lines.reduce((sum, l) => sum + (Number(l.debit) - Number(l.credit)), 0),
+      netCashFlow: lines.reduce(
+        (sum, l) => sum + (Number(l.debit) - Number(l.credit)),
+        0,
+      ),
     };
   }
-
-  // ─── AR REMINDERS ───────────────────────────────────────────
 
   async scheduleARReminders() {
     const overdueInvoices = await this.invoiceRepo.find({
@@ -217,15 +228,19 @@ export class FinanceService {
     });
 
     for (const inv of overdueInvoices) {
-      await this.arReminderQueue.add('send_reminder', {
-        invoiceId: inv.id,
-        customerEmail: inv.customerEmail,
-        invoiceNumber: inv.invoiceNumber,
-        amount: inv.totalAmount - inv.paidAmount,
-      }, {
-        attempts: 3,
-        backoff: 5000,
-      });
+      await this.arReminderQueue.add(
+        'send_reminder',
+        {
+          invoiceId: inv.id,
+          customerEmail: inv.customerEmail,
+          invoiceNumber: inv.invoiceNumber,
+          amount: inv.totalAmount - inv.paidAmount,
+        },
+        {
+          attempts: 3,
+          backoff: 5000,
+        },
+      );
     }
 
     return { count: overdueInvoices.length };
@@ -234,7 +249,7 @@ export class FinanceService {
   async closePeriod(id: string): Promise<AccountingPeriod> {
     const period = await this.periodRepo.findOne({ where: { id } });
     if (!period) throw new NotFoundException('Period not found');
-    
+
     if (period.status === PeriodStatus.CLOSED) {
       throw new BadRequestException('Period is already closed');
     }
@@ -270,8 +285,6 @@ export class FinanceService {
     });
   }
 
-  // ─── ACCOUNTS ───────────────────────────────────────────────
-
   async createAccount(dto: CreateAccountDto): Promise<Account> {
     const exists = await this.accountRepo.findOne({
       where: { code: dto.code },
@@ -305,8 +318,6 @@ export class FinanceService {
     await this.findAccountById(id);
     await this.accountRepo.softDelete(id);
   }
-
-  // ─── INVOICES ───────────────────────────────────────────────
 
   async createInvoice(dto: CreateInvoiceDto): Promise<Invoice> {
     const exists = await this.invoiceRepo.findOne({
@@ -389,9 +400,9 @@ export class FinanceService {
             credit: 0,
           },
           {
-            accountId: arAccount.id, 
-            debit: 0, 
-            credit: invoice.totalAmount 
+            accountId: arAccount.id,
+            debit: 0,
+            credit: invoice.totalAmount,
           },
         ],
       });
@@ -403,13 +414,10 @@ export class FinanceService {
     return this.findInvoiceById(id);
   }
 
-
   async removeInvoice(id: string): Promise<void> {
     await this.findInvoiceById(id);
     await this.invoiceRepo.softDelete(id);
   }
-
-  // ─── JOURNALS ───────────────────────────────────────────────
 
   async createJournalEntry(dto: CreateJournalEntryDto): Promise<JournalEntry> {
     const totalDebit = dto.lines.reduce((s, l) => s + Number(l.debit), 0);
@@ -495,15 +503,15 @@ export class FinanceService {
     await this.journalRepo.softDelete(id);
   }
 
-  // ─── BILLS ──────────────────────────────────────────────────
-
   async createBill(dto: any): Promise<Bill> {
     // 3-Way Matching Logic
     if (dto.purchaseOrderId && dto.grnId) {
       // In a real system, we would inject PurchaseOrderRepo and GrnRepo
       // For now, we simulate the validation logic
-      this.logger.log(`Performing 3-way match for PO: ${dto.purchaseOrderId} and GRN: ${dto.grnId}`);
-      
+      this.logger.log(
+        `Performing 3-way match for PO: ${dto.purchaseOrderId} and GRN: ${dto.grnId}`,
+      );
+
       // Validation: Sum of bill line quantities should not exceed GRN quantities
       // Validation: Bill prices should match PO prices (within tolerance)
     }
@@ -532,9 +540,9 @@ export class FinanceService {
     });
 
     const saved = await this.billRepo.save(bill);
-    this.logger.log(`Bill created: ${saved.billNumber}`);
+    this.logger.log(`Bill created: ${(saved as any).billNumber}`);
 
-    return saved;
+    return saved as any;
   }
 
   async findAllBills(page = 1, limit = 20) {
@@ -567,32 +575,30 @@ export class FinanceService {
       const apAccount = await this.findAccountByCode('2100');
 
       await this.createJournalEntry({
-        entryNumber: `BILL-${bill.billNumber}`,
+        entryNumber: `BILL-${(bill as Bill).billNumber}`,
         entryDate: new Date().toISOString(),
-        description: `Expense recorded for Bill ${bill.billNumber}`,
-        reference: bill.billNumber,
+        description: `Expense recorded for Bill ${(bill as Bill).billNumber}`,
+        reference: (bill as Bill).billNumber,
         lines: [
           {
             accountId: expenseAccount.id,
-            debit: bill.totalAmount,
+            debit: (bill as Bill).totalAmount,
             credit: 0,
           },
           {
             accountId: apAccount.id,
             debit: 0,
-            credit: bill.totalAmount,
+            credit: (bill as Bill).totalAmount,
           },
         ],
       });
       this.logger.log(
-        `Auto-journal posted for approved bill: ${bill.billNumber}`,
+        `Auto-journal posted for approved bill: ${(bill as Bill).billNumber}`,
       );
     }
 
-    return saved;
+    return saved as Bill;
   }
-
-  // ─── REPORTS ────────────────────────────────────────────────
 
   async getTrialBalance() {
     const accounts = await this.accountRepo.find({ where: { isActive: true } });
@@ -630,8 +636,6 @@ export class FinanceService {
     return { data, meta: { total, page, limit } };
   }
 
-  // ─── INTEGRATIONS ───────────────────────────────────────────
-
   async recordPayrollDisbursement(totalNetPay: number, payrollRef: string) {
     const cashAccount = await this.findAccountByCode('1010');
     const salaryExpenseAccount = await this.findAccountByCode('5100'); // Salaries
@@ -648,7 +652,11 @@ export class FinanceService {
     });
   }
 
-  async recordAssetDepreciation(assetId: string, assetName: string, amount: number) {
+  async recordAssetDepreciation(
+    assetId: string,
+    assetName: string,
+    amount: number,
+  ) {
     const deprExpenseAccount = await this.findAccountByCode('5500'); // Depreciation Exp
     const accumDeprAccount = await this.findAccountByCode('1810'); // Accum Depreciation
 
@@ -701,17 +709,15 @@ export class FinanceService {
     return aging;
   }
 
-  // ─── BANK RECONCILIATION ────────────────────────────────────
-
   async importBankStatement(bankAccountId: string, transactions: any[]) {
-    const saved = [];
+    const saved: BankTransaction[] = [];
     for (const trx of transactions) {
       const entry = this.bankTransactionRepo.create({
         ...trx,
         bankAccountId,
         status: TransactionStatus.UNRECONCILED,
       });
-      saved.push(await this.bankTransactionRepo.save(entry));
+      saved.push((await this.bankTransactionRepo.save(entry)) as any);
     }
     return saved;
   }
@@ -726,8 +732,6 @@ export class FinanceService {
     trx.matchedJournalEntryId = journalEntryId;
     return this.bankTransactionRepo.save(trx);
   }
-
-  // ─── TAX RATES ──────────────────────────────────────────────
 
   async createTaxRate(dto: any) {
     const taxRate = this.taxRateRepo.create(dto);
@@ -753,7 +757,7 @@ export class FinanceService {
       budgets.map(async (budget) => {
         const startDate = `${period}-01`;
         const endDate = `${period}-31`; // Simplified
-        
+
         const actualResult = await this.journalLineRepo
           .createQueryBuilder('line')
           .innerJoin('line.journalEntry', 'entry')
@@ -762,10 +766,13 @@ export class FinanceService {
           .andWhere('entry.entryDate >= :startDate', { startDate })
           .andWhere('entry.entryDate <= :endDate', { endDate })
           .getRawOne();
-        
+
         const actual = Math.abs(Number(actualResult.balance) || 0);
         const variance = actual - Number(budget.amount);
-        const variancePercent = Number(budget.amount) !== 0 ? (variance / Number(budget.amount)) * 100 : 0;
+        const variancePercent =
+          Number(budget.amount) !== 0
+            ? (variance / Number(budget.amount)) * 100
+            : 0;
 
         return {
           accountName: budget.account?.name || 'Unknown',
@@ -780,8 +787,6 @@ export class FinanceService {
 
     return report;
   }
-
-  // ─── EXPORTS ────────────────────────────────────────────────
 
   async exportTrialBalancePdf() {
     const data = await this.getTrialBalance();
@@ -819,8 +824,6 @@ export class FinanceService {
     return Buffer.from(buffer);
   }
 
-  // ─── EVENT HANDLERS ────────────────────────────────────────
-
   @OnEvent('payroll.processed')
   async handlePayrollProcessed(payload: {
     runId: string;
@@ -829,7 +832,9 @@ export class FinanceService {
     totalDeductions: number;
     period: string;
   }) {
-    this.logger.log(`Handling payroll processed event for period: ${payload.period}`);
+    this.logger.log(
+      `Handling payroll processed event for period: ${payload.period}`,
+    );
     await this.recordPayrollDisbursement(payload.totalNet, payload.period);
   }
 }

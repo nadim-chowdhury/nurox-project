@@ -40,18 +40,22 @@ export class PayrollComputeService {
 
     // Leave Encashment Calculation
     if (leaveEncashmentDays > 0) {
-        const perDaySalary = baseSalary / 30; // Standard 30 days divisor
-        const encashmentAmount = leaveEncashmentDays * perDaySalary;
-        items.push({ name: 'Leave Encashment', amount: encashmentAmount, type: 'EARNING' });
-        grossPay += encashmentAmount;
-        taxableAmount += encashmentAmount;
+      const perDaySalary = baseSalary / 30; // Standard 30 days divisor
+      const encashmentAmount = leaveEncashmentDays * perDaySalary;
+      items.push({
+        name: 'Leave Encashment',
+        amount: encashmentAmount,
+        type: 'EARNING',
+      });
+      grossPay += encashmentAmount;
+      taxableAmount += encashmentAmount;
     }
 
     // Arrears Calculation
     if (arrears > 0) {
-        items.push({ name: 'Salary Arrears', amount: arrears, type: 'EARNING' });
-        grossPay += arrears;
-        taxableAmount += arrears;
+      items.push({ name: 'Salary Arrears', amount: arrears, type: 'EARNING' });
+      grossPay += arrears;
+      taxableAmount += arrears;
     }
 
     // 2. Add Earnings from Structure (handling dependsOn)
@@ -59,7 +63,9 @@ export class PayrollComputeService {
       (c) => c.type === PayrollComponentType.EARNING,
     )) {
       let amount = 0;
-      const baseForComp = comp.dependsOn ? (resolvedValues.get(comp.dependsOn) || baseSalary) : baseSalary;
+      const baseForComp = comp.dependsOn
+        ? resolvedValues.get(comp.dependsOn) || baseSalary
+        : baseSalary;
 
       if (comp.amountType === AmountType.FIXED) {
         amount = Number(comp.value);
@@ -94,7 +100,9 @@ export class PayrollComputeService {
       (c) => c.type === PayrollComponentType.DEDUCTION,
     )) {
       let amount = 0;
-      const baseForComp = comp.dependsOn ? (resolvedValues.get(comp.dependsOn) || baseSalary) : baseSalary;
+      const baseForComp = comp.dependsOn
+        ? resolvedValues.get(comp.dependsOn) || baseSalary
+        : baseSalary;
 
       if (comp.amountType === AmountType.FIXED) {
         amount = Number(comp.value);
@@ -126,7 +134,7 @@ export class PayrollComputeService {
       totalDeductions += pfAmount;
 
       // Employer PF (Usually matched or slightly different)
-      employerPfContribution = pfAmount; 
+      employerPfContribution = pfAmount;
     }
 
     // Income Tax Calculation (Monthly projection)

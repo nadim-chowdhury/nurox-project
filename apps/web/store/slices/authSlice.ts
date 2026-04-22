@@ -8,6 +8,7 @@ export interface AuthUser {
   role: string;
   avatarUrl?: string | null;
   phone?: string | null;
+  isTwoFactorEnabled?: boolean;
 }
 
 export interface AuthState {

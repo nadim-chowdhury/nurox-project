@@ -25,8 +25,6 @@ import { Permission } from '../auth/enums/permissions.enum';
 export class PayrollController {
   constructor(private readonly payrollService: PayrollService) {}
 
-  // ─── SALARY STRUCTURES ──────────────────────────────────────
-
   @Post('structures')
   @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
   createStructure(@Body() dto: any) {
@@ -48,8 +46,6 @@ export class PayrollController {
     return this.payrollService.assignStructure(employeeId, structureId);
   }
 
-  // ─── TAX CONFIGURATIONS ────────────────────────────────────
-
   @Get('tax-configs')
   @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
   findAllTaxConfigs() {
@@ -61,8 +57,6 @@ export class PayrollController {
   createTaxConfig(@Body() dto: any) {
     return this.payrollService.createTaxConfig(dto);
   }
-
-  // ─── PAYROLL RUNS ──────────────────────────────────────────
 
   @Post('runs')
   @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
@@ -107,8 +101,6 @@ export class PayrollController {
     });
     res.send(content);
   }
-
-  // ─── PAYSLIPS ──────────────────────────────────────────────
 
   @Get('me/payslips')
   getMyPayslips(@Query('employeeId') employeeId: string) {

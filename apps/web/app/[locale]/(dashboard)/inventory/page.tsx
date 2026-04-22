@@ -55,11 +55,11 @@ export default function InventoryPage() {
           <KpiCard title="Total SKU" value="1,240" />
         </Col>
         <Col xs={12} sm={6}>
-          <KpiCard 
-            title="Low Stock Alerts" 
-            value={alerts?.length?.toString() || "0"} 
-            status={alerts?.length ? "error" : "success"}
+          <KpiCard
+            title="Low Stock Alerts"
+            value={alerts?.length?.toString() || "0"}
           />
+
         </Col>
         <Col xs={12} sm={6}>
           <KpiCard title="Active Warehouses" value="4" />

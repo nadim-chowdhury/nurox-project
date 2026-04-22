@@ -11,17 +11,25 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLoginMutation } from "@/store/api/authApi";
+import { ForcePasswordChangeModal } from "@/components/modules/auth/ForcePasswordChangeModal";
 
 const { Title, Text } = Typography;
 
 export default function LoginPage() {
   const router = useRouter();
   const [login, { isLoading, error }] = useLoginMutation();
+  const [showForcePassword, setShowForcePassword] = React.useState(false);
+  const [tempUser, setTempUser] = React.useState<any>(null);
 
   const onFinish = async (values: { email: string; password: string }) => {
     try {
-      await login(values).unwrap();
-      router.push("/dashboard");
+      const result = await login(values).unwrap();
+      if (result.user.forcePasswordChange) {
+        setTempUser(result.user);
+        setShowForcePassword(true);
+      } else {
+        router.push("/dashboard");
+      }
     } catch {
       // Error state handled by RTK Query
     }
@@ -249,6 +257,12 @@ export default function LoginPage() {
           © {new Date().getFullYear()} Nurox ERP — All rights reserved
         </Text>
       </div>
+
+      <ForcePasswordChangeModal 
+        visible={showForcePassword} 
+        user={tempUser} 
+        onSuccess={() => router.push("/dashboard")} 
+      />
     </div>
   );
 }

@@ -56,6 +56,13 @@ export class StorageService {
   }
 
   /**
+   * Alias for getViewPresignedUrl for downloading.
+   */
+  async getDownloadPresignedUrl(key: string): Promise<string> {
+    return this.getViewPresignedUrl(key);
+  }
+
+  /**
    * Returns the public URL for a file (if the bucket is public).
    */
   getPublicUrl(key: string): string {

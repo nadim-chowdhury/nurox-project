@@ -1,11 +1,11 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "@/lib/api-client";
-import type { 
+import type {
   AttendanceRecordDto,
   LeaveRequestDto,
   LeaveBalanceDto,
   HolidayDto,
-  ShiftDto
+  ShiftDto,
 } from "@repo/shared-schemas";
 
 export const attendanceApi = createApi({
@@ -13,7 +13,6 @@ export const attendanceApi = createApi({
   baseQuery: baseQueryWithReauth,
   tagTypes: ["Attendance", "LeaveRequest", "LeaveBalance", "Holiday", "Shift"],
   endpoints: (builder) => ({
-    // ─── ATTENDANCE ─────────────────────────────────────────────
     getTeamAttendance: builder.query<any[], { date?: string }>({
       query: (params) => ({
         url: "/hr/attendance/team",
@@ -22,7 +21,16 @@ export const attendanceApi = createApi({
       providesTags: ["Attendance"],
     }),
 
-    checkIn: builder.mutation<any, { employeeId: string; method: string; token?: string; location?: any; timestamp?: string }>({
+    checkIn: builder.mutation<
+      any,
+      {
+        employeeId: string;
+        method: string;
+        token?: string;
+        location?: any;
+        timestamp?: string;
+      }
+    >({
       query: (body) => ({
         url: "/hr/attendance/check-in",
         method: "POST",
@@ -31,7 +39,10 @@ export const attendanceApi = createApi({
       invalidatesTags: ["Attendance"],
     }),
 
-    checkOut: builder.mutation<any, { employeeId: string; method: string; location?: any; timestamp?: string }>({
+    checkOut: builder.mutation<
+      any,
+      { employeeId: string; method: string; location?: any; timestamp?: string }
+    >({
       query: (body) => ({
         url: "/hr/attendance/check-out",
         method: "POST",
@@ -44,24 +55,27 @@ export const attendanceApi = createApi({
       query: (employeeId) => ({
         url: "/hr/attendance/qr",
         method: "POST", // Adjusted to match expected client behavior for body use
-        body: { employeeId }
+        body: { employeeId },
       }),
     }),
 
     bulkImportAttendance: builder.mutation<any, any[]>({
-        query: (records) => ({
-            url: "/hr/attendance/bulk",
-            method: "POST",
-            body: records,
-        }),
-        invalidatesTags: ["Attendance"],
+      query: (records) => ({
+        url: "/hr/attendance/bulk",
+        method: "POST",
+        body: records,
+      }),
+      invalidatesTags: ["Attendance"],
     }),
 
-    getAttendanceReportUrl: builder.query<string, { month: number; year: number }>({
-        query: ({ month, year }) => `/hr/attendance/report?month=${month}&year=${year}`,
+    getAttendanceReportUrl: builder.query<
+      string,
+      { month: number; year: number }
+    >({
+      query: ({ month, year }) =>
+        `/hr/attendance/report?month=${month}&year=${year}`,
     }),
 
-    // ─── LEAVE MANAGEMENT ────────────────────────────────────────
     applyLeave: builder.mutation<LeaveRequestDto, any>({
       query: (body) => ({
         url: "/hr/leaves/apply",
@@ -77,11 +91,14 @@ export const attendanceApi = createApi({
     }),
 
     getLeaveRequests: builder.query<any[], void>({
-        query: () => "/hr/leaves",
-        providesTags: ["LeaveRequest"],
+      query: () => "/hr/leaves",
+      providesTags: ["LeaveRequest"],
     }),
 
-    approveLeave: builder.mutation<any, { id: string; status: string; approvedBy: string }>({
+    approveLeave: builder.mutation<
+      any,
+      { id: string; status: string; approvedBy: string }
+    >({
       query: ({ id, ...body }) => ({
         url: `/hr/leaves/${id}/approve`,
         method: "PATCH",

@@ -27,8 +27,6 @@ import { Res } from '@nestjs/common';
 export class FinanceController {
   constructor(private readonly financeService: FinanceService) {}
 
-  // ─── ACCOUNTS ───────────────────────────────────────────────
-
   @Post('accounts')
   createAccount(@Body() dto: CreateAccountDto) {
     return this.financeService.createAccount(dto);
@@ -62,8 +60,6 @@ export class FinanceController {
   removeAccount(@Param('id', ParseUUIDPipe) id: string) {
     return this.financeService.removeAccount(id);
   }
-
-  // ─── INVOICES ───────────────────────────────────────────────
 
   @Post('invoices')
   createInvoice(@Body() dto: CreateInvoiceDto) {
@@ -100,8 +96,6 @@ export class FinanceController {
     return this.financeService.removeInvoice(id);
   }
 
-  // ─── JOURNALS ───────────────────────────────────────────────
-
   @Post('journals')
   createJournal(@Body() dto: CreateJournalEntryDto) {
     return this.financeService.createJournalEntry(dto);
@@ -129,8 +123,6 @@ export class FinanceController {
     return this.financeService.removeJournal(id);
   }
 
-  // ─── BILLS ──────────────────────────────────────────────────
-
   @Get('bills')
   findAllBills(@Query('page') page?: string, @Query('limit') limit?: string) {
     return this.financeService.findAllBills(
@@ -156,8 +148,6 @@ export class FinanceController {
   ) {
     return this.financeService.updateBillStatus(id, status);
   }
-
-  // ─── REPORTS ────────────────────────────────────────────────
 
   @Get('reports/trial-balance')
   getTrialBalance() {
@@ -245,8 +235,6 @@ export class FinanceController {
     res.end(buffer);
   }
 
-  // ─── BANKING ────────────────────────────────────────────────
-
   @Post('banking/:bankAccountId/import')
   importStatement(
     @Param('bankAccountId', ParseUUIDPipe) bankAccountId: string,
@@ -266,8 +254,6 @@ export class FinanceController {
     );
   }
 
-  // ─── TAX RATES ──────────────────────────────────────────────
-
   @Post('tax-rates')
   createTaxRate(@Body() dto: any) {
     return this.financeService.createTaxRate(dto);
@@ -279,10 +265,7 @@ export class FinanceController {
   }
 
   @Patch('tax-rates/:id')
-  updateTaxRate(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: any,
-  ) {
+  updateTaxRate(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
     return this.financeService.updateTaxRate(id, dto);
   }
 }

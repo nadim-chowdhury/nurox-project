@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Card,
   Descriptions,
@@ -23,6 +23,9 @@ import {
   ArrowLeftOutlined,
   BankOutlined,
   EnvironmentOutlined,
+  SwapOutlined,
+  StopOutlined,
+  DollarCircleOutlined,
 } from "@ant-design/icons";
 import { useParams, useRouter } from "next/navigation";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -33,19 +36,28 @@ import { formatDate, formatCurrency } from "@/lib/utils";
 import { 
     useGetEmployeeQuery, 
     useGetEmployeeHistoryQuery,
+    useGetSalaryHistoryQuery,
     useTransferEmployeeMutation,
     useTerminateEmployeeMutation 
 } from "@/store/api/hrApi";
+import { EmployeeHistoryTimeline } from "@/components/modules/hr/EmployeeHistoryTimeline";
+import { TransferEmployeeModal } from "@/components/modules/hr/employees/TransferEmployeeModal";
+import { TerminateEmployeeModal } from "@/components/modules/hr/employees/TerminateEmployeeModal";
+import { UpdateSalaryModal } from "@/components/modules/hr/employees/UpdateSalaryModal";
 
 export default function EmployeeProfilePage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
 
-  const { data: emp, isLoading: isEmpLoading } = useGetEmployeeQuery(id);
-  const { data: history, isLoading: isHistoryLoading } = useGetEmployeeHistoryQuery(id);
+  const [transferVisible, setTransferVisible] = useState(false);
+  const [terminateVisible, setTerminateVisible] = useState(false);
+  const [salaryVisible, setSalaryVisible] = useState(false);
 
-  if (isEmpLoading || isHistoryLoading) {
+  const { data: emp, isLoading: isEmpLoading } = useGetEmployeeQuery(id);
+  const { data: salaryHistory, isLoading: isSalaryLoading } = useGetSalaryHistoryQuery(id);
+
+  if (isEmpLoading || isSalaryLoading) {
       return (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
               <Spin size="large" />
@@ -59,7 +71,7 @@ export default function EmployeeProfilePage() {
     <div className="animate-fade-in-up">
       <PageHeader
         title={`${emp.firstName} ${emp.lastName}`}
-        subtitle={emp.employeeId}
+        subtitle={emp.employeeCode}
         breadcrumbs={[
           { label: "Home", href: "/dashboard" },
           { label: "HR", href: "/hr" },
@@ -75,6 +87,25 @@ export default function EmployeeProfilePage() {
               Back
             </Button>
             <Button
+              icon={<SwapOutlined />}
+              onClick={() => setTransferVisible(true)}
+            >
+              Transfer
+            </Button>
+            <Button
+              icon={<DollarCircleOutlined />}
+              onClick={() => setSalaryVisible(true)}
+            >
+              Revise Salary
+            </Button>
+            <Button
+              danger
+              icon={<StopOutlined />}
+              onClick={() => setTerminateVisible(true)}
+            >
+              Offboard
+            </Button>
+            <Button
               type="primary"
               icon={<EditOutlined />}
               onClick={() => router.push(`/hr/employees/${id}/edit`)}
@@ -83,6 +114,22 @@ export default function EmployeeProfilePage() {
             </Button>
           </Space>
         }
+      />
+
+      <TransferEmployeeModal 
+        employeeId={id} 
+        visible={transferVisible} 
+        onClose={() => setTransferVisible(false)} 
+      />
+      <TerminateEmployeeModal 
+        employeeId={id} 
+        visible={terminateVisible} 
+        onClose={() => setTerminateVisible(false)} 
+      />
+      <UpdateSalaryModal 
+        employeeId={id} 
+        visible={salaryVisible} 
+        onClose={() => setSalaryVisible(false)} 
       />
 
       {/* Profile Header */}
@@ -267,7 +314,7 @@ export default function EmployeeProfilePage() {
                     <StatusTag status={emp.status} />
                   </Descriptions.Item>
                   <Descriptions.Item label="Employee ID">
-                    {emp.employeeId}
+                    {emp.employeeCode}
                   </Descriptions.Item>
                   <Descriptions.Item label="Contract Expiry">
                     {emp.contractExpiryDate ? formatDate(emp.contractExpiryDate) : "N/A"}
@@ -277,8 +324,8 @@ export default function EmployeeProfilePage() {
             ),
           },
           {
-            key: "timeline",
-            label: "History & Timeline",
+            key: "compensation",
+            label: "Compensation",
             children: (
               <Card
                 style={{
@@ -289,8 +336,8 @@ export default function EmployeeProfilePage() {
                 styles={{ body: { padding: 24 } }}
               >
                 <Timeline
-                  items={history?.map((t) => ({
-                    color: "#c3f5ff",
+                  items={salaryHistory?.map((s: any) => ({
+                    color: "purple",
                     children: (
                       <div>
                         <div
@@ -300,7 +347,7 @@ export default function EmployeeProfilePage() {
                             fontWeight: 600,
                           }}
                         >
-                          {t.event}
+                          {formatCurrency(s.newSalary)} ({s.reason})
                         </div>
                         <div
                           style={{
@@ -308,7 +355,7 @@ export default function EmployeeProfilePage() {
                             fontSize: 13,
                           }}
                         >
-                          {t.comments}
+                          {s.comments}
                         </div>
                         <div
                           style={{
@@ -316,7 +363,7 @@ export default function EmployeeProfilePage() {
                             fontSize: 12,
                           }}
                         >
-                          {formatDate(t.effectiveDate)}
+                          {formatDate(s.effectiveDate)}
                         </div>
                       </div>
                     ),
@@ -324,6 +371,11 @@ export default function EmployeeProfilePage() {
                 />
               </Card>
             ),
+          },
+          {
+            key: "timeline",
+            label: "History & Timeline",
+            children: <EmployeeHistoryTimeline employeeId={id} />,
           },
         ]}
       />
