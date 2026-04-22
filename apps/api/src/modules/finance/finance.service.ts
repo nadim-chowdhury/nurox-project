@@ -818,4 +818,18 @@ export class FinanceService {
     const buffer = await workbook.xlsx.writeBuffer();
     return Buffer.from(buffer);
   }
+
+  // ─── EVENT HANDLERS ────────────────────────────────────────
+
+  @OnEvent('payroll.processed')
+  async handlePayrollProcessed(payload: {
+    runId: string;
+    totalNet: number;
+    totalGross: number;
+    totalDeductions: number;
+    period: string;
+  }) {
+    this.logger.log(`Handling payroll processed event for period: ${payload.period}`);
+    await this.recordPayrollDisbursement(payload.totalNet, payload.period);
+  }
 }

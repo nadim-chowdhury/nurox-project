@@ -13,6 +13,7 @@ import { payrollApi } from "./api/payrollApi";
 import { attendanceApi } from "./api/attendanceApi";
 import { inventoryApi } from "./api/inventoryApi";
 import { procurementApi } from "./api/procurementApi";
+import { recruitmentApi } from "./api/recruitmentApi";
 
 export const store = configureStore({
   reducer: {
@@ -30,6 +31,7 @@ export const store = configureStore({
     [attendanceApi.reducerPath]: attendanceApi.reducer,
     [inventoryApi.reducerPath]: inventoryApi.reducer,
     [procurementApi.reducerPath]: procurementApi.reducer,
+    [recruitmentApi.reducerPath]: recruitmentApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
@@ -43,7 +45,8 @@ export const store = configureStore({
       .concat(payrollApi.middleware)
       .concat(attendanceApi.middleware)
       .concat(inventoryApi.middleware)
-      .concat(procurementApi.middleware),
+      .concat(procurementApi.middleware)
+      .concat(recruitmentApi.middleware),
   devTools: process.env.NODE_ENV !== "production",
 });
 

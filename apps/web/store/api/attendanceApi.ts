@@ -22,7 +22,7 @@ export const attendanceApi = createApi({
       providesTags: ["Attendance"],
     }),
 
-    checkIn: builder.mutation<any, { employeeId: string; method: string; token?: string; location?: any }>({
+    checkIn: builder.mutation<any, { employeeId: string; method: string; token?: string; location?: any; timestamp?: string }>({
       query: (body) => ({
         url: "/hr/attendance/check-in",
         method: "POST",
@@ -31,7 +31,7 @@ export const attendanceApi = createApi({
       invalidatesTags: ["Attendance"],
     }),
 
-    checkOut: builder.mutation<any, { employeeId: string; method: string; location?: any }>({
+    checkOut: builder.mutation<any, { employeeId: string; method: string; location?: any; timestamp?: string }>({
       query: (body) => ({
         url: "/hr/attendance/check-out",
         method: "POST",
@@ -43,9 +43,22 @@ export const attendanceApi = createApi({
     getCheckInQr: builder.query<{ token: string }, string>({
       query: (employeeId) => ({
         url: "/hr/attendance/qr",
-        method: "POST", // In controller it's GET but uses body, changed to handle appropriately
+        method: "POST", // Adjusted to match expected client behavior for body use
         body: { employeeId }
       }),
+    }),
+
+    bulkImportAttendance: builder.mutation<any, any[]>({
+        query: (records) => ({
+            url: "/hr/attendance/bulk",
+            method: "POST",
+            body: records,
+        }),
+        invalidatesTags: ["Attendance"],
+    }),
+
+    getAttendanceReportUrl: builder.query<string, { month: number; year: number }>({
+        query: ({ month, year }) => `/hr/attendance/report?month=${month}&year=${year}`,
     }),
 
     // ─── LEAVE MANAGEMENT ────────────────────────────────────────
@@ -61,6 +74,11 @@ export const attendanceApi = createApi({
     getLeaveBalances: builder.query<LeaveBalanceDto[], string>({
       query: (employeeId) => `/hr/leaves/balances/${employeeId}`,
       providesTags: ["LeaveBalance"],
+    }),
+
+    getLeaveRequests: builder.query<any[], void>({
+        query: () => "/hr/leaves",
+        providesTags: ["LeaveRequest"],
     }),
 
     approveLeave: builder.mutation<any, { id: string; status: string; approvedBy: string }>({
@@ -79,7 +97,10 @@ export const {
   useCheckInMutation,
   useCheckOutMutation,
   useLazyGetCheckInQrQuery,
+  useBulkImportAttendanceMutation,
+  useLazyGetAttendanceReportUrlQuery,
   useApplyLeaveMutation,
   useGetLeaveBalancesQuery,
+  useGetLeaveRequestsQuery,
   useApproveLeaveMutation,
 } = attendanceApi;

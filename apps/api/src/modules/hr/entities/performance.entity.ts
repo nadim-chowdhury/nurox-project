@@ -9,6 +9,12 @@ export enum PerformanceReviewStatus {
   ABANDONED = 'ABANDONED',
 }
 
+export enum PerformanceReviewType {
+  OKR = 'OKR',
+  THREE_SIXTY = 'THREE_SIXTY',
+  PIP = 'PIP',
+}
+
 @Entity('performance_reviews')
 export class PerformanceReview extends BaseEntity {
   @Column({ type: 'uuid' })
@@ -17,6 +23,13 @@ export class PerformanceReview extends BaseEntity {
   @ManyToOne(() => Employee, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'employeeId' })
   employee: Employee;
+
+  @Column({
+    type: 'enum',
+    enum: PerformanceReviewType,
+    default: PerformanceReviewType.OKR,
+  })
+  type: PerformanceReviewType;
 
   @Column({ type: 'varchar', length: 500 })
   objective: string;
@@ -33,6 +46,18 @@ export class PerformanceReview extends BaseEntity {
 
   @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
   progress: number; // 0.00 - 100.00
+
+  @Column({ type: 'decimal', precision: 3, scale: 2, nullable: true })
+  selfRating: number | null;
+
+  @Column({ type: 'decimal', precision: 3, scale: 2, nullable: true })
+  peerRating: number | null;
+
+  @Column({ type: 'decimal', precision: 3, scale: 2, nullable: true })
+  managerRating: number | null;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  documentationUrl: string | null;
 
   @OneToMany(() => KeyResult, (kr) => kr.performanceReview, { cascade: true })
   keyResults: KeyResult[];

@@ -46,11 +46,13 @@ export const employeePersonalSchema = z.object({
 export const employmentDetailsSchema = z.object({
   employeeCode: z.string().min(1, "Employee code is required").max(20).trim(),
   departmentId: z.string().uuid("Invalid department"),
-  designation: z.string().min(1, "Designation is required").max(100).trim(),
+  designationId: z.string().uuid("Invalid designation"),
   managerId: z.string().uuid().optional().nullable(),
   employmentType: employmentTypeEnum.default("FULL_TIME"),
   joinDate: z.string().datetime("Join date is required"),
   probationEndDate: z.string().datetime().optional().nullable(),
+  contractUrl: z.string().url().optional().nullable(),
+  contractExpiryDate: z.string().datetime().optional().nullable(),
   branchId: z.string().uuid("Branch is required"),
 });
 
@@ -61,10 +63,63 @@ export const compensationDetailsSchema = z.object({
   baseSalary: z.number().min(0, "Base salary must be positive"),
   currency: z.string().min(1).max(3).default("USD"),
   paymentFrequency: z.enum(["MONTHLY", "WEEKLY", "BI_WEEKLY"]).default("MONTHLY"),
-  bankName: z.string().max(255).trim().optional(),
-  accountNumber: z.string().max(50).trim().optional(),
-  taxId: z.string().max(50).trim().optional(),
+  bankName: z.string().max(255).trim().optional().nullable(),
+  accountNumber: z.string().max(50).trim().optional().nullable(),
+  routingNumber: z.string().max(20).trim().optional().nullable(),
+  taxId: z.string().max(50).trim().optional().nullable(),
 });
+
+/**
+ * Transfer Employee Schema
+ */
+export const transferEmployeeSchema = z.object({
+  departmentId: z.string().uuid(),
+  designationId: z.string().uuid(),
+  effectiveDate: z.string().datetime(),
+  comments: z.string().max(500).optional(),
+});
+
+export type TransferEmployeeDto = z.infer<typeof transferEmployeeSchema>;
+
+/**
+ * Terminate/Resign Employee Schema
+ */
+export const terminationSchema = z.object({
+  endDate: z.string().datetime(),
+  reason: z.enum(["RESIGNED", "TERMINATED", "RETIRED", "DECEASED"]),
+  comments: z.string().max(500).optional(),
+  clearanceChecklist: z.array(z.string()).optional(),
+});
+
+export type TerminationDto = z.infer<typeof terminationSchema>;
+
+/**
+ * 360 Degree Review Schema
+ */
+export const threeSixtyReviewSchema = z.object({
+  objective: z.string().min(1).max(500),
+  period: z.string().max(20),
+  selfRating: z.number().min(0).max(5),
+  peerRating: z.number().min(0).max(5).optional(),
+  managerRating: z.number().min(0).max(5).optional(),
+  comments: z.string().max(1000).optional(),
+});
+
+export type ThreeSixtyReviewDto = z.infer<typeof threeSixtyReviewSchema>;
+
+/**
+ * Performance Improvement Plan (PIP) Schema
+ */
+export const pipSchema = z.object({
+  objective: z.string().min(1).max(500),
+  period: z.string().max(20),
+  startDate: z.string().datetime(),
+  endDate: z.string().datetime(),
+  documentationUrl: z.string().url().optional().nullable(),
+  comments: z.string().max(1000).optional(),
+});
+
+export type PipDto = z.infer<typeof pipSchema>;
 
 /**
  * Full Create Employee Schema (Multi-step combination)

@@ -22,6 +22,15 @@ export class Training extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   title: string;
 
+  @Column({ type: 'text', nullable: true })
+  description: string | null;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  category: string | null;
+
+  @Column({ type: 'int', nullable: true })
+  durationHours: number | null;
+
   @Column({ type: 'varchar', length: 255, nullable: true })
   provider: string | null;
 

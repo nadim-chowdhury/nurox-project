@@ -1,12 +1,17 @@
 "use client";
 
-import React from "react";
-import { Row, Col, Card, Table, Tag, Progress } from "antd";
+import React, { useState } from "react";
+import { Row, Col, Card, Table, Tag, Button, Space, message, Select, DatePicker } from "antd";
 import {
   ClockCircleOutlined,
   CheckCircleOutlined,
   WarningOutlined,
   CalendarOutlined,
+  PlusOutlined,
+  UploadOutlined,
+  QrcodeOutlined,
+  FileExcelOutlined,
+  EnvironmentOutlined,
 } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { KpiCard } from "@/components/common/KpiCard";
@@ -14,109 +19,27 @@ import { StatusTag } from "@/components/common/StatusTag";
 import { Avatar } from "@/components/common/Avatar";
 import { formatDate } from "@/lib/utils";
 import type { ColumnsType } from "antd/es/table";
+import { useGetTeamAttendanceQuery, useCheckInMutation, useLazyGetAttendanceReportUrlQuery } from "@/store/api/attendanceApi";
+import { AttendanceEntryModal } from "@/components/modules/hr/attendance/AttendanceEntryModal";
+import { BulkImportModal } from "@/components/modules/hr/attendance/BulkImportModal";
+import dayjs from "dayjs";
 
-interface AttendanceRecord {
-  id: string;
-  employee: string;
-  date: string;
-  checkIn: string;
-  checkOut: string;
-  hours: number;
-  status: string;
-}
-
-const mockRecords: AttendanceRecord[] = [
-  {
-    id: "1",
-    employee: "Sarah Ahmed",
-    date: "2026-04-21",
-    checkIn: "09:02 AM",
-    checkOut: "06:10 PM",
-    hours: 9.1,
-    status: "present",
-  },
-  {
-    id: "2",
-    employee: "James Wilson",
-    date: "2026-04-21",
-    checkIn: "09:15 AM",
-    checkOut: "06:00 PM",
-    hours: 8.75,
-    status: "present",
-  },
-  {
-    id: "3",
-    employee: "Fatima Khan",
-    date: "2026-04-21",
-    checkIn: "10:30 AM",
-    checkOut: "05:45 PM",
-    hours: 7.25,
-    status: "late",
-  },
-  {
-    id: "4",
-    employee: "Michael Chen",
-    date: "2026-04-21",
-    checkIn: "—",
-    checkOut: "—",
-    hours: 0,
-    status: "absent",
-  },
-  {
-    id: "5",
-    employee: "Priya Sharma",
-    date: "2026-04-21",
-    checkIn: "—",
-    checkOut: "—",
-    hours: 0,
-    status: "on_leave",
-  },
-  {
-    id: "6",
-    employee: "David Miller",
-    date: "2026-04-21",
-    checkIn: "08:55 AM",
-    checkOut: "05:50 PM",
-    hours: 8.9,
-    status: "present",
-  },
-  {
-    id: "7",
-    employee: "Aisha Rahman",
-    date: "2026-04-21",
-    checkIn: "09:00 AM",
-    checkOut: "—",
-    hours: 4.5,
-    status: "in_progress",
-  },
-  {
-    id: "8",
-    employee: "Robert Taylor",
-    date: "2026-04-21",
-    checkIn: "09:05 AM",
-    checkOut: "06:30 PM",
-    hours: 9.4,
-    status: "present",
-  },
-];
-
-const columns: ColumnsType<AttendanceRecord> = [
+const columns: ColumnsType<any> = [
   {
     title: "Employee",
     key: "employee",
     width: 220,
     render: (_, r) => (
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <Avatar name={r.employee} size={32} />
-        <span
-          style={{
-            color: "var(--color-on-surface)",
-            fontSize: 13,
-            fontWeight: 500,
-          }}
-        >
-          {r.employee}
-        </span>
+        <Avatar name={`${r.employee?.firstName} ${r.employee?.lastName}`} size={32} />
+        <div>
+          <div style={{ color: "var(--color-on-surface)", fontSize: 13, fontWeight: 500 }}>
+            {r.employee?.firstName} {r.employee?.lastName}
+          </div>
+          <div style={{ color: "var(--color-on-surface-variant)", fontSize: 11 }}>
+            {r.employee?.department?.name}
+          </div>
+        </div>
       </div>
     ),
   },
@@ -137,14 +60,8 @@ const columns: ColumnsType<AttendanceRecord> = [
     key: "checkIn",
     width: 110,
     render: (v: string) => (
-      <span
-        style={{
-          color: v === "—" ? "var(--color-on-surface-variant)" : "#6dd58c",
-          fontSize: 13,
-          fontWeight: 500,
-        }}
-      >
-        {v}
+      <span style={{ color: v ? "#6dd58c" : "var(--color-on-surface-variant)", fontSize: 13, fontWeight: 500 }}>
+        {v ? dayjs(v).format("hh:mm A") : "—"}
       </span>
     ),
   },
@@ -154,70 +71,109 @@ const columns: ColumnsType<AttendanceRecord> = [
     key: "checkOut",
     width: 110,
     render: (v: string) => (
-      <span
-        style={{
-          color: v === "—" ? "var(--color-on-surface-variant)" : "#c3f5ff",
-          fontSize: 13,
-          fontWeight: 500,
-        }}
-      >
-        {v}
+      <span style={{ color: v ? "#c3f5ff" : "var(--color-on-surface-variant)", fontSize: 13, fontWeight: 500 }}>
+        {v ? dayjs(v).format("hh:mm A") : "—"}
       </span>
     ),
   },
   {
-    title: "Hours",
-    dataIndex: "hours",
-    key: "hours",
+    title: "Method",
+    dataIndex: "method",
+    key: "method",
     width: 100,
-    sorter: (a, b) => a.hours - b.hours,
-    render: (h: number) => (
-      <span
-        style={{
-          fontFamily: "var(--font-display)",
-          color:
-            h >= 8
-              ? "#6dd58c"
-              : h > 0
-                ? "#ffb347"
-                : "var(--color-on-surface-variant)",
-          fontSize: 14,
-          fontWeight: 600,
-        }}
-      >
-        {h > 0 ? `${h}h` : "—"}
-      </span>
-    ),
+    render: (m: string) => <Tag size="small">{m}</Tag>,
   },
   {
     title: "Status",
     dataIndex: "status",
     key: "status",
     width: 120,
-    render: (s: string) => <StatusTag status={s} />,
+    render: (s: string) => <StatusTag status={s?.toLowerCase()} />,
   },
+  {
+      title: "Overtime",
+      key: "overtime",
+      width: 100,
+      render: (_, r) => r.isOvertime ? <Tag color="orange">{r.overtimeMinutes}m</Tag> : "—",
+  }
 ];
 
 export default function AttendancePage() {
-  const present = mockRecords.filter((r) => r.status === "present").length;
-  const late = mockRecords.filter((r) => r.status === "late").length;
-  const absent = mockRecords.filter((r) => r.status === "absent").length;
+  const [date, setDate] = useState(dayjs().format("YYYY-MM-DD"));
+  const { data: records, isLoading } = useGetTeamAttendanceQuery({ date });
+  const [checkIn, { isLoading: isGeoLoading }] = useCheckInMutation();
+  const [getReportUrl] = useLazyGetAttendanceReportUrlQuery();
+
+  const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+
+  const present = records?.filter((r) => r.status === "PRESENT").length || 0;
+  const late = records?.filter((r) => r.status === "LATE").length || 0;
+  const overtime = records?.filter((r) => r.isOvertime).length || 0;
+
+  const handleGeoCheckIn = () => {
+      if (!navigator.geolocation) {
+          return message.error("Geolocation is not supported by your browser");
+      }
+
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+          try {
+              // In a real app, employeeId would come from auth context
+              const employeeId = "current-user-id"; 
+              await checkIn({
+                  employeeId,
+                  method: "GEO_FENCED",
+                  location: {
+                      lat: pos.coords.latitude,
+                      lng: pos.coords.longitude,
+                      address: "Current Location"
+                  }
+              }).unwrap();
+              message.success("Geo-fenced check-in successful");
+          } catch (err: any) {
+              message.error(err.data?.message || "Geo-fenced check-in failed");
+          }
+      });
+  };
+
+  const handleExport = async () => {
+      const month = dayjs().month() + 1;
+      const year = dayjs().year();
+      // Implementation for direct download or opening the URL
+      window.open(`/api/hr/attendance/report?month=${month}&year=${year}`, '_blank');
+  };
 
   return (
     <div className="animate-fade-in-up">
       <PageHeader
         title="Attendance"
-        subtitle="Today's attendance overview"
+        subtitle="Real-time attendance tracking & reports"
         breadcrumbs={[
           { label: "Home", href: "/dashboard" },
           { label: "Attendance" },
         ]}
+        extra={
+            <Space>
+                <Button icon={<EnvironmentOutlined />} onClick={handleGeoCheckIn} loading={isGeoLoading}>
+                    Geo Check-In
+                </Button>
+                <Button icon={<PlusOutlined />} onClick={() => setIsEntryModalOpen(true)}>
+                    Manual Entry
+                </Button>
+                <Button icon={<UploadOutlined />} onClick={() => setIsBulkModalOpen(true)}>
+                    Bulk Import
+                </Button>
+                <Button type="primary" icon={<FileExcelOutlined />} onClick={handleExport}>
+                    Monthly Report
+                </Button>
+            </Space>
+        }
       />
 
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={12} sm={6}>
           <KpiCard
-            title="Present"
+            title="Present Today"
             value={`${present}`}
             prefix={<CheckCircleOutlined style={{ color: "#6dd58c" }} />}
           />
@@ -231,15 +187,15 @@ export default function AttendancePage() {
         </Col>
         <Col xs={12} sm={6}>
           <KpiCard
-            title="Absent"
-            value={`${absent}`}
+            title="Overtime"
+            value={`${overtime}`}
             prefix={<WarningOutlined style={{ color: "#ffb4ab" }} />}
           />
         </Col>
         <Col xs={12} sm={6}>
           <KpiCard
-            title="On Leave"
-            value="1"
+            title="Active Shifts"
+            value="3"
             prefix={<CalendarOutlined style={{ color: "#80d8ff" }} />}
           />
         </Col>
@@ -253,15 +209,25 @@ export default function AttendancePage() {
         }}
         styles={{ body: { padding: 0 } }}
       >
+          <div style={{ padding: 16, borderBottom: "1px solid var(--ghost-border)" }}>
+              <Space>
+                  <span style={{ color: "var(--color-on-surface-variant)" }}>Viewing attendance for:</span>
+                  <DatePicker defaultValue={dayjs()} onChange={(d) => setDate(d?.format("YYYY-MM-DD") || "")} />
+              </Space>
+          </div>
         <Table
           columns={columns}
-          dataSource={mockRecords}
+          dataSource={records}
           rowKey="id"
-          pagination={false}
+          loading={isLoading}
+          pagination={{ pageSize: 10 }}
           size="middle"
           style={{ background: "transparent" }}
         />
       </Card>
+
+      <AttendanceEntryModal open={isEntryModalOpen} onClose={() => setIsEntryModalOpen(false)} />
+      <BulkImportModal open={isBulkModalOpen} onClose={() => setIsBulkModalOpen(false)} />
     </div>
   );
 }

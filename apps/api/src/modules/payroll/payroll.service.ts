@@ -17,9 +17,12 @@ import {
   EmployeeSalaryAssignment,
 } from './entities/salary-structure.entity';
 import { TaxConfiguration, TaxBracket } from './entities/tax-bracket.entity';
-import { Employee } from '../hr/entities/employee.entity';
+import { SalaryHistory } from '../hr/entities/salary-history.entity';
+import { AttendanceService } from '../hr/attendance.service';
 import { PayrollComputeService } from './payroll-compute.service';
 import { PdfService } from '../system/pdf.service';
+import { StorageService } from '../system/storage.service';
+import { AuditService } from '../system/audit.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
@@ -33,14 +36,19 @@ export class PayrollService {
     private readonly payslipRepo: Repository<Payslip>,
     @InjectRepository(SalaryStructure)
     private readonly structureRepo: Repository<SalaryStructure>,
+    @InjectRepository(SalaryHistory)
+    private readonly salaryHistoryRepo: Repository<SalaryHistory>,
     @InjectRepository(EmployeeSalaryAssignment)
     private readonly assignmentRepo: Repository<EmployeeSalaryAssignment>,
     @InjectRepository(TaxConfiguration)
     private readonly taxRepo: Repository<TaxConfiguration>,
     @InjectRepository(Employee)
     private readonly employeeRepo: Repository<Employee>,
+    private readonly attendanceService: AttendanceService,
     private readonly computeService: PayrollComputeService,
     private readonly pdfService: PdfService,
+    private readonly storageService: StorageService,
+    private readonly auditService: AuditService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -48,7 +56,17 @@ export class PayrollService {
 
   async createStructure(dto: any): Promise<SalaryStructure> {
     const structure = this.structureRepo.create(dto);
-    return this.structureRepo.save(structure);
+    const saved = await this.structureRepo.save(structure);
+    
+    await this.auditService.log({
+      userId: null, // Should come from req context in real app
+      action: 'CREATE_SALARY_STRUCTURE',
+      module: 'PAYROLL',
+      description: `Created salary structure: ${saved.name}`,
+      metadata: { structureId: saved.id },
+    });
+
+    return saved;
   }
 
   async findAllStructures(): Promise<SalaryStructure[]> {
@@ -68,6 +86,30 @@ export class PayrollService {
       });
     }
     return this.assignmentRepo.save(assignment);
+  }
+
+  // ─── TAX CONFIGURATIONS ────────────────────────────────────
+
+  async findAllTaxConfigs(): Promise<TaxConfiguration[]> {
+    return this.taxRepo.find({ relations: ['brackets'], order: { fiscalYear: 'DESC' } });
+  }
+
+  async createTaxConfig(dto: any): Promise<TaxConfiguration> {
+    const config = this.taxRepo.create(dto);
+    if (config.isActive) {
+        await this.taxRepo.update({ isActive: true }, { isActive: false });
+    }
+    const saved = await this.taxRepo.save(config);
+
+    await this.auditService.log({
+        userId: null,
+        action: 'CREATE_TAX_CONFIG',
+        module: 'PAYROLL',
+        description: `Created tax configuration for fiscal year ${saved.fiscalYear}`,
+        metadata: { configId: saved.id },
+    });
+
+    return saved;
   }
 
   // ─── PAYROLL RUNS ──────────────────────────────────────────
@@ -108,14 +150,27 @@ export class PayrollService {
     const payslips: Payslip[] = [];
 
     for (const assign of assignments) {
+      // Calculate Overtime for the month
+      const attendance = await this.attendanceService.getTeamAttendance(run.period); // Period as prefix check
+      const employeeAttendance = attendance.filter(a => a.employeeId === assign.employeeId);
+      const totalOtMins = employeeAttendance.reduce((sum, a) => sum + (a.overtimeMinutes || 0), 0);
+      const otHours = totalOtMins / 60;
+
+      // Calculate Leave Encashment (e.g. at the end of fiscal year)
+      let encashmentDays = 0;
+      if (run.period.endsWith('-03')) { // Example: March is fiscal year end
+          encashmentDays = await this.attendanceService.getEncashableLeaveDays(assign.employeeId, '2025-26');
+      }
+
       const { items, grossPay, totalDeductions, netPay } =
         this.computeService.calculatePayslipItems(
           Number(assign.employee.salary),
           assign.salaryStructure,
           taxConfig,
-          0, // Overtime hours (mock)
-          0, // Overtime rate (mock)
+          otHours,
+          Number(assign.employee.salary) / 160 * 1.5, // 1.5x hourly rate (OT)
           0, // Bonus (mock)
+          encashmentDays,
         );
 
       const payslip = this.payslipRepo.create({
@@ -171,6 +226,21 @@ export class PayrollService {
     });
 
     return run;
+  }
+
+  async getPayslipsByRun(runId: string): Promise<Payslip[]> {
+    return this.payslipRepo.find({
+      where: { payrollRunId: runId },
+      relations: ['employee'],
+    });
+  }
+
+  async getPayslipsByEmployee(employeeId: string): Promise<Payslip[]> {
+    return this.payslipRepo.find({
+      where: { employeeId, isPublished: true },
+      relations: ['payrollRun'],
+      order: { createdAt: 'DESC' },
+    });
   }
 
   // ─── PAYSLIPS ──────────────────────────────────────────────
@@ -253,6 +323,18 @@ export class PayrollService {
     const payslips = await this.payslipRepo.find({
       where: { payrollRunId: runId },
       relations: ['employee'],
+    });
+
+    let content =
+      'Receiver Name\tReceiver Account\tAmount\tBank Name\tBranch Name\tRouting Number\n';
+
+    for (const p of payslips) {
+      content += `${p.employee.firstName} ${p.employee.lastName}\t${p.employee.employeeId}_ACC\t${p.netPay}\tSample Bank\tMain Branch\t123456789\n`;
+    }
+
+    return content;
+  }
+}
     });
 
     let content =

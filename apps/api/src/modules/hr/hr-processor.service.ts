@@ -47,6 +47,12 @@ export class HrProcessor extends WorkerHost {
       `Checking contract for ${employee.firstName} ${employee.lastName}`,
     );
 
-    // Similar notification logic
+    // Send notification to HR/Manager
+    await this.mailerService.sendMail({
+      to: 'hr@nurox.app',
+      subject: `Contract Expiry Warning: ${employee.firstName} ${employee.lastName}`,
+      html: `<p>Employee <b>${employee.firstName} ${employee.lastName}</b>'s contract is expiring in 30 days on <b>${employee.contractExpiryDate}</b>.</p>
+             <p>Please initiate renewal or termination process.</p>`,
+    });
   }
 }

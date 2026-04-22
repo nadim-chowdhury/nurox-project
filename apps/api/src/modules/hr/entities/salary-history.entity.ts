@@ -40,4 +40,7 @@ export class SalaryHistory extends BaseEntity {
 
   @Column({ type: 'uuid', nullable: true })
   approvedById: string | null;
+
+  @Column({ type: 'boolean', default: false })
+  isProcessedInPayroll: boolean;
 }

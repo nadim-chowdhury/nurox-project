@@ -20,6 +20,8 @@ export class PayrollComputeService {
     overtimeHours: number = 0,
     overtimeRate: number = 0,
     bonuses: number = 0,
+    leaveEncashmentDays: number = 0,
+    arrears: number = 0,
   ) {
     const items: Array<{
       name: string;
@@ -27,24 +29,47 @@ export class PayrollComputeService {
       type: 'EARNING' | 'DEDUCTION' | 'STATUTORY';
     }> = [];
 
+    // Map to keep track of resolved component values for dependencies
+    const resolvedValues = new Map<string, number>();
+    resolvedValues.set('Basic', baseSalary);
+
     // 1. Base Earning
     items.push({ name: 'Basic Salary', amount: baseSalary, type: 'EARNING' });
     let grossPay = baseSalary;
     let taxableAmount = baseSalary;
 
-    // 2. Add Earnings from Structure
+    // Leave Encashment Calculation
+    if (leaveEncashmentDays > 0) {
+        const perDaySalary = baseSalary / 30; // Standard 30 days divisor
+        const encashmentAmount = leaveEncashmentDays * perDaySalary;
+        items.push({ name: 'Leave Encashment', amount: encashmentAmount, type: 'EARNING' });
+        grossPay += encashmentAmount;
+        taxableAmount += encashmentAmount;
+    }
+
+    // Arrears Calculation
+    if (arrears > 0) {
+        items.push({ name: 'Salary Arrears', amount: arrears, type: 'EARNING' });
+        grossPay += arrears;
+        taxableAmount += arrears;
+    }
+
+    // 2. Add Earnings from Structure (handling dependsOn)
     for (const comp of structure.components.filter(
       (c) => c.type === PayrollComponentType.EARNING,
     )) {
       let amount = 0;
+      const baseForComp = comp.dependsOn ? (resolvedValues.get(comp.dependsOn) || baseSalary) : baseSalary;
+
       if (comp.amountType === AmountType.FIXED) {
         amount = Number(comp.value);
       } else {
-        // Percentage of Base
-        amount = (baseSalary * Number(comp.value)) / 100;
+        // Percentage of Dependee or Base
+        amount = (baseForComp * Number(comp.value)) / 100;
       }
 
       items.push({ name: comp.name, amount, type: 'EARNING' });
+      resolvedValues.set(comp.name, amount);
       grossPay += amount;
       if (comp.isTaxable) taxableAmount += amount;
     }
@@ -69,16 +94,20 @@ export class PayrollComputeService {
       (c) => c.type === PayrollComponentType.DEDUCTION,
     )) {
       let amount = 0;
+      const baseForComp = comp.dependsOn ? (resolvedValues.get(comp.dependsOn) || baseSalary) : baseSalary;
+
       if (comp.amountType === AmountType.FIXED) {
         amount = Number(comp.value);
       } else {
-        amount = (baseSalary * Number(comp.value)) / 100;
+        amount = (baseForComp * Number(comp.value)) / 100;
       }
       items.push({ name: comp.name, amount, type: 'DEDUCTION' });
       totalDeductions += amount;
     }
 
     // 5. Calculate Statutory (PF, Tax)
+    let employerPfContribution = 0;
+
     // Provident Fund (Typically 10% of Basic)
     const pfComponent = structure.components.find(
       (c) => c.name.includes('Provident Fund') || c.name.includes('PF'),
@@ -95,6 +124,9 @@ export class PayrollComputeService {
         type: 'STATUTORY',
       });
       totalDeductions += pfAmount;
+
+      // Employer PF (Usually matched or slightly different)
+      employerPfContribution = pfAmount; 
     }
 
     // Income Tax Calculation (Monthly projection)
@@ -120,6 +152,7 @@ export class PayrollComputeService {
       grossPay,
       totalDeductions,
       netPay,
+      employerPfContribution,
     };
   }
 

@@ -61,6 +61,7 @@ export class HrController {
       method: AttendanceMethod;
       token?: string;
       location?: any;
+      timestamp?: string;
     },
   ) {
     if (dto.method === AttendanceMethod.QR && dto.token) {
@@ -71,6 +72,7 @@ export class HrController {
       dto.method,
       'IN',
       dto.location,
+      dto.timestamp ? new Date(dto.timestamp) : undefined,
     );
   }
 
@@ -81,6 +83,7 @@ export class HrController {
       employeeId: string;
       method: AttendanceMethod;
       location?: any;
+      timestamp?: string;
     },
   ) {
     return this.attendanceService.recordAttendance(
@@ -88,6 +91,7 @@ export class HrController {
       dto.method,
       'OUT',
       dto.location,
+      dto.timestamp ? new Date(dto.timestamp) : undefined,
     );
   }
 
@@ -99,7 +103,31 @@ export class HrController {
     );
   }
 
+  @Post('attendance/bulk')
+  @RequirePermissions(Permission.HR_CREATE_EMPLOYEE)
+  async bulkImportAttendance(@Body() records: any[]) {
+    return this.attendanceService.bulkImport(records);
+  }
+
+  @Get('attendance/report')
+  @RequirePermissions(Permission.HR_VIEW_EMPLOYEES)
+  async getAttendanceReport(
+    @Query('month') month: number,
+    @Query('year') year: number,
+    @Res() res: Response,
+  ) {
+    return this.attendanceService.generateMonthlyReport(month, year, res);
+  }
+
   // ─── LEAVE MANAGEMENT ────────────────────────────────────────
+
+  @Get('leaves')
+  @RequirePermissions(Permission.HR_VIEW_EMPLOYEES)
+  async getLeaveRequests() {
+      // Logic would be in AttendanceService
+      // For now using existing repo via service if possible or adding method
+      return this.attendanceService.findAllLeaveRequests();
+  }
 
   @Post('leaves/apply')
   async applyLeave(@Body() dto: any) {
@@ -147,7 +175,44 @@ export class HrController {
     return this.hrService.updateEmployee(id, dto);
   }
 
-  @Post('employees/:id/salary')
+  @Post('employees/:id/transfer')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  transferEmployee(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+    return this.hrService.transferEmployee(id, dto);
+  }
+
+  @Post('employees/:id/terminate')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  terminateEmployee(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+    return this.hrService.terminateEmployee(id, dto);
+  }
+
+  @Post('employees/:id/360-review')
+  @RequirePermissions(Permission.HR_MANAGE_PERFORMANCE)
+  submit360Review(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+    return this.hrService.submit360Review(id, dto);
+  }
+
+  @Post('employees/:id/pip')
+  @RequirePermissions(Permission.HR_MANAGE_PERFORMANCE)
+  initiatePIP(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+    return this.hrService.initiatePIP(id, dto);
+  }
+
+  @Get('trainings')
+  @RequirePermissions(Permission.HR_VIEW_EMPLOYEES)
+  findAllTrainings() {
+    return this.hrService.findAllTrainings();
+  }
+
+  @Get('skill-matrix')
+  @RequirePermissions(Permission.HR_VIEW_EMPLOYEES)
+  getSkillMatrix() {
+    return this.hrService.getSkillMatrix();
+  }
+
+  @Delete('employees/:id')
+
   @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
   updateSalary(
     @Param('id', ParseUUIDPipe) id: string,

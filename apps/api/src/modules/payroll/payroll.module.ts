@@ -10,6 +10,7 @@ import {
   EmployeeSalaryAssignment,
 } from './entities/salary-structure.entity';
 import { TaxConfiguration, TaxBracket } from './entities/tax-bracket.entity';
+import { SalaryHistory } from '../hr/entities/salary-history.entity';
 import { HrModule } from '../hr/hr.module';
 import { SystemModule } from '../system/system.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -24,6 +25,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
       EmployeeSalaryAssignment,
       TaxConfiguration,
       TaxBracket,
+      SalaryHistory,
     ]),
     HrModule,
     SystemModule,

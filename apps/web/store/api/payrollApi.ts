@@ -9,7 +9,7 @@ import type {
 export const payrollApi = createApi({
   reducerPath: "payrollApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["PayrollRun", "Payslip", "SalaryStructure"],
+  tagTypes: ["PayrollRun", "Payslip", "SalaryStructure", "TaxConfig"],
   endpoints: (builder) => ({
     // ─── SALARY STRUCTURES ──────────────────────────────────────
     getStructures: builder.query<SalaryStructureDto[], void>({
@@ -73,10 +73,45 @@ export const payrollApi = createApi({
       invalidatesTags: ["PayrollRun"],
     }),
 
+    publishPayslips: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/payroll/runs/${id}/publish`,
+        method: "POST",
+      }),
+      invalidatesTags: ["PayrollRun", "Payslip"],
+    }),
+
     // ─── PAYSLIPS ──────────────────────────────────────────────
     getPayslipsByRun: builder.query<PayslipDto[], string>({
       query: (runId) => `/payroll/payslips/run/${runId}`,
       providesTags: ["Payslip"],
+    }),
+
+    getMyPayslips: builder.query<PayslipDto[], { employeeId: string }>({
+      query: (params) => ({
+        url: "/payroll/me/payslips",
+        params,
+      }),
+      providesTags: ["Payslip"],
+    }),
+
+    getPayslipDownloadUrl: builder.query<{ url: string }, string>({
+      query: (id) => `/payroll/payslips/${id}/download`,
+    }),
+
+    // ─── TAX CONFIGURATION ──────────────────────────────────────
+    getTaxConfigs: builder.query<any[], void>({
+      query: () => "/payroll/tax-configs",
+      providesTags: ["TaxConfig"],
+    }),
+
+    createTaxConfig: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/payroll/tax-configs",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["TaxConfig"],
     }),
   }),
 });
@@ -90,5 +125,10 @@ export const {
   useProcessPayrollRunMutation,
   useApprovePayrollRunMutation,
   useFinalizePayrollRunMutation,
+  usePublishPayslipsMutation,
   useGetPayslipsByRunQuery,
+  useGetMyPayslipsQuery,
+  useLazyGetPayslipDownloadUrlQuery,
+  useGetTaxConfigsQuery,
+  useCreateTaxConfigMutation,
 } = payrollApi;

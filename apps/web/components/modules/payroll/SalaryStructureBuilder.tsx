@@ -80,6 +80,16 @@ export const SalaryStructureBuilder: React.FC = () => {
                   </Form.Item>
                   <Form.Item
                     {...restField}
+                    name={[name, "dependsOn"]}
+                  >
+                    <Select placeholder="Depends On" style={{ width: 120 }} allowClear>
+                      <Select.Option value="Basic">Basic</Select.Option>
+                      <Select.Option value="HRA">HRA</Select.Option>
+                      <Select.Option value="Transport">Transport</Select.Option>
+                    </Select>
+                  </Form.Item>
+                  <Form.Item
+                    {...restField}
                     name={[name, "isTaxable"]}
                     valuePropName="checked"
                     label="Tax"

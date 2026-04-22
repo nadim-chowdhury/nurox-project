@@ -11,6 +11,8 @@ import { RecruitmentController } from './recruitment.controller';
 import { SystemModule } from '../system/system.module';
 import { UsersModule } from '../users/users.module';
 import { BullModule } from '@nestjs/bullmq';
+import { RecruitmentProcessor } from './recruitment.processor';
+import { MailerModule } from '../mailer/mailer.module';
 
 @Module({
   imports: [
@@ -27,9 +29,10 @@ import { BullModule } from '@nestjs/bullmq';
     }),
     SystemModule,
     UsersModule,
+    MailerModule,
   ],
   controllers: [RecruitmentController],
-  providers: [RecruitmentService],
+  providers: [RecruitmentService, RecruitmentProcessor],
   exports: [RecruitmentService],
 })
 export class RecruitmentModule {}

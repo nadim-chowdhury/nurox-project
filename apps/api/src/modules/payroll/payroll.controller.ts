@@ -48,10 +48,24 @@ export class PayrollController {
     return this.payrollService.assignStructure(employeeId, structureId);
   }
 
+  // ─── TAX CONFIGURATIONS ────────────────────────────────────
+
+  @Get('tax-configs')
+  @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
+  findAllTaxConfigs() {
+    return this.payrollService.findAllTaxConfigs();
+  }
+
+  @Post('tax-configs')
+  @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
+  createTaxConfig(@Body() dto: any) {
+    return this.payrollService.createTaxConfig(dto);
+  }
+
   // ─── PAYROLL RUNS ──────────────────────────────────────────
 
   @Post('runs')
-  @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES) // Simplified permission
+  @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
   createRun(@Body('period') period: string) {
     return this.payrollService.createRun(period);
   }
@@ -74,6 +88,12 @@ export class PayrollController {
     return this.payrollService.finalizeRun(id);
   }
 
+  @Post('runs/:id/publish')
+  @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
+  publishPayslips(@Param('id', ParseUUIDPipe) id: string) {
+    return this.payrollService.publishPayslips(id);
+  }
+
   @Get('runs/:id/beftn')
   @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
   async exportBeftn(
@@ -89,6 +109,24 @@ export class PayrollController {
   }
 
   // ─── PAYSLIPS ──────────────────────────────────────────────
+
+  @Get('me/payslips')
+  getMyPayslips(@Query('employeeId') employeeId: string) {
+    return this.payrollService.getPayslipsByEmployee(employeeId);
+  }
+
+  @Get('payslips/run/:runId')
+  @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
+  getPayslipsByRun(@Param('runId', ParseUUIDPipe) runId: string) {
+    return this.payrollService.getPayslipsByRun(runId);
+  }
+
+  @Get('payslips/:id/download')
+  @RequirePermissions(Permission.HR_VIEW_EMPLOYEES)
+  async getDownloadUrl(@Param('id', ParseUUIDPipe) id: string) {
+    const url = await this.payrollService.getPayslipDownloadUrl(id);
+    return { url };
+  }
 
   @Get('payslips/:id/pdf')
   async getPayslipPdf(

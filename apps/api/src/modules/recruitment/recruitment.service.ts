@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ObjectLiteral } from 'typeorm';
 import { JobRequisition, JobStatus } from './entities/job-requisition.entity';
 import { Candidate } from './entities/candidate.entity';
 import { Application, ApplicationStatus } from './entities/application.entity';
@@ -14,6 +14,8 @@ import { TenantConnectionService } from '../../database/tenant-connection.servic
 import { StorageService } from '../system/storage.service';
 import { PdfService } from '../system/pdf.service';
 import { UsersService } from '../users/users.service';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class RecruitmentService {
@@ -24,10 +26,11 @@ export class RecruitmentService {
     private readonly storageService: StorageService,
     private readonly pdfService: PdfService,
     private readonly usersService: UsersService,
+    @InjectQueue('recruitment') private recruitmentQueue: Queue,
   ) {}
 
   // Helper to get repository for current tenant
-  private async getRepo<T>(entity: any): Promise<Repository<T>> {
+  private async getRepo<T extends ObjectLiteral>(entity: any): Promise<Repository<T>> {
     const manager = await this.tenantConnectionService.getTenantManager();
     return manager.getRepository(entity);
   }
@@ -43,28 +46,60 @@ export class RecruitmentService {
     const job = repo.create({
       ...data,
       status: JobStatus.DRAFT,
+      approvalChain: [],
     });
     return repo.save(job);
   }
 
-  async submitForApproval(id: string) {
+  async submitForApproval(id: string, approverIds: string[]) {
     const repo = await this.getRepo<JobRequisition>(JobRequisition);
     const job = await repo.findOne({ where: { id } as any });
     if (!job) throw new Error('Job requisition not found');
 
     job.status = JobStatus.PENDING_APPROVAL;
-    // In a real app, we'd trigger notifications to the first approver here
+    job.approvalChain = approverIds.map((userId) => ({
+      userId,
+      status: 'PENDING',
+      updatedAt: null,
+      comment: '',
+    }));
+
     return repo.save(job);
   }
 
-  async approveJob(id: string, userId: string, comment?: string) {
+  async approveJobStep(id: string, userId: string, comment?: string) {
     const repo = await this.getRepo<JobRequisition>(JobRequisition);
     const job = await repo.findOne({ where: { id } as any });
     if (!job) throw new Error('Job requisition not found');
 
-    // Simple approval logic for now
-    // In a real app, we'd check the approval chain
-    job.status = JobStatus.APPROVED;
+    const step = job.approvalChain.find((s) => s.userId === userId);
+    if (!step) throw new Error('User not in approval chain');
+
+    step.status = 'APPROVED';
+    step.comment = comment || '';
+    step.updatedAt = new Date();
+
+    const allApproved = job.approvalChain.every((s) => s.status === 'APPROVED');
+    if (allApproved) {
+      job.status = JobStatus.APPROVED;
+    }
+
+    return repo.save(job);
+  }
+
+  async rejectJobStep(id: string, userId: string, comment: string) {
+    const repo = await this.getRepo<JobRequisition>(JobRequisition);
+    const job = await repo.findOne({ where: { id } as any });
+    if (!job) throw new Error('Job requisition not found');
+
+    const step = job.approvalChain.find((s) => s.userId === userId);
+    if (!step) throw new Error('User not in approval chain');
+
+    step.status = 'REJECTED';
+    step.comment = comment;
+    step.updatedAt = new Date();
+    job.status = JobStatus.DRAFT; // Reset to draft if rejected
+
     return repo.save(job);
   }
 
@@ -105,10 +140,12 @@ export class RecruitmentService {
     const saved = await repo.save(app);
 
     if (status === ApplicationStatus.REJECTED) {
-      // Trigger rejection email
-      // In a real app, we'd use BullMQ to queue this
-      this.logger.log(`Sending rejection email to ${app.candidate.email}`);
-      // await this.mailerService.sendRejectionEmail(app.candidate.email, app.candidate.firstName, app.job.title);
+      await this.recruitmentQueue.add('application.rejected', {
+        email: app.candidate.email,
+        firstName: app.candidate.firstName,
+        jobTitle: app.job.title,
+      });
+      this.logger.log(`Queued rejection email for ${app.candidate.email}`);
     }
 
     return saved;
@@ -173,7 +210,21 @@ export class RecruitmentService {
       ApplicationStatus.INTERVIEW,
     );
 
+    // Simulated Google Calendar Webhook / Integration
+    this.logger.log(
+      `[PROTOTYPE] Triggering Google Calendar invite for ${saved.startTime} to ${saved.endTime}`,
+    );
+    // TODO: Implement actual Google Calendar API call or webhook trigger here
+
     return saved;
+  }
+
+  async updateJobStatus(id: string, status: JobStatus) {
+    const repo = await this.getRepo<JobRequisition>(JobRequisition);
+    const job = await repo.findOne({ where: { id } as any });
+    if (!job) throw new Error('Job requisition not found');
+    job.status = status;
+    return repo.save(job);
   }
 
   async updateInterviewFeedback(id: string, feedback: string, rating: number) {
@@ -218,30 +269,42 @@ export class RecruitmentService {
       <html>
         <head>
           <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; }
-            .header { text-align: center; margin-bottom: 30px; }
-            .content { margin: 0 50px; }
-            .footer { margin-top: 50px; text-align: center; font-size: 0.8em; }
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { padding: 40px; border: 1px solid #ddd; }
+            .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #00b96b; padding-bottom: 10px; }
+            .content { margin: 20px 0; }
+            .footer { margin-top: 50px; border-top: 1px solid #eee; padding-top: 10px; font-size: 0.8em; text-align: center; }
+            .signature-area { margin-top: 40px; height: 100px; }
           </style>
         </head>
         <body>
-          <div class="header">
-            <h1>Offer Letter</h1>
-          </div>
-          <div class="content">
-            <p>Date: ${new Date().toLocaleDateString()}</p>
-            <p>Dear {{candidateName}},</p>
-            <p>We are pleased to offer you the position of <strong>{{jobTitle}}</strong> at Nurox ERP.</p>
-            <p><strong>Compensation:</strong> {{baseSalary}} {{currency}} per annum.</p>
-            <p><strong>Joining Date:</strong> {{joiningDate}}</p>
-            <p>This offer is contingent upon successful completion of our onboarding process.</p>
-            <p>We look forward to having you join our team!</p>
-            <br/>
-            <p>Best regards,</p>
-            <p>The HR Team<br/>Nurox ERP</p>
-          </div>
-          <div class="footer">
-            <p>This is an electronically generated document.</p>
+          <div class="container">
+            <div class="header">
+              <h1>Offer of Employment</h1>
+            </div>
+            <div class="content">
+              <p>Date: ${new Date().toLocaleDateString()}</p>
+              <p>To: <strong>{{candidateName}}</strong></p>
+              <p>We are delighted to offer you the position of <strong>{{jobTitle}}</strong> with Nurox ERP. We were impressed with your skills and experience and believe you will be a valuable addition to our team.</p>
+              <p><strong>Position:</strong> {{jobTitle}}</p>
+              <p><strong>Start Date:</strong> {{joiningDate}}</p>
+              <p><strong>Annual Salary:</strong> {{baseSalary}} {{currency}}</p>
+              <p>Please review this offer and, if you accept, provide your signature below.</p>
+              <br/>
+              <p>Sincerely,</p>
+              <p>HR Department<br/>Nurox ERP</p>
+            </div>
+            <div class="signature-area" id="signature-area">
+              {{#if signed}}
+                <img src="{{signatureData}}" style="max-height: 80px;" />
+                <p>Signed on: {{signedDate}}</p>
+              {{else}}
+                <p>(Candidate Signature)</p>
+              {{/if}}
+            </div>
+            <div class="footer">
+              <p>&copy; 2026 Nurox ERP. All rights reserved.</p>
+            </div>
           </div>
         </body>
       </html>
@@ -252,12 +315,14 @@ export class RecruitmentService {
       jobTitle: offer.application.job.title,
       baseSalary: offer.baseSalary,
       currency: offer.currency,
-      joiningDate: offer.joiningDate,
+      joiningDate: new Date(offer.joiningDate).toLocaleDateString(),
+      signed: !!offer.signedUrl,
+      signatureData: offer.signedUrl, // Placeholder for signature image if already signed
+      signedDate: offer.updatedAt?.toLocaleDateString(),
     };
 
     const pdfBuffer = await this.pdfService.generatePdf(templateHtml, data);
 
-    // Save to Storage
     const key = `recruitment/offers/${offer.id}.pdf`;
     const publicUrl = await this.storageService.uploadBuffer(
       key,
@@ -265,9 +330,83 @@ export class RecruitmentService {
       'application/pdf',
     );
 
-    // Update offer with signed URL
     offer.signedUrl = publicUrl;
     await repo.save(offer);
+
+    return { publicUrl, key };
+  }
+
+  async signOfferLetter(id: string, signatureBase64: string) {
+    const repo = await this.getRepo<OfferLetter>(OfferLetter);
+    const offer = await repo.findOne({
+      where: { id } as any,
+      relations: ['application', 'application.candidate', 'application.job'],
+    });
+    if (!offer) throw new Error('Offer letter not found');
+
+    // In a real Puppeteer implementation, we'd re-generate the PDF with the signature image.
+    // For this prototype, we'll update the PDF data and re-generate.
+    
+    const templateHtml = `
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { padding: 40px; border: 1px solid #ddd; }
+            .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #00b96b; padding-bottom: 10px; }
+            .content { margin: 20px 0; }
+            .footer { margin-top: 50px; border-top: 1px solid #eee; padding-top: 10px; font-size: 0.8em; text-align: center; }
+            .signature-area { margin-top: 40px; height: 100px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Offer of Employment (SIGNED)</h1>
+            </div>
+            <div class="content">
+              <p>Date: ${new Date().toLocaleDateString()}</p>
+              <p>To: <strong>{{candidateName}}</strong></p>
+              <p>We are delighted to offer you the position of <strong>{{jobTitle}}</strong> with Nurox ERP. We were impressed with your skills and experience and believe you will be a valuable addition to our team.</p>
+              <p><strong>Position:</strong> {{jobTitle}}</p>
+              <p><strong>Start Date:</strong> {{joiningDate}}</p>
+              <p><strong>Annual Salary:</strong> {{baseSalary}} {{currency}}</p>
+            </div>
+            <div class="signature-area">
+              <img src="{{signatureBase64}}" style="max-height: 80px;" />
+              <p>Signed by ${offer.application.candidate.firstName} ${offer.application.candidate.lastName} on ${new Date().toLocaleDateString()}</p>
+            </div>
+            <div class="footer">
+              <p>&copy; 2026 Nurox ERP. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const data = {
+      candidateName: `${offer.application.candidate.firstName} ${offer.application.candidate.lastName}`,
+      jobTitle: offer.application.job.title,
+      baseSalary: offer.baseSalary,
+      currency: offer.currency,
+      joiningDate: new Date(offer.joiningDate).toLocaleDateString(),
+      signatureBase64,
+    };
+
+    const pdfBuffer = await this.pdfService.generatePdf(templateHtml, data);
+    const key = `recruitment/offers/${offer.id}-signed.pdf`;
+    const publicUrl = await this.storageService.uploadBuffer(
+      key,
+      pdfBuffer,
+      'application/pdf',
+    );
+
+    offer.signedUrl = publicUrl;
+    offer.status = 'ACCEPTED' as any;
+    await repo.save(offer);
+
+    // Auto-create onboarding checklist
+    await this.createOnboardingChecklist(offer.application.candidateId);
 
     return { publicUrl, key };
   }
@@ -275,37 +414,20 @@ export class RecruitmentService {
   // Onboarding
   async createOnboardingChecklist(candidateId: string) {
     const repo = await this.getRepo<OnboardingChecklist>(OnboardingChecklist);
+    const existing = await repo.findOne({ where: { candidateId } as any });
+    if (existing) return existing;
+
     const checklist = repo.create({
       candidateId,
       tasks: [
-        {
-          title: 'Personal Information',
-          description: 'NID, Date of Birth, etc.',
-          isCompleted: false,
-        },
-        {
-          title: 'Bank Details',
-          description: 'Account number, Bank name',
-          isCompleted: false,
-        },
-        {
-          title: 'Educational Certificates',
-          description: 'Degree, Transcript',
-          isCompleted: false,
-        },
-        {
-          title: 'Work Experience Documents',
-          description: 'Experience letters',
-          isCompleted: false,
-        },
-        {
-          title: 'E-Signature',
-          description: 'Sign the offer letter electronically',
-          isCompleted: false,
-        },
+        { title: 'Personal Information', description: 'NID, TIN, Date of Birth, etc.', isCompleted: false },
+        { title: 'Bank Details', description: 'Account number, Bank name, Routing info', isCompleted: false },
+        { title: 'Educational Certificates', description: 'Degree, Transcript', isCompleted: false },
+        { title: 'Work Experience Documents', description: 'Experience letters', isCompleted: false },
+        { title: 'E-Signature', description: 'Sign the offer letter electronically', isCompleted: true },
       ],
-      progress: 0,
-      status: OnboardingStatus.NOT_STARTED,
+      progress: 20,
+      status: OnboardingStatus.IN_PROGRESS,
     });
     return repo.save(checklist);
   }

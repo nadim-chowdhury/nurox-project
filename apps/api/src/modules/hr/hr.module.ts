@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HrService } from './hr.service';
 import { AttendanceService } from './attendance.service';
+import { BiometricService } from './biometric.service';
 import { HrProcessor } from './hr-processor.service';
 import { HrController } from './hr.controller';
 import { Employee } from './entities/employee.entity';
@@ -15,6 +16,7 @@ import { EmploymentHistory } from './entities/employment-history.entity';
 import { AttendanceRecord } from './entities/attendance.entity';
 import { LeaveRequest, LeaveBalance } from './entities/leave.entity';
 import { Shift } from './entities/shift.entity';
+import { Holiday } from './entities/holiday.entity';
 import { BullModule } from '@nestjs/bullmq';
 import { SystemModule } from '../system/system.module';
 
@@ -34,6 +36,7 @@ import { SystemModule } from '../system/system.module';
       LeaveRequest,
       LeaveBalance,
       Shift,
+      Holiday,
     ]),
     BullModule.registerQueue({
       name: 'hr',
@@ -41,7 +44,7 @@ import { SystemModule } from '../system/system.module';
     SystemModule,
   ],
   controllers: [HrController],
-  providers: [HrService, AttendanceService, HrProcessor],
-  exports: [HrService, AttendanceService],
+  providers: [HrService, AttendanceService, BiometricService, HrProcessor],
+  exports: [HrService, AttendanceService, TypeOrmModule],
 })
 export class HrModule {}

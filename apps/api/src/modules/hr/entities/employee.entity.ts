@@ -14,6 +14,7 @@ import { SalaryHistory } from './salary-history.entity';
 import { Training } from './training.entity';
 import { Skill } from './skill.entity';
 import { EmploymentHistory } from './employment-history.entity';
+import { Shift } from './shift.entity';
 
 export enum EmployeeStatus {
   ACTIVE = 'ACTIVE',
@@ -102,6 +103,12 @@ export class Employee extends BaseEntity {
   @Column({ type: 'varchar', length: 500, nullable: true })
   avatarUrl: string | null;
 
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  contractUrl: string | null;
+
+  @Column({ type: 'date', nullable: true })
+  contractExpiryDate: string | null;
+
   // Emergency contact
   @Column({ type: 'varchar', length: 100, nullable: true })
   emergencyContactName: string | null;
@@ -111,6 +118,19 @@ export class Employee extends BaseEntity {
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   emergencyContactRelation: string | null;
+
+  // Bank Details (for Payroll BEFTN)
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  bankName: string | null;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  bankBranch: string | null;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  accountNumber: string | null;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  routingNumber: string | null;
 
   // Relations
   @Column({ type: 'uuid', nullable: true })
@@ -133,6 +153,13 @@ export class Employee extends BaseEntity {
   @ManyToOne(() => Employee, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'managerId' })
   manager: Employee;
+
+  @Column({ type: 'uuid', nullable: true })
+  shiftId: string | null;
+
+  @ManyToOne(() => Shift, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'shiftId' })
+  shift: Shift;
 
   @OneToMany(() => PerformanceReview, (pr) => pr.employee)
   performanceReviews: PerformanceReview[];

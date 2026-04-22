@@ -139,10 +139,43 @@ export const hrApi = createApi({
       providesTags: (_, __, id) => [{ type: "History", id }],
     }),
 
+    transferEmployee: builder.mutation<Employee, { id: string; data: any }>({
+      query: ({ id, data }) => ({
+        url: `/hr/employees/${id}/transfer`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: (_, __, { id }) => [{ type: "Employee", id }, { type: "History", id }],
+    }),
+
+    terminateEmployee: builder.mutation<Employee, { id: string; data: any }>({
+      query: ({ id, data }) => ({
+        url: `/hr/employees/${id}/terminate`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: (_, __, { id }) => [{ type: "Employee", id }, { type: "History", id }],
+    }),
+
+    getTrainings: builder.query<any[], void>({
+      query: () => "/hr/trainings",
+      providesTags: ["Training"],
+    }),
+
+    getSkillMatrix: builder.query<any, void>({
+      query: () => "/hr/skill-matrix",
+      providesTags: ["Skill"],
+    }),
+
     // ─── DEPARTMENTS ────────────────────────────────────────────
     getDepartments: builder.query<DepartmentDto[], void>({
       query: () => "/hr/departments",
       providesTags: ["Department"],
+    }),
+
+    getDesignations: builder.query<any[], void>({
+      query: () => "/hr/designations",
+      providesTags: ["Designation"],
     }),
 
     getDepartment: builder.query<DepartmentDto, string>({
@@ -192,7 +225,12 @@ export const {
   useAddTrainingMutation,
   useAddSkillMutation,
   useGetEmployeeHistoryQuery,
+  useTransferEmployeeMutation,
+  useTerminateEmployeeMutation,
+  useGetTrainingsQuery,
+  useGetSkillMatrixQuery,
   useGetDepartmentsQuery,
+  useGetDesignationsQuery,
   useGetDepartmentQuery,
   useCreateDepartmentMutation,
   useUpdateDepartmentMutation,

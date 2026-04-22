@@ -75,6 +75,9 @@ export class Payslip extends BaseEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   totalDeductions: number;
 
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  employerPfContribution: number;
+
   @Column({ type: 'jsonb', default: [] })
   items: Array<{
     name: string;

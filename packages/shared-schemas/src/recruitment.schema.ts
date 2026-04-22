@@ -80,6 +80,7 @@ export const offerLetterSchema = z.object({
   expiryDate: z.string().datetime(),
   status: z.enum(["DRAFT", "SENT", "ACCEPTED", "REJECTED", "EXPIRED"]).default("DRAFT"),
   signedUrl: z.string().url().optional().nullable(),
+  signature: z.string().optional(), // Base64 signature for signing
 });
 
 export type OfferLetterDto = z.infer<typeof offerLetterSchema>;
@@ -91,6 +92,7 @@ export const onboardingTaskSchema = z.object({
   isCompleted: z.boolean().default(false),
   completedAt: z.string().datetime().optional().nullable(),
   assignedToId: z.string().uuid().optional().nullable(),
+  documentKey: z.string().optional(), // S3 key for uploaded document
 });
 
 export const onboardingChecklistSchema = z.object({
@@ -99,6 +101,7 @@ export const onboardingChecklistSchema = z.object({
   tasks: z.array(onboardingTaskSchema),
   progress: z.number().min(0).max(100).default(0),
   status: z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETED"]).default("NOT_STARTED"),
+  documentMetadata: z.record(z.string(), z.string()).optional(), // Map of task title to document key
 });
 
 export type OnboardingChecklistDto = z.infer<typeof onboardingChecklistSchema>;

@@ -82,6 +82,10 @@ export class HrService {
         probationEndDate: dto.probationEndDate
           ? dto.probationEndDate.split('T')[0]
           : null,
+        contractUrl: dto.contractUrl || null,
+        contractExpiryDate: dto.contractExpiryDate
+          ? dto.contractExpiryDate.split('T')[0]
+          : null,
       });
       const saved = await manager.save(employee);
 
@@ -102,7 +106,7 @@ export class HrService {
         event: EmploymentEvent.HIRED,
         effectiveDate: dto.joinDate.split('T')[0],
         departmentId: dto.departmentId,
-        designationId: (dto as any).designationId || null, // Designation might come from somewhere else in future
+        designationId: dto.designationId || null,
         comments: 'Employee hired',
       });
       await manager.save(employmentHistory);
@@ -119,11 +123,100 @@ export class HrService {
         }
       }
 
+      // Schedule contract expiry check (30 days before)
+      if (dto.contractExpiryDate) {
+        const expiryDate = new Date(dto.contractExpiryDate);
+        const notificationDate = new Date(expiryDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const delay = notificationDate.getTime() - Date.now();
+        if (delay > 0) {
+            await this.hrQueue.add(
+                'contract-expiry-check',
+                { employeeId: saved.id },
+                { delay }
+            );
+        }
+      }
+
       this.logger.log(
         `Employee created: ${saved.employeeId} — ${saved.firstName} ${saved.lastName}`,
       );
       return saved;
     });
+  }
+
+  async transferEmployee(id: string, dto: TransferEmployeeDto): Promise<Employee> {
+    const employee = await this.findEmployeeById(id);
+    
+    return await this.employeeRepo.manager.transaction(async (manager) => {
+        const oldDeptId = employee.departmentId;
+        const oldDesigId = employee.designationId;
+
+        employee.departmentId = dto.departmentId;
+        employee.designationId = dto.designationId;
+        await manager.save(employee);
+
+        const history = manager.create(EmploymentHistory, {
+            employeeId: id,
+            event: EmploymentEvent.TRANSFERRED,
+            effectiveDate: dto.effectiveDate.split('T')[0],
+            departmentId: dto.departmentId,
+            designationId: dto.designationId,
+            comments: dto.comments || `Transferred from ${oldDeptId} to ${dto.departmentId}`,
+        });
+        await manager.save(history);
+
+        return employee;
+    });
+  }
+
+  async terminateEmployee(id: string, dto: TerminationDto): Promise<Employee> {
+    const employee = await this.findEmployeeById(id);
+    
+    return await this.employeeRepo.manager.transaction(async (manager) => {
+        employee.status = dto.reason === 'RESIGNED' ? EmployeeStatus.INACTIVE : EmployeeStatus.TERMINATED;
+        employee.endDate = dto.endDate.split('T')[0];
+        await manager.save(employee);
+
+        const event = dto.reason === 'RESIGNED' ? EmploymentEvent.RESIGNED : EmploymentEvent.TERMINATED;
+
+        const history = manager.create(EmploymentHistory, {
+            employeeId: id,
+            event: event,
+            effectiveDate: dto.endDate.split('T')[0],
+            comments: dto.comments || `Employee ${dto.reason.toLowerCase()}`,
+        });
+        await manager.save(history);
+
+        return employee;
+    });
+  }
+
+  async submit360Review(id: string, dto: ThreeSixtyReviewDto): Promise<PerformanceReview> {
+    await this.findEmployeeById(id);
+    const review = this.performanceRepo.create({
+        employeeId: id,
+        type: PerformanceReviewType.THREE_SIXTY,
+        objective: dto.objective,
+        period: dto.period,
+        selfRating: dto.selfRating,
+        peerRating: dto.peerRating || null,
+        managerRating: dto.managerRating || null,
+        status: PerformanceReviewStatus.COMPLETED,
+    });
+    return this.performanceRepo.save(review);
+  }
+
+  async initiatePIP(id: string, dto: PipDto): Promise<PerformanceReview> {
+    await this.findEmployeeById(id);
+    const pip = this.performanceRepo.create({
+        employeeId: id,
+        type: PerformanceReviewType.PIP,
+        objective: dto.objective,
+        period: dto.period,
+        documentationUrl: dto.documentationUrl || null,
+        status: PerformanceReviewStatus.ACTIVE,
+    });
+    return this.performanceRepo.save(pip);
   }
 
   async findAllEmployees(query: QueryEmployeeDto) {
@@ -273,6 +366,33 @@ export class HrService {
       lastAssessed: dto.lastAssessed ? dto.lastAssessed.split('T')[0] : null,
     });
     return this.skillRepo.save(skill);
+  }
+
+  async findAllTrainings(): Promise<Training[]> {
+    return this.trainingRepo.find({
+        order: { title: 'ASC' },
+        relations: ['employee'],
+    });
+  }
+
+  async getSkillMatrix() {
+    const skills = await this.skillRepo.find({
+        relations: ['employee'],
+    });
+
+    // Group by skill name
+    const matrix: Record<string, any[]> = {};
+    skills.forEach(s => {
+        if (!matrix[s.skillName]) matrix[s.skillName] = [];
+        matrix[s.skillName].push({
+            employeeId: s.employeeId,
+            employeeName: `${s.employee.firstName} ${s.employee.lastName}`,
+            proficiency: s.proficiency,
+            lastAssessed: s.lastAssessed,
+        });
+    });
+
+    return matrix;
   }
 
   async getEmployeeHistory(id: string): Promise<EmploymentHistory[]> {

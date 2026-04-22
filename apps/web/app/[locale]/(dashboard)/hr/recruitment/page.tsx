@@ -1,220 +1,197 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button, Space, Row, Col, Tabs } from "antd";
+import { Button, Space, Row, Col, Tabs, Modal, message, Dropdown, MenuProps, Tag } from "antd";
 import {
   PlusOutlined,
   EyeOutlined,
   UserAddOutlined,
   FileSearchOutlined,
   CheckSquareOutlined,
+  MoreOutlined,
+  SendOutlined,
+  UnlockOutlined,
+  StopOutlined,
 } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/tables/DataTable";
 import { TableToolbar } from "@/components/tables/TableToolbar";
 import { KpiCard } from "@/components/common/KpiCard";
 import { StatusTag } from "@/components/common/StatusTag";
-import { Avatar } from "@/components/common/Avatar";
 import { formatDate } from "@/lib/utils";
 import type { ColumnsType } from "antd/es/table";
 import { AtsKanban } from "@/components/modules/hr/recruitment/AtsKanban";
-
-interface Job {
-  id: string;
-  title: string;
-  department: string;
-  location: string;
-  type: string;
-  applicants: number;
-  postedDate: string;
-  status: string;
-}
-
-const mockJobs: Job[] = [
-  {
-    id: "1",
-    title: "Senior Backend Developer",
-    department: "Engineering",
-    location: "Remote",
-    type: "Full-time",
-    applicants: 28,
-    postedDate: "2026-04-10",
-    status: "active",
-  },
-  {
-    id: "2",
-    title: "Product Designer",
-    department: "Design",
-    location: "San Francisco",
-    type: "Full-time",
-    applicants: 15,
-    postedDate: "2026-04-12",
-    status: "active",
-  },
-  {
-    id: "3",
-    title: "Financial Controller",
-    department: "Finance",
-    location: "New York",
-    type: "Full-time",
-    applicants: 8,
-    postedDate: "2026-04-05",
-    status: "active",
-  },
-  {
-    id: "4",
-    title: "DevOps Engineer",
-    department: "Engineering",
-    location: "Remote",
-    type: "Contract",
-    applicants: 22,
-    postedDate: "2026-03-28",
-    status: "active",
-  },
-  {
-    id: "5",
-    title: "Sales Manager",
-    department: "Sales & Marketing",
-    location: "Chicago",
-    type: "Full-time",
-    applicants: 11,
-    postedDate: "2026-04-01",
-    status: "paused",
-  },
-  {
-    id: "6",
-    title: "Office Coordinator",
-    department: "Operations",
-    location: "San Francisco",
-    type: "Part-time",
-    applicants: 35,
-    postedDate: "2026-03-15",
-    status: "closed",
-  },
-];
+import { JobRequisitionForm } from "@/components/modules/hr/recruitment/JobRequisitionForm";
+import { CandidateForm } from "@/components/modules/hr/recruitment/CandidateForm";
+import { 
+  useGetJobsQuery, 
+  useGetApplicationsQuery, 
+  useGetCandidatesQuery,
+  useSubmitJobForApprovalMutation,
+  useOpenJobMutation,
+  useUpdateJobStatusMutation
+} from "@/store/api/recruitmentApi";
 
 export default function RecruitmentPage() {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("1");
+  const [modalType, setModalType] = useState<"job" | "candidate" | null>(null);
 
-  const filtered = mockJobs.filter((j) =>
+  const { data: jobs, isLoading: isJobsLoading } = useGetJobsQuery();
+  const { data: applications, isLoading: isAppsLoading } = useGetApplicationsQuery();
+  const { data: candidates, isLoading: isCandidatesLoading } = useGetCandidatesQuery();
+  
+  const [submitForApproval] = useSubmitJobForApprovalMutation();
+  const [openJob] = useOpenJobMutation();
+  const [updateJobStatus] = useUpdateJobStatusMutation();
+
+  const filteredJobs = jobs?.filter((j) =>
     j.title.toLowerCase().includes(search.toLowerCase()),
-  );
-  const activeJobs = mockJobs.filter((j) => j.status === "active").length;
-  const totalApplicants = mockJobs.reduce((a, b) => a + b.applicants, 0);
+  ) || [];
 
-  const mockApplications = [
-    { id: "1", candidateName: "John Doe", jobTitle: "Senior Backend Developer", status: "APPLIED" },
-    { id: "2", candidateName: "Jane Smith", jobTitle: "Product Designer", status: "SCREENED" },
-    { id: "3", candidateName: "Robert Brown", jobTitle: "Senior Backend Developer", status: "INTERVIEW" },
-    { id: "4", candidateName: "Emily Davis", jobTitle: "Financial Controller", status: "OFFER" },
-    { id: "5", candidateName: "Michael Wilson", jobTitle: "DevOps Engineer", status: "HIRED" },
-  ];
+  const filteredCandidates = candidates?.filter((c) =>
+    `${c.firstName} ${c.lastName}`.toLowerCase().includes(search.toLowerCase()) ||
+    c.email.toLowerCase().includes(search.toLowerCase())
+  ) || [];
 
-  const columns: ColumnsType<Job> = [
+  const activeJobs = jobs?.filter((j) => j.status === "OPEN").length || 0;
+  const totalApplicants = applications?.length || 0;
+  const interviewsScheduled = applications?.filter(a => a.status === "INTERVIEW").length || 0;
+  const offersMade = applications?.filter(a => a.status === "OFFER").length || 0;
+
+  const handleJobAction = async (id: string, action: string) => {
+    try {
+      if (action === "submit") {
+        await submitForApproval({ id, approverIds: [] }).unwrap();
+        message.success("Job submitted for approval");
+      } else if (action === "open") {
+        await openJob(id).unwrap();
+        message.success("Job is now OPEN");
+      } else if (action === "close") {
+        await updateJobStatus({ id, status: "CLOSED" }).unwrap();
+        message.success("Job is now CLOSED");
+      }
+    } catch (err) {
+      message.error("Failed to perform action");
+    }
+  };
+
+  const jobColumns: ColumnsType<any> = [
     {
       title: "Position",
       dataIndex: "title",
       key: "title",
-      width: 240,
-      render: (v: string) => (
-        <span
-          style={{
-            color: "var(--color-on-surface)",
-            fontWeight: 500,
-            fontSize: 13,
-          }}
-        >
-          {v}
-        </span>
-      ),
+      width: 200,
+      render: (v: string) => <span style={{ fontWeight: 500 }}>{v}</span>,
     },
     {
       title: "Department",
-      dataIndex: "department",
+      dataIndex: ["department", "name"],
       key: "dept",
       width: 150,
-      render: (v: string) => (
-        <span
-          style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
-        >
-          {v}
-        </span>
-      ),
     },
     {
-      title: "Location",
-      dataIndex: "location",
-      key: "location",
-      width: 130,
-      render: (v: string) => (
-        <span
-          style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
-        >
-          {v}
-        </span>
-      ),
-    },
-    {
-      title: "Type",
-      dataIndex: "type",
-      key: "type",
-      width: 100,
-      render: (t: string) => (
-        <StatusTag status={t.toLowerCase().replace("-", "_")} label={t} />
-      ),
+        title: "Status",
+        dataIndex: "status",
+        key: "status",
+        width: 120,
+        render: (s: string) => <StatusTag status={s?.toLowerCase() || "unknown"} />,
     },
     {
       title: "Applicants",
-      dataIndex: "applicants",
       key: "applicants",
       width: 100,
-      sorter: (a, b) => a.applicants - b.applicants,
-      render: (v: number) => (
-        <span
-          style={{
-            fontFamily: "var(--font-display)",
-            color: "var(--color-primary)",
-            fontWeight: 700,
-          }}
-        >
-          {v}
+      render: (_, record) => (
+        <span style={{ fontWeight: 700, color: "var(--color-primary)" }}>
+          {record.applications?.length || 0}
         </span>
       ),
     },
     {
       title: "Posted",
-      dataIndex: "postedDate",
+      dataIndex: "createdAt",
       key: "posted",
       width: 120,
-      render: (d: string) => (
-        <span
-          style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
-        >
-          {formatDate(d)}
-        </span>
-      ),
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      width: 100,
-      render: (s: string) => <StatusTag status={s} />,
+      render: (d: string) => formatDate(d),
     },
     {
       title: "",
       key: "actions",
       width: 50,
-      render: () => (
-        <Button
-          type="text"
-          size="small"
-          icon={<EyeOutlined />}
-          style={{ color: "var(--color-on-surface-variant)" }}
-        />
-      ),
+      render: (_, record) => {
+        const items: MenuProps['items'] = [];
+        
+        if (record.status === 'DRAFT') {
+            items.push({
+                key: 'submit',
+                label: 'Submit for Approval',
+                icon: <SendOutlined />,
+                onClick: () => handleJobAction(record.id, 'submit')
+            });
+        }
+        
+        if (record.status === 'APPROVED') {
+            items.push({
+                key: 'open',
+                label: 'Open Job',
+                icon: <UnlockOutlined />,
+                onClick: () => handleJobAction(record.id, 'open')
+            });
+        }
+
+        if (record.status === 'OPEN') {
+            items.push({
+                key: 'close',
+                label: 'Close Job',
+                icon: <StopOutlined />,
+                onClick: () => handleJobAction(record.id, 'close')
+            });
+        }
+
+        items.push({
+            key: 'view',
+            label: 'View Details',
+            icon: <EyeOutlined />
+        });
+
+        return (
+            <Dropdown menu={{ items }} trigger={['click']}>
+                <Button type="text" size="small" icon={<MoreOutlined />} />
+            </Dropdown>
+        );
+      },
     },
+  ];
+
+  const candidateColumns: ColumnsType<any> = [
+    {
+        title: "Name",
+        key: "name",
+        render: (_, r) => `${r.firstName} ${r.lastName}`,
+    },
+    {
+        title: "Email",
+        dataIndex: "email",
+    },
+    {
+        title: "Applications",
+        key: "apps",
+        render: (_, r) => (r.applications?.length || 0),
+    },
+    {
+        title: "Skills",
+        dataIndex: "skills",
+        render: (skills: string[]) => (
+            <Space size={[0, 4]} wrap>
+                {skills?.map(s => <Tag key={s} size="small">{s}</Tag>)}
+            </Space>
+        )
+    },
+    {
+        title: "Resume",
+        dataIndex: "resumeUrl",
+        render: (url) => url ? <a href={url} target="_blank" rel="noreferrer">View</a> : "N/A",
+    }
   ];
 
   return (
@@ -228,9 +205,14 @@ export default function RecruitmentPage() {
           { label: "Recruitment" },
         ]}
         extra={
-          <Button type="primary" icon={<PlusOutlined />}>
-            Post Job
-          </Button>
+          <Space>
+            <Button icon={<UserAddOutlined />} onClick={() => setModalType("candidate")}>
+                Add Candidate
+            </Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalType("job")}>
+                Post Job
+            </Button>
+          </Space>
         }
       />
 
@@ -251,15 +233,15 @@ export default function RecruitmentPage() {
         </Col>
         <Col xs={12} sm={6}>
           <KpiCard
-            title="Interviews Scheduled"
-            value="12"
+            title="Interviews"
+            value={`${interviewsScheduled}`}
             prefix={<CheckSquareOutlined style={{ color: "#ffb347" }} />}
           />
         </Col>
         <Col xs={12} sm={6}>
           <KpiCard
-            title="Offers Made"
-            value="3"
+            title="Offers"
+            value={`${offersMade}`}
             prefix={<UserAddOutlined style={{ color: "#80d8ff" }} />}
           />
         </Col>
@@ -279,17 +261,61 @@ export default function RecruitmentPage() {
                   onSearchChange={setSearch}
                   searchPlaceholder="Search positions..."
                 />
-                <DataTable<Job> columns={columns} dataSource={filtered} rowKey="id" />
+                <DataTable
+                  columns={jobColumns}
+                  dataSource={filteredJobs}
+                  rowKey="id"
+                  loading={isJobsLoading}
+                />
               </>
             ),
           },
           {
             key: "2",
             label: "ATS Kanban",
-            children: <AtsKanban initialApplications={mockApplications} />,
+            children: (
+                <div style={{ marginTop: 16 }}>
+                    {isAppsLoading ? (
+                        <div>Loading Kanban...</div>
+                    ) : (
+                        <AtsKanban initialApplications={applications || []} />
+                    )}
+                </div>
+            ),
           },
+          {
+            key: "3",
+            label: "Candidates",
+            children: (
+                <>
+                <TableToolbar
+                  searchValue={search}
+                  onSearchChange={setSearch}
+                  searchPlaceholder="Search candidates..."
+                />
+                <DataTable
+                  columns={candidateColumns}
+                  dataSource={filteredCandidates}
+                  rowKey="id"
+                  loading={isCandidatesLoading}
+                />
+              </>
+            )
+          }
         ]}
       />
+
+      <Modal
+        open={!!modalType}
+        onCancel={() => setModalType(null)}
+        footer={null}
+        width={modalType === "job" ? 800 : 500}
+        destroyOnClose
+        title={modalType === "job" ? "New Job Requisition" : "Add New Candidate"}
+      >
+        {modalType === "job" && <JobRequisitionForm onSuccess={() => setModalType(null)} />}
+        {modalType === "candidate" && <CandidateForm onSuccess={() => setModalType(null)} />}
+      </Modal>
     </div>
   );
 }

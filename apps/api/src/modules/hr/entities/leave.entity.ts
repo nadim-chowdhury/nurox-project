@@ -76,6 +76,12 @@ export class LeaveBalance extends BaseEntity {
   @Column({ type: 'decimal', precision: 4, scale: 1, default: 0 })
   usedDays: number;
 
+  @Column({ type: 'decimal', precision: 4, scale: 1, default: 0 })
+  carriedForwardDays: number;
+
+  @Column({ type: 'date', nullable: true })
+  expiryDate: string | null;
+
   @Column({ type: 'varchar', length: 10 })
   fiscalYear: string; // e.g., "2025-26"
 }
