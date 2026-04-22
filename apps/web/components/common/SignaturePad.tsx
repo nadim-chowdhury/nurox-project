@@ -50,8 +50,10 @@ export function SignaturePad({ onSave, width = 500, height = 200 }: SignaturePad
     let x, y;
 
     if ("touches" in e) {
-      x = e.touches[0].clientX - rect.left;
-      y = e.touches[0].clientY - rect.top;
+      const touch = e.touches[0];
+      if (!touch) return;
+      x = touch.clientX - rect.left;
+      y = touch.clientY - rect.top;
     } else {
       x = e.clientX - rect.left;
       y = e.clientY - rect.top;

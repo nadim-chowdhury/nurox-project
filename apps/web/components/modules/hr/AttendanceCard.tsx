@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, Button, Typography, Space, Tag, message, QRCode, Modal, Spin } from "antd";
-import { CheckCircleOutlined, LogoutOutlined, QrcodeOutlined, environmentOutlined } from "@ant-design/icons";
+import { CheckCircleOutlined, LogoutOutlined, QrcodeOutlined, EnvironmentOutlined } from "@ant-design/icons";
 import { useCheckInMutation, useCheckOutMutation, useLazyGetCheckInQrQuery } from "@/store/api/attendanceApi";
 import { useAppSelector } from "@/hooks/useRedux";
 

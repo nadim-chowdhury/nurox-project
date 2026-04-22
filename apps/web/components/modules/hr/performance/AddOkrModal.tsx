@@ -61,7 +61,7 @@ export const AddOkrModal: React.FC<Props> = ({ visible, onClose }) => {
           ]} />
         </Form.Item>
 
-        <Divider orientation="left">Key Results</Divider>
+        <Divider titlePlacement="left">Key Results</Divider>
         
         <Form.List name="keyResults">
           {(fields, { add, remove }) => (

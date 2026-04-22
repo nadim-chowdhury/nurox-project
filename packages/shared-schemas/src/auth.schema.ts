@@ -22,7 +22,7 @@ export const registerSchema = z.object({
     .min(8, "Password must be at least 8 characters")
     .max(128, "Password must be 128 characters or fewer")
     .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/,
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/,
       "Password must include uppercase, lowercase, number, and special character",
     ),
   organizationName: z
@@ -56,7 +56,7 @@ export const changePasswordSchema = z.object({
     .min(8, "New password must be at least 8 characters")
     .max(128, "Password must be 128 characters or fewer")
     .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/,
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/,
       "Password must include uppercase, lowercase, number, and special character",
     ),
 });
@@ -77,7 +77,7 @@ export const resetPasswordSchema = z.object({
     .min(8, "Password must be at least 8 characters")
     .max(128, "Password must be 128 characters or fewer")
     .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/,
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/,
       "Password must include uppercase, lowercase, number, and special character",
     ),
 });

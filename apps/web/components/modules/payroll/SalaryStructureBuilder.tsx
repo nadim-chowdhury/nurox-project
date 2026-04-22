@@ -36,7 +36,7 @@ export const SalaryStructureBuilder: React.FC = () => {
           </Form.Item>
         </div>
 
-        <Divider orientation="left">Components</Divider>
+        <Divider titlePlacement="left">Components</Divider>
 
         <Form.List name="components">
           {(fields, { add, remove }) => (

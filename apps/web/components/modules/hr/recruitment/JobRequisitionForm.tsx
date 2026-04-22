@@ -12,7 +12,8 @@ export function JobRequisitionForm({ onSuccess }: { onSuccess?: () => void }) {
   const [form] = Form.useForm();
   const [createJob, { isLoading }] = useCreateJobMutation();
   const { data: departments } = useGetDepartmentsQuery();
-  const { data: users } = useGetUsersQuery();
+  const { data: usersResponse } = useGetUsersQuery({ page: 1, limit: 100, sortBy: "firstName", sortOrder: "ASC" });
+  const users = usersResponse?.data;
 
   const onFinish = async (values: any) => {
     try {

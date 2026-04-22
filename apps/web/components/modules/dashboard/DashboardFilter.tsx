@@ -3,6 +3,9 @@
 import React from "react";
 import { DatePicker, Space, Typography } from "antd";
 import dayjs from "dayjs";
+import quarterOfYear from "dayjs/plugin/quarterOfYear";
+
+dayjs.extend(quarterOfYear);
 
 const { RangePicker } = DatePicker;
 const { Text } = Typography;
@@ -28,7 +31,7 @@ export function DashboardFilter({ value, onChange }: Props) {
             { label: 'Last 7 Days', value: [dayjs().subtract(7, 'd'), dayjs()] },
             { label: 'Last 30 Days', value: [dayjs().subtract(30, 'd'), dayjs()] },
             { label: 'This Month', value: [dayjs().startOf('month'), dayjs().endOf('month')] },
-            { label: 'Last Quarter', value: [dayjs().subtract(1, 'quarter').startOf('quarter'), dayjs().subtract(1, 'quarter').endOf('quarter')] },
+            { label: 'Last Quarter', value: [dayjs().subtract(1, 'quarter' as any).startOf('quarter' as any), dayjs().subtract(1, 'quarter' as any).endOf('quarter' as any)] },
           ]}
           style={{ 
             background: 'var(--color-surface-container-low)', 

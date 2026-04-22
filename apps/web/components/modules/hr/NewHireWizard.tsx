@@ -14,8 +14,6 @@ import { useCreateEmployeeMutation, useGetDepartmentsQuery } from "@/store/api/h
 import { useGetBranchesQuery } from "@/store/api/systemApi";
 import dayjs from "dayjs";
 
-const { Step } = Steps;
-
 export const NewHireWizard: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [createEmployee, { isLoading }] = useCreateEmployeeMutation();
@@ -203,13 +201,9 @@ export const NewHireWizard: React.FC = () => {
 
   return (
     <Card title="New Hire Wizard" className="max-w-2xl mx-auto shadow-lg">
-      <Steps current={currentStep}>
-        {steps.map((item) => (
-          <Step key={item.title} title={item.title} />
-        ))}
-      </Steps>
+      <Steps current={currentStep} items={steps.map(item => ({ title: item.title }))} />
       <Form layout="vertical" className="mt-8">
-        <div className="steps-content">{steps[currentStep].content}</div>
+        <div className="steps-content">{steps[currentStep]?.content}</div>
         <div className="steps-action flex justify-end gap-2 mt-8">
           {currentStep > 0 && (
             <Button onClick={() => prev()}>

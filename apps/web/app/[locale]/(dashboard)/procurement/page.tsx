@@ -95,7 +95,7 @@ export default function ProcurementPage() {
                   <XAxis dataKey="name" />
                   <YAxis tickFormatter={(value) => `$${value / 1000}k`} />
                   <Tooltip
-                    formatter={(value: number) => formatCurrency(value)}
+                    formatter={(value: any) => formatCurrency(value)}
                     contentStyle={{
                       background: "var(--color-surface)",
                       border: "1px solid var(--ghost-border)",

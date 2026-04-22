@@ -44,10 +44,10 @@ export const EmployeeHistoryTimeline: React.FC<Props> = ({ employeeId }) => {
                 <Tag color={eventColors[event.event]}>{event.event}</Tag>
               </div>
               {event.designation && (
-                <Text type="secondary" size="small">Designation: {event.designation.title}</Text>
+                <Text type="secondary">Designation: {event.designation.title}</Text>
               )}
               {event.department && (
-                <Text type="secondary" size="small">Department: {event.department.name}</Text>
+                <Text type="secondary">Department: {event.department.name}</Text>
               )}
               {event.comments && (
                 <Text className="mt-1 italic">{event.comments}</Text>

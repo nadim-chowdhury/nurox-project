@@ -23,7 +23,6 @@ export interface Employee extends EmployeeResponseDto {
   gender?: string;
   address?: string;
   contractExpiryDate?: string;
-  probationEndDate?: string;
 }
 
 export interface EmployeeListParams {

@@ -181,7 +181,7 @@ export function Sidebar() {
   ];
 
   // Recursively filter hidden items
-  const filterMenuItems = (items: any[]) => {
+  const filterMenuItems = (items: any[]): any[] => {
     return items
       .filter(item => !item.hidden)
       .map(item => {

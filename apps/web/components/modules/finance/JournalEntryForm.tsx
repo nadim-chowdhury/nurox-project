@@ -15,6 +15,7 @@ export function JournalEntryForm() {
     control,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(journalEntrySchema),
@@ -53,7 +54,7 @@ export function JournalEntryForm() {
               <DatePicker
                 style={{ width: "100%" }}
                 defaultValue={dayjs()}
-                onChange={(date) => control._fields.entryDate?._f.onChange(date?.toISOString())}
+                onChange={(date) => setValue("entryDate", date?.toISOString() || "")}
               />
             </Form.Item>
           </Col>

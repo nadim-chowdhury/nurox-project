@@ -1,18 +1,12 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, TreeRepository, EntityManager } from 'typeorm';
+import { Repository, TreeRepository } from 'typeorm';
 import { Employee, EmployeeStatus, Gender } from './entities/employee.entity';
 import { Department } from './entities/department.entity';
 import { Designation } from './entities/designation.entity';
 import {
   PerformanceReview,
   PerformanceReviewStatus,
-  KeyResult,
   PerformanceReviewType,
 } from './entities/performance.entity';
 import {
@@ -28,7 +22,6 @@ import {
 import { PdfService } from '../system/pdf.service';
 import {
   CreateEmployeeDto,
-  EmployeeResponseDto,
   OkrDto,
   TrainingDto,
   SkillDto,

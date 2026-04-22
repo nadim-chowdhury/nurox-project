@@ -40,14 +40,14 @@ export class AttendanceService {
     private readonly holidayRepo: Repository<Holiday>,
   ) {}
 
-  async generateCheckInQr(employeeId: string): Promise<string> {
+  async generateCheckInQr(_employeeId: string): Promise<string> {
     // In a real app, generate a signed, time-limited token
     const token = crypto.randomBytes(32).toString('hex');
     // Store in Redis with TTL
     return token;
   }
 
-  async checkInViaQr(employeeId: string, token: string) {
+  async checkInViaQr(employeeId: string, _token: string) {
     // Validate token from Redis
     return this.recordAttendance(employeeId, AttendanceMethod.QR, 'IN');
   }

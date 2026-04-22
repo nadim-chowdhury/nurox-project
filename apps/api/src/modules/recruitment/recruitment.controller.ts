@@ -5,10 +5,7 @@ import {
   Body,
   Param,
   Put,
-  Patch,
-  Delete,
   UseGuards,
-  Query,
 } from '@nestjs/common';
 import { RecruitmentService } from './recruitment.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';

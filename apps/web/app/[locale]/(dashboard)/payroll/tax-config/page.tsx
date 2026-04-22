@@ -104,7 +104,7 @@ export default function TaxConfigPage() {
                 <Switch />
             </Form.Item>
 
-            <Divider orientation="left">Tax Brackets</Divider>
+            <Divider titlePlacement="left">Tax Brackets</Divider>
             <Form.List name="brackets">
                 {(fields, { add, remove }) => (
                     <>

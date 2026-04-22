@@ -319,7 +319,6 @@ export class HrController {
     return this.hrService.removeDepartment(id);
   }
 
-
   @Post('designations')
   createDesignation(@Body() dto: CreateDesignationDto) {
     return this.hrService.createDesignation(dto);

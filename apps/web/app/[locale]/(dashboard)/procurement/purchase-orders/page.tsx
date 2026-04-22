@@ -75,6 +75,7 @@ export default function PurchaseOrdersPage() {
     try {
       await createGRN({
         poId: receiptPo.id,
+        status: "PENDING",
         receivedDate: new Date().toISOString(),
         receivedById: "current-user-id",
         lines: receiptPo.lines.map((l: any) => ({

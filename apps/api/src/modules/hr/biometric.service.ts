@@ -1,7 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
 import * as net from 'net';
-import { AttendanceMethod } from './entities/attendance.entity';
 
 @Injectable()
 export class BiometricService implements OnModuleInit {
@@ -43,15 +42,9 @@ export class BiometricService implements OnModuleInit {
     });
   }
 
-  private processDeviceData(data: Buffer) {
+  private processDeviceData(_data: Buffer) {
     // Decode data based on ZKTeco protocol
     // For now, let's mock a successful read
-    const mockRecord = {
-      employeeId: 'EMP-001', // This should be mapped from device's user ID to system's employee ID
-      timestamp: new Date(),
-      type: 'IN' as const,
-    };
-
     // Find employee by internal biometric ID
     // Then call attendance service
     // this.attendanceService.recordAttendance(internalEmployeeId, AttendanceMethod.BIOMETRIC, mockRecord.type);

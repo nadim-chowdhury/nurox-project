@@ -11,7 +11,8 @@ import { z } from "zod";
 export function InterviewForm({ applicationId, onSuccess }: { applicationId: string; onSuccess?: () => void }) {
   const [form] = Form.useForm();
   const [scheduleInterview, { isLoading }] = useScheduleInterviewMutation();
-  const { data: users } = useGetUsersQuery();
+  const { data: usersResponse } = useGetUsersQuery({ page: 1, limit: 100, sortBy: "firstName", sortOrder: "ASC" });
+  const users = usersResponse?.data;
 
   const onFinish = async (values: any) => {
     try {

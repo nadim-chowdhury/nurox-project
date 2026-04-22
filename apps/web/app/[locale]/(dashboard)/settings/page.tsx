@@ -1085,7 +1085,7 @@ function RolesTab() {
           <Form.Item name="description" label="Description">
             <Input.TextArea rows={2} />
           </Form.Item>
-          <Divider orientation="left">Permissions</Divider>
+          <Divider titlePlacement="left">Permissions</Divider>
           <Form.Item name="permissions" rules={[{ required: true, message: 'Please select at least one permission' }]}>
             <div style={{ maxHeight: 400, overflow: 'auto' }}>
               <Checkbox.Group style={{ width: '100%' }}>

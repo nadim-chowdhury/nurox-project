@@ -21,7 +21,6 @@ import { Permission } from '../auth/enums/permissions.enum';
 import {
   updateUserSchema,
   inviteUserSchema,
-  userListQuerySchema,
   UpdateUserDto,
   InviteUserDto,
   UserListQueryDto,

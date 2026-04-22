@@ -12,7 +12,7 @@ import type {
 export const procurementApi = createApi({
   reducerPath: "procurementApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["Vendor", "PR", "RFQ", "PO", "GRN"],
+  tagTypes: ["Vendor", "PR", "RFQ", "PO", "GRN", "Stock"],
   endpoints: (builder) => ({
     getVendors: builder.query<any[], void>({
       query: () => "/procurement/vendors",

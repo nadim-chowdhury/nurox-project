@@ -12,7 +12,6 @@ import {
   LessThanOrEqual,
   MoreThanOrEqual,
   In,
-  IsNull,
   Like,
 } from 'typeorm';
 import { Account, AccountType } from './entities/account.entity';
@@ -430,7 +429,6 @@ export class FinanceService {
     }
 
     // Check if period is open
-    const entryDate = new Date(dto.entryDate);
     const period = await this.periodRepo.findOne({
       where: {
         status: PeriodStatus.OPEN,
@@ -575,29 +573,29 @@ export class FinanceService {
       const apAccount = await this.findAccountByCode('2100');
 
       await this.createJournalEntry({
-        entryNumber: `BILL-${(bill as Bill).billNumber}`,
+        entryNumber: `BILL-${bill.billNumber}`,
         entryDate: new Date().toISOString(),
-        description: `Expense recorded for Bill ${(bill as Bill).billNumber}`,
-        reference: (bill as Bill).billNumber,
+        description: `Expense recorded for Bill ${bill.billNumber}`,
+        reference: bill.billNumber,
         lines: [
           {
             accountId: expenseAccount.id,
-            debit: (bill as Bill).totalAmount,
+            debit: bill.totalAmount,
             credit: 0,
           },
           {
             accountId: apAccount.id,
             debit: 0,
-            credit: (bill as Bill).totalAmount,
+            credit: bill.totalAmount,
           },
         ],
       });
       this.logger.log(
-        `Auto-journal posted for approved bill: ${(bill as Bill).billNumber}`,
+        `Auto-journal posted for approved bill: ${bill.billNumber}`,
       );
     }
 
-    return saved as Bill;
+    return saved;
   }
 
   async getTrialBalance() {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Table, Button, Tag, Space, Modal, Form, Input, InputNumber, Select, message } from "antd";
+import { Table, Button, Tag, Space, Modal, Form, Input, InputNumber, Select, message, Row, Col } from "antd";
 import { PlusOutlined, TeamOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useGetVendorsQuery, useCreateVendorMutation } from "@/store/api/procurementApi";

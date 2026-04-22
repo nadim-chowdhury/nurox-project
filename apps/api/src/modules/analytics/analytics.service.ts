@@ -17,7 +17,7 @@ export class AnalyticsService {
     private readonly inventoryService: InventoryService,
   ) {}
 
-  async getDashboard(startDate?: string, endDate?: string) {
+  async getDashboard(_startDate?: string, _endDate?: string) {
     const [
       employeeCount,
       revenueMTD,

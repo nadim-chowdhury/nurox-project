@@ -1,6 +1,18 @@
 import { z } from "zod";
 
-export const departmentSchema: z.ZodType<any> = z.lazy(() => 
+export interface DepartmentDto {
+  id?: string;
+  name: string;
+  code: string;
+  description?: string | null;
+  costCenter?: string | null;
+  headId?: string | null;
+  isActive: boolean;
+  parentId?: string | null;
+  children?: DepartmentDto[];
+}
+
+export const departmentSchema: z.ZodType<DepartmentDto> = z.lazy(() => 
   z.object({
     id: z.string().uuid().optional(),
     name: z.string().min(1, "Department name is required").max(100),
@@ -13,8 +25,6 @@ export const departmentSchema: z.ZodType<any> = z.lazy(() =>
     children: z.array(departmentSchema).optional(),
   })
 );
-
-export type DepartmentDto = z.infer<typeof departmentSchema>;
 
 export const createDepartmentSchema = z.object({
   name: z.string().min(1, "Department name is required").max(100),

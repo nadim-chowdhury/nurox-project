@@ -6,8 +6,7 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, UseGuards } from '@nestjs/common';
-import { WsJwtGuard } from '../../auth/guards/ws-jwt.guard';
+import { Logger } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: {
@@ -32,14 +31,14 @@ export class NotificationsGateway
   }
 
   @SubscribeMessage('joinTenant')
-  handleJoinTenant(client: Socket, tenantId: string) {
-    client.join(`tenant:${tenantId}`);
+  async handleJoinTenant(client: Socket, tenantId: string) {
+    await client.join(`tenant:${tenantId}`);
     this.logger.log(`Client ${client.id} joined tenant room: ${tenantId}`);
   }
 
   @SubscribeMessage('joinUser')
-  handleJoinUser(client: Socket, userId: string) {
-    client.join(`user:${userId}`);
+  async handleJoinUser(client: Socket, userId: string) {
+    await client.join(`user:${userId}`);
     this.logger.log(`Client ${client.id} joined user room: ${userId}`);
   }
 

@@ -8,7 +8,6 @@ import {
   ZoneDto,
   RackDto,
   BinDto,
-  StockMovementDto,
   StockAdjustmentDto,
 } from '@repo/shared-schemas';
 

@@ -7,7 +7,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, In, IsNull } from 'typeorm';
+import { Repository, DataSource, IsNull } from 'typeorm';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { Product, ValuationMethod } from './entities/product.entity';
@@ -208,7 +208,6 @@ export class InventoryService implements OnModuleInit {
       if (!product) throw new NotFoundException('Product not found');
 
       // 1. Find available batches based on valuation method
-      const order: any = {};
       let orderByField = 'receivedDate';
       let orderByDir = 'ASC';
 
@@ -381,7 +380,7 @@ export class InventoryService implements OnModuleInit {
     });
   }
 
-  async getStockLevels(productId?: string, warehouseId?: string) {
+  async getStockLevels(_productId?: string, _warehouseId?: string) {
     // ... (existing code)
   }
 
@@ -453,10 +452,6 @@ export class InventoryService implements OnModuleInit {
   }
 
   async getInventoryAging() {
-    const batches = await this.batchRepo.find({
-      where: { remainingQuantity: In([0]) }, // TypeORM dummy, I'll use query builder
-    });
-
     // We'll use QueryBuilder for a more efficient aging bucket report
     const now = new Date();
     const result = await this.batchRepo

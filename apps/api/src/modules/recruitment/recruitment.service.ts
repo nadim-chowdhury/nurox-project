@@ -1,5 +1,4 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { Injectable, Logger } from '@nestjs/common';
 import { Repository, ObjectLiteral } from 'typeorm';
 import { JobRequisition, JobStatus } from './entities/job-requisition.entity';
 import { Candidate } from './entities/candidate.entity';
