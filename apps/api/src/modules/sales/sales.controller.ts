@@ -12,10 +12,16 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { SalesService } from './sales.service';
-import { CreateLeadDto } from './dto/create-lead.dto';
-import { UpdateLeadDto } from './dto/update-lead.dto';
-import { CreateDealDto } from './dto/create-deal.dto';
-import { UpdateDealDto } from './dto/update-deal.dto';
+import {
+  createLeadSchema,
+  updateLeadSchema,
+  createDealSchema,
+  updateDealSchema,
+  type CreateLeadDto,
+  type UpdateLeadDto,
+  type CreateDealDto,
+  type UpdateDealDto,
+} from '@repo/shared-schemas';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
@@ -29,7 +35,8 @@ export class SalesController {
   @Post('leads')
   @RequirePermissions(Permission.SALES_MANAGE_LEADS)
   createLead(@Body() dto: CreateLeadDto) {
-    return this.salesService.createLead(dto);
+    const parsed = createLeadSchema.parse(dto);
+    return this.salesService.createLead(parsed);
   }
 
   @Get('leads')
@@ -50,7 +57,8 @@ export class SalesController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateLeadDto,
   ) {
-    return this.salesService.updateLead(id, dto);
+    const parsed = updateLeadSchema.parse(dto);
+    return this.salesService.updateLead(id, parsed);
   }
 
   @Delete('leads/:id')
@@ -63,7 +71,8 @@ export class SalesController {
   @Post('deals')
   @RequirePermissions(Permission.SALES_MANAGE_DEALS)
   createDeal(@Body() dto: CreateDealDto) {
-    return this.salesService.createDeal(dto);
+    const parsed = createDealSchema.parse(dto);
+    return this.salesService.createDeal(parsed);
   }
 
   @Get('deals')
@@ -84,7 +93,8 @@ export class SalesController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateDealDto,
   ) {
-    return this.salesService.updateDeal(id, dto);
+    const parsed = updateDealSchema.parse(dto);
+    return this.salesService.updateDeal(id, parsed);
   }
 
   @Delete('deals/:id')

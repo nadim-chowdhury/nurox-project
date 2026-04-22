@@ -25,6 +25,7 @@ import { attendanceApi } from "./api/attendanceApi";
 import { inventoryApi } from "./api/inventoryApi";
 import { procurementApi } from "./api/procurementApi";
 import { recruitmentApi } from "./api/recruitmentApi";
+import { notificationApi } from "./api/notificationApi";
 
 /**
  * Persist config — only the auth slice is persisted to localStorage.
@@ -53,6 +54,7 @@ const rootReducer = combineReducers({
   [inventoryApi.reducerPath]: inventoryApi.reducer,
   [procurementApi.reducerPath]: procurementApi.reducer,
   [recruitmentApi.reducerPath]: recruitmentApi.reducer,
+  [notificationApi.reducerPath]: notificationApi.reducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
@@ -77,7 +79,8 @@ export const store = configureStore({
       .concat(attendanceApi.middleware)
       .concat(inventoryApi.middleware)
       .concat(procurementApi.middleware)
-      .concat(recruitmentApi.middleware),
+      .concat(recruitmentApi.middleware)
+      .concat(notificationApi.middleware),
   devTools: process.env.NODE_ENV !== "production",
 });
 

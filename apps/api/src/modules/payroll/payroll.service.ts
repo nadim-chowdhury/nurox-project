@@ -17,7 +17,8 @@ import {
 } from './entities/salary-structure.entity';
 import { TaxConfiguration } from './entities/tax-bracket.entity';
 import { SalaryHistory } from '../hr/entities/salary-history.entity';
-import { AttendanceService } from '../hr/attendance.service';
+import { AttendanceService } from '../attendance/attendance.service';
+import { LeaveService } from '../leave/leave.service';
 import { PayrollComputeService } from './payroll-compute.service';
 import { PdfService } from '../system/pdf.service';
 import { StorageService } from '../system/storage.service';
@@ -45,6 +46,7 @@ export class PayrollService {
     @InjectRepository(Employee)
     private readonly employeeRepo: Repository<Employee>,
     private readonly attendanceService: AttendanceService,
+    private readonly leaveService: LeaveService,
     private readonly computeService: PayrollComputeService,
     private readonly pdfService: PdfService,
     private readonly storageService: StorageService,
@@ -164,7 +166,7 @@ export class PayrollService {
       let encashmentDays = 0;
       if (run.period.endsWith('-03')) {
         // Example: March is fiscal year end
-        encashmentDays = await this.attendanceService.getEncashableLeaveDays(
+        encashmentDays = await this.leaveService.getEncashableLeaveDays(
           assign.employeeId,
           '2025-26',
         );

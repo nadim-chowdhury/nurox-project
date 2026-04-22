@@ -11,10 +11,15 @@ export class AuditService {
   ) {}
 
   async log(data: {
+    tenantId: string;
     userId: string | null;
     action: string;
     module: string;
     description: string;
+    entityType?: string;
+    entityId?: string;
+    oldValue?: Record<string, any> | null;
+    newValue?: Record<string, any> | null;
     metadata?: Record<string, any>;
     ipAddress?: string;
     userAgent?: string;
@@ -24,14 +29,16 @@ export class AuditService {
   }
 
   async findAll(query: {
+    tenantId: string;
     userId?: string;
     module?: string;
     limit?: number;
     page?: number;
   }) {
-    const { userId, module, limit = 50, page = 1 } = query;
+    const { tenantId, userId, module, limit = 50, page = 1 } = query;
     const qb = this.auditRepo.createQueryBuilder('log');
 
+    qb.where('log.tenantId = :tenantId', { tenantId });
     if (userId) qb.andWhere('log.userId = :userId', { userId });
     if (module) qb.andWhere('log.module = :module', { module });
 

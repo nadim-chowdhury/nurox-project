@@ -138,7 +138,7 @@ export default function AttendancePage() {
       const month = dayjs().month() + 1;
       const year = dayjs().year();
       // Implementation for direct download or opening the URL
-      window.open(`/api/hr/attendance/report?month=${month}&year=${year}`, '_blank');
+      window.open(`/api/attendance/report?month=${month}&year=${year}`, '_blank');
   };
 
   return (

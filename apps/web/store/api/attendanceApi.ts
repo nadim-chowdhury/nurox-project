@@ -15,7 +15,7 @@ export const attendanceApi = createApi({
   endpoints: (builder) => ({
     getTeamAttendance: builder.query<any[], { date?: string }>({
       query: (params) => ({
-        url: "/hr/attendance/team",
+        url: "/attendance/team",
         params,
       }),
       providesTags: ["Attendance"],
@@ -32,7 +32,7 @@ export const attendanceApi = createApi({
       }
     >({
       query: (body) => ({
-        url: "/hr/attendance/check-in",
+        url: "/attendance/check-in",
         method: "POST",
         body,
       }),
@@ -44,7 +44,7 @@ export const attendanceApi = createApi({
       { employeeId: string; method: string; location?: any; timestamp?: string }
     >({
       query: (body) => ({
-        url: "/hr/attendance/check-out",
+        url: "/attendance/check-out",
         method: "POST",
         body,
       }),
@@ -53,7 +53,7 @@ export const attendanceApi = createApi({
 
     getCheckInQr: builder.query<{ token: string }, string>({
       query: (employeeId) => ({
-        url: "/hr/attendance/qr",
+        url: "/attendance/qr",
         method: "POST", // Adjusted to match expected client behavior for body use
         body: { employeeId },
       }),
@@ -61,7 +61,7 @@ export const attendanceApi = createApi({
 
     bulkImportAttendance: builder.mutation<any, any[]>({
       query: (records) => ({
-        url: "/hr/attendance/bulk",
+        url: "/attendance/bulk",
         method: "POST",
         body: records,
       }),
@@ -73,12 +73,12 @@ export const attendanceApi = createApi({
       { month: number; year: number }
     >({
       query: ({ month, year }) =>
-        `/hr/attendance/report?month=${month}&year=${year}`,
+        `/attendance/report?month=${month}&year=${year}`,
     }),
 
     applyLeave: builder.mutation<LeaveRequestDto, any>({
       query: (body) => ({
-        url: "/hr/leaves/apply",
+        url: "/leave/apply",
         method: "POST",
         body,
       }),
@@ -86,12 +86,12 @@ export const attendanceApi = createApi({
     }),
 
     getLeaveBalances: builder.query<LeaveBalanceDto[], string>({
-      query: (employeeId) => `/hr/leaves/balances/${employeeId}`,
+      query: (employeeId) => `/leave/balances/${employeeId}`,
       providesTags: ["LeaveBalance"],
     }),
 
     getLeaveRequests: builder.query<any[], void>({
-      query: () => "/hr/leaves",
+      query: () => "/leave",
       providesTags: ["LeaveRequest"],
     }),
 
@@ -100,7 +100,7 @@ export const attendanceApi = createApi({
       { id: string; status: string; approvedBy: string }
     >({
       query: ({ id, ...body }) => ({
-        url: `/hr/leaves/${id}/approve`,
+        url: `/leave/${id}/approve`,
         method: "PATCH",
         body,
       }),

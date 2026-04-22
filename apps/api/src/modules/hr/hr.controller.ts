@@ -15,7 +15,6 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { HrService } from './hr.service';
-import { AttendanceService } from './attendance.service';
 import {
   CreateEmployeeDto,
   OkrDto,
@@ -29,12 +28,8 @@ import {
   TerminationDto,
   PipDto,
   ThreeSixtyReviewDto,
-  leaveRequestSchema,
-  type LeaveRequestDto,
 } from '@repo/shared-schemas';
 import { SalaryChangeReason } from './entities/salary-history.entity';
-import { LeaveRequestStatus } from './entities/leave.entity';
-import { AttendanceMethod } from './entities/attendance.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
@@ -48,109 +43,7 @@ import { UpdateDesignationDto } from './dto/update-designation.dto';
 export class HrController {
   constructor(
     private readonly hrService: HrService,
-    private readonly attendanceService: AttendanceService,
   ) {}
-
-  @Get('attendance/qr')
-  async getCheckInQr(@Body('employeeId') employeeId: string) {
-    const token = await this.attendanceService.generateCheckInQr(employeeId);
-    return { token };
-  }
-
-  @Post('attendance/check-in')
-  async checkIn(
-    @Body()
-    dto: {
-      employeeId: string;
-      method: AttendanceMethod;
-      token?: string;
-      location?: any;
-      timestamp?: string;
-    },
-  ) {
-    if (dto.method === AttendanceMethod.QR && dto.token) {
-      return this.attendanceService.checkInViaQr(dto.employeeId, dto.token);
-    }
-    return this.attendanceService.recordAttendance(
-      dto.employeeId,
-      dto.method,
-      'IN',
-      dto.location,
-      dto.timestamp ? new Date(dto.timestamp) : undefined,
-    );
-  }
-
-  @Post('attendance/check-out')
-  async checkOut(
-    @Body()
-    dto: {
-      employeeId: string;
-      method: AttendanceMethod;
-      location?: any;
-      timestamp?: string;
-    },
-  ) {
-    return this.attendanceService.recordAttendance(
-      dto.employeeId,
-      dto.method,
-      'OUT',
-      dto.location,
-      dto.timestamp ? new Date(dto.timestamp) : undefined,
-    );
-  }
-
-  @Get('attendance/team')
-  @RequirePermissions(Permission.HR_VIEW_EMPLOYEES)
-  async getTeamAttendance(@Query('date') date: string) {
-    return this.attendanceService.getTeamAttendance(
-      date || new Date().toISOString().split('T')[0],
-    );
-  }
-
-  @Post('attendance/bulk')
-  @RequirePermissions(Permission.HR_CREATE_EMPLOYEE)
-  async bulkImportAttendance(@Body() records: Record<string, unknown>[]) {
-    return this.attendanceService.bulkImport(records);
-  }
-
-  @Get('attendance/report')
-  @RequirePermissions(Permission.HR_VIEW_EMPLOYEES)
-  async getAttendanceReport(
-    @Query('month') month: number,
-    @Query('year') year: number,
-    @Res() res: Response,
-  ) {
-    return this.attendanceService.generateMonthlyReport(month, year, res);
-  }
-
-  @Get('leaves')
-  @RequirePermissions(Permission.HR_VIEW_EMPLOYEES)
-  async getLeaveRequests() {
-    return this.attendanceService.findAllLeaveRequests();
-  }
-
-  @Post('leaves/apply')
-  async applyLeave(@Body() dto: LeaveRequestDto) {
-    const parsed = leaveRequestSchema.parse(dto);
-    return this.attendanceService.applyLeave(parsed);
-  }
-
-  @Get('leaves/balances/:employeeId')
-  async getLeaveBalances(
-    @Param('employeeId', ParseUUIDPipe) employeeId: string,
-  ) {
-    return this.attendanceService.getLeaveBalances(employeeId);
-  }
-
-  @Patch('leaves/:id/approve')
-  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
-  async approveLeave(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body('status') status: LeaveRequestStatus,
-    @Body('approvedBy') approvedBy: string,
-  ) {
-    return this.attendanceService.approveLeave(id, approvedBy, status);
-  }
 
   @Post('employees')
   @RequirePermissions(Permission.HR_CREATE_EMPLOYEE)
@@ -284,6 +177,12 @@ export class HrController {
   @HttpCode(HttpStatus.NO_CONTENT)
   removeEmployee(@Param('id', ParseUUIDPipe) id: string) {
     return this.hrService.removeEmployee(id);
+  }
+
+  @Get('org-chart')
+  @RequirePermissions(Permission.HR_VIEW_EMPLOYEES)
+  getOrgChart() {
+    return this.hrService.getOrgChart();
   }
 
   @Post('departments')

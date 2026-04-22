@@ -30,6 +30,8 @@ import { MailerModule } from './modules/mailer/mailer.module';
 import { TenantMiddleware } from './common/middlewares/tenant.middleware';
 import { UsersModule } from './modules/users/users.module';
 import { HrModule } from './modules/hr/hr.module';
+import { AttendanceModule } from './modules/attendance/attendance.module';
+import { LeaveModule } from './modules/leave/leave.module';
 import { RecruitmentModule } from './modules/recruitment/recruitment.module';
 import { PayrollModule } from './modules/payroll/payroll.module';
 import { FinanceModule } from './modules/finance/finance.module';
@@ -38,6 +40,12 @@ import { SalesModule } from './modules/sales/sales.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ProcurementModule } from './modules/procurement/procurement.module';
+import { DocumentsModule } from './modules/documents/documents.module';
+import { AssetsModule } from './modules/assets/assets.module';
+import { ReportsModule } from './modules/reports/reports.module';
+
+import { ClsModule } from 'nestjs-cls';
+import { ClsMiddleware } from './common/middlewares/cls.middleware';
 
 @Module({
   imports: [
@@ -54,6 +62,12 @@ import { ProcurementModule } from './modules/procurement/procurement.module';
         s3Config,
       ],
       validate, // Zod-based env validation (replaces Joi)
+    }),
+
+    // ─── CLS (AsyncLocalStorage) ─────────────────────────────────
+    ClsModule.forRoot({
+      global: true,
+      middleware: { mount: true },
     }),
 
     // ─── Logging (Pino — structured JSON) ────────────────────────
@@ -117,6 +131,8 @@ import { ProcurementModule } from './modules/procurement/procurement.module';
     AuthModule,
     UsersModule,
     HrModule,
+    AttendanceModule,
+    LeaveModule,
     RecruitmentModule,
     PayrollModule,
     FinanceModule,
@@ -125,6 +141,9 @@ import { ProcurementModule } from './modules/procurement/procurement.module';
     SalesModule,
     ProjectsModule,
     AnalyticsModule,
+    DocumentsModule,
+    AssetsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -135,6 +154,7 @@ import { ProcurementModule } from './modules/procurement/procurement.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
+    consumer.apply(ClsMiddleware).forRoutes('*');
     consumer
       .apply(TenantMiddleware)
       .exclude(
@@ -144,6 +164,9 @@ export class AppModule implements NestModule {
       )
       .forRoutes(
         { path: 'hr/(.*)', method: RequestMethod.ALL },
+        { path: 'attendance/(.*)', method: RequestMethod.ALL },
+        { path: 'leave/(.*)', method: RequestMethod.ALL },
+        { path: 'notifications/(.*)', method: RequestMethod.ALL },
         { path: 'recruitment/(.*)', method: RequestMethod.ALL },
         { path: 'finance/(.*)', method: RequestMethod.ALL },
         { path: 'inventory/(.*)', method: RequestMethod.ALL },

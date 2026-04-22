@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { AttendanceService } from './attendance.service';
+import { AttendanceService } from '../attendance/attendance.service';
 import * as net from 'net';
 
 @Injectable()

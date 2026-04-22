@@ -213,6 +213,10 @@ export const hrApi = createApi({
       providesTags: ["Skill"],
     }),
 
+    getOrgChart: builder.query<any[], void>({
+      query: () => "/hr/org-chart",
+    }),
+
     getDepartments: builder.query<DepartmentDto[], void>({
       query: () => "/hr/departments",
       providesTags: ["Department"],
@@ -280,6 +284,7 @@ export const {
   useTerminateEmployeeMutation,
   useGetTrainingsQuery,
   useGetSkillMatrixQuery,
+  useGetOrgChartQuery,
   useGetDepartmentsQuery,
   useGetDesignationsQuery,
   useGetDepartmentQuery,

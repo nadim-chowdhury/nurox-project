@@ -48,6 +48,7 @@ export function Sidebar() {
         { key: "/hr/employees", label: "Employees" },
         { key: "/hr/departments", label: "Departments", hidden: !canPerform(Permission.HR_VIEW_DEPARTMENTS) },
         { key: "/hr/designations", label: "Designations" },
+        { key: "/hr/org-chart", label: "Org Chart" },
         { key: "/hr/recruitment", label: "Recruitment" },
         { key: "/hr/performance", label: "Performance", hidden: !canPerform(Permission.HR_MANAGE_PERFORMANCE) },
       ],

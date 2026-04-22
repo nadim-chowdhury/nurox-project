@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import { useAppSelector, useAppDispatch } from "@/hooks/useRedux";
 import { useLogoutMutation } from "@/store/api/authApi";
 import { Breadcrumbs } from "./Breadcrumbs";
-import { NotificationPanel } from "./NotificationPanel";
+import { NotificationDropdown } from "./NotificationDropdown";
 
 const { Header } = Layout;
 
@@ -96,7 +96,7 @@ export function TopBar() {
         </Button>
 
         {/* Notifications */}
-        <NotificationPanel />
+        <NotificationDropdown />
 
         {/* User menu */}
         <Dropdown

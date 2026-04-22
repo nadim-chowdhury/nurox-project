@@ -421,4 +421,38 @@ export class HrService {
   async getCount(): Promise<number> {
     return this.employeeRepo.count({ where: { deletedAt: null } as any });
   }
+
+  async getOrgChart(): Promise<any> {
+    const employees = await this.employeeRepo.find({
+      where: { status: EmployeeStatus.ACTIVE },
+      relations: ['designation', 'department'],
+      select: ['id', 'firstName', 'lastName', 'managerId', 'avatarUrl'],
+    });
+
+    const map = new Map();
+    const roots: any[] = [];
+
+    employees.forEach((emp) => {
+      map.set(emp.id, {
+        id: emp.id,
+        name: `${emp.firstName} ${emp.lastName}`,
+        attributes: {
+          designation: emp.designation?.name || 'N/A',
+          department: emp.department?.name || 'N/A',
+        },
+        avatarUrl: emp.avatarUrl,
+        children: [],
+      });
+    });
+
+    employees.forEach((emp) => {
+      if (emp.managerId && map.has(emp.managerId)) {
+        map.get(emp.managerId).children.push(map.get(emp.id));
+      } else {
+        roots.push(map.get(emp.id));
+      }
+    });
+
+    return roots;
+  }
 }

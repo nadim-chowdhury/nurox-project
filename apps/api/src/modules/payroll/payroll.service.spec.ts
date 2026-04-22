@@ -9,7 +9,8 @@ import {
 import { TaxConfiguration } from './entities/tax-bracket.entity';
 import { SalaryHistory } from '../hr/entities/salary-history.entity';
 import { Employee } from '../hr/entities/employee.entity';
-import { AttendanceService } from '../hr/attendance.service';
+import { AttendanceService } from '../attendance/attendance.service';
+import { LeaveService } from '../leave/leave.service';
 import { PayrollComputeService } from './payroll-compute.service';
 import { PdfService } from '../system/pdf.service';
 import { StorageService } from '../system/storage.service';
@@ -89,6 +90,11 @@ describe('PayrollService', () => {
           provide: AttendanceService,
           useValue: {
             getTeamAttendance: jest.fn(),
+          },
+        },
+        {
+          provide: LeaveService,
+          useValue: {
             getEncashableLeaveDays: jest.fn(),
           },
         },

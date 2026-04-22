@@ -12,6 +12,8 @@ import {
 import { TaxConfiguration, TaxBracket } from './entities/tax-bracket.entity';
 import { SalaryHistory } from '../hr/entities/salary-history.entity';
 import { HrModule } from '../hr/hr.module';
+import { AttendanceModule } from '../attendance/attendance.module';
+import { LeaveModule } from '../leave/leave.module';
 import { SystemModule } from '../system/system.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
@@ -28,6 +30,8 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
       SalaryHistory,
     ]),
     HrModule,
+    AttendanceModule,
+    LeaveModule,
     SystemModule,
     EventEmitterModule.forRoot(),
   ],

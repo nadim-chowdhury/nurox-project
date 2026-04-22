@@ -3,6 +3,7 @@ import { Space_Grotesk, Manrope } from "next/font/google";
 import { AntdProvider } from "@/components/providers/AntdProvider";
 import { ReduxProvider } from "@/components/providers/ReduxProvider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { SocketProvider } from "@/components/providers/SocketProvider";
 import { CommandPalette } from "@/components/common/CommandPalette/CommandPalette";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
@@ -75,8 +76,10 @@ export default async function RootLayout({
           <ReduxProvider>
             <AuthProvider>
               <AntdProvider locale={locale} direction={direction}>
-                {children}
-                <CommandPalette />
+                <SocketProvider>
+                  {children}
+                  <CommandPalette />
+                </SocketProvider>
               </AntdProvider>
             </AuthProvider>
           </ReduxProvider>

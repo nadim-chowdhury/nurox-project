@@ -88,12 +88,14 @@ export class SystemController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List all audit logs' })
   async getAuditLogs(
+    @Headers('x-tenant-id') tenantId: string,
     @Query('userId') userId?: string,
     @Query('module') module?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     return this.auditService.findAll({
+      tenantId,
       userId,
       module,
       page: page ? parseInt(page, 10) : 1,

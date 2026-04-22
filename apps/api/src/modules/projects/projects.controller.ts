@@ -12,10 +12,16 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
-import { CreateProjectDto } from './dto/create-project.dto';
-import { UpdateProjectDto } from './dto/update-project.dto';
-import { CreateTaskDto } from './dto/create-task.dto';
-import { UpdateTaskDto } from './dto/update-task.dto';
+import {
+  createProjectSchema,
+  updateProjectSchema,
+  createTaskSchema,
+  updateTaskSchema,
+  type CreateProjectDto,
+  type UpdateProjectDto,
+  type CreateTaskDto,
+  type UpdateTaskDto,
+} from '@repo/shared-schemas';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
@@ -29,7 +35,8 @@ export class ProjectsController {
   @Post()
   @RequirePermissions(Permission.PROJECTS_MANAGE)
   createProject(@Body() dto: CreateProjectDto) {
-    return this.projectsService.createProject(dto);
+    const parsed = createProjectSchema.parse(dto);
+    return this.projectsService.createProject(parsed);
   }
 
   @Get()
@@ -50,7 +57,8 @@ export class ProjectsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateProjectDto,
   ) {
-    return this.projectsService.updateProject(id, dto);
+    const parsed = updateProjectSchema.parse(dto);
+    return this.projectsService.updateProject(id, parsed);
   }
 
   @Delete(':id')
@@ -63,7 +71,8 @@ export class ProjectsController {
   @Post('tasks')
   @RequirePermissions(Permission.PROJECTS_MANAGE)
   createTask(@Body() dto: CreateTaskDto) {
-    return this.projectsService.createTask(dto);
+    const parsed = createTaskSchema.parse(dto);
+    return this.projectsService.createTask(parsed);
   }
 
   @Patch('tasks/:id')
@@ -72,7 +81,8 @@ export class ProjectsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateTaskDto,
   ) {
-    return this.projectsService.updateTask(id, dto);
+    const parsed = updateTaskSchema.parse(dto);
+    return this.projectsService.updateTask(id, parsed);
   }
 
   @Delete('tasks/:id')
