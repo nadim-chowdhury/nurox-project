@@ -15,6 +15,12 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { Permission } from '../auth/enums/permissions.enum';
+import {
+  salaryStructureSchema,
+  taxBracketSchema,
+  type SalaryStructureDto,
+  type TaxBracketDto,
+} from '@repo/shared-schemas';
 
 @Controller('payroll')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -23,8 +29,9 @@ export class PayrollController {
 
   @Post('structures')
   @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
-  createStructure(@Body() dto: any) {
-    return this.payrollService.createStructure(dto);
+  createStructure(@Body() dto: SalaryStructureDto) {
+    const parsed = salaryStructureSchema.parse(dto);
+    return this.payrollService.createStructure(parsed);
   }
 
   @Get('structures')
@@ -50,8 +57,9 @@ export class PayrollController {
 
   @Post('tax-configs')
   @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
-  createTaxConfig(@Body() dto: any) {
-    return this.payrollService.createTaxConfig(dto);
+  createTaxConfig(@Body() dto: TaxBracketDto) {
+    const parsed = taxBracketSchema.parse(dto);
+    return this.payrollService.createTaxConfig(parsed);
   }
 
   @Post('runs')

@@ -1,4 +1,15 @@
-import { configureStore } from "@reduxjs/toolkit";
+import { configureStore, combineReducers } from "@reduxjs/toolkit";
+import {
+  persistStore,
+  persistReducer,
+  FLUSH,
+  REHYDRATE,
+  PAUSE,
+  PERSIST,
+  PURGE,
+  REGISTER,
+} from "redux-persist";
+import storage from "redux-persist/lib/storage";
 import authReducer from "./slices/authSlice";
 import uiReducer from "./slices/uiSlice";
 import notificationReducer from "./slices/notificationSlice";
@@ -15,26 +26,46 @@ import { inventoryApi } from "./api/inventoryApi";
 import { procurementApi } from "./api/procurementApi";
 import { recruitmentApi } from "./api/recruitmentApi";
 
+/**
+ * Persist config — only the auth slice is persisted to localStorage.
+ * This ensures the user stays logged in across page refreshes.
+ * RTK Query caches are NOT persisted (re-fetched on mount).
+ */
+const persistConfig = {
+  key: "nurox",
+  storage,
+  whitelist: ["auth"], // Only persist auth slice
+};
+
+const rootReducer = combineReducers({
+  auth: authReducer,
+  ui: uiReducer,
+  notifications: notificationReducer,
+  [authApi.reducerPath]: authApi.reducer,
+  [usersApi.reducerPath]: usersApi.reducer,
+  [hrApi.reducerPath]: hrApi.reducer,
+  [projectsApi.reducerPath]: projectsApi.reducer,
+  [salesApi.reducerPath]: salesApi.reducer,
+  [systemApi.reducerPath]: systemApi.reducer,
+  [analyticsApi.reducerPath]: analyticsApi.reducer,
+  [payrollApi.reducerPath]: payrollApi.reducer,
+  [attendanceApi.reducerPath]: attendanceApi.reducer,
+  [inventoryApi.reducerPath]: inventoryApi.reducer,
+  [procurementApi.reducerPath]: procurementApi.reducer,
+  [recruitmentApi.reducerPath]: recruitmentApi.reducer,
+});
+
+const persistedReducer = persistReducer(persistConfig, rootReducer);
+
 export const store = configureStore({
-  reducer: {
-    auth: authReducer,
-    ui: uiReducer,
-    notifications: notificationReducer,
-    [authApi.reducerPath]: authApi.reducer,
-    [usersApi.reducerPath]: usersApi.reducer,
-    [hrApi.reducerPath]: hrApi.reducer,
-    [projectsApi.reducerPath]: projectsApi.reducer,
-    [salesApi.reducerPath]: salesApi.reducer,
-    [systemApi.reducerPath]: systemApi.reducer,
-    [analyticsApi.reducerPath]: analyticsApi.reducer,
-    [payrollApi.reducerPath]: payrollApi.reducer,
-    [attendanceApi.reducerPath]: attendanceApi.reducer,
-    [inventoryApi.reducerPath]: inventoryApi.reducer,
-    [procurementApi.reducerPath]: procurementApi.reducer,
-    [recruitmentApi.reducerPath]: recruitmentApi.reducer,
-  },
+  reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware()
+    getDefaultMiddleware({
+      serializableCheck: {
+        // redux-persist dispatches non-serializable actions — ignore them
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+      },
+    })
       .concat(authApi.middleware)
       .concat(usersApi.middleware)
       .concat(hrApi.middleware)
@@ -49,6 +80,8 @@ export const store = configureStore({
       .concat(recruitmentApi.middleware),
   devTools: process.env.NODE_ENV !== "production",
 });
+
+export const persistor = persistStore(store);
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

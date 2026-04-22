@@ -1,7 +1,11 @@
 # Nurox ERP — Production-Ready System Documentation
 
+> ⚠️ **DEPRECATED** — This document has been superseded by [`NUROX_ERP_MASTER_ARCHITECTURE.md`](./NUROX_ERP_MASTER_ARCHITECTURE.md) (v2.1).
+> All new architectural decisions, tech stack updates, and module specifications should reference the **Master Architecture** document.
+> This file is retained for historical reference only. Do NOT update this file.
+
 > **Project:** Nurox ERP · **Design System:** Liquid Precision (Architectural Infinite)
-> **Stack:** Next.js 16 · NestJS 11 · TypeORM 0.3 · PostgreSQL 18 · Ant Design 6.x · RTK Query · Custom JWT Auth (Passport.js)
+> **Stack:** Next.js 16 · NestJS 11 · TypeORM 1.0 · PostgreSQL 18 · Ant Design 6.x · RTK Query · Custom JWT Auth (Passport.js)
 > **Last Updated:** April 2026
 
 ---

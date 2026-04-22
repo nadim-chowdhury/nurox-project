@@ -9,6 +9,8 @@ import {
   RackDto,
   BinDto,
   StockAdjustmentDto,
+  stockMovementSchema,
+  type StockMovementDto,
 } from '@repo/shared-schemas';
 
 @ApiTags('Inventory')
@@ -50,20 +52,23 @@ export class InventoryController {
 
   @Post('stock/receive')
   @ApiOperation({ summary: 'Receive stock' })
-  receiveStock(@Body() dto: any) {
-    return this.inventoryService.receiveStock(dto);
+  receiveStock(@Body() dto: StockMovementDto) {
+    const parsed = stockMovementSchema.parse(dto);
+    return this.inventoryService.receiveStock(parsed as any);
   }
 
   @Post('stock/issue')
   @ApiOperation({ summary: 'Issue stock' })
-  issueStock(@Body() dto: any) {
-    return this.inventoryService.issueStock(dto);
+  issueStock(@Body() dto: StockMovementDto) {
+    const parsed = stockMovementSchema.parse(dto);
+    return this.inventoryService.issueStock(parsed as any);
   }
 
   @Post('stock/transfer')
   @ApiOperation({ summary: 'Transfer stock between warehouses/bins' })
-  transferStock(@Body() dto: any) {
-    return this.inventoryService.transferStock(dto);
+  transferStock(@Body() dto: StockMovementDto) {
+    const parsed = stockMovementSchema.parse(dto);
+    return this.inventoryService.transferStock(parsed as any);
   }
 
   @Post('stock/adjust')

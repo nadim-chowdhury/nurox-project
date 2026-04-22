@@ -270,7 +270,11 @@ export class AuthController {
       REFRESH_COOKIE_OPTIONS,
     );
 
-    const frontendUrl = process.env.CORS_ORIGIN || 'http://localhost:3000';
+    const frontendUrl = (
+      process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:3000'
+    )
+      .split(',')[0]
+      .trim();
     return res.redirect(
       `${frontendUrl}/auth/callback?token=${tokens.accessToken}`,
     );
@@ -300,7 +304,11 @@ export class AuthController {
       REFRESH_COOKIE_OPTIONS,
     );
 
-    const frontendUrl = process.env.CORS_ORIGIN || 'http://localhost:3000';
+    const frontendUrl = (
+      process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:3000'
+    )
+      .split(',')[0]
+      .trim();
     return res.redirect(
       `${frontendUrl}/auth/callback?token=${tokens.accessToken}`,
     );

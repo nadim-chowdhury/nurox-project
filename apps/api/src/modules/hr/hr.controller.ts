@@ -29,6 +29,8 @@ import {
   TerminationDto,
   PipDto,
   ThreeSixtyReviewDto,
+  leaveRequestSchema,
+  type LeaveRequestDto,
 } from '@repo/shared-schemas';
 import { SalaryChangeReason } from './entities/salary-history.entity';
 import { LeaveRequestStatus } from './entities/leave.entity';
@@ -107,7 +109,7 @@ export class HrController {
 
   @Post('attendance/bulk')
   @RequirePermissions(Permission.HR_CREATE_EMPLOYEE)
-  async bulkImportAttendance(@Body() records: any[]) {
+  async bulkImportAttendance(@Body() records: Record<string, unknown>[]) {
     return this.attendanceService.bulkImport(records);
   }
 
@@ -128,8 +130,9 @@ export class HrController {
   }
 
   @Post('leaves/apply')
-  async applyLeave(@Body() dto: any) {
-    return this.attendanceService.applyLeave(dto);
+  async applyLeave(@Body() dto: LeaveRequestDto) {
+    const parsed = leaveRequestSchema.parse(dto);
+    return this.attendanceService.applyLeave(parsed);
   }
 
   @Get('leaves/balances/:employeeId')
@@ -168,7 +171,7 @@ export class HrController {
 
   @Patch('employees/:id')
   @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
-  updateEmployee(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+  updateEmployee(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateEmployeeDto>) {
     return this.hrService.updateEmployee(id, dto);
   }
 

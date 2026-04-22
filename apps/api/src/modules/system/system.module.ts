@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { TerminusModule } from '@nestjs/terminus';
 import { Tenant } from './entities/tenant.entity';
 import { TenantModule as TenantModuleEntity } from './entities/tenant-module.entity';
 import { Branch } from './entities/branch.entity';
@@ -10,6 +11,7 @@ import { StorageService } from './storage.service';
 import { AuditService } from './audit.service';
 import { PdfService } from './pdf.service';
 import { SystemController } from './system.controller';
+import { HealthController } from './health.controller';
 import { NotificationsGateway } from './gateways/notifications.gateway';
 import { JwtModule } from '@nestjs/jwt';
 
@@ -22,9 +24,10 @@ import { JwtModule } from '@nestjs/jwt';
       AuditLog,
       Holiday,
     ]),
+    TerminusModule, // Health checks for K8s probes
     JwtModule,
   ],
-  controllers: [SystemController],
+  controllers: [SystemController, HealthController],
   providers: [
     TenantProvisioningService,
     StorageService,

@@ -10,6 +10,19 @@ import {
 import { RecruitmentService } from './recruitment.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  jobRequisitionSchema,
+  applicationSchema,
+  candidateSchema,
+  interviewSchema,
+  offerLetterSchema,
+  applicantStatusEnum,
+  type JobRequisitionDto,
+  type ApplicationDto,
+  type CandidateDto,
+  type InterviewDto,
+  type OfferLetterDto,
+} from '@repo/shared-schemas';
 
 @ApiTags('Recruitment')
 @ApiBearerAuth()
@@ -27,8 +40,9 @@ export class RecruitmentController {
 
   @Post('jobs')
   @ApiOperation({ summary: 'Create a new job requisition' })
-  createJob(@Body() data: any) {
-    return this.recruitmentService.createJob(data);
+  createJob(@Body() data: JobRequisitionDto) {
+    const parsed = jobRequisitionSchema.parse(data);
+    return this.recruitmentService.createJob(parsed as any);
   }
 
   @Put('jobs/:id/submit')
@@ -75,8 +89,9 @@ export class RecruitmentController {
 
   @Post('applications')
   @ApiOperation({ summary: 'Create a new application' })
-  createApplication(@Body() data: any) {
-    return this.recruitmentService.createApplication(data);
+  createApplication(@Body() data: ApplicationDto) {
+    const parsed = applicationSchema.parse(data);
+    return this.recruitmentService.createApplication(parsed as any);
   }
 
   @Get('applications/:id')
@@ -89,9 +104,10 @@ export class RecruitmentController {
   @ApiOperation({ summary: 'Update application status' })
   updateApplicationStatus(
     @Param('id') id: string,
-    @Body('status') status: any,
+    @Body('status') status: string,
   ) {
-    return this.recruitmentService.updateApplicationStatus(id, status);
+    const parsed = applicantStatusEnum.parse(status);
+    return this.recruitmentService.updateApplicationStatus(id, parsed as any);
   }
 
   // Candidates
@@ -103,8 +119,9 @@ export class RecruitmentController {
 
   @Post('candidates')
   @ApiOperation({ summary: 'Create a new candidate' })
-  createCandidate(@Body() data: any) {
-    return this.recruitmentService.createCandidate(data);
+  createCandidate(@Body() data: CandidateDto) {
+    const parsed = candidateSchema.parse(data);
+    return this.recruitmentService.createCandidate(parsed as any);
   }
 
   @Get('candidates/:id')
@@ -115,8 +132,8 @@ export class RecruitmentController {
 
   @Put('candidates/:id')
   @ApiOperation({ summary: 'Update candidate details' })
-  updateCandidate(@Param('id') id: string, @Body() data: any) {
-    return this.recruitmentService.updateCandidate(id, data);
+  updateCandidate(@Param('id') id: string, @Body() data: Partial<CandidateDto>) {
+    return this.recruitmentService.updateCandidate(id, data as any);
   }
 
   @Post('candidates/:id/resume-url')
@@ -142,8 +159,9 @@ export class RecruitmentController {
 
   @Post('interviews')
   @ApiOperation({ summary: 'Schedule an interview' })
-  scheduleInterview(@Body() data: any) {
-    return this.recruitmentService.scheduleInterview(data);
+  scheduleInterview(@Body() data: InterviewDto) {
+    const parsed = interviewSchema.parse(data);
+    return this.recruitmentService.scheduleInterview(parsed as any);
   }
 
   @Put('interviews/:id/feedback')
@@ -163,8 +181,9 @@ export class RecruitmentController {
   // Offer Letters
   @Post('offers')
   @ApiOperation({ summary: 'Create an offer letter' })
-  createOfferLetter(@Body() data: any) {
-    return this.recruitmentService.createOfferLetter(data);
+  createOfferLetter(@Body() data: OfferLetterDto) {
+    const parsed = offerLetterSchema.parse(data);
+    return this.recruitmentService.createOfferLetter(parsed as any);
   }
 
   @Post('offers/:id/generate-pdf')

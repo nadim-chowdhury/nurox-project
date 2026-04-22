@@ -1,7 +1,7 @@
 # NUROX ERP — Ultimate SaaS Master Documentation
 
-> **Version:** 2.0 · **Last Updated:** April 2026
-> **Stack:** Next.js 16 · NestJS 11 · TypeORM 0.3 · PostgreSQL 18 · Ant Design 6.x · RTK Query · Custom JWT Auth (Passport.js)
+> **Version:** 2.1 · **Last Updated:** April 2026
+> **Stack:** Next.js 16 · NestJS 11 · TypeORM 1.0 · PostgreSQL 18 · Ant Design 6.x · RTK Query · Custom JWT Auth (Passport.js)
 > **Design System:** Liquid Precision — "The Architectural Infinite"
 > **Architecture:** Multi-Tenant SaaS · Module-Based · API-First · Event-Driven
 
@@ -56,84 +56,84 @@
 
 ### 1.1 Frontend
 
-| Category                | Technology                       | Version            | Purpose                                                                                |
-| ----------------------- | -------------------------------- | ------------------ | -------------------------------------------------------------------------------------- |
-| Framework               | Next.js                          | 16 (App Router)    | SSR, SSG, RSC, routing                                                                 |
-| Language                | TypeScript                       | 5.x                | Type safety                                                                            |
-| UI Component Library    | **Ant Design (antd)**            | **6.x**            | Primary component library — forms, tables, modals, date pickers, upload, notifications |
-| Layout Utilities        | TailwindCSS                      | 4.x                | Spacing, flex, grid utilities only — no component styling                              |
-| Icons                   | @ant-design/icons + Lucide React | 6.x                | Icon set (antd icons primary, lucide for custom)                                       |
-| Form Management         | React Hook Form                  | 7.x                | Performant form state                                                                  |
-| Schema Validation       | Zod                              | 4.x                | Runtime validation (shared frontend ↔ backend via `@repo/shared-schemas`)              |
-| RHF + Zod Bridge        | @hookform/resolvers              | latest             | `zodResolver` integration                                                              |
-| State Management        | Redux Toolkit                    | 2.x                | Global UI state only (excluding server & form state)                                   |
-| Server State / API      | RTK Query                        | (bundled with RTK) | Data fetching, caching, mutations                                                      |
-| Auth State Persistence  | redux-persist                    | latest             | Persist auth slice to localStorage                                                     |
-| Auth (Frontend Session) | Custom JWT (Redux + httpOnly)    | —                  | Token storage in Redux (memory) + httpOnly refresh cookie                              |
-| Rich Text Editor        | Tiptap                           | 2.x                | Descriptions, announcements, notes                                                     |
-| Date Handling           | date-fns                         | 3.x                | Formatting, arithmetic, locale                                                         |
-| Charts                  | Recharts                         | 2.x                | Bar, Line, Area, Pie, Donut                                                            |
-| Data Tables             | TanStack Table                   | 8.x                | Advanced client-side filtering/sorting on large (10k+ row) virtualized datasets        |
-| Virtualization          | TanStack Virtual                 | 3.x                | Large list rendering                                                                   |
-| Drag & Drop             | @dnd-kit/core                    | 6.x                | Kanban boards, sortable lists                                                          |
-| File Upload             | antd Upload                      | —                  | Drag-and-drop file input                                                               |
-| PDF Viewer              | react-pdf                        | 7.x                | In-app PDF preview                                                                     |
-| Toast Notifications     | antd message + notification API  | —                  | Non-blocking toasts                                                                    |
-| Animations              | Framer Motion                    | 11.x               | Page transitions, micro-interactions                                                   |
-| Real-time               | Socket.io Client                 | 4.x                | WebSocket connection                                                                   |
-| i18n                    | next-intl                        | 3.x                | Multi-language + locale routing                                                        |
-| Component Docs          | Storybook                        | 8.x                | Component development and documentation                                                |
-| Testing                 | Vitest + Testing Library         | latest             | Unit + component tests                                                                 |
-| E2E Testing             | Playwright                       | latest             | Critical flow automation                                                               |
-| Linting                 | ESLint (flat config)             | 9.x                | Code quality                                                                           |
-| Formatting              | Prettier                         | 3.x                | Code formatting                                                                        |
-| Command Palette         | cmdk                             | latest             | ⌘K global search                                                                       |
-| Maps                    | Mapbox GL JS                     | 3.x                | Geo-fenced attendance, fleet tracking                                                  |
-| Gantt                   | @dhtmlx/gantt                    | latest             | Project timeline rendering                                                             |
-| Org Chart               | react-d3-tree                    | 3.x                | Visual org chart                                                                       |
-| Signature               | react-signature-canvas           | latest             | HTML5 canvas e-signature capture                                                       |
-| QR Code                 | qrcode.react                     | 3.x                | QR code generation for check-in                                                        |
-| Barcode                 | react-barcode                    | latest             | Product/asset barcode rendering                                                        |
-| Camera                  | react-webcam                     | latest             | Biometric/photo capture                                                                |
+| Category                | Technology                       | Version            | Purpose                                                                                                              |
+| ----------------------- | -------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| Framework               | Next.js                          | 16 (App Router)    | SSR, SSG, RSC, routing                                                                                               |
+| Language                | TypeScript                       | 5.x                | Type safety                                                                                                          |
+| UI Component Library    | **Ant Design (antd)**            | **6.x**            | Primary component library — CSS Variables mode (no Less); forms, tables, modals, date pickers, upload, notifications |
+| Layout Utilities        | TailwindCSS                      | 4.x                | Spacing, flex, grid utilities only — CSS-first config via `@theme` directive (no tailwind.config.js)                 |
+| Icons                   | @ant-design/icons + Lucide React | 6.x                | Icon set (antd icons primary, lucide for custom)                                                                     |
+| Form Management         | React Hook Form                  | 7.x                | Performant form state                                                                                                |
+| Schema Validation       | Zod                              | 4.x                | Runtime validation (shared frontend ↔ backend via `@repo/shared-schemas`)                                            |
+| RHF + Zod Bridge        | @hookform/resolvers              | latest             | `zodResolver` integration                                                                                            |
+| State Management        | Redux Toolkit                    | 2.x                | Global UI state only (excluding server & form state)                                                                 |
+| Server State / API      | RTK Query                        | (bundled with RTK) | Data fetching, caching, mutations                                                                                    |
+| Auth State Persistence  | redux-persist                    | latest             | Persist auth slice to localStorage                                                                                   |
+| Auth (Frontend Session) | Custom JWT (Redux + httpOnly)    | —                  | Token storage in Redux (memory) + httpOnly refresh cookie                                                            |
+| Rich Text Editor        | Tiptap                           | 2.x                | Descriptions, announcements, notes                                                                                   |
+| Date Handling           | dayjs + date-fns                 | latest + 3.x       | dayjs required by antd DatePicker; date-fns for utility formatting/arithmetic                                        |
+| Charts                  | Recharts                         | 2.x                | Bar, Line, Area, Pie, Donut                                                                                          |
+| Data Tables             | TanStack Table                   | 8.x                | Advanced client-side filtering/sorting on large (10k+ row) virtualized datasets                                      |
+| Virtualization          | TanStack Virtual                 | 3.x                | Large list rendering                                                                                                 |
+| Drag & Drop             | @dnd-kit/core                    | 6.x                | Kanban boards, sortable lists                                                                                        |
+| File Upload             | antd Upload                      | —                  | Drag-and-drop file input                                                                                             |
+| PDF Viewer              | react-pdf                        | 7.x                | In-app PDF preview                                                                                                   |
+| Toast Notifications     | antd message + notification API  | —                  | Non-blocking toasts                                                                                                  |
+| Animations              | Motion (`motion/react`)          | 12.x               | Page transitions, micro-interactions (formerly Framer Motion — rebranded 2025)                                       |
+| Real-time               | Socket.io Client                 | 4.x                | WebSocket connection                                                                                                 |
+| i18n                    | next-intl                        | 3.x                | Multi-language + locale routing                                                                                      |
+| Component Docs          | Storybook                        | 8.x                | Component development and documentation                                                                              |
+| Testing                 | Vitest + Testing Library         | latest             | Unit + component tests                                                                                               |
+| E2E Testing             | Playwright                       | latest             | Critical flow automation                                                                                             |
+| Linting                 | ESLint (flat config)             | 9.x                | Code quality                                                                                                         |
+| Formatting              | Prettier                         | 3.x                | Code formatting                                                                                                      |
+| Command Palette         | cmdk                             | latest             | ⌘K global search                                                                                                     |
+| Maps                    | Mapbox GL JS                     | 3.x                | Geo-fenced attendance, fleet tracking                                                                                |
+| Gantt                   | @dhtmlx/gantt                    | latest             | Project timeline rendering                                                                                           |
+| Org Chart               | react-d3-tree                    | 3.x                | Visual org chart                                                                                                     |
+| Signature               | react-signature-canvas           | latest             | HTML5 canvas e-signature capture                                                                                     |
+| QR Code                 | qrcode.react                     | 3.x                | QR code generation for check-in                                                                                      |
+| Barcode                 | react-barcode                    | latest             | Product/asset barcode rendering                                                                                      |
+| Camera                  | react-webcam                     | latest             | Biometric/photo capture                                                                                              |
 
 ### 1.2 Backend
 
-| Category            | Technology                         | Version | Purpose                                                |
-| ------------------- | ---------------------------------- | ------- | ------------------------------------------------------ |
-| Framework           | NestJS                             | 11.x    | Modular Node.js backend                                |
-| Language            | TypeScript                         | 5.x     | Strict type safety                                     |
-| ORM                 | TypeORM                            | 0.3.x   | Database access, migrations, relations                 |
-| Database            | PostgreSQL                         | 18      | Primary relational store                               |
-| Cache               | Redis                              | 7.x     | Session, cache, rate limit store                       |
-| Queue               | BullMQ                             | 5.x     | Background jobs, email, payroll runs                   |
-| Auth                | Passport.js + JWT                  | latest  | Core backend authentication / token verification       |
-| JWT                 | @nestjs/jwt                        | latest  | Access + refresh token signing (RS256)                 |
-| Password Hashing    | bcrypt                             | 5.x     | saltRounds=12                                          |
-| Validation          | nestjs-zod                         | latest  | DTO validation pipe using shared mono-repo Zod schemas |
-| API Docs            | @nestjs/swagger                    | latest  | Auto-generated Swagger UI at `/api/docs`               |
-| File Storage        | MinIO SDK                          | latest  | S3-compatible object storage                           |
-| Email               | Nodemailer + Handlebars            | latest  | Transactional email with templates                     |
-| SMS                 | Twilio SDK / BD SSLCOMMERZ gateway | latest  | OTP and alerts                                         |
-| PDF Generation      | Puppeteer                          | 21.x    | Payslips, invoices, reports                            |
-| Excel Export        | ExcelJS                            | 4.x     | XLSX report exports                                    |
-| Logging             | Pino                               | 9.x     | Structured JSON logging                                |
-| Error Tracking      | Sentry Node SDK                    | 8.x     | Backend exception monitoring                           |
-| Scheduling          | @nestjs/schedule                   | latest  | Cron-triggered jobs                                    |
-| Config              | @nestjs/config + Joi               | latest  | Env validation at boot                                 |
-| Throttling          | @nestjs/throttler                  | latest  | Rate limiting per IP and API key (Redis store)         |
-| Health Check        | @nestjs/terminus                   | latest  | `/health` endpoint                                     |
-| Testing             | Jest + Supertest                   | latest  | Unit + integration + API tests                         |
-| DB Migration CLI    | TypeORM CLI                        | 0.3.x   | `typeorm migration:run`                                |
-| Event Bus           | EventEmitter2                      | latest  | Cross-module async events                              |
-| Search              | MeiliSearch                        | 1.x     | Full-text product/employee/document search             |
-| AI                  | OpenAI SDK / Anthropic SDK         | latest  | AI assistant, smart suggestions                        |
-| OCR                 | Tesseract.js (NestJS worker)       | 5.x     | Receipt / document scanning                            |
-| Barcode Scanner     | zxing-js                           | latest  | Barcode/QR decode on server                            |
-| Geo-coding          | node-geocoder                      | latest  | Address ↔ coordinates                                  |
-| Currency Rates      | fixer.io / Open Exchange Rates API | —       | Live exchange rate fetching                            |
-| Payment Gateway     | Stripe SDK / SSLCommerz            | latest  | SaaS billing + customer payments                       |
-| IP Geo              | geoip-lite                         | latest  | Login geo-tagging                                      |
-| Analytics (Backend) | PostHog Node SDK                   | latest  | Product analytics events                               |
+| Category            | Technology                         | Version | Purpose                                                     |
+| ------------------- | ---------------------------------- | ------- | ----------------------------------------------------------- |
+| Framework           | NestJS                             | 11.x    | Modular Node.js backend                                     |
+| Language            | TypeScript                         | 5.x     | Strict type safety                                          |
+| ORM                 | TypeORM                            | 1.0.x   | Database access, migrations, relations (DataSource API)     |
+| Database            | PostgreSQL                         | 18      | Primary relational store                                    |
+| Cache               | Redis                              | 7.x     | Session, cache, rate limit store                            |
+| Queue               | BullMQ                             | 5.x     | Background jobs, email, payroll runs                        |
+| Auth                | Passport.js + JWT                  | latest  | Core backend authentication / token verification            |
+| JWT                 | @nestjs/jwt                        | latest  | Access + refresh token signing (RS256)                      |
+| Password Hashing    | bcrypt                             | 5.x     | saltRounds=12                                               |
+| Validation          | nestjs-zod                         | 5.1.x   | DTO validation pipe — Zod 4 compatible with codec support   |
+| API Docs            | @nestjs/swagger                    | latest  | Auto-generated Swagger UI at `/api/docs`                    |
+| File Storage        | MinIO SDK                          | latest  | S3-compatible object storage                                |
+| Email               | Nodemailer + Handlebars            | latest  | Transactional email with templates                          |
+| SMS                 | Twilio SDK / BD SSLCOMMERZ gateway | latest  | OTP and alerts                                              |
+| PDF Generation      | Puppeteer                          | 24.x    | Payslips, invoices, reports                                 |
+| Excel Export        | ExcelJS                            | 4.x     | XLSX report exports                                         |
+| Logging             | Pino                               | 9.x     | Structured JSON logging                                     |
+| Error Tracking      | Sentry Node SDK                    | 8.x     | Backend exception monitoring                                |
+| Scheduling          | @nestjs/schedule                   | latest  | Cron-triggered jobs                                         |
+| Config              | @nestjs/config + Zod               | latest  | Env validation at boot (consistent with shared Zod schemas) |
+| Throttling          | @nestjs/throttler                  | latest  | Rate limiting per IP and API key (Redis store)              |
+| Health Check        | @nestjs/terminus                   | latest  | `/health` endpoint                                          |
+| Testing             | Jest + Supertest                   | latest  | Unit + integration + API tests                              |
+| DB Migration CLI    | TypeORM CLI                        | 1.0.x   | `typeorm migration:run` — DataSource API (no Connection)    |
+| Event Bus           | EventEmitter2                      | latest  | Cross-module async events                                   |
+| Search              | MeiliSearch                        | 1.x     | Full-text product/employee/document search                  |
+| AI                  | OpenAI SDK / Anthropic SDK         | latest  | AI assistant, smart suggestions                             |
+| OCR                 | Tesseract.js (NestJS worker)       | 5.x     | Receipt / document scanning                                 |
+| Barcode Scanner     | zxing-js                           | latest  | Barcode/QR decode on server                                 |
+| Geo-coding          | node-geocoder                      | latest  | Address ↔ coordinates                                       |
+| Currency Rates      | fixer.io / Open Exchange Rates API | —       | Live exchange rate fetching                                 |
+| Payment Gateway     | Stripe SDK / SSLCommerz            | latest  | SaaS billing + customer payments                            |
+| IP Geo              | geoip-lite                         | latest  | Login geo-tagging                                           |
+| Analytics (Backend) | PostHog Node SDK                   | latest  | Product analytics events                                    |
 
 ### 1.3 Infrastructure & DevOps
 
@@ -166,14 +166,14 @@ nurox-erp/                          # Turborepo root
 ├── apps/
 │   ├── web/                        # Next.js 16 frontend
 │   ├── api/                        # NestJS 11 backend
-│   └── storybook/                  # Storybook component docs
+│   └── storybook/                  # Storybook component docs (Phase 2 — after core UI stabilizes)
 ├── packages/
 │   ├── ui/                         # Shared React component library
 │   ├── ui-tokens/                  # Design system tokens (colors, typography, spacing)
-│   ├── zod-schemas/                # Shared Zod DTOs (frontend + backend)
+│   ├── shared-schemas/             # Shared Zod 4 DTOs (frontend + backend) — @repo/shared-schemas
 │   ├── config-eslint/              # Shared ESLint config
 │   ├── config-typescript/          # Shared tsconfig bases
-│   └── utils/                      # Shared utility functions
+│   └── utils/                      # Shared utility functions (TODO: create)
 ├── infra/
 │   ├── docker/                     # Docker Compose files
 │   ├── k8s/                        # Kubernetes manifests + Helm chart
@@ -750,7 +750,7 @@ apps/api/
 │       └── seeds/
 └── test/
 
-packages/zod-schemas/
+packages/shared-schemas/
 ├── src/
 │   ├── auth/
 │   ├── hr/
@@ -1089,7 +1089,19 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
   app.setGlobalPrefix("api/v1");
-  app.enableCors({ origin: process.env.FRONTEND_URL, credentials: true });
+  app.enableShutdownHooks(); // Graceful shutdown on SIGTERM (K8s)
+  app.enableCors({
+    origin: (origin, callback) => {
+      const allowed = process.env.CORS_ALLOWED_ORIGINS?.split(",") ?? [];
+      const pattern = /^https?:\/\/([\w-]+\.)?nurox\.app$/;
+      if (!origin || pattern.test(origin) || allowed.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  });
 
   const config = new DocumentBuilder()
     .setTitle("Nurox ERP API")
@@ -1122,6 +1134,7 @@ import {
   DeleteDateColumn,
   Index,
 } from "typeorm";
+import { Department } from "./department.entity";
 
 @Entity("employees")
 @Index(["tenantId", "employeeCode"], { unique: true })
@@ -1157,7 +1170,7 @@ export class Employee {
 ### 6.3 Shared Zod Schemas
 
 ```typescript
-// packages/zod-schemas/src/hr/employee.schema.ts
+// packages/shared-schemas/src/hr/employee.schema.ts
 import { z } from "zod";
 
 export const createEmployeeSchema = z.object({
@@ -1245,7 +1258,10 @@ export class AuditLogInterceptor implements NestInterceptor {
             tenantId: req.tenantId,
             actorId: user?.id,
             action: method,
-            entityType: url.split("/")[3],
+            entityType: context
+              .getClass()
+              .name.replace("Controller", "")
+              .toLowerCase(),
             entityId: data?.id ?? req.params?.id,
             ipAddress: ip,
             userAgent: headers["user-agent"],
@@ -1259,18 +1275,52 @@ export class AuditLogInterceptor implements NestInterceptor {
 }
 ```
 
+### 6.6 Caching Strategy
+
+- **L1 (In-memory):** NestJS `CacheModule` with TTL for hot config (tenant settings, feature flags, permission matrices)
+- **L2 (Redis):** Session store, rate limits, feature flags, BullMQ job state
+- **Cache invalidation:** Event-driven — entity writes emit via `@nestjs/event-emitter` → clear relevant Redis keys
+- **Cache warming:** On API boot, pre-load active tenant configs and permission matrices
+- **No-cache endpoints:** Auth, write operations, real-time WebSocket data
+- **RTK Query cache:** Tag-based invalidation on mutations; optimistic updates for UX
+
+### 6.7 Pagination Standard
+
+- All list endpoints support offset-based pagination: `?page=1&limit=25` (antd Table compatible)
+- Cursor-based pagination available for real-time feeds: `?cursor=abc&limit=25`
+- Max page size: 100 records per request (enforced in Zod DTO)
+- Response shape: `{ data: T[], meta: { total, page, limit, totalPages } }`
+- For large exports (>10k rows): use streaming CSV via NestJS `StreamableFile` (no pagination)
+
+### 6.8 Database Connection Config
+
+- TypeORM pool: `max: 20` connections per pod (behind PgBouncer in production)
+- PgBouncer: `transaction` mode — per-query connection borrowing
+- Connection timeout: `5000ms`; idle timeout: `30000ms`; query timeout: `30000ms`
+- Read replica support: optional `replication` config for read-heavy analytics queries
+- PostgreSQL version: 18 with `postgres:18-alpine` Docker image
+
+### 6.9 Graceful Shutdown
+
+- `app.enableShutdownHooks()` — NestJS drains active requests on SIGTERM
+- K8s `terminationGracePeriodSeconds: 30` — pods get 30s to finish in-flight work
+- Close DB connections, Redis clients, and BullMQ workers on shutdown
+- Health endpoint returns `503` during drain phase — K8s stops routing new traffic
+
 ---
 
 ## 7. SaaS Infrastructure & Multi-Tenancy
 
 ### 7.1 Tenancy Model
 
-- **Strategy:** Row-level multi-tenancy — all tables include `tenant_id UUID NOT NULL`
+- **Strategy (Default):** Row-level multi-tenancy — all tables include `tenant_id UUID NOT NULL`
+- **Strategy (Enterprise Tier):** Optional PostgreSQL schema-per-tenant for regulatory data isolation compliance
+- **Decision Rule:** Starter/Growth/Business plans use row-level (simpler ops, lower cost). Enterprise tier can opt into schema-per-tenant.
 - **Tenant Resolution:** `TenantMiddleware` resolves from subdomain (`acme.nurox.app`) or `x-tenant-id` header
 - **Data Isolation:** All service methods scoped with `WHERE tenant_id = :tenantId` — enforced via TypeORM query scoping
-- **Schema Alternative:** Optional PostgreSQL schema-per-tenant for enterprise tier (schema namespace via `SET search_path`)
 - **Wildcard DNS:** `*.nurox.app` → Cloudflare → Nginx → Next.js (subdomain injected as tenant context)
 - **Custom Domains:** CNAME mapping (`erp.acme.com` → `nurox.app`) — stored in `tenant_custom_domains` table
+- **DNS Validation:** Custom domain verified via DNS TXT record before activation
 
 ### 7.2 Tenant Provisioning Workflow
 
@@ -1326,13 +1376,27 @@ CREATE TABLE tenant_modules (
 
 ---
 
+### 7.6 Development Priority Phases
+
+| Phase                      | Modules                                       | Timeline    | Business Value                        |
+| -------------------------- | --------------------------------------------- | ----------- | ------------------------------------- |
+| **Phase 1 — MVP**          | Auth, Users, HR, Attendance, Leave, Dashboard | Month 1-4   | Core HR SaaS — first paying customers |
+| **Phase 2 — Finance**      | Payroll, Finance, Reporting, Notifications    | Month 5-8   | Complete HR+Payroll+Finance           |
+| **Phase 3 — Supply Chain** | Inventory, Procurement, Sales/CRM             | Month 9-12  | Manufacturing/trading company support |
+| **Phase 4 — Advanced**     | Projects, Assets, Documents, Manufacturing    | Month 13-16 | Enterprise feature completeness       |
+| **Phase 5 — Scale**        | SaaS Billing, AI, POS, Logistics, Mobile      | Month 17-20 | Revenue expansion, mobile, AI         |
+| **Phase 6 — Hardening**    | Security, DevOps, Compliance, Support         | Ongoing     | Production hardening, compliance      |
+
+---
+
 ## 8. Feature Modules (1–30)
 
 ---
 
 ### Module 1: Core Platform & Infrastructure
 
-- [ ] Schema-per-tenant isolation in PostgreSQL (`SchemaNamespace` via TypeORM)
+- [ ] Row-level tenant isolation as default — all queries scoped by `tenant_id` column
+- [ ] Optional schema-per-tenant isolation for Enterprise tier (via `SET search_path`)
 - [ ] `TenantMiddleware` resolves `tenantId` from subdomain (`acme.nurox.app`) or `x-tenant-id` header
 - [ ] All service layer queries scoped by `tenantId` field — no cross-tenant data leakage possible
 - [ ] Custom subdomain routing in middleware.ts — `acme.nurox.app` → inject `x-tenant-id`
@@ -1391,6 +1455,11 @@ CREATE TABLE tenant_modules (
 - [ ] Force password change flag — `must_change_password` field on user; enforced on next login
 - [ ] Password strength meter — real-time Zod-driven feedback in password fields
 - [ ] Login activity log — `login_events` table with geo, device, result; displayed in My Account → Security
+- [ ] Refresh token stored in Redis: `refresh:{tokenHash}` → `{userId, family, generation}` with TTL
+- [ ] On each refresh: increment generation; if old generation reused → delete entire family → force re-login
+- [ ] Token hash: SHA-256 (never store raw refresh token in Redis)
+- [ ] Max concurrent sessions: configurable per tenant (default: 5 per user); auto-revoke oldest on exceed
+- [ ] Admin can view and terminate any user's active sessions from admin panel
 
 ---
 
@@ -1490,7 +1559,7 @@ CREATE TABLE tenant_modules (
 - [ ] Gross / Net auto-computation — `payroll-compute.service.ts` with formula engine per component
 - [ ] Tax bracket configuration per fiscal year — BD TIN compliant; configurable slabs + rebate
 - [ ] Tax calculation: progressive slab computation, investment rebate, annual tax projection
-- [ ] BEFTN bank file export — tab-delimited per Bangladesh Bank standard; bank-wise split
+- [ ] 🇧🇩 BEFTN bank file export — tab-delimited per Bangladesh Bank standard; bank-wise split
 - [ ] PF contribution computation — employee + employer %; optional Gratuity calculation
 - [ ] Overtime hours pulled from `attendance_records`; configurable overtime multiplier (1x, 1.5x, 2x)
 - [ ] Overtime approval workflow — manager approves overtime before payroll computation
@@ -1825,6 +1894,10 @@ CREATE TABLE tenant_modules (
 - [ ] Chat message search — MeiliSearch indexes chat messages
 - [ ] Chat notifications — unread badge per channel; desktop notification
 - [ ] Webhook outbound — trigger external systems on events (e.g., Slack, Teams webhook)
+- [ ] WebSocket authentication — client sends JWT in Socket.io handshake `auth` payload
+- [ ] `handleConnection` validates JWT before joining tenant room; rejects invalid tokens
+- [ ] Auto-reconnect with refreshed token on expiry; client-side exponential backoff
+- [ ] Room naming: `tenant:{tenantId}:user:{userId}` (private), `tenant:{tenantId}` (broadcast)
 
 ---
 
@@ -1941,7 +2014,7 @@ CREATE TABLE tenant_modules (
 - [ ] File upload security — MIME type + magic byte (file-type library) validation; max size; filename sanitize
 - [ ] ClamAV antivirus scan — async scan on file upload via BullMQ; quarantine on detection
 - [ ] Auth brute-force protection — 5 failed attempts / 15 min per IP + per account; Redis TTL-backed
-- [ ] Secrets management — `@nestjs/config` + Joi at boot; HashiCorp Vault in production; no secrets in code
+- [ ] Secrets management — `@nestjs/config` + Zod at boot; HashiCorp Vault in production; no secrets in code
 - [ ] `npm audit` + Snyk scan in CI — fail pipeline on critical CVEs
 - [ ] OWASP Dependency Check in CI — weekly scheduled scan
 - [ ] PII fields encrypted at rest — TypeORM `@Column` transformer with AES-256-GCM (NID, bank account, TIN, salary)
@@ -1953,6 +2026,12 @@ CREATE TABLE tenant_modules (
 - [ ] Responsible disclosure policy — security.txt at `/.well-known/security.txt`
 - [ ] mTLS for internal service-to-service — in K8s service mesh (Istio/Linkerd optional)
 - [ ] Row-level security audit — automated test suite verifying tenant data isolation
+- [ ] Rate limits by endpoint type: Auth 10 req/min/IP, Write 60 req/min/user, Read 200 req/min/user, Uploads 20 req/min/user, API keys 1000 req/min/key
+- [ ] `ClassSerializerInterceptor` strips `@Exclude()` fields (password hashes, internal tokens, PII)
+- [ ] No stack traces in production errors — global exception filter returns generic message + `correlationId` only
+- [ ] PII masking in Pino logs — email, phone, NID, bank account masked in log output
+- [ ] Global string length limits — max 10,000 chars for text fields, 255 for single-line; enforced via Zod `.max()`
+- [ ] Request body size limit: 10MB for JSON; file uploads via pre-signed URL (direct S3 PUT, no body limit needed)
 
 ---
 
@@ -1984,6 +2063,11 @@ CREATE TABLE tenant_modules (
 - [ ] Blue-green deployment support — Helm release name switch via CI environment variable
 - [ ] Database backup — `pg_dump` daily via K8s CronJob → MinIO → S3 replication; 30-day retention
 - [ ] Disaster recovery runbook — documented in `/docs/DISASTER_RECOVERY.md`; tested quarterly
+- [ ] RPO (Recovery Point Objective): ≤ 1 hour — PostgreSQL WAL archiving to S3 for point-in-time recovery
+- [ ] RTO (Recovery Time Objective): ≤ 4 hours — documented restore runbook with automated scripts
+- [ ] Backup verification: monthly automated restore-and-validate test on isolated environment
+- [ ] Prometheus alert rules: error rate >5% for 5min → P1, P95 latency >2s for 10min → P2, DB pool >80% → P2, queue depth >1000 for 10min → P2, disk >85% → P1, SSL cert expiry <14 days → P2
+- [ ] On-call rotation — PagerDuty/Opsgenie integration; P1 alerts page on-call engineer immediately
 
 ---
 
@@ -1992,7 +2076,7 @@ CREATE TABLE tenant_modules (
 - [ ] Subscription plans — Starter, Growth, Business, Enterprise (defined in `subscription_plans` table)
 - [ ] Plan features matrix — module access, user seats, storage limit, API rate limit per plan
 - [ ] Stripe integration — `stripe.customers.create` on tenant signup; `stripe.subscriptions.create` on plan select
-- [ ] SSLCommerz integration (Bangladesh market) — hosted payment page; IPN webhook handler
+- [ ] 🇧🇩 SSLCommerz integration (Bangladesh market) — hosted payment page; IPN webhook handler
 - [ ] bKash / Nagad API integration — mobile banking payments for BD market
 - [ ] Free trial — 14-day trial on signup; `trial_ends_at` field; BullMQ reminder at 7/3/1 days before expiry
 - [ ] Trial-to-paid conversion — in-app upgrade prompt; plan comparison modal
@@ -2007,6 +2091,11 @@ CREATE TABLE tenant_modules (
 - [ ] Plan limits enforcement — seat count check on user creation; storage check on file upload; module guard
 - [ ] Billing analytics (super-admin) — MRR, ARR, churn rate, LTV, new subscriptions, upgrades, downgrades
 - [ ] Revenue recognition — invoice accrual logic per period for accurate reporting
+- [ ] Data export on cancellation — full ZIP (JSON + attachments) downloadable within 90-day grace period
+- [ ] Pre-deletion reminders — email at 60/30/7 days before permanent data deletion after cancellation
+- [ ] Account freeze option — tenant pauses billing (vacation mode); data preserved for up to 12 months
+- [ ] Account reactivation — frozen accounts can reactivate within 12 months; billing resumes at same plan
+- [ ] Account deletion — permanent; requires double confirmation + admin approval
 
 ---
 
@@ -2127,7 +2216,7 @@ CREATE TABLE tenant_modules (
 ### Module 30: Compliance, Tax & Regulatory
 
 - [ ] Country-specific tax engine — pluggable tax calculators per country; BD / IN / US modules
-- [ ] Bangladesh NBR compliance — TIN linkage; AIT deduction; VAT 15%; TDS schedule
+- [ ] 🇧🇩 Bangladesh NBR compliance — TIN linkage; AIT deduction; VAT 15%; TDS schedule
 
 - [ ] India GST compliance — GSTIN per entity; CGST/SGST/IGST computation; GSTR-1 / GSTR-3B export
 - [ ] US payroll tax — Federal + State income tax, FICA (Social Security + Medicare), FUTA/SUTA
@@ -2184,6 +2273,17 @@ Secondary: SAARC region (India, Sri Lanka, Nepal, Pakistan)
 Tertiary:  SE Asia diaspora / expat-led companies
 Vertical:  Garments / RMG, NGO, Healthcare, Education, Manufacturing, IT Services
 ```
+
+### 9.5 Legal Requirements
+
+- Terms of Service at `nurox.app/terms` — required acceptance before tenant signup
+- Privacy Policy at `nurox.app/privacy` — GDPR and local (e.g., BDPA) compliant
+- Data Processing Agreement (DPA) — available for Enterprise customers on request
+- Service Level Agreement (SLA) — 99.9% uptime guarantee for Business/Enterprise plans
+- Cookie consent banner — required for EU users; consent stored in `user_consent_log`
+- Acceptable Use Policy — prohibits illegal use, abuse, data harvesting
+- Right to data export — tenant admin can export all tenant data at any time (GDPR Art. 20)
+- Right to erasure — tenant admin can request full data deletion (GDPR Art. 17); admin approval required
 
 ---
 
@@ -2286,7 +2386,7 @@ e_signatures, signature_workflows
 boms, bom_lines, work_orders, wo_operations, wo_material_issues
 
 -- Logistics
-vehicles, drivers, trips, delivery_orders, routes
+vehicles, drivers, trips, routes  -- NOTE: delivery_orders defined in Sales/CRM schema
 
 -- Billing (SaaS)
 subscription_plans, subscriptions, billing_invoices, payments, coupons
@@ -2386,7 +2486,7 @@ services:
     depends_on: [postgres, redis, minio, meilisearch]
 
   postgres:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_DB: nurox_erp
       POSTGRES_USER: nurox
@@ -2542,12 +2642,85 @@ Billing       GET|POST /api/v1/billing/subscriptions|invoices · POST /api/v1/bi
 Health        GET /health · GET /api/v1/health
 ```
 
-### Appendix H — Feature Count Summary
+### Appendix H — Database Indexing Strategy
+
+```
+Strategy: Every multi-tenant query MUST use tenant_id in the WHERE clause. All indexes include tenant_id.
+
+-- Composite B-tree indexes (all tables)
+CREATE INDEX idx_{table}_tenant ON {table}(tenant_id);
+CREATE INDEX idx_{table}_tenant_created ON {table}(tenant_id, created_at DESC);
+CREATE INDEX idx_{table}_tenant_status ON {table}(tenant_id, status) WHERE deleted_at IS NULL;
+
+-- Unique composites (per-tenant uniqueness)
+CREATE UNIQUE INDEX idx_employees_tenant_code ON employees(tenant_id, employee_code);
+CREATE UNIQUE INDEX idx_employees_tenant_email ON employees(tenant_id, email);
+CREATE UNIQUE INDEX idx_products_tenant_sku ON products(tenant_id, sku);
+CREATE UNIQUE INDEX idx_products_tenant_barcode ON products(tenant_id, barcode) WHERE barcode IS NOT NULL;
+
+-- Full-text search (GIN indexes for MeiliSearch sync fallback)
+CREATE INDEX idx_employees_search ON employees USING gin(to_tsvector('english', first_name || ' ' || last_name));
+CREATE INDEX idx_products_search ON products USING gin(to_tsvector('english', name || ' ' || description));
+
+-- Partial indexes (active records only — most queries filter deleted)
+CREATE INDEX idx_employees_active ON employees(tenant_id, status) WHERE deleted_at IS NULL;
+CREATE INDEX idx_invoices_unpaid ON invoices(tenant_id, status) WHERE status IN ('DRAFT', 'SENT', 'OVERDUE');
+
+-- Foreign key indexes (TypeORM does NOT auto-create these)
+-- Every @ManyToOne column must have an explicit index
+CREATE INDEX idx_employees_department ON employees(department_id);
+CREATE INDEX idx_employees_manager ON employees(manager_id);
+```
+
+### Appendix I — Error Code Catalog
+
+```
+Format: { code: number, message: string, correlationId: string }
+
+Code Range    Module              Examples
+─────────────────────────────────────────────────────────────────────
+1000-1099     Auth                1001: Invalid credentials
+                                  1002: Account locked (too many attempts)
+                                  1003: MFA required
+                                  1004: Refresh token expired/revoked
+                                  1005: Session limit exceeded
+                                  1006: IP not in allowlist
+1100-1199     Users               1101: Email already exists
+                                  1102: Invite expired
+                                  1103: Insufficient seats (plan limit)
+1200-1299     HR                  1201: Employee code already exists
+                                  1202: Cannot delete department with employees
+                                  1203: Circular manager reference
+1300-1399     Payroll             1301: Payroll already processed for this period
+                                  1302: Salary structure not assigned
+                                  1303: Tax bracket not configured for fiscal year
+1400-1499     Finance             1401: Unbalanced journal entry (debits ≠ credits)
+                                  1402: Accounting period closed
+                                  1403: Invoice already voided
+                                  1404: Bank reconciliation mismatch
+1500-1599     Inventory           1501: Insufficient stock for movement
+                                  1502: Duplicate SKU
+                                  1503: Negative stock not allowed
+1600-1699     Procurement         1601: PO already approved
+                                  1602: GRN quantity exceeds PO quantity
+1700-1799     Sales               1701: Lead already converted
+                                  1702: Order cannot be cancelled (already shipped)
+1800-1899     Projects            1801: Timesheet already approved
+                                  1802: Task dependency cycle detected
+1900-1999     System              1901: Feature not available on current plan
+                                  1902: Tenant module disabled
+                                  1903: File too large / invalid MIME type
+9000-9099     Infrastructure      9001: Database connection failed
+                                  9002: Redis unavailable
+                                  9003: External service timeout
+```
+
+### Appendix J — Feature Count Summary
 
 | Module                      | Feature Items     |
 | --------------------------- | ----------------- |
-| 1. Core Platform            | 27                |
-| 2. Auth & AuthZ             | 29                |
+| 1. Core Platform            | 28                |
+| 2. Auth & AuthZ             | 34                |
 | 3. User & Org               | 20                |
 | 4. Dashboard                | 19                |
 | 5. Human Resources          | 28                |
@@ -2561,14 +2734,14 @@ Health        GET /health · GET /api/v1/health
 | 13. Project Management      | 26                |
 | 14. Asset Management        | 20                |
 | 15. Document Management     | 21                |
-| 16. Notifications           | 22                |
+| 16. Notifications           | 26                |
 | 17. Audit & Compliance      | 16                |
 | 18. Reporting & Exports     | 20                |
 | 19. System Administration   | 21                |
 | 20. API & Integrations      | 20                |
-| 21. Security Hardening      | 22                |
-| 22. DevOps & Deployment     | 28                |
-| 23. SaaS Billing            | 18                |
+| 21. Security Hardening      | 28                |
+| 22. DevOps & Deployment     | 33                |
+| 23. SaaS Billing            | 23                |
 | 24. Help Desk & Support     | 17                |
 | 25. AI & Automation         | 17                |
 | 26. Mobile & PWA            | 13                |
@@ -2576,11 +2749,11 @@ Health        GET /health · GET /api/v1/health
 | 28. Manufacturing           | 13                |
 | 29. Logistics & Fleet       | 12                |
 | 30. Compliance & Tax        | 15                |
-| **TOTAL**                   | **~656 features** |
+| **TOTAL**                   | **~692 features** |
 
 ---
 
-_Nurox ERP Master Documentation — April 2026_
-_Stack: Next.js 16 · NestJS 11 · Ant Design 6 · TypeORM 0.3 · PostgreSQL 18 · Redux Toolkit + RTK Query · React Hook Form · Zod 4 · Custom JWT Auth · Redis · BullMQ · MeiliSearch · Docker · Kubernetes_
+_Nurox ERP Master Documentation — April 2026 — v2.1_
+_Stack: Next.js 16 · NestJS 11 · Ant Design 6 · TypeORM 1.0 · PostgreSQL 18 · Redux Toolkit + RTK Query · React Hook Form · Zod 4 · Custom JWT Auth · Redis · BullMQ · MeiliSearch · Docker · Kubernetes_
 _Design System: Liquid Precision — "The Architectural Infinite" · Deep Space Palette · Space Grotesk + Manrope_
-_Total: 30 modules · ~656 feature items · SaaS-first · Multi-tenant · API-first · Event-driven_
+_Total: 30 modules · ~692 feature items · SaaS-first · Multi-tenant · API-first · Event-driven_

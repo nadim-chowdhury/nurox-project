@@ -1,5 +1,15 @@
-import { Module } from '@nestjs/common';
+import {
+  Module,
+  MiddlewareConsumer,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
+import { LoggerModule } from 'nestjs-pino';
+import { BullModule } from '@nestjs/bullmq';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import {
@@ -11,14 +21,13 @@ import {
   oauthConfig,
   s3Config,
 } from './config/app.config';
-import { envValidationSchema } from './config/env.validation';
+import { validate } from './config/env.validation';
 import { DatabaseModule } from './database/database.module';
 import { SystemModule } from './modules/system/system.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { RedisModule } from './modules/redis/redis.module';
 import { MailerModule } from './modules/mailer/mailer.module';
 import { TenantMiddleware } from './common/middlewares/tenant.middleware';
-import { MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
 import { UsersModule } from './modules/users/users.module';
 import { HrModule } from './modules/hr/hr.module';
 import { RecruitmentModule } from './modules/recruitment/recruitment.module';
@@ -29,10 +38,10 @@ import { SalesModule } from './modules/sales/sales.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ProcurementModule } from './modules/procurement/procurement.module';
-import { BullModule } from '@nestjs/bullmq';
 
 @Module({
   imports: [
+    // ─── Configuration ───────────────────────────────────────────
     ConfigModule.forRoot({
       isGlobal: true,
       load: [
@@ -44,12 +53,49 @@ import { BullModule } from '@nestjs/bullmq';
         oauthConfig,
         s3Config,
       ],
-      validationSchema: envValidationSchema,
-      validationOptions: {
-        abortEarly: true, // fail on first missing var
-      },
+      validate, // Zod-based env validation (replaces Joi)
     }),
 
+    // ─── Logging (Pino — structured JSON) ────────────────────────
+    LoggerModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        pinoHttp: {
+          transport:
+            config.get<string>('app.nodeEnv') !== 'production'
+              ? {
+                  target: 'pino-pretty',
+                  options: { colorize: true, singleLine: true },
+                }
+              : undefined,
+          level:
+            config.get<string>('app.nodeEnv') === 'production'
+              ? 'info'
+              : 'debug',
+          autoLogging: true,
+          customProps: (req: any) => ({
+            tenantId: req.tenantId ?? 'system',
+            correlationId: req.headers?.['x-correlation-id'] ?? undefined,
+          }),
+          redact: {
+            paths: ['req.headers.authorization', 'req.headers.cookie'],
+            censor: '[REDACTED]',
+          },
+        },
+      }),
+      inject: [ConfigService],
+    }),
+
+    // ─── Rate Limiting (Redis-backed in production) ──────────────
+    ThrottlerModule.forRoot([
+      { name: 'short', ttl: 1000, limit: 10 }, // 10 req/sec burst
+      { name: 'medium', ttl: 60000, limit: 200 }, // 200 req/min sustained
+    ]),
+
+    // ─── Task Scheduling (cron jobs) ─────────────────────────────
+    ScheduleModule.forRoot(),
+
+    // ─── Queue (BullMQ + Redis) ──────────────────────────────────
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
@@ -61,14 +107,15 @@ import { BullModule } from '@nestjs/bullmq';
       inject: [ConfigService],
     }),
 
+    // ─── Core Infrastructure ─────────────────────────────────────
     DatabaseModule,
     SystemModule,
     RedisModule,
     MailerModule,
 
+    // ─── Feature Modules ─────────────────────────────────────────
     AuthModule,
     UsersModule,
-
     HrModule,
     RecruitmentModule,
     PayrollModule,
@@ -80,17 +127,21 @@ import { BullModule } from '@nestjs/bullmq';
     AnalyticsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // Global rate limit guard — applies to all endpoints
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(TenantMiddleware)
       .exclude(
-        { path: 'auth/(.*)', method: RequestMethod.ALL }, // auth endpoints are typically global
+        { path: 'auth/(.*)', method: RequestMethod.ALL },
         { path: 'api/docs', method: RequestMethod.ALL },
+        { path: 'health', method: RequestMethod.GET },
       )
-      // Apply the middleware to all feature modules enforcing multi-tenancy
       .forRoutes(
         { path: 'hr/(.*)', method: RequestMethod.ALL },
         { path: 'recruitment/(.*)', method: RequestMethod.ALL },

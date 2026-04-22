@@ -7,7 +7,8 @@ import {
 import type { RootState } from "@/store/store";
 import { setAccessToken, clearAuth } from "@/store/slices/authSlice";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
 
 /**
  * Base fetch configured with:

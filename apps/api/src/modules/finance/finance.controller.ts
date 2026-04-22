@@ -21,6 +21,12 @@ import { InvoiceStatus } from './entities/invoice.entity';
 import { BillStatus } from './entities/bill.entity';
 import { Response } from 'express';
 import { Res } from '@nestjs/common';
+import {
+  billSchema,
+  taxRateSchema,
+  type BillDto,
+  type TaxRateDto,
+} from '@repo/shared-schemas';
 
 @Controller('finance')
 @UseGuards(JwtAuthGuard)
@@ -132,8 +138,9 @@ export class FinanceController {
   }
 
   @Post('bills')
-  createBill(@Body() dto: any) {
-    return this.financeService.createBill(dto);
+  createBill(@Body() dto: BillDto) {
+    const parsed = billSchema.parse(dto);
+    return this.financeService.createBill(parsed as any);
   }
 
   @Get('bills/:id')
@@ -255,8 +262,9 @@ export class FinanceController {
   }
 
   @Post('tax-rates')
-  createTaxRate(@Body() dto: any) {
-    return this.financeService.createTaxRate(dto);
+  createTaxRate(@Body() dto: TaxRateDto) {
+    const parsed = taxRateSchema.parse(dto);
+    return this.financeService.createTaxRate(parsed as any);
   }
 
   @Get('tax-rates')
@@ -265,7 +273,7 @@ export class FinanceController {
   }
 
   @Patch('tax-rates/:id')
-  updateTaxRate(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
-    return this.financeService.updateTaxRate(id, dto);
+  updateTaxRate(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<TaxRateDto>) {
+    return this.financeService.updateTaxRate(id, dto as any);
   }
 }
