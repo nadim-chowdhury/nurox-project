@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Row, Col, Card, Table, Tag, Button, Space, message, Select, DatePicker } from "antd";
+import { Row, Col, Card, Table, Tag, Button, Space, message, DatePicker } from "antd";
 import {
   ClockCircleOutlined,
   CheckCircleOutlined,
@@ -9,7 +9,6 @@ import {
   CalendarOutlined,
   PlusOutlined,
   UploadOutlined,
-  QrcodeOutlined,
   FileExcelOutlined,
   EnvironmentOutlined,
 } from "@ant-design/icons";
@@ -19,7 +18,7 @@ import { StatusTag } from "@/components/common/StatusTag";
 import { Avatar } from "@/components/common/Avatar";
 import { formatDate } from "@/lib/utils";
 import type { ColumnsType } from "antd/es/table";
-import { useGetTeamAttendanceQuery, useCheckInMutation, useLazyGetAttendanceReportUrlQuery } from "@/store/api/attendanceApi";
+import { useGetTeamAttendanceQuery, useCheckInMutation } from "@/store/api/attendanceApi";
 import { AttendanceEntryModal } from "@/components/modules/hr/attendance/AttendanceEntryModal";
 import { BulkImportModal } from "@/components/modules/hr/attendance/BulkImportModal";
 import dayjs from "dayjs";
@@ -102,7 +101,6 @@ export default function AttendancePage() {
   const [date, setDate] = useState(dayjs().format("YYYY-MM-DD"));
   const { data: records, isLoading } = useGetTeamAttendanceQuery({ date });
   const [checkIn, { isLoading: isGeoLoading }] = useCheckInMutation();
-  const [getReportUrl] = useLazyGetAttendanceReportUrlQuery();
 
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);

@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import {
   Card,
   Descriptions,
-  Tag,
   Tabs,
   Timeline,
   Spin,
@@ -12,17 +11,13 @@ import {
   Space,
   Row,
   Col,
-  Statistic,
 } from "antd";
 import {
-  UserOutlined,
   MailOutlined,
   PhoneOutlined,
   CalendarOutlined,
   EditOutlined,
   ArrowLeftOutlined,
-  BankOutlined,
-  EnvironmentOutlined,
   SwapOutlined,
   StopOutlined,
   DollarCircleOutlined,
@@ -35,10 +30,7 @@ import { KpiCard } from "@/components/common/KpiCard";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { 
     useGetEmployeeQuery, 
-    useGetEmployeeHistoryQuery,
     useGetSalaryHistoryQuery,
-    useTransferEmployeeMutation,
-    useTerminateEmployeeMutation 
 } from "@/store/api/hrApi";
 import { EmployeeHistoryTimeline } from "@/components/modules/hr/EmployeeHistoryTimeline";
 import { TransferEmployeeModal } from "@/components/modules/hr/employees/TransferEmployeeModal";
