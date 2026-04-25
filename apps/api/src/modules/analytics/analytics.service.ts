@@ -17,7 +17,7 @@ export class AnalyticsService {
     private readonly inventoryService: InventoryService,
   ) {}
 
-  async getDashboard(_startDate?: string, _endDate?: string) {
+  async getDashboard(_startDate?: string, _endDate?: string, managerId?: string) {
     const [
       employeeCount,
       revenueMTD,
@@ -26,7 +26,7 @@ export class AnalyticsService {
       pipelineStats,
       taskStats,
     ] = await Promise.all([
-      this.hrService.getCount(),
+      this.hrService.getCount(managerId),
       this.financeService.getRevenueMTD(),
       this.financeService.getPendingInvoicesCount(),
       this.salesService.getPipelineValue(),
@@ -65,9 +65,70 @@ export class AnalyticsService {
     };
   }
 
-  async getKPIs(startDate?: string, endDate?: string) {
-    const data = await this.getDashboard(startDate, endDate);
+  async getKPIs(startDate?: string, endDate?: string, managerId?: string) {
+    const data = await this.getDashboard(startDate, endDate, managerId);
     return data.kpis;
+  }
+
+  async getDepartmentKPIs() {
+    // Mock department comparison data
+    return [
+      { name: 'Engineering', employees: 45, budget: 120000, spend: 115000, tasks: 88 },
+      { name: 'Sales', employees: 12, budget: 80000, spend: 92000, tasks: 42 },
+      { name: 'HR', employees: 5, budget: 30000, spend: 28000, tasks: 15 },
+      { name: 'Finance', employees: 8, budget: 50000, spend: 48000, tasks: 22 },
+    ];
+  }
+
+  async getComparison(currentStart: string, currentEnd: string, prevStart: string, prevEnd: string) {
+    const [current, previous] = await Promise.all([
+      this.getKPIs(currentStart, currentEnd),
+      this.getKPIs(prevStart, prevEnd),
+    ]);
+
+    return {
+      current,
+      previous,
+      delta: {
+        totalEmployees: current.totalEmployees - previous.totalEmployees,
+        revenueMTD: current.revenueMTD - previous.revenueMTD,
+        pendingInvoices: current.pendingInvoices - previous.pendingInvoices,
+        pipelineValue: current.pipelineValue - previous.pipelineValue,
+      },
+    };
+  }
+
+  async getHRAnalytics() {
+    const totalEmployees = await this.hrService.getCount();
+    
+    // Mock data for trends
+    return {
+      totalEmployees,
+      turnoverRate: 4.2,
+      averageTenure: 2.8,
+      genderDiversity: [
+        { type: 'Male', value: 65 },
+        { type: 'Female', value: 35 },
+      ],
+      headcountTrend: [
+        { month: 'Jan', count: 250 },
+        { month: 'Feb', count: 255 },
+        { month: 'Mar', count: 268 },
+        { month: 'Apr', count: 284 },
+      ],
+      departmentDistribution: await this.getDepartmentKPIs(),
+    };
+  }
+
+  async getPerformanceCalibration() {
+    // Mock bell curve distribution data
+    return [
+      { rating: '1', count: 5 },
+      { rating: '2', count: 15 },
+      { rating: '3', count: 45 },
+      { rating: '4', count: 25 },
+      { rating: '5', count: 10 },
+    ];
   }
 
   async getAlerts(startDate?: string, endDate?: string) {

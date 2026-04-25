@@ -14,6 +14,15 @@ export class Tenant {
   @Column({ type: 'varchar', length: 150, unique: true })
   name: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  legalName: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  tradeName: string;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  registrationNumber: string;
+
   @Column({ type: 'varchar', length: 63, unique: true })
   schemaNamespace: string; // The Postgres schema name (e.g. 'tenant_acme')
 
@@ -23,7 +32,7 @@ export class Tenant {
   @Column({ type: 'varchar', length: 255, nullable: true })
   logoUrl: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'text', nullable: true })
   address: string;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
@@ -37,6 +46,12 @@ export class Tenant {
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   website: string;
+
+  @Column({ type: 'varchar', length: 20, default: 'USD' })
+  currency: string;
+
+  @Column({ type: 'varchar', length: 50, default: 'UTC' })
+  timezone: string;
 
   @Column({ type: 'varchar', length: 7, default: '#00b96b' })
   primaryColor: string;

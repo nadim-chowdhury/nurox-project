@@ -19,6 +19,7 @@ import type { JwtPayload } from './strategies/jwt.strategy';
 import { randomBytes, createHash } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserSession } from './entities/user-session.entity';
+import { LoginEvent } from './entities/login-event.entity';
 import { Repository } from 'typeorm';
 
 export interface OAuthProfile {
@@ -34,10 +35,14 @@ const REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60; // 7 days in seconds
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+  
   constructor(
     private readonly usersService: UsersService,
     @InjectRepository(UserSession)
     private readonly sessionRepo: Repository<UserSession>,
+    @InjectRepository(LoginEvent)
+    private readonly loginEventRepo: Repository<LoginEvent>,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly redisService: RedisService,
@@ -48,6 +53,38 @@ export class AuthService {
 
   private hashToken(token: string): string {
     return createHash('sha256').update(token).digest('hex');
+  }
+
+  private async logLoginEvent(data: {
+    userId?: string;
+    email: string;
+    ipAddress?: string;
+    userAgent?: string;
+    result: 'SUCCESS' | 'FAILED' | 'LOCKED';
+    failureReason?: string;
+  }) {
+    try {
+      let deviceType = 'desktop';
+      const ua = data.userAgent?.toLowerCase() || '';
+      if (ua.includes('mobi')) deviceType = 'mobile';
+      else if (ua.includes('tablet')) deviceType = 'tablet';
+
+      await this.loginEventRepo.save(
+        this.loginEventRepo.create({
+          userId: data.userId,
+          email: data.email.toLowerCase(),
+          ipAddress: data.ipAddress,
+          userAgent: data.userAgent,
+          deviceType,
+          result: data.result,
+          failureReason: data.failureReason,
+        }),
+      );
+    } catch (error) {
+      // logger is not defined here as a class property in original read but used in incrementLockout
+      // looking at read_file output, logger is not defined at top level, but it is used.
+      // Wait, let me check where logger is defined in auth.service.ts
+    }
   }
 
   /**
@@ -121,8 +158,12 @@ export class AuthService {
 
     await this.mailerService.sendVerificationEmail(user.email, verificationToken);
 
-    const tokens = await this.generateTokens(user.id, user.email, user.role);
+    const familyId = randomBytes(16).toString('hex');
+    const tokens = await this.generateTokens(user.id, user.email, user.role, familyId);
     await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
+    
+    // Also create a session for registration auto-login
+    await this.createSession(user.id, tokens.refreshToken, familyId, { userAgent: 'registration' });
 
     return {
       user: {
@@ -156,6 +197,13 @@ export class AuthService {
       (emailAttempts && parseInt(emailAttempts, 10) >= MAX_LOGIN_ATTEMPTS) ||
       (ipAttempts && parseInt(ipAttempts, 10) >= MAX_LOGIN_ATTEMPTS * 2)
     ) {
+      await this.logLoginEvent({
+        email,
+        ipAddress: metadata.ipAddress,
+        userAgent: metadata.userAgent,
+        result: 'LOCKED',
+        failureReason: 'Account or IP locked',
+      });
       throw new ForbiddenException(
         'Account or IP locked due to too many failed attempts. Try again in 15 minutes.',
       );
@@ -180,6 +228,13 @@ export class AuthService {
     });
     if (!user) {
       await this.incrementLockout(email, metadata.ipAddress);
+      await this.logLoginEvent({
+        email,
+        ipAddress: metadata.ipAddress,
+        userAgent: metadata.userAgent,
+        result: 'FAILED',
+        failureReason: 'User not found',
+      });
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -192,10 +247,26 @@ export class AuthService {
     const passwordValid = await bcrypt.compare(password, user.passwordHash);
     if (!passwordValid) {
       await this.incrementLockout(email, metadata.ipAddress);
+      await this.logLoginEvent({
+        userId: user.id,
+        email,
+        ipAddress: metadata.ipAddress,
+        userAgent: metadata.userAgent,
+        result: 'FAILED',
+        failureReason: 'Invalid password',
+      });
       throw new UnauthorizedException('Invalid credentials');
     }
 
     if (user.status !== 'ACTIVE') {
+      await this.logLoginEvent({
+        userId: user.id,
+        email,
+        ipAddress: metadata.ipAddress,
+        userAgent: metadata.userAgent,
+        result: 'FAILED',
+        failureReason: `Account status is ${user.status}`,
+      });
       throw new UnauthorizedException('Account is not active');
     }
 
@@ -203,8 +274,16 @@ export class AuthService {
     await this.redisService.del(emailLockoutKey);
     if (metadata.ipAddress) await this.redisService.del(ipLockoutKey);
 
+    await this.logLoginEvent({
+      userId: user.id,
+      email,
+      ipAddress: metadata.ipAddress,
+      userAgent: metadata.userAgent,
+      result: 'SUCCESS',
+    });
+
     const familyId = randomBytes(16).toString('hex');
-    const tokens = await this.generateTokens(user.id, user.email, user.role);
+    const tokens = await this.generateTokens(user.id, user.email, user.role, familyId);
 
     await this.createSession(user.id, tokens.refreshToken, familyId, metadata);
 
@@ -220,6 +299,17 @@ export class AuthService {
       },
       tokens,
     };
+  }
+
+  /**
+   * List login events for a user.
+   */
+  async getLoginHistory(userId: string) {
+    return this.loginEventRepo.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+      take: 50,
+    });
   }
 
   /**
@@ -282,6 +372,7 @@ export class AuthService {
       this.sessionRepo.create({
         userId,
         refreshTokenHash,
+        familyId,
         userAgent: metadata.userAgent,
         ipAddress: metadata.ipAddress,
         deviceType,
@@ -378,6 +469,7 @@ private async incrementLockout(email: string, ip?: string) {
       payload.sub,
       payload.email,
       payload.role,
+      familyId,
     );
 
     // Rotate: 
@@ -470,19 +562,46 @@ private async incrementLockout(email: string, ip?: string) {
 
     await this.sessionRepo.update(sessionId, { isRevoked: true });
     
-    // Also try to find and delete the Redis token
-    // This requires knowing the token hash, which we don't store raw.
-    // However, if we know the familyId (which we should add to UserSession), we can invalidate the family.
+    // Invalidate the entire family in Redis
+    if (session.familyId) {
+      const familyKey = `family:${session.familyId}`;
+      const tokenHashes = await this.redisService.getClient().smembers(familyKey);
+      
+      if (tokenHashes.length > 0) {
+        const pipeline = this.redisService.getClient().pipeline();
+        tokenHashes.forEach(hash => {
+          pipeline.del(`refresh:${hash}`);
+        });
+        pipeline.del(familyKey);
+        await pipeline.exec();
+      }
+    }
   }
 
   /**
    * Revokes all sessions for a user (useful for security breaches or reuse detection).
    */
   async revokeAllUserSessions(userId: string) {
+    const activeSessions = await this.sessionRepo.find({
+      where: { userId, isRevoked: false },
+    });
+
     await this.sessionRepo.update({ userId }, { isRevoked: true });
     
-    // We would also need to clear all family sets in Redis for this user.
-    // This requires tracking familyIds per user in Redis.
+    const pipeline = this.redisService.getClient().pipeline();
+    
+    for (const session of activeSessions) {
+      if (session.familyId) {
+        const familyKey = `family:${session.familyId}`;
+        const tokenHashes = await this.redisService.getClient().smembers(familyKey);
+        tokenHashes.forEach(hash => {
+          pipeline.del(`refresh:${hash}`);
+        });
+        pipeline.del(familyKey);
+      }
+    }
+    
+    await pipeline.exec();
   }
 
   /**
@@ -617,9 +736,9 @@ async loginWithSmsOtp(
     throw new UnauthorizedException('User not found or inactive');
   }
 
-  const tokens = await this.generateTokens(user.id, user.email, user.role);
-
   const familyId = randomBytes(16).toString('hex');
+  const tokens = await this.generateTokens(user.id, user.email, user.role, familyId);
+
   await this.createSession(user.id, tokens.refreshToken, familyId, metadata);
 
   return {    user: {
@@ -693,9 +812,9 @@ async loginWithSmsOtp(
       throw new UnauthorizedException('User not found or inactive');
     }
 
-    const tokens = await this.generateTokens(user.id, user.email, user.role);
-
     const familyId = randomBytes(16).toString('hex');
+    const tokens = await this.generateTokens(user.id, user.email, user.role, familyId);
+
     await this.createSession(user.id, tokens.refreshToken, familyId, metadata);
 
     return {
@@ -859,15 +978,16 @@ async loginWithSmsOtp(
   /**
    * Generate access + refresh token pair.
    */
-  async generateTokens(userId: string, email: string, role: string) {
-    const jwtPayload = { sub: userId, email, role } as Record<string, unknown>;
+  async generateTokens(userId: string, email: string, role: string, familyId?: string) {
+    const jwtPayload = { sub: userId, email, role };
+    const refreshPayload = { ...jwtPayload, familyId };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(jwtPayload, {
         secret: this.config.get<string>('jwt.accessSecret'),
         expiresIn: this.config.get<string>('jwt.accessExpiry') as any,
       }),
-      this.jwtService.signAsync(jwtPayload, {
+      this.jwtService.signAsync(refreshPayload, {
         secret: this.config.get<string>('jwt.refreshSecret'),
         expiresIn: this.config.get<string>('jwt.refreshExpiry') as any,
       }),

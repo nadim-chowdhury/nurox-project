@@ -9,6 +9,8 @@ import {
 import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Department } from './department.entity';
 import { Designation } from './designation.entity';
+import { Grade } from './grade.entity';
+import { Branch } from '../../system/entities/branch.entity';
 import { PerformanceReview } from './performance.entity';
 import { SalaryHistory } from './salary-history.entity';
 import { Training } from './training.entity';
@@ -21,6 +23,8 @@ export enum EmployeeStatus {
   INACTIVE = 'INACTIVE',
   ON_LEAVE = 'ON_LEAVE',
   TERMINATED = 'TERMINATED',
+  RESIGNED = 'RESIGNED',
+  RETIRED = 'RETIRED',
   PROBATION = 'PROBATION',
 }
 
@@ -133,6 +137,12 @@ export class Employee extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 20, nullable: true })
   routingNumber: string | null;
 
+  @Column({ type: 'boolean', default: false })
+  isSalaryOnHold: boolean;
+
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  preferredCurrency: string;
+
   // Relations
   @Column({ type: 'uuid', nullable: true })
   departmentId: string | null;
@@ -142,11 +152,25 @@ export class Employee extends TenantBaseEntity {
   department: Department;
 
   @Column({ type: 'uuid', nullable: true })
+  branchId: string | null;
+
+  @ManyToOne(() => Branch, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'branchId' })
+  branch: Branch;
+
+  @Column({ type: 'uuid', nullable: true })
   designationId: string | null;
 
   @ManyToOne(() => Designation, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'designationId' })
   designation: Designation;
+
+  @Column({ type: 'uuid', nullable: true })
+  gradeId: string | null;
+
+  @ManyToOne(() => Grade, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'gradeId' })
+  grade: Grade;
 
   @Column({ type: 'uuid', nullable: true })
   managerId: string | null;

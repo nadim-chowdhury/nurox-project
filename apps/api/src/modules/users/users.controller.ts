@@ -26,6 +26,8 @@ import {
   UserListQueryDto,
 } from '@repo/shared-schemas';
 
+import { UserDashboardService } from './user-dashboard.service';
+
 @ApiTags('Users')
 @Controller('users')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -33,7 +35,25 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly preferencesService: UserPreferencesService,
+    private readonly dashboardService: UserDashboardService,
   ) {}
+
+  @Get('dashboard-widgets')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user dashboard widgets' })
+  async getDashboardWidgets(@CurrentUser('id') userId: string) {
+    return this.dashboardService.getUserWidgets(userId);
+  }
+
+  @Post('dashboard-widgets')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Save current user dashboard widgets' })
+  async saveDashboardWidgets(
+    @CurrentUser('id') userId: string,
+    @Body() body: { widgets: any[] },
+  ) {
+    return this.dashboardService.saveUserWidgets(userId, body.widgets);
+  }
 
   @Get()
   @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)

@@ -25,6 +25,13 @@ const modules = [
     count: "284",
   },
   {
+    title: "Directory",
+    description: "Searchable team directory and contacts",
+    icon: <TeamOutlined style={{ fontSize: 28, color: "#e3eeff" }} />,
+    href: "/hr/directory",
+    count: "Connect",
+  },
+  {
     title: "Departments",
     description: "Organizational structure and teams",
     icon: <ApartmentOutlined style={{ fontSize: 28, color: "#80d8ff" }} />,

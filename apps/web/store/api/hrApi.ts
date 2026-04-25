@@ -23,6 +23,8 @@ export interface Employee extends EmployeeResponseDto {
   gender?: string;
   address?: string;
   contractExpiryDate?: string;
+  probationEndDate?: string;
+  skills?: any[];
 }
 
 export interface EmployeeListParams {
@@ -56,6 +58,11 @@ export const hrApi = createApi({
     "Performance",
     "Training",
     "Skill",
+    "TrainingCourse",
+    "SkillCatalog",
+    "ENPS",
+    "Handbook",
+    "Succession",
   ],
   endpoints: (builder) => ({
     getEmployees: builder.query<EmployeeListResponse, EmployeeListParams>({
@@ -263,6 +270,253 @@ export const hrApi = createApi({
       }),
       invalidatesTags: ["Department"],
     }),
+
+    getSalaryRevisions: builder.query<any[], void>({
+      query: () => "/hr/salary-revisions",
+      providesTags: ["History"],
+    }),
+
+    createSalaryRevision: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/hr/salary-revisions",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["History"],
+    }),
+
+    updateSalaryRevisionStatus: builder.mutation<any, { id: string; status: string; comments?: string }>({
+      query: ({ id, ...body }) => ({
+        url: `/hr/salary-revisions/${id}/status`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["History", "Employee"],
+    }),
+
+    extendProbation: builder.mutation<any, { id: string; newEndDate: string; comments: string }>({
+      query: ({ id, ...body }) => ({
+        url: `/hr/employees/${id}/probation/extend`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Employee", "History"],
+    }),
+
+    completeProbation: builder.mutation<any, { id: string; comments: string }>({
+      query: ({ id, ...body }) => ({
+        url: `/hr/employees/${id}/probation/complete`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Employee", "History"],
+    }),
+
+    createProfileChangeRequest: builder.mutation<any, { id: string; changes: any }>({
+      query: ({ id, changes }) => ({
+        url: `/hr/employees/${id}/profile-change`,
+        method: "POST",
+        body: changes,
+      }),
+      invalidatesTags: ["History"],
+    }),
+
+    getProfileChangeRequests: builder.query<any[], void>({
+      query: () => "/hr/profile-changes",
+      providesTags: ["History"],
+    }),
+
+    updateProfileChangeRequestStatus: builder.mutation<any, { id: string; status: string; rejectionReason?: string }>({
+      query: ({ id, ...body }) => ({
+        url: `/hr/profile-changes/${id}/status`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["History", "Employee"],
+    }),
+
+    submitResignation: builder.mutation<any, { id: string; requestedLastWorkingDay: string; reason: string }>({
+      query: ({ id, ...body }) => ({
+        url: `/hr/employees/${id}/resignation`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["History", "Employee"],
+    }),
+
+    updateResignationStatus: builder.mutation<any, { id: string; status: string; approvedLastWorkingDay?: string; adminComments?: string }>({
+      query: ({ id, ...body }) => ({
+        url: `/hr/resignations/${id}/status`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["History", "Employee"],
+    }),
+
+    getClearanceChecklist: builder.query<any[], string>({
+      query: (id) => `/hr/employees/${id}/clearance`,
+      providesTags: ["History"],
+    }),
+
+    updateClearanceItem: builder.mutation<any, { id: string; isCleared: boolean; remarks?: string }>({
+      query: ({ id, ...body }) => ({
+        url: `/hr/clearance/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["History"],
+    }),
+
+    submitExitInterview: builder.mutation<any, { id: string; responses: any }>({
+      query: ({ id, responses }) => ({
+        url: `/hr/employees/${id}/exit-interview`,
+        method: "POST",
+        body: responses,
+      }),
+      invalidatesTags: ["History"],
+    }),
+
+    getPerformanceReviews: builder.query<any[], { employeeId: string; type?: string }>({
+      query: (params) => ({
+        url: "/hr/performance-reviews",
+        params,
+      }),
+      providesTags: ["Performance"],
+    }),
+
+    addOKRCheckIn: builder.mutation<any, { keyResultId: string; value: number; comment?: string; checkedById: string }>({
+      query: (body) => ({
+        url: "/hr/okr-checkins",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Performance"],
+    }),
+
+    getTrainingCourses: builder.query<any[], void>({
+      query: () => "/hr/training-courses",
+      providesTags: ["TrainingCourse"],
+    }),
+
+    enrollInTraining: builder.mutation<any, { id: string; courseId: string }>({
+      query: ({ id, ...body }) => ({
+        url: `/hr/employees/${id}/enroll`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Training", "Employee"],
+    }),
+
+    updateEmployeeTrainingStatus: builder.mutation<any, { id: string; status: string; certificateUrl?: string }>({
+      query: ({ id, ...body }) => ({
+        url: `/hr/trainings/${id}/status`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["Training", "Employee"],
+    }),
+
+    getSkillCatalog: builder.query<any[], void>({
+      query: () => "/hr/skill-catalog",
+      providesTags: ["SkillCatalog"],
+    }),
+
+    addEmployeeSkill: builder.mutation<any, { id: string; catalogId: string; proficiency: number }>({
+      query: ({ id, ...body }) => ({
+        url: `/hr/employees/${id}/skills`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Skill", "Employee"],
+    }),
+
+    submitReviewFeedback: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/hr/review-feedback",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Performance"],
+    }),
+
+    getReviewSummary: builder.query<any, string>({
+      query: (id) => `/hr/performance-reviews/${id}/summary`,
+      providesTags: ["Performance"],
+    }),
+
+    getPIPActions: builder.query<any[], string>({
+      query: (id) => `/hr/performance-reviews/${id}/pip-actions`,
+      providesTags: ["Performance"],
+    }),
+
+    createPIPAction: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/hr/pip-actions",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Performance"],
+    }),
+
+    updatePIPAction: builder.mutation<any, { id: string; isAchieved: boolean; notes?: string }>({
+      query: ({ id, ...body }) => ({
+        url: `/hr/pip-actions/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["Performance"],
+    }),
+
+    getENPSSurveys: builder.query<any[], void>({
+      query: () => "/hr/enps-surveys",
+      providesTags: ["ENPS"],
+    }),
+
+    submitENPSResponse: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/hr/enps-responses",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["ENPS"],
+    }),
+
+    getENPSAnalytics: builder.query<any, string>({
+      query: (id) => `/hr/enps-surveys/${id}/analytics`,
+      providesTags: ["ENPS"],
+    }),
+
+    getHandbooks: builder.query<any[], void>({
+      query: () => "/hr/handbooks",
+      providesTags: ["Handbook"],
+    }),
+
+    acknowledgeHandbook: builder.mutation<any, { id: string; handbookId: string }>({
+      query: ({ id, ...body }) => ({
+        url: `/hr/employees/${id}/handbook-ack`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Handbook"],
+    }),
+
+    createSuccessionPlan: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/hr/succession-plans",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Succession"],
+    }),
+
+    getSuccessionPlans: builder.query<any[], { designationId?: string; employeeId?: string }>({
+      query: (params) => {
+        if (params.designationId) return `/hr/designations/${params.designationId}/succession`;
+        if (params.employeeId) return `/hr/employees/${params.employeeId}/successor-roles`;
+        return "/hr/succession-plans"; // Not implemented but for completeness
+      },
+      providesTags: ["Succession"],
+    }),
   }),
 });
 
@@ -291,4 +545,36 @@ export const {
   useCreateDepartmentMutation,
   useUpdateDepartmentMutation,
   useDeleteDepartmentMutation,
+  useGetSalaryRevisionsQuery,
+  useCreateSalaryRevisionMutation,
+  useUpdateSalaryRevisionStatusMutation,
+  useExtendProbationMutation,
+  useCompleteProbationMutation,
+  useCreateProfileChangeRequestMutation,
+  useGetProfileChangeRequestsQuery,
+  useUpdateProfileChangeRequestStatusMutation,
+  useSubmitResignationMutation,
+  useUpdateResignationStatusMutation,
+  useGetClearanceChecklistQuery,
+  useUpdateClearanceItemMutation,
+  useSubmitExitInterviewMutation,
+  useGetPerformanceReviewsQuery,
+  useAddOKRCheckInMutation,
+  useGetTrainingCoursesQuery,
+  useEnrollInTrainingMutation,
+  useUpdateEmployeeTrainingStatusMutation,
+  useGetSkillCatalogQuery,
+  useAddEmployeeSkillMutation,
+  useSubmitReviewFeedbackMutation,
+  useGetReviewSummaryQuery,
+  useGetPIPActionsQuery,
+  useCreatePIPActionMutation,
+  useUpdatePIPActionMutation,
+  useGetENPSSurveysQuery,
+  useSubmitENPSResponseMutation,
+  useGetENPSAnalyticsQuery,
+  useGetHandbooksQuery,
+  useAcknowledgeHandbookMutation,
+  useCreateSuccessionPlanMutation,
+  useGetSuccessionPlansQuery,
 } = hrApi;

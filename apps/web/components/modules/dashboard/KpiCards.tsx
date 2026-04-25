@@ -54,6 +54,7 @@ export function KpiCards({ dateRange }: Props) {
       value: kpis?.totalEmployees || 0,
       icon: <TeamOutlined />,
       color: "var(--color-primary)", // Electric Cyan
+      trend: 12,
     },
     {
       title: "Revenue (Period)",
@@ -61,6 +62,7 @@ export function KpiCards({ dateRange }: Props) {
       icon: <RiseOutlined />,
       color: "var(--color-success)",
       prefix: "$",
+      trend: 8.5,
     },
     {
       title: "Pipeline Value",
@@ -68,12 +70,14 @@ export function KpiCards({ dateRange }: Props) {
       icon: <DollarOutlined />,
       color: "var(--color-primary-fixed-dim)",
       prefix: "$",
+      trend: -2.4,
     },
     {
       title: "Pending Invoices",
       value: kpis?.pendingInvoices || 0,
       icon: <FileTextOutlined />,
       color: "var(--color-warning)",
+      trend: 5.1,
     },
   ];
 
@@ -95,20 +99,31 @@ export function KpiCards({ dateRange }: Props) {
               {item.icon}
             </div>
             <Statistic
-              title={<span style={{ color: 'var(--color-on-surface-variant)', fontSize: 13 }}>{item.title}</span>}
+              title={<span style={{ color: 'var(--color-on-surface-variant)', fontSize: 13, fontWeight: 500 }}>{item.title}</span>}
               value={item.value}
               prefix={item.prefix}
               valueStyle={{ 
                 color: 'var(--color-on-surface)', 
-                fontFamily: 'var(--font-display)', 
+                fontFamily: 'var(--font-display)', // Space Grotesk
                 fontWeight: 700,
-                fontSize: 24
+                fontSize: 28,
+                letterSpacing: '-0.02em'
               }}
             />
             <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <ArrowUpOutlined style={{ color: 'var(--color-success)', fontSize: 10 }} />
-              <span style={{ color: 'var(--color-success)', fontSize: 11, fontWeight: 600 }}>+4.4%</span>
-              <span style={{ color: 'var(--color-on-surface-variant)', fontSize: 11 }}>vs prev. period</span>
+              {item.trend >= 0 ? (
+                <ArrowUpOutlined style={{ color: 'var(--color-success)', fontSize: 10 }} />
+              ) : (
+                <ArrowUpOutlined style={{ color: 'var(--color-error)', fontSize: 10, transform: 'rotate(180deg)' }} />
+              )}
+              <span style={{ 
+                color: item.trend >= 0 ? 'var(--color-success)' : 'var(--color-error)', 
+                fontSize: 12, 
+                fontWeight: 600 
+              }}>
+                {item.trend >= 0 ? '+' : ''}{item.trend}%
+              </span>
+              <span style={{ color: 'var(--color-on-surface-variant)', fontSize: 11, opacity: 0.7 }}>vs last period</span>
             </div>
             {/* Electric Cyan Accent bottom line */}
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: 'var(--color-primary)', opacity: 0.3 }} />

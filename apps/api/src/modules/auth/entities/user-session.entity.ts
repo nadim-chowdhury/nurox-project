@@ -31,6 +31,10 @@ export class UserSession extends BaseEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   deviceType: string | null; // e.g. 'mobile', 'desktop', 'tablet'
 
+  @Index()
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  familyId: string | null;
+
   @Column({ type: 'timestamptz' })
   expiresAt: Date;
 

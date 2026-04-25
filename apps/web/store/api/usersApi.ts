@@ -22,7 +22,7 @@ export interface PaginatedUsersResponse {
 export const usersApi = createApi({
   reducerPath: "usersApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["Users", "Preferences"],
+  tagTypes: ["Users", "Preferences", "DashboardWidgets"],
   endpoints: (builder) => ({
     getUsers: builder.query<PaginatedUsersResponse, UserListQueryDto>({
       query: (params) => ({
@@ -54,6 +54,20 @@ export const usersApi = createApi({
     getPreferences: builder.query<Record<string, any>, void>({
       query: () => "/users/preferences",
       providesTags: ["Preferences"],
+    }),
+
+    getDashboardWidgets: builder.query<any[], void>({
+      query: () => "/users/dashboard-widgets",
+      providesTags: ["DashboardWidgets"],
+    }),
+
+    saveDashboardWidgets: builder.mutation<void, any[]>({
+      query: (widgets) => ({
+        url: "/users/dashboard-widgets",
+        method: "POST",
+        body: { widgets },
+      }),
+      invalidatesTags: ["DashboardWidgets"],
     }),
 
     setPreference: builder.mutation<void, { key: string; value: any }>({
@@ -120,6 +134,8 @@ export const {
   useGetUserQuery,
   useGetProfileQuery,
   useGetPreferencesQuery,
+  useGetDashboardWidgetsQuery,
+  useSaveDashboardWidgetsMutation,
   useSetPreferenceMutation,
   useInviteUserMutation,
   useUpdateUserMutation,

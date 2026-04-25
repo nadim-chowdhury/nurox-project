@@ -19,6 +19,7 @@ import {
 } from "recharts";
 import { Card, Row, Col, Spin, Empty } from "antd";
 import { useGetDashboardQuery } from "@/store/api/analyticsApi";
+import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 
 interface Props {
@@ -28,6 +29,7 @@ interface Props {
 const COLORS = ["#c3f5ff", "#80d8ff", "#6dd58c", "#ffb347", "#ffb4ab", "#9aa5be"];
 
 export function AnalyticsCharts({ dateRange }: Props) {
+  const router = useRouter();
   const { data, isLoading } = useGetDashboardQuery({
     startDate: dateRange[0].toISOString(),
     endDate: dateRange[1].toISOString(),
@@ -35,6 +37,18 @@ export function AnalyticsCharts({ dateRange }: Props) {
 
   if (isLoading) return <div style={{ height: 350, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Spin size="large" /></div>;
   if (!data) return <Empty description="No data available for this period" />;
+
+  const handleBarClick = (payload: any) => {
+    if (payload && payload.status) {
+      router.push(`/projects/tasks?status=${payload.status}`);
+    }
+  };
+
+  const handlePieClick = (payload: any) => {
+    if (payload && payload.stage) {
+      router.push(`/sales/deals?stage=${payload.stage}`);
+    }
+  };
 
   const tooltipStyle = { 
     background: 'var(--color-surface-container-high)', 
@@ -102,7 +116,11 @@ export function AnalyticsCharts({ dateRange }: Props) {
           >
             <div style={{ width: "100%", height: 250 }}>
               <ResponsiveContainer>
-                <BarChart data={data.taskStats}>
+                <BarChart 
+                  data={data.taskStats} 
+                  onClick={(e: any) => e && handleBarClick(e.activePayload?.[0]?.payload)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                   <XAxis dataKey="status" axisLine={false} tickLine={false} tick={{ fill: 'var(--color-on-surface-variant)', fontSize: 11 }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--color-on-surface-variant)', fontSize: 11 }} />
@@ -134,6 +152,8 @@ export function AnalyticsCharts({ dateRange }: Props) {
                     paddingAngle={5}
                     dataKey="value"
                     nameKey="stage"
+                    onClick={(e) => handlePieClick(e.payload)}
+                    style={{ cursor: 'pointer' }}
                   >
                     {data.pipelineStats.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

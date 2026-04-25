@@ -5,19 +5,23 @@ import {
   Card,
   Descriptions,
   Table,
-  Tag,
   Button,
   Space,
   Row,
   Col,
   Steps,
-  Divider,
+  Spin,
+  Tabs,
+  Tag,
+  message,
 } from "antd";
 import {
   ArrowLeftOutlined,
   CheckOutlined,
-  PrinterOutlined,
+  PlayCircleOutlined,
+  FileDoneOutlined,
   DownloadOutlined,
+  SendOutlined,
 } from "@ant-design/icons";
 import { useParams, useRouter } from "next/navigation";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -25,155 +29,53 @@ import { KpiCard } from "@/components/common/KpiCard";
 import { StatusTag } from "@/components/common/StatusTag";
 import { Avatar } from "@/components/common/Avatar";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { 
+  useGetPayrollRunQuery, 
+  useGetPayslipsByRunQuery,
+  useGetPayrollSummaryQuery,
+  useGetPayrollComparisonQuery,
+  useProcessPayrollRunMutation,
+  useApprovePayrollRunMutation,
+  useFinalizePayrollRunMutation,
+  usePublishPayslipsMutation
+} from "@/store/api/payrollApi";
 import type { ColumnsType } from "antd/es/table";
 
-interface PayslipLine {
-  id: string;
-  employee: string;
-  baseSalary: number;
-  allowances: number;
-  deductions: number;
-  tax: number;
-  netPay: number;
-  status: string;
-}
-
-const mockRun = {
-  id: "PR-2026-04",
-  period: "April 2026",
-  status: "processing",
-  createdBy: "Fatima Khan",
-  createdAt: "2026-04-20",
-  totalEmployees: 8,
-  totalGross: 720000,
-  totalDeductions: 108000,
-  totalNet: 612000,
-  step: 1,
-};
-
-const mockPayslips: PayslipLine[] = [
-  {
-    id: "1",
-    employee: "Sarah Ahmed",
-    baseSalary: 125000 / 12,
-    allowances: 1500,
-    deductions: 800,
-    tax: 2200,
-    netPay: 8917,
-    status: "calculated",
-  },
-  {
-    id: "2",
-    employee: "James Wilson",
-    baseSalary: 95000 / 12,
-    allowances: 1200,
-    deductions: 600,
-    tax: 1700,
-    netPay: 6817,
-    status: "calculated",
-  },
-  {
-    id: "3",
-    employee: "Fatima Khan",
-    baseSalary: 110000 / 12,
-    allowances: 1400,
-    deductions: 700,
-    tax: 2000,
-    netPay: 7867,
-    status: "calculated",
-  },
-  {
-    id: "4",
-    employee: "Michael Chen",
-    baseSalary: 85000 / 12,
-    allowances: 1000,
-    deductions: 500,
-    tax: 1400,
-    netPay: 6183,
-    status: "calculated",
-  },
-  {
-    id: "5",
-    employee: "Priya Sharma",
-    baseSalary: 75000 / 12,
-    allowances: 900,
-    deductions: 400,
-    tax: 1200,
-    netPay: 5550,
-    status: "calculated",
-  },
-  {
-    id: "6",
-    employee: "David Miller",
-    baseSalary: 100000 / 12,
-    allowances: 1300,
-    deductions: 650,
-    tax: 1800,
-    netPay: 7183,
-    status: "calculated",
-  },
-];
-
-const columns: ColumnsType<PayslipLine> = [
+const columns: ColumnsType<any> = [
   {
     title: "Employee",
     key: "employee",
-    width: 200,
+    width: 250,
     render: (_, r) => (
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <Avatar name={r.employee} size={32} />
-        <span
-          style={{
-            color: "var(--color-on-surface)",
-            fontSize: 13,
-            fontWeight: 500,
-          }}
-        >
-          {r.employee}
-        </span>
+        <Avatar name={`${r.employee.firstName} ${r.employee.lastName}`} size={32} />
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ color: "var(--color-on-surface)", fontSize: 13, fontWeight: 500 }}>
+            {r.employee.firstName} {r.employee.lastName}
+          </span>
+          <span style={{ fontSize: 11, color: 'var(--color-on-surface-variant)' }}>{r.employee.employeeId}</span>
+        </div>
       </div>
     ),
   },
   {
-    title: "Base Salary",
-    dataIndex: "baseSalary",
-    key: "base",
+    title: "Gross Pay",
+    dataIndex: "grossPay",
+    key: "gross",
     width: 120,
     render: (v: number) => (
-      <span style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}>
+      <span style={{ color: "var(--color-on-surface)", fontSize: 13 }}>
         {formatCurrency(v)}
       </span>
     ),
   },
   {
-    title: "Allowances",
-    dataIndex: "allowances",
-    key: "allowances",
-    width: 110,
-    render: (v: number) => (
-      <span style={{ color: "#6dd58c", fontSize: 13 }}>
-        +{formatCurrency(v)}
-      </span>
-    ),
-  },
-  {
     title: "Deductions",
-    dataIndex: "deductions",
+    dataIndex: "totalDeductions",
     key: "deductions",
-    width: 110,
+    width: 120,
     render: (v: number) => (
       <span style={{ color: "#ffb4ab", fontSize: 13 }}>
-        -{formatCurrency(v)}
-      </span>
-    ),
-  },
-  {
-    title: "Tax",
-    dataIndex: "tax",
-    key: "tax",
-    width: 100,
-    render: (v: number) => (
-      <span style={{ color: "#ffb347", fontSize: 13 }}>
         -{formatCurrency(v)}
       </span>
     ),
@@ -183,169 +85,250 @@ const columns: ColumnsType<PayslipLine> = [
     dataIndex: "netPay",
     key: "netPay",
     width: 120,
-    sorter: (a, b) => a.netPay - b.netPay,
-    render: (v: number) => (
-      <span
-        style={{
-          fontFamily: "var(--font-display)",
-          color: "var(--color-primary)",
-          fontWeight: 700,
-          fontSize: 14,
-        }}
-      >
-        {formatCurrency(v)}
-      </span>
+    render: (v: number, r) => (
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <span style={{ fontFamily: "var(--font-display)", color: "var(--color-primary)", fontWeight: 700, fontSize: 14 }}>
+          {formatCurrency(v)}
+        </span>
+        {r.payoutCurrency !== 'USD' && (
+          <span style={{ fontSize: 10, color: 'var(--color-on-surface-variant)' }}>
+            ≈ {r.payoutCurrency} {(v * r.exchangeRate).toFixed(2)}
+          </span>
+        )}
+      </div>
     ),
   },
   {
-    title: "Status",
-    dataIndex: "status",
-    key: "status",
-    width: 100,
-    render: (s: string) => <StatusTag status={s} />,
+    title: "PF (Employer)",
+    dataIndex: "employerPfContribution",
+    key: "pf",
+    width: 120,
+    render: (v: number) => formatCurrency(v),
   },
+  {
+    title: "Items",
+    dataIndex: "items",
+    key: "items",
+    render: (items: any[]) => (
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+        {items.map((it, idx) => (
+          <Tag key={idx} size="small" style={{ fontSize: 10 }}>{it.name}</Tag>
+        ))}
+      </div>
+    )
+  }
 ];
 
 export default function PayrollRunDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const id = params.id as string;
+
+  const { data: run, isLoading: isRunLoading } = useGetPayrollRunQuery(id);
+  const { data: payslips, isLoading: isPayslipsLoading } = useGetPayslipsByRunQuery(id);
+  const { data: summary, isLoading: isSummaryLoading } = useGetPayrollSummaryQuery(id);
+  
+  // Previous run comparison (hardcoded ID for demo, in real app would be from a list)
+  const { data: comparison } = useGetPayrollComparisonQuery({ id, previousRunId: 'previous-id' }, { skip: !run });
+  
+  const [processRun, { isLoading: isProcessing }] = useProcessPayrollRunMutation();
+  const [approveRun, { isLoading: isApproving }] = useApprovePayrollRunMutation();
+  const [finalizeRun, { isLoading: isFinalizing }] = useFinalizePayrollRunMutation();
+  const [publishPayslips, { isLoading: isPublishing }] = usePublishPayslipsMutation();
+
+  const handleProcess = async () => {
+    try {
+      await processRun(id).unwrap();
+      message.success("Payroll computation completed");
+    } catch (err: any) {
+      message.error(err.data?.message || "Failed to process payroll");
+    }
+  };
+
+  const handleApprove = async () => {
+    try {
+      await approveRun(id).unwrap();
+      message.success("Payroll run approved");
+    } catch (err: any) {
+      message.error(err.data?.message || "Failed to approve payroll");
+    }
+  };
+
+  const handleFinalize = async () => {
+    try {
+      await finalizeRun(id).unwrap();
+      message.success("Payroll run finalized and journal entries posted");
+    } catch (err: any) {
+      message.error(err.data?.message || "Failed to finalize payroll");
+    }
+  };
+
+  const handlePublish = async () => {
+    try {
+      await publishPayslips(id).unwrap();
+      message.success("Payslips published to employee portal and emailed");
+    } catch (err: any) {
+      message.error(err.data?.message || "Failed to publish payslips");
+    }
+  };
+
+  const getStep = (status: string) => {
+    switch (status) {
+      case "DRAFT": return 0;
+      case "REVIEW": return 2;
+      case "APPROVED": return 3;
+      case "PROCESSED": return 4;
+      default: return 0;
+    }
+  };
+
+  if (isRunLoading) return <div style={{ padding: 100, textAlign: 'center' }}><Spin size="large" /></div>;
+  if (!run) return <div>Run not found</div>;
 
   return (
     <div className="animate-fade-in-up">
       <PageHeader
-        title={`Payroll Run — ${mockRun.period}`}
-        subtitle={`Run ID: ${mockRun.id}`}
+        title={`Payroll Run — ${run.period}`}
+        subtitle={`Run ID: ${run.runId}`}
         breadcrumbs={[
           { label: "Home", href: "/dashboard" },
           { label: "Payroll", href: "/payroll" },
           { label: "Runs", href: "/payroll/runs" },
-          { label: mockRun.period },
+          { label: run.period },
         ]}
         extra={
-          <Space>
-            <Button
-              icon={<ArrowLeftOutlined />}
-              onClick={() => router.push("/payroll/runs")}
-            >
-              Back
-            </Button>
-            <Button icon={<DownloadOutlined />}>Export</Button>
-            <Button icon={<PrinterOutlined />}>Print</Button>
-            <Button type="primary" icon={<CheckOutlined />}>
-              Approve & Finalize
-            </Button>
+          <Space wrap>
+            <Button icon={<ArrowLeftOutlined />} onClick={() => router.push("/payroll/runs")}>Back</Button>
+            
+            {run.status === 'DRAFT' && (
+              <Button type="primary" icon={<PlayCircleOutlined />} onClick={handleProcess} loading={isProcessing}>
+                Compute Payroll
+              </Button>
+            )}
+            
+            {run.status === 'REVIEW' && (
+              <Button type="primary" icon={<CheckOutlined />} onClick={handleApprove} loading={isApproving}>
+                Approve Run
+              </Button>
+            )}
+
+            {run.status === 'APPROVED' && (
+              <Button type="primary" icon={<FileDoneOutlined />} onClick={handleFinalize} loading={isFinalizing}>
+                Finalize & Post
+              </Button>
+            )}
+
+            {run.status === 'PROCESSED' && (
+              <>
+                <Button icon={<DownloadOutlined />} onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/payroll/runs/${id}/beftn`, '_blank')}>
+                  BEFTN Export
+                </Button>
+                <Button icon={<DownloadOutlined />} onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/payroll/runs/${id}/bank-transfer`, '_blank')}>
+                  Bank Transfer
+                </Button>
+                <Button type="primary" icon={<SendOutlined />} onClick={handlePublish} loading={isPublishing}>
+                  Publish Payslips
+                </Button>
+              </>
+            )}
           </Space>
         }
       />
 
       {/* Progress Steps */}
-      <Card
-        style={{
-          background: "var(--color-surface)",
-          border: "1px solid var(--ghost-border)",
-          borderRadius: 4,
-          marginBottom: 24,
-        }}
-        styles={{ body: { padding: 24 } }}
-      >
+      <Card style={{ background: "var(--color-surface)", border: "1px solid var(--ghost-border)", borderRadius: 4, marginBottom: 24 }} styles={{ body: { padding: 24 } }}>
         <Steps
-          current={mockRun.step}
+          current={getStep(run.status)}
           size="small"
           items={[
             { title: "Draft", description: "Created" },
             { title: "Processing", description: "Calculating" },
             { title: "Review", description: "Manager review" },
             { title: "Approved", description: "Finalized" },
-            { title: "Paid", description: "Disbursed" },
+            { title: "Processed", description: "Posted to GL" },
           ]}
         />
       </Card>
 
       {/* KPIs */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={12} sm={6}>
-          <KpiCard title="Employees" value={`${mockRun.totalEmployees}`} />
-        </Col>
-        <Col xs={12} sm={6}>
-          <KpiCard
-            title="Total Gross"
-            value={formatCurrency(mockRun.totalGross)}
-          />
-        </Col>
-        <Col xs={12} sm={6}>
-          <KpiCard
-            title="Total Deductions"
-            value={formatCurrency(mockRun.totalDeductions)}
-          />
-        </Col>
-        <Col xs={12} sm={6}>
-          <KpiCard
-            title="Total Net Pay"
-            value={formatCurrency(mockRun.totalNet)}
-          />
-        </Col>
+        <Col xs={12} sm={6}><KpiCard title="Employees" value={`${run.employeeCount || 0}`} /></Col>
+        <Col xs={12} sm={6}><KpiCard title="Total Gross" value={formatCurrency(run.totalGross || 0)} /></Col>
+        <Col xs={12} sm={6}><KpiCard title="Total Deductions" value={formatCurrency(run.totalDeductions || 0)} /></Col>
+        <Col xs={12} sm={6}><KpiCard title="Total Net Pay" value={formatCurrency(run.totalNet || 0)} /></Col>
       </Row>
 
-      {/* Run Info */}
-      <Card
-        style={{
-          background: "var(--color-surface)",
-          border: "1px solid var(--ghost-border)",
-          borderRadius: 4,
-          marginBottom: 24,
-        }}
-        styles={{ body: { padding: 24 } }}
-      >
-        <Descriptions
-          column={{ xs: 1, sm: 3 }}
-          labelStyle={{
-            color: "var(--color-on-surface-variant)",
-            fontSize: 13,
-          }}
-          contentStyle={{ color: "var(--color-on-surface)", fontSize: 13 }}
-        >
-          <Descriptions.Item label="Period">{mockRun.period}</Descriptions.Item>
-          <Descriptions.Item label="Status">
-            <StatusTag status={mockRun.status} />
-          </Descriptions.Item>
-          <Descriptions.Item label="Created By">
-            {mockRun.createdBy}
-          </Descriptions.Item>
-          <Descriptions.Item label="Created On">
-            {formatDate(mockRun.createdAt)}
-          </Descriptions.Item>
-        </Descriptions>
-      </Card>
-
-      {/* Payslip Lines */}
-      <Card
-        title={
-          <span
-            style={{
-              fontFamily: "var(--font-display)",
-              color: "var(--color-on-surface)",
-              fontWeight: 600,
-            }}
-          >
-            Employee Payslips
-          </span>
-        }
-        style={{
-          background: "var(--color-surface)",
-          border: "1px solid var(--ghost-border)",
-          borderRadius: 4,
-        }}
-        styles={{ body: { padding: 0 } }}
-      >
-        <Table
-          columns={columns}
-          dataSource={mockPayslips}
-          rowKey="id"
-          pagination={false}
-          size="middle"
-          style={{ background: "transparent" }}
-        />
-      </Card>
+      <Tabs
+        defaultActiveKey="payslips"
+        items={[
+          {
+            key: "payslips",
+            label: "Employee Payslips",
+            children: (
+              <Card style={{ background: "var(--color-surface)", border: "1px solid var(--ghost-border)", borderRadius: 4 }} styles={{ body: { padding: 0 } }}>
+                <Table
+                  columns={columns}
+                  dataSource={payslips || []}
+                  rowKey="id"
+                  loading={isPayslipsLoading}
+                  pagination={false}
+                  size="middle"
+                  style={{ background: "transparent" }}
+                />
+              </Card>
+            ),
+          },
+          {
+            key: "summary",
+            label: "Department Summary",
+            children: (
+              <Card style={{ background: "var(--color-surface)", border: "1px solid var(--ghost-border)", borderRadius: 4 }} styles={{ body: { padding: 0 } }}>
+                <Table
+                  loading={isSummaryLoading}
+                  dataSource={summary ? Object.entries(summary).map(([name, data]: any) => ({ name, ...data })) : []}
+                  rowKey="name"
+                  pagination={false}
+                  columns={[
+                    { title: 'Department', dataIndex: 'name', key: 'name' },
+                    { title: 'Employees', dataIndex: 'count', key: 'count' },
+                    { title: 'Gross', dataIndex: 'gross', key: 'gross', render: v => formatCurrency(v) },
+                    { title: 'Deductions', dataIndex: 'deductions', key: 'deductions', render: v => formatCurrency(v) },
+                    { title: 'Net Pay', dataIndex: 'net', key: 'net', render: v => formatCurrency(v) },
+                  ]}
+                />
+              </Card>
+            )
+          },
+          {
+            key: "comparison",
+            label: "MoM Comparison",
+            children: (
+              <Card style={{ background: "var(--color-surface)", border: "1px solid var(--ghost-border)", borderRadius: 4 }} styles={{ body: { padding: 0 } }}>
+                <Table
+                  dataSource={comparison || []}
+                  rowKey="employeeName"
+                  pagination={false}
+                  columns={[
+                    { title: 'Employee', dataIndex: 'employeeName', key: 'name' },
+                    { title: 'Previous Net', dataIndex: 'previousNet', key: 'prev', render: v => formatCurrency(v) },
+                    { title: 'Current Net', dataIndex: 'currentNet', key: 'curr', render: v => formatCurrency(v) },
+                    { 
+                      title: 'Variance', 
+                      dataIndex: 'variance', 
+                      key: 'var', 
+                      render: v => (
+                        <span style={{ color: v > 0 ? '#6dd58c' : v < 0 ? '#ffb4ab' : 'inherit' }}>
+                          {v > 0 ? '+' : ''}{formatCurrency(v)}
+                        </span>
+                      ) 
+                    },
+                  ]}
+                />
+              </Card>
+            )
+          }
+        ]}
+      />
     </div>
   );
 }

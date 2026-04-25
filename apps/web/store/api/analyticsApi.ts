@@ -49,6 +49,21 @@ export const analyticsApi = createApi({
         params: params || undefined,
       }),
     }),
+    getDepartmentKPIs: builder.query<any[], void>({
+      query: () => "/analytics/departments",
+    }),
+    getComparison: builder.query<any, { currentStart: string; currentEnd: string; prevStart: string; prevEnd: string }>({
+      query: (params) => ({
+        url: "/analytics/comparison",
+        params,
+      }),
+    }),
+    getHRAnalytics: builder.query<any, void>({
+      query: () => "/analytics/hr",
+    }),
+    getPerformanceCalibration: builder.query<any[], void>({
+      query: () => "/analytics/performance-calibration",
+    }),
   }),
 });
 
@@ -57,4 +72,8 @@ export const {
   useGetKPIsQuery,
   useGetAuditLogsQuery,
   useGetAlertsQuery,
+  useGetDepartmentKPIsQuery,
+  useGetComparisonQuery,
+  useGetHRAnalyticsQuery,
+  useGetPerformanceCalibrationQuery,
 } = analyticsApi;

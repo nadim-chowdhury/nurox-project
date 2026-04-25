@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { PayrollService } from './payroll.service';
+import { AdvanceSalaryStatus } from './entities/advance-salary.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
@@ -70,6 +71,26 @@ export class PayrollController {
     return this.payrollService.createRun(period);
   }
 
+  @Post('runs/off-cycle')
+  @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
+  createOffCycleRun(
+    @Body('employeeId') employeeId: string,
+    @Body('period') period: string,
+    @Body('type') type: string,
+  ) {
+    return this.payrollService.createOffCycleRun(employeeId, period, type);
+  }
+
+  @Post('overtime/:id/approve')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  approveOvertime(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('approvedById') approvedById: string,
+  ) {
+    // This should probably be in AttendanceService, but adding here for simplicity of Module 6 flow
+    return this.payrollService.approveOvertime(id, approvedById);
+  }
+
   @Post('runs/:id/process')
   @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
   processRun(@Param('id', ParseUUIDPipe) id: string) {
@@ -108,6 +129,50 @@ export class PayrollController {
     res.send(content);
   }
 
+  @Get('runs/:id/bank-letter')
+  @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
+  async downloadBankLetter(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ) {
+    const buffer = await this.payrollService.generateBankLetterPdf(id);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename=bank-letter-${id}.pdf`,
+      'Content-Length': buffer.length,
+    });
+    res.end(buffer);
+  }
+
+  @Get('runs/:id/summary')
+  @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
+  getPayrollSummary(@Param('id', ParseUUIDPipe) id: string) {
+    return this.payrollService.getPayrollSummary(id);
+  }
+
+  @Get('runs/:id/comparison')
+  @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
+  getPayrollComparison(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('previousRunId') previousRunId: string,
+  ) {
+    return this.payrollService.getPayrollComparison(id, previousRunId);
+  }
+
+  @Get('runs/:id/bank-transfer')
+  @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
+  async exportBankTransfer(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ) {
+    const content = await this.payrollService.generateBankTransferFile(id);
+    res.set({
+      'Content-Type': 'text/csv',
+      'Content-Disposition': `attachment; filename=bank-transfer-${id}.csv`,
+    });
+    res.send(content);
+  }
+
   @Get('me/payslips')
   getMyPayslips(@Query('employeeId') employeeId: string) {
     return this.payrollService.getPayslipsByEmployee(employeeId);
@@ -138,5 +203,19 @@ export class PayrollController {
       'Content-Length': buffer.length,
     });
     res.end(buffer);
+  }
+
+  @Post('advance-requests')
+  createAdvanceRequest(@Body() dto: any) {
+    return this.payrollService.createAdvanceRequest(dto);
+  }
+
+  @Patch('advance-requests/:id/status')
+  @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
+  updateAdvanceStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('status') status: AdvanceSalaryStatus,
+  ) {
+    return this.payrollService.updateAdvanceStatus(id, status);
   }
 }

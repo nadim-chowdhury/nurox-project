@@ -58,6 +58,12 @@ export class AttendanceRecord extends TenantBaseEntity {
   @Column({ type: 'int', default: 0 })
   overtimeMinutes: number;
 
+  @Column({ type: 'boolean', default: false })
+  isOvertimeApproved: boolean;
+
+  @Column({ type: 'uuid', nullable: true })
+  overtimeApprovedById: string;
+
   @Column({ type: 'varchar', length: 255, nullable: true })
   remarks: string | null;
 }

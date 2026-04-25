@@ -48,6 +48,7 @@ const STEPS = [
   { title: "Personal", icon: <UserOutlined />, schema: employeePersonalSchema },
   { title: "Employment", icon: <BankOutlined />, schema: employmentDetailsSchema },
   { title: "Compensation", icon: <DollarOutlined />, schema: compensationDetailsSchema },
+  { title: "Emergency", icon: <SafetyOutlined />, schema: null },
   { title: "Documents", icon: <FileTextOutlined />, schema: null },
 ];
 
@@ -361,8 +362,37 @@ export default function NewEmployeePage() {
             </Row>
           </div>
 
-          {/* Step 4: Documents */}
+          {/* Step 4: Emergency */}
           <div style={{ display: current === 3 ? "block" : "none" }}>
+            <h3 style={{ fontFamily: "var(--font-display)", color: "var(--color-on-surface)", marginBottom: 24 }}>
+              Emergency Contact
+            </h3>
+            <Row gutter={[24, 0]}>
+              <Col xs={24} sm={12}>
+                <Form.Item name="emergencyContactName" label={<span style={labelStyle}>Contact Name</span>} rules={[{ required: true }]}>
+                  <Input placeholder="Full name" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12}>
+                <Form.Item name="emergencyContactPhone" label={<span style={labelStyle}>Contact Phone</span>} rules={[{ required: true }]}>
+                  <Input placeholder="+1 (555) 000-0000" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12}>
+                <Form.Item name="emergencyContactRelationship" label={<span style={labelStyle}>Relationship</span>}>
+                  <Select placeholder="Select" options={[
+                      { value: "SPOUSE", label: "Spouse" },
+                      { value: "PARENT", label: "Parent" },
+                      { value: "SIBLING", label: "Sibling" },
+                      { value: "OTHER", label: "Other" },
+                  ]} />
+                </Form.Item>
+              </Col>
+            </Row>
+          </div>
+
+          {/* Step 5: Documents */}
+          <div style={{ display: current === 4 ? "block" : "none" }}>
             <h3 style={{ fontFamily: "var(--font-display)", color: "var(--color-on-surface)", marginBottom: 24 }}>
               Documents & Contract
             </h3>
@@ -384,19 +414,6 @@ export default function NewEmployeePage() {
               <Col xs={24} sm={12}>
                 <Form.Item name="contractExpiryDate" label={<span style={labelStyle}>Contract Expiry Date</span>}>
                   <DatePicker style={{ width: "100%" }} />
-                </Form.Item>
-              </Col>
-              <Col xs={24}>
-                <Divider>Emergency Contact</Divider>
-              </Col>
-              <Col xs={24} sm={12}>
-                <Form.Item name="emergencyContactName" label={<span style={labelStyle}>Contact Name</span>}>
-                  <Input placeholder="Full name" />
-                </Form.Item>
-              </Col>
-              <Col xs={24} sm={12}>
-                <Form.Item name="emergencyContactPhone" label={<span style={labelStyle}>Contact Phone</span>}>
-                  <Input placeholder="+1 (555) 000-0000" />
                 </Form.Item>
               </Col>
             </Row>

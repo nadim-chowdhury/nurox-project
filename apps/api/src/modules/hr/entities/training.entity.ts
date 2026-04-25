@@ -1,6 +1,7 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { Employee } from './employee.entity';
+import { TrainingCourse } from './training-course.entity';
 
 export enum TrainingStatus {
   ENROLLED = 'ENROLLED',
@@ -18,6 +19,13 @@ export class Training extends BaseEntity {
   @ManyToOne(() => Employee, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'employeeId' })
   employee: Employee;
+
+  @Column({ type: 'uuid', nullable: true })
+  courseId: string | null;
+
+  @ManyToOne(() => TrainingCourse, { nullable: true })
+  @JoinColumn({ name: 'courseId' })
+  course: TrainingCourse;
 
   @Column({ type: 'varchar', length: 255 })
   title: string;

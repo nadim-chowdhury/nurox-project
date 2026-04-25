@@ -30,6 +30,9 @@ export class Department extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 50, nullable: true })
   costCenter: string | null;
 
+  @Column({ type: 'uuid', nullable: true })
+  glAccountId: string | null;
+
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 

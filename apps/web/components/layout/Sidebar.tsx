@@ -51,6 +51,7 @@ export function Sidebar() {
       hidden: !enabledModuleKeys.includes("hr") || !canPerform(Permission.HR_VIEW_EMPLOYEES),
       children: [
         { key: "/hr/employees", label: "Employees" },
+        { key: "/hr/directory", label: "Team Directory" },
         { key: "/hr/departments", label: "Departments", hidden: !canPerform(Permission.HR_VIEW_DEPARTMENTS) },
         { key: "/hr/designations", label: "Designations" },
         { key: "/hr/org-chart", label: "Org Chart" },

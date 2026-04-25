@@ -13,7 +13,8 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import type { Response, Request } from 'express';
+import { Response, Request } from 'express';
+import { randomBytes } from 'crypto';
 import { AuthService, OAuthProfile } from './auth.service';
 import { RolesService } from './roles.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -319,10 +320,12 @@ export class AuthController {
     const user = await this.authService.validateOAuthUser(
       req.user as OAuthProfile,
     );
+    const familyId = randomBytes(16).toString('hex');
     const tokens = await this.authService.generateTokens(
       user.id,
       user.email,
       user.role,
+      familyId,
     );
 
     res.cookie(
@@ -353,10 +356,12 @@ export class AuthController {
     const user = await this.authService.validateOAuthUser(
       req.user as OAuthProfile,
     );
+    const familyId = randomBytes(16).toString('hex');
     const tokens = await this.authService.generateTokens(
       user.id,
       user.email,
       user.role,
+      familyId,
     );
 
     res.cookie(
@@ -413,6 +418,14 @@ export class AuthController {
     const currentToken = (req as { cookies?: Record<string, string> })
       .cookies?.[REFRESH_COOKIE_NAME];
     return this.authService.getSessions(userId, currentToken);
+  }
+
+  @Get('login-history')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get recent login activity' })
+  async getLoginHistory(@CurrentUser('id') userId: string) {
+    return this.authService.getLoginHistory(userId);
   }
 
   @Delete('sessions/:id')

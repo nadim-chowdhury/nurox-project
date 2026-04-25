@@ -16,6 +16,16 @@ import {
 import { Response } from 'express';
 import { HrService } from './hr.service';
 import {
+  ProfileChangeStatus,
+} from './entities/profile-change-request.entity';
+import {
+  ResignationStatus,
+} from './entities/resignation.entity';
+import {
+  TerminationType,
+} from './entities/termination.entity';
+import { TrainingStatus } from './entities/training.entity';
+import {
   CreateEmployeeDto,
   OkrDto,
   TrainingDto,
@@ -37,6 +47,14 @@ import { Permission } from '../auth/enums/permissions.enum';
 import { QueryEmployeeDto } from './dto/query-employee.dto';
 import { CreateDesignationDto } from './dto/create-designation.dto';
 import { UpdateDesignationDto } from './dto/update-designation.dto';
+import {
+  CreateSalaryRevisionDto,
+  UpdateSalaryRevisionStatusDto,
+} from './dto/salary-revision.dto';
+import {
+  CreateTransferRequestDto,
+  UpdateTransferStatusDto,
+} from './dto/transfer-request.dto';
 import { CheckModule } from '../../common/guards/module.guard';
 
 @Controller('hr')
@@ -185,6 +203,313 @@ export class HrController {
   @RequirePermissions(Permission.HR_VIEW_EMPLOYEES)
   getOrgChart() {
     return this.hrService.getOrgChart();
+  }
+
+  @Post('salary-revisions')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  createSalaryRevision(@Body() dto: CreateSalaryRevisionDto) {
+    return this.hrService.createSalaryRevision(dto);
+  }
+
+  @Get('salary-revisions')
+  @RequirePermissions(Permission.HR_VIEW_HISTORY)
+  findAllSalaryRevisions() {
+    return this.hrService.findAllSalaryRevisions();
+  }
+
+  @Patch('salary-revisions/:id/status')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  updateSalaryRevisionStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateSalaryRevisionStatusDto,
+  ) {
+    return this.hrService.updateSalaryRevisionStatus(id, dto);
+  }
+
+  @Post('employees/:id/probation/extend')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  extendProbation(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('newEndDate') newEndDate: string,
+    @Body('comments') comments: string,
+  ) {
+    return this.hrService.extendProbation(id, newEndDate, comments);
+  }
+
+  @Post('employees/:id/probation/complete')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  completeProbation(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('comments') comments: string,
+  ) {
+    return this.hrService.completeProbation(id, comments);
+  }
+
+  @Post('transfers')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  createTransferRequest(@Body() dto: CreateTransferRequestDto) {
+    return this.hrService.createTransferRequest(dto);
+  }
+
+  @Get('transfers')
+  @RequirePermissions(Permission.HR_VIEW_HISTORY)
+  findAllTransferRequests() {
+    return this.hrService.findAllTransferRequests();
+  }
+
+  @Patch('transfers/:id/status')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  updateTransferStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateTransferStatusDto,
+  ) {
+    return this.hrService.updateTransferRequestStatus(id, dto);
+  }
+
+  @Post('employees/:id/profile-change')
+  createProfileChangeRequest(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() changes: any,
+  ) {
+    return this.hrService.createProfileChangeRequest(id, changes);
+  }
+
+  @Get('profile-changes')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  findAllProfileChangeRequests() {
+    return this.hrService.findAllProfileChangeRequests();
+  }
+
+  @Patch('profile-changes/:id/status')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  updateProfileChangeRequestStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: { status: ProfileChangeStatus; rejectionReason?: string },
+  ) {
+    return this.hrService.updateProfileChangeRequestStatus(id, dto);
+  }
+
+  @Post('employees/:id/resignation')
+  createResignation(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: any,
+  ) {
+    return this.hrService.createResignation(id, dto);
+  }
+
+  @Patch('resignations/:id/status')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  updateResignationStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: { status: ResignationStatus; approvedLastWorkingDay?: string; adminComments?: string },
+  ) {
+    return this.hrService.updateResignationStatus(id, dto);
+  }
+
+  @Post('terminations')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  createTermination(@Body() dto: any) {
+    return this.hrService.createTermination(dto);
+  }
+
+  @Get('employees/:id/clearance')
+  getClearanceChecklist(@Param('id', ParseUUIDPipe) id: string) {
+    return this.hrService.getClearanceChecklist(id);
+  }
+
+  @Patch('clearance/:id')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  updateClearanceItem(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('isCleared') isCleared: boolean,
+    @Body('remarks') remarks?: string,
+  ) {
+    return this.hrService.updateClearanceItem(id, isCleared, remarks);
+  }
+
+  @Post('employees/:id/exit-interview')
+  submitExitInterview(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() responses: any,
+  ) {
+    return this.hrService.submitExitInterview(id, responses);
+  }
+
+  @Post('okr-checkins')
+  createOKRCheckIn(@Body() dto: any) {
+    return this.hrService.createOKRCheckIn(dto);
+  }
+
+  @Get('performance-reviews/:id/progress')
+  getOKRProgress(@Param('id', ParseUUIDPipe) id: string) {
+    return this.hrService.calculateOKRProgress(id);
+  }
+
+  @Post('training-courses')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  createTrainingCourse(@Body() dto: any) {
+    return this.hrService.createTrainingCourse(dto);
+  }
+
+  @Get('training-courses')
+  findAllTrainingCourses() {
+    return this.hrService.findAllTrainingCourses();
+  }
+
+  @Post('employees/:id/enroll')
+  enrollEmployee(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('courseId') courseId: string,
+  ) {
+    return this.hrService.enrollEmployeeInTraining(id, courseId);
+  }
+
+  @Patch('trainings/:id/status')
+  updateTrainingStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('status') status: TrainingStatus,
+    @Body('certificateUrl') certificateUrl?: string,
+  ) {
+    return this.hrService.updateTrainingStatus(id, status, certificateUrl);
+  }
+
+  @Post('skill-catalog')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  createSkillInCatalog(@Body() dto: any) {
+    return this.hrService.createSkillInCatalog(dto);
+  }
+
+  @Get('skill-catalog')
+  findAllSkillsInCatalog() {
+    return this.hrService.findAllSkillsInCatalog();
+  }
+
+  @Post('employees/:id/skills')
+  addSkillToEmployee(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('catalogId') catalogId: string,
+    @Body('proficiency') proficiency: number,
+  ) {
+    return this.hrService.addSkillToEmployee(id, catalogId, proficiency);
+  }
+
+  @Get('skill-matrix')
+  @RequirePermissions(Permission.HR_VIEW_EMPLOYEES)
+  getSkillMatrix() {
+    return this.hrService.getSkillMatrix();
+  }
+
+  @Post('review-feedback')
+  submitReviewFeedback(@Body() dto: any) {
+    return this.hrService.submitReviewFeedback(dto);
+  }
+
+  @Get('performance-reviews/:id/summary')
+  getReviewFeedbackSummary(@Param('id', ParseUUIDPipe) id: string) {
+    return this.hrService.getReviewFeedbackSummary(id);
+  }
+
+  @Post('pip-actions')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  createPIPAction(@Body() dto: any) {
+    return this.hrService.createPIPActionPlan(dto);
+  }
+
+  @Get('performance-reviews/:id/pip-actions')
+  getPIPActions(@Param('id', ParseUUIDPipe) id: string) {
+    return this.hrService.getPIPActionPlans(id);
+  }
+
+  @Get('performance-reviews/:id/pip-letter')
+  async downloadPIPLetter(@Param('id', ParseUUIDPipe) id: string, @Res() res: Response) {
+    const buffer = await this.hrService.generatePIPLetter(id);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename=pip-letter.pdf',
+      'Content-Length': buffer.length,
+    });
+    res.end(buffer);
+  }
+
+  @Get('trainings/:id/certificate')
+  async downloadCertificate(@Param('id', ParseUUIDPipe) id: string, @Res() res: Response) {
+    const buffer = await this.hrService.generateTrainingCertificate(id);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename=certificate.pdf',
+      'Content-Length': buffer.length,
+    });
+    res.end(buffer);
+  }
+
+  @Patch('pip-actions/:id')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  updatePIPAction(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('isAchieved') isAchieved: boolean,
+    @Body('notes') notes?: string,
+  ) {
+    return this.hrService.updatePIPActionPlanStatus(id, isAchieved, notes);
+  }
+
+  @Post('enps-surveys')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  createENPSSurvey(@Body() dto: any) {
+    return this.hrService.createENPSSurvey(dto);
+  }
+
+  @Get('enps-surveys')
+  findAllENPSSurveys() {
+    return this.hrService.findAllENPSSurveys();
+  }
+
+  @Post('enps-responses')
+  submitENPSResponse(@Body() dto: any) {
+    return this.hrService.submitENPSResponse(dto);
+  }
+
+  @Get('enps-surveys/:id/analytics')
+  getENPSAnalytics(@Param('id', ParseUUIDPipe) id: string) {
+    return this.hrService.getENPSAnalytics(id);
+  }
+
+  @Post('handbooks')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  createHandbook(@Body() dto: any) {
+    return this.hrService.createHandbook(dto);
+  }
+
+  @Get('handbooks')
+  findAllHandbooks() {
+    return this.hrService.findAllHandbooks();
+  }
+
+  @Post('employees/:id/handbook-ack')
+  acknowledgeHandbook(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('handbookId') handbookId: string,
+    @Req() req: any,
+  ) {
+    return this.hrService.acknowledgeHandbook(id, handbookId, {
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+  }
+
+  @Post('succession-plans')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  createSuccessionPlan(@Body() dto: any) {
+    return this.hrService.createSuccessionPlan(dto);
+  }
+
+  @Get('designations/:id/succession')
+  getSuccessionPlansByDesignation(@Param('id', ParseUUIDPipe) id: string) {
+    return this.hrService.getSuccessionPlansByDesignation(id);
+  }
+
+  @Get('employees/:id/successor-roles')
+  getSuccessionPlansByEmployee(@Param('id', ParseUUIDPipe) id: string) {
+    return this.hrService.getSuccessionPlansByEmployee(id);
   }
 
   @Post('departments')

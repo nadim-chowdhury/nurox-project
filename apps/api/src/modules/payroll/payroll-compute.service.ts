@@ -22,6 +22,8 @@ export class PayrollComputeService {
     bonuses: number = 0,
     leaveEncashmentDays: number = 0,
     arrears: number = 0,
+    loanDeductions: number = 0,
+    advanceDeductions: number = 0,
   ) {
     const items: Array<{
       name: string;
@@ -151,6 +153,25 @@ export class PayrollComputeService {
         });
         totalDeductions += monthlyTax;
       }
+    }
+
+    // 6. Loans & Advances
+    if (loanDeductions > 0) {
+      items.push({
+        name: 'Loan Repayment',
+        amount: loanDeductions,
+        type: 'DEDUCTION',
+      });
+      totalDeductions += loanDeductions;
+    }
+
+    if (advanceDeductions > 0) {
+      items.push({
+        name: 'Salary Advance Deduction',
+        amount: advanceDeductions,
+        type: 'DEDUCTION',
+      });
+      totalDeductions += advanceDeductions;
     }
 
     const netPay = grossPay - totalDeductions;

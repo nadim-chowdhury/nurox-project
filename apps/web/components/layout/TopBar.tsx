@@ -95,6 +95,7 @@ export function TopBar() {
         <Button
           type="text"
           icon={<SearchOutlined />}
+          aria-label="Open Command Palette"
           style={{
             color: "var(--color-on-surface-variant)",
             display: "flex",
@@ -117,6 +118,9 @@ export function TopBar() {
           placement="bottomRight"
         >
           <div
+            role="button"
+            aria-label="User profile menu"
+            tabIndex={0}
             style={{
               display: "flex",
               alignItems: "center",

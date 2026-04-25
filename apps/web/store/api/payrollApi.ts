@@ -41,6 +41,11 @@ export const payrollApi = createApi({
       providesTags: ["PayrollRun"],
     }),
 
+    getPayrollRun: builder.query<PayrollRunDto, string>({
+      query: (id) => `/payroll/runs/${id}`,
+      providesTags: (_, __, id) => [{ type: "PayrollRun", id }],
+    }),
+
     createPayrollRun: builder.mutation<PayrollRunDto, { period: string }>({
       query: (body) => ({
         url: "/payroll/runs",
@@ -112,6 +117,42 @@ export const payrollApi = createApi({
       }),
       invalidatesTags: ["TaxConfig"],
     }),
+
+    createOffCycleRun: builder.mutation<PayrollRunDto, { employeeId: string; period: string; type: string }>({
+      query: (body) => ({
+        url: "/payroll/runs/off-cycle",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["PayrollRun"],
+    }),
+
+    getPayrollSummary: builder.query<any, string>({
+      query: (id) => `/payroll/runs/${id}/summary`,
+    }),
+
+    getPayrollComparison: builder.query<any[], { id: string; previousRunId: string }>({
+      query: ({ id, previousRunId }) => ({
+        url: `/payroll/runs/${id}/comparison`,
+        params: { previousRunId },
+      }),
+    }),
+
+    createAdvanceRequest: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/payroll/advance-requests",
+        method: "POST",
+        body,
+      }),
+    }),
+
+    updateAdvanceStatus: builder.mutation<any, { id: string; status: string }>({
+      query: ({ id, ...body }) => ({
+        url: `/payroll/advance-requests/${id}/status`,
+        method: "PATCH",
+        body,
+      }),
+    }),
   }),
 });
 
@@ -120,6 +161,7 @@ export const {
   useCreateStructureMutation,
   useAssignStructureMutation,
   useGetPayrollRunsQuery,
+  useGetPayrollRunQuery,
   useCreatePayrollRunMutation,
   useProcessPayrollRunMutation,
   useApprovePayrollRunMutation,
@@ -130,4 +172,9 @@ export const {
   useLazyGetPayslipDownloadUrlQuery,
   useGetTaxConfigsQuery,
   useCreateTaxConfigMutation,
+  useCreateOffCycleRunMutation,
+  useGetPayrollSummaryQuery,
+  useGetPayrollComparisonQuery,
+  useCreateAdvanceRequestMutation,
+  useUpdateAdvanceStatusMutation,
 } = payrollApi;

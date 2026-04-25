@@ -8,7 +8,7 @@ import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { FloatingActions } from "@/components/common/FloatingActions";
 import { OfflineBanner } from "@/components/common/OfflineBanner";
 import { useAppSelector, useAppDispatch } from "@/hooks/useRedux";
-import { toggleSidebar } from "@/store/slices/uiSlice";
+import { toggleSidebar, toggleCommandPalette } from "@/store/slices/uiSlice";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 

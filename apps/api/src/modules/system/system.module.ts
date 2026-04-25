@@ -5,6 +5,7 @@ import { Tenant } from './entities/tenant.entity';
 import { TenantModule as TenantModuleEntity } from './entities/tenant-module.entity';
 import { TenantCustomDomain } from './entities/tenant-custom-domain.entity';
 import { Branch } from './entities/branch.entity';
+import { WorkingCalendar } from './entities/working-calendar.entity';
 import { AuditLog } from './entities/audit-log.entity';
 import { Holiday } from './entities/holiday.entity';
 import { Notification } from './entities/notification.entity';
@@ -28,6 +29,7 @@ import { DatabaseInitService } from './database-init.service';
       TenantModuleEntity,
       TenantCustomDomain,
       Branch,
+      WorkingCalendar,
       AuditLog,
       Holiday,
       Notification,

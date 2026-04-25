@@ -84,11 +84,22 @@ export const baseQueryWithReauth: BaseQueryFn<
         api.dispatch(clearAuth());
       }
     } else if (result.error.status === 429) {
-      const retryAfter = result.meta?.response?.headers.get("retry-after") || "a few seconds";
-      notification.warning({
-        message: "Slow down",
-        description: `Too many requests. Please try again in ${retryAfter}.`,
+      const retryAfterStr = result.meta?.response?.headers.get("retry-after");
+      const retryAfter = retryAfterStr ? parseInt(retryAfterStr, 10) : 60;
+      
+      notification.error({
+        message: "Rate Limit Exceeded",
+        description: `Too many requests. Please try again in ${retryAfter} seconds.`,
         key: "rate-limit-warning",
+        duration: 5,
+      });
+    } else if (result.error.status === 503) {
+      const data = result.error.data as any;
+      notification.warning({
+        message: "System Maintenance",
+        description: data?.message || "The system is currently undergoing maintenance. Please try again later.",
+        duration: 0, // Persistent
+        key: "maintenance-warning",
       });
     }
   }

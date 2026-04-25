@@ -78,6 +78,12 @@ export class Payslip extends TenantBaseEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   employerPfContribution: number;
 
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  payoutCurrency: string;
+
+  @Column({ type: 'decimal', precision: 10, scale: 6, default: 1 })
+  exchangeRate: number;
+
   @Column({ type: 'jsonb', default: [] })
   items: Array<{
     name: string;
