@@ -1,8 +1,8 @@
 import { Entity, Column } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 
 @Entity('holidays')
-export class Holiday extends BaseEntity {
+export class Holiday extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 255 })
   name: string;
 

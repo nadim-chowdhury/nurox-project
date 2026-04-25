@@ -6,6 +6,7 @@ import {
 } from "@reduxjs/toolkit/query/react";
 import type { RootState } from "@/store/store";
 import { setAccessToken, clearAuth } from "@/store/slices/authSlice";
+import { notification } from "antd";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
@@ -14,15 +15,31 @@ const API_URL =
  * Base fetch configured with:
  * - Credentials: include (sends httpOnly cookies for refresh)
  * - Authorization header from Redux auth state
+ * - x-tenant-id header from cookie
  */
 const baseQuery = fetchBaseQuery({
   baseUrl: API_URL,
   credentials: "include",
   prepareHeaders: (headers, { getState }) => {
+    // 1. Set Authorization Header
     const token = (getState() as RootState).auth.accessToken;
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);
     }
+
+    // 2. Set Tenant ID Header
+    // Read from cookie (set by middleware)
+    if (typeof document !== 'undefined') {
+      const tenantId = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('nurox_tenant_id='))
+        ?.split('=')[1];
+      
+      if (tenantId) {
+        headers.set("x-tenant-id", tenantId);
+      }
+    }
+
     return headers;
   },
 });
@@ -44,26 +61,35 @@ export const baseQueryWithReauth: BaseQueryFn<
 > = async (args, api, extraOptions) => {
   let result = await baseQuery(args, api, extraOptions);
 
-  if (result.error && result.error.status === 401) {
-    // Attempt silent refresh
-    const refreshResult = await baseQuery(
-      { url: "/auth/refresh", method: "POST" },
-      api,
-      extraOptions,
-    );
+  if (result.error) {
+    if (result.error.status === 401) {
+      // Attempt silent refresh
+      const refreshResult = await baseQuery(
+        { url: "/auth/refresh", method: "POST" },
+        api,
+        extraOptions,
+      );
 
-    if (refreshResult.data) {
-      const data = refreshResult.data as {
-        accessToken: string;
-        expiresIn: number;
-      };
-      // Store new access token
-      api.dispatch(setAccessToken(data.accessToken));
-      // Retry original request with new token
-      result = await baseQuery(args, api, extraOptions);
-    } else {
-      // Refresh failed — clear auth state
-      api.dispatch(clearAuth());
+      if (refreshResult.data) {
+        const data = refreshResult.data as {
+          accessToken: string;
+          expiresIn: number;
+        };
+        // Store new access token
+        api.dispatch(setAccessToken(data.accessToken));
+        // Retry original request with new token
+        result = await baseQuery(args, api, extraOptions);
+      } else {
+        // Refresh failed — clear auth state
+        api.dispatch(clearAuth());
+      }
+    } else if (result.error.status === 429) {
+      const retryAfter = result.meta?.response?.headers.get("retry-after") || "a few seconds";
+      notification.warning({
+        message: "Slow down",
+        description: `Too many requests. Please try again in ${retryAfter}.`,
+        key: "rate-limit-warning",
+      });
     }
   }
 

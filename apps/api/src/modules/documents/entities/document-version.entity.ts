@@ -1,10 +1,10 @@
 import { Entity, Column, ManyToOne, Index } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { User } from '../../users/entities/user.entity';
 import { Document } from './document.entity';
 
 @Entity('document_versions')
-export class DocumentVersion extends BaseEntity {
+export class DocumentVersion extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   documentId: string;
 

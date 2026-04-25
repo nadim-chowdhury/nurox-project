@@ -39,6 +39,7 @@ export class UsersService {
       includePassword?: boolean;
       includeResetFields?: boolean;
       includeTwoFactor?: boolean;
+      includeVerificationFields?: boolean;
     } = {},
   ): Promise<User | null> {
     const qb = this.usersRepo
@@ -61,6 +62,12 @@ export class UsersService {
         'user.twoFactorBackupCodes',
       ]);
     }
+    if (options.includeVerificationFields) {
+      qb.addSelect([
+        'user.emailVerificationTokenHash',
+        'user.emailVerificationExpires',
+      ]);
+    }
 
     return qb.getOne();
   }
@@ -81,6 +88,13 @@ export class UsersService {
     }
 
     return qb.getOne();
+  }
+
+  /**
+   * Find user by phone number.
+   */
+  async findByPhone(phone: string): Promise<User | null> {
+    return this.usersRepo.findOne({ where: { phone } });
   }
 
   /**

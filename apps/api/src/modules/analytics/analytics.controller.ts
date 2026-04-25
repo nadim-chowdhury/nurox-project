@@ -3,10 +3,12 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { CheckModule } from '../../common/guards/module.guard';
 
 @ApiTags('Analytics')
 @Controller('analytics')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
+@CheckModule('analytics')
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 

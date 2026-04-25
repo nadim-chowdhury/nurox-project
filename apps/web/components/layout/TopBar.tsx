@@ -1,15 +1,16 @@
 "use client";
 
 import React from "react";
-import { Layout, Button, Avatar, Dropdown, Space } from "antd";
+import { Layout, Button, Avatar, Dropdown, Space, Badge, Tooltip } from "antd";
 import {
   SearchOutlined,
   UserOutlined,
   LogoutOutlined,
   SettingOutlined,
+  WifiOutlined,
 } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
-import { useAppSelector, useAppDispatch } from "@/hooks/useRedux";
+import { useAppSelector } from "@/hooks/useRedux";
 import { useLogoutMutation } from "@/store/api/authApi";
 import { Breadcrumbs } from "./Breadcrumbs";
 import { NotificationDropdown } from "./NotificationDropdown";
@@ -18,9 +19,8 @@ const { Header } = Layout;
 
 export function TopBar() {
   const router = useRouter();
-  const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
-  const collapsed = useAppSelector((s) => s.ui.sidebarCollapsed);
+  const { sidebarCollapsed: collapsed, primaryColor, socketStatus } = useAppSelector((s) => s.ui);
   const [logout] = useLogoutMutation();
 
   const handleLogout = async () => {
@@ -65,9 +65,9 @@ export function TopBar() {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 24px",
-        marginLeft: collapsed ? 64 : 256,
-        transition: "margin-left 0.2s ease",
+        paddingInline: "24px",
+        marginInlineStart: collapsed ? 64 : 256,
+        transition: "all 0.2s ease",
         background: "rgba(17, 24, 39, 0.7)",
         height: 64,
       }}
@@ -78,7 +78,19 @@ export function TopBar() {
       </div>
 
       {/* Right side */}
-      <Space size={12}>
+      <Space size={16}>
+        {/* Socket Status */}
+        <Tooltip title={`System Status: ${socketStatus}`}>
+          <Badge 
+            status={
+              socketStatus === 'connected' ? 'success' : 
+              socketStatus === 'connecting' ? 'processing' : 'error'
+            } 
+          >
+            <WifiOutlined style={{ color: 'var(--color-on-surface-variant)', fontSize: 16 }} />
+          </Badge>
+        </Tooltip>
+
         {/* Search trigger */}
         <Button
           type="text"
@@ -118,7 +130,7 @@ export function TopBar() {
             <Avatar
               size={32}
               style={{
-                background: "linear-gradient(135deg, #c3f5ff, #00e5ff)",
+                background: `linear-gradient(135deg, ${primaryColor}, #00e5ff)`,
                 color: "#003c4a",
                 fontWeight: 600,
               }}

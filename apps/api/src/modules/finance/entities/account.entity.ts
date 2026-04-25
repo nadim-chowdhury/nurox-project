@@ -1,5 +1,5 @@
 import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 
 export enum AccountType {
   ASSET = 'ASSET',
@@ -10,7 +10,7 @@ export enum AccountType {
 }
 
 @Entity('chart_of_accounts')
-export class Account extends BaseEntity {
+export class Account extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 20, unique: true })
   code: string;
 
@@ -41,4 +41,6 @@ export class Account extends BaseEntity {
 
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
+}
+ean;
 }

@@ -27,7 +27,8 @@ export class TenantConnectionService {
 
   /**
    * Runs a database operation within a tenant-scoped transaction context.
-   * This ensures the search_path is correctly set and the query runner is released.
+   * This ensures the search_path is correctly set (for schema-per-tenant)
+   * OR app.current_tenant_id is set (for row-level isolation).
    */
   async runInTenantContext<T>(
     work: (manager: EntityManager) => Promise<T>,
@@ -36,11 +37,22 @@ export class TenantConnectionService {
     await queryRunner.connect();
 
     try {
-      // Switch the active schema path securely for Postgres
-      // We use double quotes for schema name to prevent SQL injection and handle special characters
+      // 1. Set Row-Level Security Context (Default)
+      // This works even if the tenant has their own schema, as long as RLS is enabled on tables.
       await queryRunner.query(
-        `SET search_path TO "${this.tenantId}", "public"`,
+        `SET app.current_tenant_id = '${this.tenantId}'`,
       );
+
+      // 2. Switch search_path (Optional/Enterprise)
+      // If we determine this tenant uses a separate schema, we set the search_path.
+      // For now, we'll try to use the tenantId as schema name if it's not a UUID, 
+      // but in the future this should be based on a flag in the Tenant entity.
+      const tenant = (this.request as any).tenant;
+      if (tenant?.schemaNamespace && tenant.schemaNamespace !== 'public') {
+        await queryRunner.query(
+          `SET search_path TO "${tenant.schemaNamespace}", "public"`,
+        );
+      }
 
       return await work(queryRunner.manager);
     } catch (error) {
@@ -57,14 +69,19 @@ export class TenantConnectionService {
   }
 
   /**
-   * Returns a TypeORM EntityManager execution wrapper securely scoped to the tenant's exact Postgres Schema.
-   * WARNING: The caller is responsible for releasing the underlying query runner if they use the manager directly.
-   * Prefer using runInTenantContext for automatic lifecycle management.
+   * Returns a TypeORM EntityManager execution wrapper securely scoped to the tenant.
    */
   async getTenantManager(): Promise<EntityManager> {
     const queryRunner = this.defaultDataSource.createQueryRunner();
     await queryRunner.connect();
-    await queryRunner.query(`SET search_path TO "${this.tenantId}", "public"`);
+    
+    await queryRunner.query(`SET app.current_tenant_id = '${this.tenantId}'`);
+    
+    const tenant = (this.request as any).tenant;
+    if (tenant?.schemaNamespace && tenant.schemaNamespace !== 'public') {
+        await queryRunner.query(`SET search_path TO "${tenant.schemaNamespace}", "public"`);
+    }
+    
     return queryRunner.manager;
   }
 }

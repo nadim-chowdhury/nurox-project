@@ -4,7 +4,8 @@ import React, { useEffect } from "react";
 import { useAppSelector, useAppDispatch } from "@/hooks/useRedux";
 import { getSocket, disconnectSocket } from "@/lib/socket";
 import { notificationApi } from "@/store/api/notificationApi";
-import { message, notification as antdNotification } from "antd";
+import { setSocketStatus } from "@/store/slices/uiSlice";
+import { notification as antdNotification } from "antd";
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   const { token, user } = useAppSelector((state) => state.auth);
@@ -12,10 +13,26 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (token && user) {
-      // Create or get existing socket
+      dispatch(setSocketStatus("connecting"));
       const socket = getSocket(token);
 
       if (socket) {
+        if (socket.connected) {
+          dispatch(setSocketStatus("connected"));
+        }
+
+        socket.on("connect", () => {
+          dispatch(setSocketStatus("connected"));
+        });
+
+        socket.on("disconnect", () => {
+          dispatch(setSocketStatus("disconnected"));
+        });
+
+        socket.on("connect_error", () => {
+          dispatch(setSocketStatus("disconnected"));
+        });
+
         // Listen for notifications
         socket.on("newNotification", (data: any) => {
           // Invalidate cache so UI refreshes
@@ -34,6 +51,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     return () => {
       if (token) {
         disconnectSocket();
+        dispatch(setSocketStatus("disconnected"));
       }
     };
   }, [token, user, dispatch]);

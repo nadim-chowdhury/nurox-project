@@ -1,8 +1,8 @@
 import { Entity, Column } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 
 @Entity('tax_rates')
-export class TaxRate extends BaseEntity {
+export class TaxRate extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 100 })
   name: string;
 

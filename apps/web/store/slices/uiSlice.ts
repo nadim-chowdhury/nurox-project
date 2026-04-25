@@ -5,15 +5,19 @@ export interface UIState {
   commandPaletteOpen: boolean;
   theme: "light" | "dark";
   primaryColor: string;
+  logoUrl: string;
   direction: "ltr" | "rtl";
+  socketStatus: "connected" | "disconnected" | "connecting";
 }
 
 const initialState: UIState = {
   sidebarCollapsed: false,
   commandPaletteOpen: false,
   theme: "dark",
-  primaryColor: "#00b96b",
+  primaryColor: "#c3f5ff",
+  logoUrl: "/logo.png",
   direction: "ltr",
+  socketStatus: "disconnected",
 };
 
 export const uiSlice = createSlice({
@@ -35,8 +39,17 @@ export const uiSlice = createSlice({
     setPrimaryColor: (state, action: PayloadAction<string>) => {
       state.primaryColor = action.payload;
     },
+    setLogoUrl: (state, action: PayloadAction<string>) => {
+      state.logoUrl = action.payload;
+    },
     setDirection: (state, action: PayloadAction<"ltr" | "rtl">) => {
       state.direction = action.payload;
+    },
+    setSocketStatus: (
+      state,
+      action: PayloadAction<"connected" | "disconnected" | "connecting">,
+    ) => {
+      state.socketStatus = action.payload;
     },
   },
 });
@@ -47,6 +60,8 @@ export const {
   toggleCommandPalette,
   setTheme,
   setPrimaryColor,
+  setLogoUrl,
   setDirection,
+  setSocketStatus,
 } = uiSlice.actions;
 export default uiSlice.reducer;

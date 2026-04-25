@@ -1,5 +1,5 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Project } from './project.entity';
 
 export enum TaskPriority {
@@ -18,7 +18,7 @@ export enum TaskStatus {
 }
 
 @Entity('tasks')
-export class Task extends BaseEntity {
+export class Task extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 255 })
   title: string;
 

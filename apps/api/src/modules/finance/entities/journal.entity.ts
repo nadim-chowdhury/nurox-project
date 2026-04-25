@@ -1,5 +1,5 @@
 import { Entity, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 
 export enum JournalStatus {
   DRAFT = 'DRAFT',
@@ -8,7 +8,7 @@ export enum JournalStatus {
 }
 
 @Entity('journal_entries')
-export class JournalEntry extends BaseEntity {
+export class JournalEntry extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 30, unique: true })
   entryNumber: string;
 
@@ -35,7 +35,7 @@ export class JournalEntry extends BaseEntity {
 }
 
 @Entity('journal_lines')
-export class JournalLine extends BaseEntity {
+export class JournalLine extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   journalEntryId: string;
 

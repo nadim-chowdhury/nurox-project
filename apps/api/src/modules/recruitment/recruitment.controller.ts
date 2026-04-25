@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { RecruitmentService } from './recruitment.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CheckModule } from '../../common/guards/module.guard';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import {
   jobRequisitionSchema,
@@ -27,6 +28,7 @@ import {
 @ApiTags('Recruitment')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+@CheckModule('recruitment')
 @Controller('recruitment')
 export class RecruitmentController {
   constructor(private readonly recruitmentService: RecruitmentService) {}

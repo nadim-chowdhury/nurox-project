@@ -1,5 +1,5 @@
 import { Entity, Column, OneToMany, ManyToMany, JoinTable } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Vendor } from './vendor.entity';
 
 export enum RfqStatus {
@@ -11,7 +11,7 @@ export enum RfqStatus {
 }
 
 @Entity('rfqs')
-export class Rfq extends BaseEntity {
+export class Rfq extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 50, unique: true })
   rfqNumber: string;
 
@@ -33,7 +33,7 @@ export class Rfq extends BaseEntity {
 }
 
 @Entity('vendor_quotes')
-export class VendorQuote extends BaseEntity {
+export class VendorQuote extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   rfqId: string;
 

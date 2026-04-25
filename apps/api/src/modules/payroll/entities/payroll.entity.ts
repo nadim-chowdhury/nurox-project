@@ -1,5 +1,5 @@
 import { Entity, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Employee } from '../../hr/entities/employee.entity';
 
 export enum PayrollRunStatus {
@@ -11,7 +11,7 @@ export enum PayrollRunStatus {
 }
 
 @Entity('payroll_runs')
-export class PayrollRun extends BaseEntity {
+export class PayrollRun extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 30, unique: true })
   runId: string; // e.g. PR-2026-04
 
@@ -51,7 +51,7 @@ export class PayrollRun extends BaseEntity {
 }
 
 @Entity('payslips')
-export class Payslip extends BaseEntity {
+export class Payslip extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   payrollRunId: string;
 

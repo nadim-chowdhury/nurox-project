@@ -51,7 +51,23 @@ export function CommandPalette() {
               </Command.Item>
               <Command.Item
                 onSelect={() => {
-                  router.push("/sales");
+                  router.push("/hr/employees");
+                  dispatch(toggleCommandPalette());
+                }}
+              >
+                Go to Employees
+              </Command.Item>
+              <Command.Item
+                onSelect={() => {
+                  router.push("/finance/chart-of-accounts");
+                  dispatch(toggleCommandPalette());
+                }}
+              >
+                Go to Finance
+              </Command.Item>
+              <Command.Item
+                onSelect={() => {
+                  router.push("/sales/deals");
                   dispatch(toggleCommandPalette());
                 }}
               >
@@ -75,6 +91,14 @@ export function CommandPalette() {
                 }}
               >
                 Create New Deal
+              </Command.Item>
+              <Command.Item
+                onSelect={() => {
+                  router.push("/hr/employees/new");
+                  dispatch(toggleCommandPalette());
+                }}
+              >
+                Add New Employee
               </Command.Item>
               <Command.Item>Create New Task</Command.Item>
             </Command.Group>

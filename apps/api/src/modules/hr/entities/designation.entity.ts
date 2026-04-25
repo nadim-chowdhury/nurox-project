@@ -1,12 +1,12 @@
 import { Entity, Column, OneToMany } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Employee } from './employee.entity';
 
 /**
  * Designation entity — job title / role level in the org hierarchy.
  */
 @Entity('designations')
-export class Designation extends BaseEntity {
+export class Designation extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 100, unique: true })
   title: string;
 

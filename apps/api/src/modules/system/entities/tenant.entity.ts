@@ -44,6 +44,9 @@ export class Tenant {
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 
+  @Column({ type: 'simple-array', nullable: true })
+  ipAllowlist: string[];
+
   @CreateDateColumn()
   createdAt: Date;
 

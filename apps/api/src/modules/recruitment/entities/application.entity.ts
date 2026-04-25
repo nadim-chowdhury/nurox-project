@@ -1,5 +1,5 @@
 import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { JobRequisition } from './job-requisition.entity';
 import { Candidate } from './candidate.entity';
 import { Interview } from './interview.entity';
@@ -16,7 +16,7 @@ export enum ApplicationStatus {
 }
 
 @Entity('applications')
-export class Application extends BaseEntity {
+export class Application extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   jobId: string;
 

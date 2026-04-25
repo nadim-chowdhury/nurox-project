@@ -1,5 +1,5 @@
 import { Entity, Column } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 
 export enum PeriodStatus {
   OPEN = 'OPEN',
@@ -8,7 +8,7 @@ export enum PeriodStatus {
 }
 
 @Entity('accounting_periods')
-export class AccountingPeriod extends BaseEntity {
+export class AccountingPeriod extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 50 })
   name: string; // e.g. "April 2026"
 

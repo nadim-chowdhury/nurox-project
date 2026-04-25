@@ -6,7 +6,7 @@ import {
   Index,
   OneToMany,
 } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Department } from './department.entity';
 import { Designation } from './designation.entity';
 import { PerformanceReview } from './performance.entity';
@@ -43,7 +43,7 @@ export enum EmploymentType {
  * Linked to User for auth, Department for org structure, Designation for job title.
  */
 @Entity('employees')
-export class Employee extends BaseEntity {
+export class Employee extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 20, unique: true })
   employeeId: string; // e.g. EMP-001
 

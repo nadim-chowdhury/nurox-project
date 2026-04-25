@@ -14,11 +14,13 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { Permission } from '../auth/enums/permissions.enum';
+import { CheckModule } from '../../common/guards/module.guard';
 
 @ApiTags('Documents')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('documents')
+@CheckModule('documents')
 export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
 

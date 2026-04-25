@@ -1,5 +1,5 @@
 import { Entity, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 
 export enum BillStatus {
   DRAFT = 'DRAFT',
@@ -12,7 +12,7 @@ export enum BillStatus {
 }
 
 @Entity('bills')
-export class Bill extends BaseEntity {
+export class Bill extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 30, unique: true })
   billNumber: string;
 
@@ -54,7 +54,7 @@ export class Bill extends BaseEntity {
 }
 
 @Entity('bill_lines')
-export class BillLine extends BaseEntity {
+export class BillLine extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   billId: string;
 
@@ -77,3 +77,4 @@ export class BillLine extends BaseEntity {
   @Column({ type: 'uuid', nullable: true })
   accountId: string | null;
 }
+

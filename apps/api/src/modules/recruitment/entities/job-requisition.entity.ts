@@ -1,5 +1,5 @@
 import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Department } from '../../hr/entities/department.entity';
 import { Designation } from '../../hr/entities/designation.entity';
 import { Application } from './application.entity';
@@ -22,7 +22,7 @@ export enum EmploymentType {
 }
 
 @Entity('job_requisitions')
-export class JobRequisition extends BaseEntity {
+export class JobRequisition extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 255 })
   title: string;
 

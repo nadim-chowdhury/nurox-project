@@ -1,5 +1,5 @@
 import { Entity, Column, Index, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { User } from '../../users/entities/user.entity';
 
 export enum NotificationType {
@@ -19,11 +19,7 @@ export enum NotificationPriority {
 }
 
 @Entity('notifications')
-export class Notification extends BaseEntity {
-  @Index()
-  @Column({ type: 'uuid' })
-  tenantId: string;
-
+export class Notification extends TenantBaseEntity {
   @Index()
   @Column({ type: 'uuid' })
   userId: string;

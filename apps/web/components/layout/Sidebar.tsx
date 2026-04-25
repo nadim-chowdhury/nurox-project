@@ -23,6 +23,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAppSelector, useAppDispatch } from "@/hooks/useRedux";
 import { toggleSidebar } from "@/store/slices/uiSlice";
 import { usePermission } from "@/hooks/usePermission";
+import { useGetModulesQuery } from "@/store/api/systemApi";
 
 const { Sider } = Layout;
 
@@ -30,8 +31,12 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const collapsed = useAppSelector((s) => s.ui.sidebarCollapsed);
+  const { sidebarCollapsed: collapsed, primaryColor, logoUrl } = useAppSelector((s) => s.ui);
   const { canPerform, Permission, isAdmin } = usePermission();
+
+  // Fetch enabled modules for this tenant
+  const { data: enabledModules = [] } = useGetModulesQuery();
+  const enabledModuleKeys = enabledModules.map(m => m.moduleKey);
 
   const menuItems = [
     {
@@ -43,7 +48,7 @@ export function Sidebar() {
       key: "hr-menu",
       icon: <TeamOutlined />,
       label: "HR",
-      hidden: !canPerform(Permission.HR_VIEW_EMPLOYEES),
+      hidden: !enabledModuleKeys.includes("hr") || !canPerform(Permission.HR_VIEW_EMPLOYEES),
       children: [
         { key: "/hr/employees", label: "Employees" },
         { key: "/hr/departments", label: "Departments", hidden: !canPerform(Permission.HR_VIEW_DEPARTMENTS) },
@@ -57,6 +62,7 @@ export function Sidebar() {
       key: "attendance-menu",
       icon: <ClockCircleOutlined />,
       label: "Attendance",
+      hidden: !enabledModuleKeys.includes("hr"),
       children: [
         { key: "/attendance", label: "Overview" },
         { key: "/attendance/shifts", label: "Shifts" },
@@ -67,6 +73,7 @@ export function Sidebar() {
       key: "leave-menu",
       icon: <CalendarOutlined />,
       label: "Leave",
+      hidden: !enabledModuleKeys.includes("hr"),
       children: [
         { key: "/leave", label: "Overview" },
         { key: "/leave/apply", label: "Apply" },
@@ -78,7 +85,7 @@ export function Sidebar() {
       key: "payroll-menu",
       icon: <DollarOutlined />,
       label: "Payroll",
-      hidden: !canPerform(Permission.FINANCE_VIEW_ACCOUNTS),
+      hidden: !enabledModuleKeys.includes("finance") || !canPerform(Permission.FINANCE_VIEW_ACCOUNTS),
       children: [
         { key: "/payroll/runs", label: "Payroll Runs" },
         { key: "/payroll/salary-structures", label: "Salary Structures" },
@@ -89,7 +96,7 @@ export function Sidebar() {
       key: "finance-menu",
       icon: <BankOutlined />,
       label: "Finance",
-      hidden: !canPerform(Permission.FINANCE_VIEW_ACCOUNTS),
+      hidden: !enabledModuleKeys.includes("finance") || !canPerform(Permission.FINANCE_VIEW_ACCOUNTS),
       children: [
         { key: "/finance/chart-of-accounts", label: "Chart of Accounts" },
         { key: "/finance/journals", label: "Journals" },
@@ -103,6 +110,7 @@ export function Sidebar() {
       key: "procurement-menu",
       icon: <ShoppingOutlined />,
       label: "Procurement",
+      hidden: !enabledModuleKeys.includes("procurement"),
       children: [
         { key: "/procurement/requisitions", label: "Requisitions" },
         { key: "/procurement/purchase-orders", label: "Purchase Orders" },
@@ -113,7 +121,7 @@ export function Sidebar() {
       key: "inventory-menu",
       icon: <InboxOutlined />,
       label: "Inventory",
-      hidden: !canPerform(Permission.INVENTORY_VIEW),
+      hidden: !enabledModuleKeys.includes("inventory") || !canPerform(Permission.INVENTORY_VIEW),
       children: [
         { key: "/inventory/products", label: "Products" },
         { key: "/inventory/warehouses", label: "Warehouses" },
@@ -124,7 +132,7 @@ export function Sidebar() {
       key: "sales-menu",
       icon: <ShoppingCartOutlined />,
       label: "Sales & CRM",
-      hidden: !canPerform(Permission.SALES_VIEW_LEADS),
+      hidden: !enabledModuleKeys.includes("sales") || !canPerform(Permission.SALES_VIEW_LEADS),
       children: [
         { key: "/sales/deals", label: "Deals" },
         { key: "/sales/leads", label: "Leads" },
@@ -140,7 +148,7 @@ export function Sidebar() {
       key: "projects-menu",
       icon: <ProjectOutlined />,
       label: "Projects",
-      hidden: !canPerform(Permission.PROJECTS_VIEW),
+      hidden: !enabledModuleKeys.includes("projects") || !canPerform(Permission.PROJECTS_VIEW),
       children: [
         { key: "/projects", label: "Overview" },
         { key: "/projects/tasks", label: "Tasks" },
@@ -205,7 +213,7 @@ export function Sidebar() {
       style={{
         height: "100vh",
         position: "fixed",
-        left: 0,
+        insetInlineStart: 0,
         top: 0,
         bottom: 0,
         overflow: "auto",
@@ -220,13 +228,13 @@ export function Sidebar() {
           display: "flex",
           alignItems: "center",
           justifyContent: collapsed ? "center" : "flex-start",
-          padding: collapsed ? "0" : "0 20px",
+          paddingInline: collapsed ? "0" : "20px",
           gap: 10,
           borderBottom: "1px solid rgba(61, 74, 99, 0.15)",
         }}
       >
         <Image
-          src="/logo.png"
+          src={logoUrl || "/logo.png"}
           alt="Nurox"
           width={collapsed ? 28 : 32}
           height={collapsed ? 28 : 32}
@@ -238,7 +246,7 @@ export function Sidebar() {
               fontFamily: "var(--font-display)",
               fontSize: 20,
               fontWeight: 600,
-              color: "#c3f5ff",
+              color: primaryColor,
               letterSpacing: "-0.01em",
             }}
           >

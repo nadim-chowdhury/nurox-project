@@ -1,17 +1,14 @@
 import { Entity, Column, OneToMany } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Asset } from './asset.entity';
 
 @Entity('asset_categories')
-export class AssetCategory extends BaseEntity {
+export class AssetCategory extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 100 })
   name: string;
 
   @Column({ type: 'text', nullable: true })
   description: string | null;
-
-  @Column({ type: 'uuid' })
-  tenantId: string;
 
   @Column({ type: 'varchar', length: 50 })
   depreciationMethod: 'STRAIGHT_LINE' | 'DECLINING_BALANCE';

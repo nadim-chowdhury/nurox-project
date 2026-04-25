@@ -1,5 +1,5 @@
 import { Entity, Column } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 
 export enum TransactionStatus {
   UNRECONCILED = 'UNRECONCILED',
@@ -8,7 +8,7 @@ export enum TransactionStatus {
 }
 
 @Entity('bank_transactions')
-export class BankTransaction extends BaseEntity {
+export class BankTransaction extends TenantBaseEntity {
   @Column({ type: 'date' })
   date: string;
 
@@ -33,4 +33,6 @@ export class BankTransaction extends BaseEntity {
 
   @Column({ type: 'uuid' })
   bankAccountId: string;
+}
+g;
 }

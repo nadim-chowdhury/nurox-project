@@ -1,11 +1,11 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Vendor } from './vendor.entity';
 import { PurchaseOrder } from './purchase-order.entity';
 import { Grn } from './grn.entity';
 
 @Entity('debit_notes')
-export class DebitNote extends BaseEntity {
+export class DebitNote extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   vendorId: string;
 

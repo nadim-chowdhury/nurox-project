@@ -1,5 +1,5 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Employee } from '../../hr/entities/employee.entity';
 
 export enum LeaveType {
@@ -21,7 +21,7 @@ export enum LeaveRequestStatus {
 }
 
 @Entity('leave_requests')
-export class LeaveRequest extends BaseEntity {
+export class LeaveRequest extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   employeeId: string;
 
@@ -59,7 +59,7 @@ export class LeaveRequest extends BaseEntity {
 }
 
 @Entity('leave_balances')
-export class LeaveBalance extends BaseEntity {
+export class LeaveBalance extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   employeeId: string;
 

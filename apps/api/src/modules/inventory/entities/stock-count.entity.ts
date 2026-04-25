@@ -1,5 +1,5 @@
 import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Warehouse } from './warehouse.entity';
 import { StockCountItem } from './stock-count-item.entity';
 
@@ -11,7 +11,7 @@ export enum StockCountStatus {
 }
 
 @Entity('stock_counts')
-export class StockCount extends BaseEntity {
+export class StockCount extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   warehouseId: string;
 

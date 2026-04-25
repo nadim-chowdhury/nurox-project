@@ -1,9 +1,9 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Account } from './account.entity';
 
 @Entity('budgets')
-export class Budget extends BaseEntity {
+export class Budget extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   accountId: string;
 

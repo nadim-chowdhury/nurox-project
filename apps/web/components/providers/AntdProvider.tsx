@@ -5,7 +5,7 @@ import { ConfigProvider, theme as antdTheme } from "antd";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../store/store";
 import { nuroxTheme } from "@repo/ui-tokens/antd-theme";
-import { setDirection, setPrimaryColor } from "../../store/slices/uiSlice";
+import { setDirection, setPrimaryColor, setLogoUrl } from "../../store/slices/uiSlice";
 import { useGetSettingsQuery } from "../../store/api/systemApi";
 import enUS from "antd/locale/en_US";
 import bnBD from "antd/locale/bn_BD";
@@ -37,6 +37,9 @@ export function AntdProvider({
   useEffect(() => {
     if (settings?.primaryColor) {
       dispatch(setPrimaryColor(settings.primaryColor));
+    }
+    if (settings?.logoUrl) {
+      dispatch(setLogoUrl(settings.logoUrl));
     }
   }, [settings, dispatch]);
 

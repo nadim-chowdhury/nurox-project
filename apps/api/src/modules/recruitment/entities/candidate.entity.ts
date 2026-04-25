@@ -1,9 +1,9 @@
 import { Entity, Column, OneToMany } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Application } from './application.entity';
 
 @Entity('candidates')
-export class Candidate extends BaseEntity {
+export class Candidate extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 100 })
   firstName: string;
 

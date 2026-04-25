@@ -1,21 +1,18 @@
 import { Entity, Column, ManyToOne, OneToMany, Index } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { AssetCategory } from './asset-category.entity';
 import { AssetAssignment } from './asset-assignment.entity';
 import { AssetMaintenance } from './asset-maintenance.entity';
 import { Employee } from '../../hr/entities/employee.entity';
 
 @Entity('assets')
-export class Asset extends BaseEntity {
+export class Asset extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 255 })
   name: string;
 
   @Index()
   @Column({ type: 'varchar', length: 50, unique: true })
   assetCode: string;
-
-  @Column({ type: 'uuid' })
-  tenantId: string;
 
   @Column({ type: 'uuid' })
   categoryId: string;

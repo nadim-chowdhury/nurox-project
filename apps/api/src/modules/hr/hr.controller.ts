@@ -37,9 +37,11 @@ import { Permission } from '../auth/enums/permissions.enum';
 import { QueryEmployeeDto } from './dto/query-employee.dto';
 import { CreateDesignationDto } from './dto/create-designation.dto';
 import { UpdateDesignationDto } from './dto/update-designation.dto';
+import { CheckModule } from '../../common/guards/module.guard';
 
 @Controller('hr')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
+@CheckModule('hr')
 export class HrController {
   constructor(
     private readonly hrService: HrService,

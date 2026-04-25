@@ -1,5 +1,5 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Candidate } from './candidate.entity';
 
 export enum OnboardingStatus {
@@ -9,7 +9,7 @@ export enum OnboardingStatus {
 }
 
 @Entity('onboarding_checklists')
-export class OnboardingChecklist extends BaseEntity {
+export class OnboardingChecklist extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   candidateId: string;
 

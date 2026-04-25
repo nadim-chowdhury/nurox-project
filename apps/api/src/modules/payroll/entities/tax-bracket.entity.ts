@@ -1,8 +1,8 @@
 import { Entity, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 
 @Entity('tax_configurations')
-export class TaxConfiguration extends BaseEntity {
+export class TaxConfiguration extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 10, unique: true })
   fiscalYear: string; // e.g., "2025-26"
 
@@ -17,7 +17,7 @@ export class TaxConfiguration extends BaseEntity {
 }
 
 @Entity('tax_brackets')
-export class TaxBracket extends BaseEntity {
+export class TaxBracket extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   taxConfigurationId: string;
 

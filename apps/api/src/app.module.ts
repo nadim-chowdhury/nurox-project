@@ -27,7 +27,9 @@ import { SystemModule } from './modules/system/system.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { RedisModule } from './modules/redis/redis.module';
 import { MailerModule } from './modules/mailer/mailer.module';
+import { SmsModule } from './modules/sms/sms.module';
 import { TenantMiddleware } from './common/middlewares/tenant.middleware';
+import { MaintenanceMiddleware } from './common/middlewares/maintenance.middleware';
 import { UsersModule } from './modules/users/users.module';
 import { HrModule } from './modules/hr/hr.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
@@ -43,9 +45,15 @@ import { ProcurementModule } from './modules/procurement/procurement.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { AssetsModule } from './modules/assets/assets.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { CommonModule } from './common/common.module';
 
 import { ClsModule } from 'nestjs-cls';
 import { ClsMiddleware } from './common/middlewares/cls.middleware';
+import { TenantSubscriber } from './common/subscribers/tenant.subscriber';
+import { TenantGuard } from './common/guards/tenant.guard';
+import { ModuleGuard } from './common/guards/module.guard';
+import { TenantInterceptor } from './common/interceptors/tenant.interceptor';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -126,6 +134,8 @@ import { ClsMiddleware } from './common/middlewares/cls.middleware';
     SystemModule,
     RedisModule,
     MailerModule,
+    SmsModule,
+    CommonModule,
 
     // ─── Feature Modules ─────────────────────────────────────────
     AuthModule,
@@ -150,11 +160,15 @@ import { ClsMiddleware } from './common/middlewares/cls.middleware';
     AppService,
     // Global rate limit guard — applies to all endpoints
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: ModuleGuard },
+    { provide: APP_INTERCEPTOR, useClass: TenantInterceptor },
+    TenantSubscriber,
+    TenantGuard,
   ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(ClsMiddleware).forRoutes('*');
+    consumer.apply(ClsMiddleware, MaintenanceMiddleware).forRoutes('*');
     consumer
       .apply(TenantMiddleware)
       .exclude(

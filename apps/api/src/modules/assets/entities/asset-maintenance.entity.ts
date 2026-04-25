@@ -1,9 +1,9 @@
 import { Entity, Column, ManyToOne } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Asset } from './asset.entity';
 
 @Entity('asset_maintenances')
-export class AssetMaintenance extends BaseEntity {
+export class AssetMaintenance extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   assetId: string;
 

@@ -39,13 +39,12 @@ export function usePermission() {
     canPerform: (permission: Permission): boolean => {
       if (!user) return false;
 
-      const extendedUser = user as ExtendedAuthUser;
-      // Use permissions from user object if available (dynamic roles)
-      if (extendedUser.permissions) {
-        return extendedUser.permissions.includes(permission);
+      // Use permissions from user object (dynamic roles)
+      if (user.permissions) {
+        return user.permissions.includes(permission as any);
       }
 
-      // Fallback to hardcoded mapping
+      // Fallback to hardcoded mapping if array is missing (unlikely with new API)
       if (!role) return false;
       const userPermissions = RolePermissions[role] || [];
       return userPermissions.includes(permission);

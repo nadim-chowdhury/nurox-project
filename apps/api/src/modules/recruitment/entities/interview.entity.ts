@@ -1,5 +1,5 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Application } from './application.entity';
 
 export enum InterviewStatus {
@@ -10,7 +10,7 @@ export enum InterviewStatus {
 }
 
 @Entity('interviews')
-export class Interview extends BaseEntity {
+export class Interview extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   applicationId: string;
 

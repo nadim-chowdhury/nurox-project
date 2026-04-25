@@ -1,13 +1,9 @@
 import { Entity, Column, Index, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { WebhookConfig } from './webhook-config.entity';
 
 @Entity('webhook_deliveries')
-export class WebhookDelivery extends BaseEntity {
-  @Index()
-  @Column({ type: 'uuid' })
-  tenantId: string;
-
+export class WebhookDelivery extends TenantBaseEntity {
   @Index()
   @Column({ type: 'uuid' })
   webhookConfigId: string;

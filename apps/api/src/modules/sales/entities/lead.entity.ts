@@ -1,5 +1,5 @@
 import { Entity, Column } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 
 export enum LeadStatus {
   NEW = 'NEW',
@@ -12,7 +12,7 @@ export enum LeadStatus {
 }
 
 @Entity('leads')
-export class Lead extends BaseEntity {
+export class Lead extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 150 })
   name: string;
 

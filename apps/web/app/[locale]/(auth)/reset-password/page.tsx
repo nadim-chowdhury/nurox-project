@@ -1,19 +1,41 @@
 "use client";
 
 import React, { useState } from "react";
-import { Form, Input, Button, Typography, Result } from "antd";
+import { Form, Input, Button, Typography, Result, Alert } from "antd";
 import { LockOutlined } from "@ant-design/icons";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useResetPasswordMutation } from "@/store/api/authApi";
+import { PasswordStrengthMeter } from "@/components/modules/auth/PasswordStrengthMeter";
 
 const { Title, Text } = Typography;
 
 export default function ResetPasswordPage() {
+  const searchParams = useSearchParams();
+  const [form] = Form.useForm();
+  const password = Form.useWatch("password", form);
   const [submitted, setSubmitted] = useState(false);
+  
+  const email = searchParams.get("email");
+  const token = searchParams.get("token");
 
-  const onFinish = async () => {
-    // TODO: Wire to API endpoint with token from URL params
-    setSubmitted(true);
+  const [resetPassword, { isLoading, error }] = useResetPasswordMutation();
+
+  const onFinish = async (values: any) => {
+    if (!email || !token) return;
+    try {
+      await resetPassword({
+        email,
+        token,
+        newPassword: values.password,
+      }).unwrap();
+      setSubmitted(true);
+    } catch {
+      // Error handled by RTK Query
+    }
   };
+
+  const apiError = error as { data?: { message?: string } } | undefined;
 
   if (submitted) {
     return (
@@ -104,12 +126,32 @@ export default function ResetPasswordPage() {
           Choose a new password for your account.
         </Text>
 
+        {(!email || !token) && (
+          <Alert
+            type="warning"
+            message="Invalid link"
+            description="The password reset link is missing required parameters. Please check your email again."
+            style={{ marginBottom: 20 }}
+          />
+        )}
+
+        {apiError?.data?.message && (
+          <Alert
+            type="error"
+            message={apiError.data.message}
+            showIcon
+            style={{ marginBottom: 20 }}
+          />
+        )}
+
         <Form
+          form={form}
           name="reset-password"
           layout="vertical"
           onFinish={onFinish}
           requiredMark={false}
           size="large"
+          disabled={!email || !token}
         >
           <Form.Item
             name="password"
@@ -137,6 +179,8 @@ export default function ResetPasswordPage() {
               placeholder="Min. 8 characters"
             />
           </Form.Item>
+
+          <PasswordStrengthMeter password={password} />
 
           <Form.Item
             name="confirmPassword"
@@ -178,6 +222,7 @@ export default function ResetPasswordPage() {
               type="primary"
               htmlType="submit"
               block
+              loading={isLoading}
               style={{ height: 44, fontWeight: 600 }}
             >
               Reset Password

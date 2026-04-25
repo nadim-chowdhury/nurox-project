@@ -1,15 +1,12 @@
 import { Entity, Column, ManyToOne, OneToMany, Index } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { User } from '../../users/entities/user.entity';
 import { Document } from './document.entity';
 
 @Entity('document_folders')
-export class DocumentFolder extends BaseEntity {
+export class DocumentFolder extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 100 })
   name: string;
-
-  @Column({ type: 'uuid' })
-  tenantId: string;
 
   @Index()
   @Column({ type: 'uuid', nullable: true })

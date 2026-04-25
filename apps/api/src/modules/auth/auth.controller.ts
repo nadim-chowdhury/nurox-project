@@ -17,8 +17,10 @@ import type { Response, Request } from 'express';
 import { AuthService, OAuthProfile } from './auth.service';
 import { RolesService } from './roles.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { PermissionsGuard } from './guards/permissions.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { RolePermissions } from './enums/permissions.enum';
+import { RequirePermissions } from './decorators/permissions.decorator';
+import { RolePermissions, Permission } from './enums/permissions.enum';
 import {
   registerSchema,
   loginSchema,
@@ -91,9 +93,12 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const parsed = loginSchema.parse(body);
+    const tenantId = req.headers['x-tenant-id'] as string;
+    
     const result = await this.authService.login(parsed.email, parsed.password, {
       userAgent: req.headers['user-agent'],
       ipAddress: req.ip,
+      tenantId,
     });
 
     res.cookie(
@@ -206,6 +211,62 @@ export class AuthController {
       parsed.newPassword,
     );
     return { message: 'Password has been reset successfully' };
+  }
+
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify user email using token' })
+  async verifyEmail(@Body() body: { email: string; token: string }) {
+    await this.authService.verifyEmail(body.email, body.token);
+    return { message: 'Email verified successfully' };
+  }
+
+  @Post('resend-verification')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Resend verification email' })
+  async resendVerification(@Body() body: { email: string }) {
+    await this.authService.resendVerification(body.email);
+    return { message: 'Verification email sent' };
+  }
+
+  @Post('sms-otp')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request an SMS OTP for login' })
+  async requestSmsOtp(@Body() body: { phone: string }) {
+    await this.authService.requestSmsOtp(body.phone);
+    return { message: 'If an account exists, an OTP has been sent' };
+  }
+
+  @Post('sms-otp/login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Login with SMS OTP' })
+  async smsOtpLogin(
+    @Body() body: { phone: string; code: string },
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.loginWithSmsOtp(
+      body.phone,
+      body.code,
+      {
+        userAgent: req.headers['user-agent'],
+        ipAddress: req.ip,
+      },
+    );
+
+    res.cookie(
+      REFRESH_COOKIE_NAME,
+      result.tokens.refreshToken,
+      REFRESH_COOKIE_OPTIONS,
+    );
+
+    return {
+      user: result.user,
+      tokens: {
+        accessToken: result.tokens.accessToken,
+        expiresIn: result.tokens.expiresIn,
+      },
+    };
   }
 
   @Post('magic-link')
@@ -362,8 +423,28 @@ export class AuthController {
     @CurrentUser('id') userId: string,
     @Param('id') sessionId: string,
   ) {
-    await this.authService.revokeSession(userId, sessionId);
+    await this.authService.revokeSession(sessionId, userId);
     return { message: 'Session revoked successfully' };
+  }
+
+  @Delete('admin/sessions/:id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Admin: Revoke any specific session' })
+  async adminRevokeSession(@Param('id') sessionId: string) {
+    await this.authService.revokeSession(sessionId);
+    return { message: 'Session revoked by admin' };
+  }
+
+  @Post('admin/unlock')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Admin: Unlock an account or IP' })
+  async adminUnlock(@Body() body: { email?: string; ip?: string }) {
+    await this.authService.unlock(body.email, body.ip);
+    return { message: 'Account/IP unlocked successfully' };
   }
 
   @Post('change-password')

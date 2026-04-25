@@ -64,6 +64,15 @@ export class User extends BaseEntity {
   @Column({ type: 'varchar', length: 500, nullable: true })
   avatarUrl: string | null;
 
+  @Column({ type: 'boolean', default: false })
+  isEmailVerified: boolean;
+
+  @Column({ type: 'varchar', length: 255, nullable: true, select: false })
+  emailVerificationTokenHash: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true, select: false })
+  emailVerificationExpires: Date | null;
+
   @Column({ type: 'varchar', length: 255, nullable: true, select: false })
   refreshTokenHash: string | null;
 

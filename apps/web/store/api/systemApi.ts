@@ -13,14 +13,35 @@ export interface TenantSettings {
   logoUrl: string;
 }
 
+export interface TenantModule {
+  moduleKey: string;
+  isEnabled: boolean;
+}
+
+export interface HealthCheckResponse {
+  status: "ok" | "error" | "shutting_down";
+  info: Record<string, any>;
+  error: Record<string, any>;
+  details: Record<string, any>;
+}
+
 export const systemApi = createApi({
   reducerPath: "systemApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["System", "Branches"],
+  tagTypes: ["System", "Branches", "Modules"],
   endpoints: (builder) => ({
+    getHealth: builder.query<HealthCheckResponse, void>({
+      query: () => "/health",
+    }),
+
     getSettings: builder.query<TenantSettings, void>({
       query: () => "/system/settings",
       providesTags: ["System"],
+    }),
+
+    getModules: builder.query<TenantModule[], void>({
+      query: () => "/system/modules",
+      providesTags: ["Modules"],
     }),
 
     getCompanyProfile: builder.query<CompanyProfileDto, void>({
@@ -71,7 +92,9 @@ export const systemApi = createApi({
 });
 
 export const { 
+  useGetHealthQuery,
   useGetSettingsQuery,
+  useGetModulesQuery,
   useGetCompanyProfileQuery,
   useUpdateCompanyProfileMutation,
   useGetBranchesQuery,

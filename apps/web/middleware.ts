@@ -11,12 +11,8 @@ const defaultLocale = "en";
 const intlMiddleware = createMiddleware({
   locales,
   defaultLocale,
-  localePrefix: "always", // or 'as-needed'
+  localePrefix: "always",
 });
-
-/**
- * Edge middleware for route protection and multi-tenancy.
- */
 
 const PUBLIC_ROUTES = [
   "/login",
@@ -26,25 +22,48 @@ const PUBLIC_ROUTES = [
 ];
 const REFRESH_COOKIE = "nurox_refresh_token";
 
-export default function proxy(request: NextRequest) {
+export default function middleware(request: NextRequest) {
   const url = request.nextUrl;
   const { pathname } = url;
   const hostname = request.headers.get("host") || "";
 
-  // 1. Multi-Tenancy Subdomain Extraction (e.g., acme.nurox.app -> acme)
+  // 1. Multi-Tenancy Resolution
+  // Check for custom domains first, then fallback to subdomains
+  // In a real app, you might query an API or cache for custom domain mapping
   let tenantId = "public";
-  if (
-    hostname.includes(".nurox.app") ||
-    (hostname.includes("localhost") && hostname.split(".").length > 1)
-  ) {
-    tenantId = hostname.split(".")[0] || "public";
+
+  const baseDomain = "nurox.app";
+  const isLocalhost = hostname.includes("localhost");
+
+  if (isLocalhost) {
+    const parts = hostname.split(".");
+    if (parts.length > 1) {
+      tenantId = parts[0];
+    }
+  } else if (hostname.endsWith(`.${baseDomain}`)) {
+    tenantId = hostname.replace(`.${baseDomain}`, "");
+  } else if (!hostname.includes(baseDomain)) {
+    // Potential custom domain
+    // tenantId = await resolveCustomDomain(hostname);
+    tenantId = hostname; // For now, pass the full hostname as identifier
+  }
+
+  // Handle 'www' and other system subdomains
+  if (["www", "app", "public"].includes(tenantId)) {
+    tenantId = "public";
   }
 
   // 2. Localization Middleware
   const response = intlMiddleware(request);
 
-  // 3. Inject Tenant ID into headers for subsequent use
+  // 3. Inject Tenant ID into response headers and cookies
+  // We set a cookie so the client-side API client can easily read it
   response.headers.set("x-tenant-id", tenantId);
+  response.cookies.set("nurox_tenant_id", tenantId, {
+    path: "/",
+    httpOnly: false, // Accessible by client-side JS
+    sameSite: "lax",
+  });
 
   // 4. Authentication logic
   const pathnameWithoutLocale = locales.reduce(
@@ -67,7 +86,7 @@ export default function proxy(request: NextRequest) {
     return response;
   }
 
-  // Check for refresh token cookie
+  // Check for refresh token cookie (indicates logged in)
   const hasRefreshToken = request.cookies.has(REFRESH_COOKIE);
 
   if (!hasRefreshToken) {

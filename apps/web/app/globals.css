@@ -107,7 +107,7 @@ a {
 }
 
 .ant-layout-sider {
-  border-right: 1px solid var(--ghost-border) !important;
+  border-inline-end: 1px solid var(--ghost-border) !important;
 }
 
 .app-header {
@@ -185,4 +185,65 @@ a {
 
 .animate-pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ─── Print Styles ─────────────────────────────────────────── */
+@media print {
+  /* Hide UI elements that shouldn't be printed */
+  .ant-layout-sider,
+  .ant-layout-header,
+  .nurox-top-bar,
+  .ant-float-btn-group,
+  .ant-breadcrumb,
+  .nurox-offline-banner,
+  button:not(.print-visible),
+  .no-print {
+    display: none !important;
+  }
+
+  /* Reset layout for printing */
+  .ant-layout {
+    background: white !important;
+    display: block !important;
+  }
+
+  .ant-layout-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: auto !important;
+  }
+
+  /* Ensure text is black and backgrounds are preserved if needed */
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+  }
+
+  /* Preserve table borders and headers */
+  .ant-table {
+    background: white !important;
+  }
+
+  .ant-table-thead > tr > th {
+    background: #f0f0f0 !important;
+    color: black !important;
+    border-bottom: 1px solid #ddd !important;
+  }
+
+  .ant-card {
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Force page breaks where needed */
+  .page-break {
+    page-break-before: always;
+  }
+
+  /* A4 size optimization */
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
 }

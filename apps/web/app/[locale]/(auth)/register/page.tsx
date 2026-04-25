@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRegisterMutation } from "@/store/api/authApi";
 import { jwtDecode } from "jwt-decode";
+import { PasswordStrengthMeter } from "@/components/modules/auth/PasswordStrengthMeter";
 
 const { Title, Text } = Typography;
 
@@ -14,6 +15,8 @@ export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
+  const [form] = Form.useForm();
+  const password = Form.useWatch("password", form);
   
   const [register, { isLoading, error }] = useRegisterMutation();
 
@@ -102,6 +105,7 @@ export default function RegisterPage() {
         )}
 
         <Form
+          form={form}
           name="register"
           layout="vertical"
           onFinish={onFinish}
@@ -214,6 +218,8 @@ export default function RegisterPage() {
               autoComplete="new-password"
             />
           </Form.Item>
+
+          <PasswordStrengthMeter password={password} />
 
           <Form.Item
             name="confirmPassword"

@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Role } from './entities/role.entity';
-import { CreateRoleDto, UpdateRoleDto } from '@repo/shared-schemas';
+import { CreateRoleDto, UpdateRoleDto, Permission } from '@repo/shared-schemas';
 
 @Injectable()
 export class RolesService {
@@ -14,6 +14,26 @@ export class RolesService {
     @InjectRepository(Role)
     private readonly roleRepo: Repository<Role>,
   ) {}
+
+  /**
+   * Resolves all permissions for a role, including those inherited from parents.
+   */
+  async getEffectivePermissions(role: Role | string): Promise<Permission[]> {
+    const roleEntity = typeof role === 'string' 
+      ? await this.roleRepo.findOne({ where: { id: role } }) 
+      : role;
+
+    if (!roleEntity) return [];
+
+    const permissions = new Set<Permission>(roleEntity.permissions);
+
+    if (roleEntity.parentRoleId) {
+      const parentPermissions = await this.getEffectivePermissions(roleEntity.parentRoleId);
+      parentPermissions.forEach(p => permissions.add(p));
+    }
+
+    return Array.from(permissions);
+  }
 
   async findAll() {
     return this.roleRepo.find({ order: { name: 'ASC' } });

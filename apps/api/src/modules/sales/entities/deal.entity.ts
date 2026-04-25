@@ -1,5 +1,5 @@
 import { Entity, Column } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 
 export enum DealStatus {
   OPEN = 'OPEN',
@@ -17,7 +17,7 @@ export enum DealStage {
 }
 
 @Entity('deals')
-export class Deal extends BaseEntity {
+export class Deal extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 200 })
   title: string;
 

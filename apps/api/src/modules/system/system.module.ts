@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TerminusModule } from '@nestjs/terminus';
 import { Tenant } from './entities/tenant.entity';
 import { TenantModule as TenantModuleEntity } from './entities/tenant-module.entity';
+import { TenantCustomDomain } from './entities/tenant-custom-domain.entity';
 import { Branch } from './entities/branch.entity';
 import { AuditLog } from './entities/audit-log.entity';
 import { Holiday } from './entities/holiday.entity';
@@ -18,12 +19,14 @@ import { HealthController } from './health.controller';
 import { NotificationController } from './notification.controller';
 import { NotificationsGateway } from './gateways/notifications.gateway';
 import { JwtModule } from '@nestjs/jwt';
+import { DatabaseInitService } from './database-init.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       Tenant,
       TenantModuleEntity,
+      TenantCustomDomain,
       Branch,
       AuditLog,
       Holiday,
@@ -41,6 +44,7 @@ import { JwtModule } from '@nestjs/jwt';
     PdfService,
     NotificationsGateway,
     NotificationService,
+    DatabaseInitService,
   ],
   exports: [
     TenantProvisioningService,

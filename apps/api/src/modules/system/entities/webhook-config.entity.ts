@@ -1,11 +1,8 @@
-import { Entity, Column, Index } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { Entity, Column } from 'typeorm';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 
 @Entity('webhook_configs')
-export class WebhookConfig extends BaseEntity {
-  @Index()
-  @Column({ type: 'uuid' })
-  tenantId: string;
+export class WebhookConfig extends TenantBaseEntity {
 
   @Column({ type: 'varchar', length: 255 })
   name: string;

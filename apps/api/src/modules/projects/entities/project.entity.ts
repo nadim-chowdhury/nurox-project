@@ -1,5 +1,5 @@
 import { Entity, Column, OneToMany } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Task } from './task.entity'; // Moved back
 
 export enum ProjectStatus {
@@ -11,7 +11,7 @@ export enum ProjectStatus {
 }
 
 @Entity('projects')
-export class Project extends BaseEntity {
+export class Project extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 200 })
   name: string;
 

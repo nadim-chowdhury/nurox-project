@@ -1,9 +1,9 @@
-import { Entity, Column, Index } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { Entity, Column, Index, ManyToOne, JoinColumn } from 'typeorm';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Permission } from '../enums/permissions.enum';
 
 @Entity('roles')
-export class Role extends BaseEntity {
+export class Role extends TenantBaseEntity {
   @Index({ unique: true })
   @Column({ type: 'varchar', length: 50 })
   name: string;
@@ -16,4 +16,11 @@ export class Role extends BaseEntity {
 
   @Column({ type: 'boolean', default: false })
   isSystem: boolean;
+
+  @Column({ type: 'uuid', nullable: true })
+  parentRoleId: string | null;
+
+  @ManyToOne(() => Role, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'parentRoleId' })
+  parentRole: Role;
 }

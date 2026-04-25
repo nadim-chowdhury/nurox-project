@@ -4,7 +4,9 @@ import { AntdProvider } from "@/components/providers/AntdProvider";
 import { ReduxProvider } from "@/components/providers/ReduxProvider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { SocketProvider } from "@/components/providers/SocketProvider";
+import { PostHogProvider } from "@/components/providers/PostHogProvider";
 import { CommandPalette } from "@/components/common/CommandPalette/CommandPalette";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -74,14 +76,18 @@ export default async function RootLayout({
       <body style={{ fontFamily: "var(--font-body)" }}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ReduxProvider>
-            <AuthProvider>
-              <AntdProvider locale={locale} direction={direction}>
-                <SocketProvider>
-                  {children}
-                  <CommandPalette />
-                </SocketProvider>
-              </AntdProvider>
-            </AuthProvider>
+            <PostHogProvider>
+              <AuthProvider>
+                <AntdProvider locale={locale} direction={direction}>
+                  <SocketProvider>
+                    <ErrorBoundary>
+                      {children}
+                    </ErrorBoundary>
+                    <CommandPalette />
+                  </SocketProvider>
+                </AntdProvider>
+              </AuthProvider>
+            </PostHogProvider>
           </ReduxProvider>
         </NextIntlClientProvider>
       </body>

@@ -1,5 +1,5 @@
 import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Employee } from '../../hr/entities/employee.entity';
 
 export enum PayrollComponentType {
@@ -14,7 +14,7 @@ export enum AmountType {
 }
 
 @Entity('salary_structures')
-export class SalaryStructure extends BaseEntity {
+export class SalaryStructure extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 100 })
   name: string;
 
@@ -31,7 +31,7 @@ export class SalaryStructure extends BaseEntity {
 }
 
 @Entity('salary_structure_components')
-export class SalaryStructureComponent extends BaseEntity {
+export class SalaryStructureComponent extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   salaryStructureId: string;
 
@@ -61,7 +61,7 @@ export class SalaryStructureComponent extends BaseEntity {
 }
 
 @Entity('employee_salary_assignments')
-export class EmployeeSalaryAssignment extends BaseEntity {
+export class EmployeeSalaryAssignment extends TenantBaseEntity {
   @Column({ type: 'uuid', unique: true })
   employeeId: string;
 

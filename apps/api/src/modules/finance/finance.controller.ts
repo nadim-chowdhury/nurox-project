@@ -17,6 +17,7 @@ import { CreateAccountDto } from './dto/create-account.dto';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { CreateJournalEntryDto } from './dto/create-journal.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ModuleGuard, CheckModule } from '../../common/guards/module.guard';
 import { InvoiceStatus } from './entities/invoice.entity';
 import { BillStatus } from './entities/bill.entity';
 import { Response } from 'express';
@@ -30,6 +31,7 @@ import {
 
 @Controller('finance')
 @UseGuards(JwtAuthGuard)
+@CheckModule('finance')
 export class FinanceController {
   constructor(private readonly financeService: FinanceService) {}
 

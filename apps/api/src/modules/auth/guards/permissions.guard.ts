@@ -7,9 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Permission, RolePermissions } from '../enums/permissions.enum';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Role } from '../entities/role.entity';
+import { RolesService } from '../roles.service';
 
 interface RequestWithUser {
   user: {
@@ -23,8 +21,7 @@ interface RequestWithUser {
 export class PermissionsGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
-    @InjectRepository(Role)
-    private readonly roleRepo: Repository<Role>,
+    private readonly rolesService: RolesService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -44,12 +41,12 @@ export class PermissionsGuard implements CanActivate {
       throw new ForbiddenException('User role not found');
     }
 
-    // Try to find role in DB
-    const dbRole = await this.roleRepo.findOne({ where: { name: user.role } });
+    // Try to find role in DB and resolve inherited permissions
+    const dbRole = await this.rolesService.findByName(user.role);
 
     let userPermissions: Permission[] = [];
     if (dbRole) {
-      userPermissions = dbRole.permissions;
+      userPermissions = await this.rolesService.getEffectivePermissions(dbRole);
     } else {
       // Fallback to hardcoded mapping
       userPermissions = RolePermissions[user.role] || [];

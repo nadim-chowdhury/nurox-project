@@ -1,5 +1,5 @@
 import { Entity, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Product } from '../../inventory/entities/product.entity';
 import { ProductVariant } from '../../inventory/entities/product-variant.entity';
 
@@ -14,7 +14,7 @@ export enum PurchaseRequestStatus {
 }
 
 @Entity('purchase_requests')
-export class PurchaseRequest extends BaseEntity {
+export class PurchaseRequest extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 50, unique: true })
   prNumber: string;
 
@@ -44,7 +44,7 @@ export class PurchaseRequest extends BaseEntity {
 }
 
 @Entity('purchase_request_lines')
-export class PurchaseRequestLine extends BaseEntity {
+export class PurchaseRequestLine extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   purchaseRequestId: string;
 

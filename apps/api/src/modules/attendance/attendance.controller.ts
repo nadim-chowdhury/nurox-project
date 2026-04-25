@@ -14,9 +14,11 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { Permission } from '../auth/enums/permissions.enum';
+import { CheckModule } from '../../common/guards/module.guard';
 
 @Controller('attendance')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
+@CheckModule('attendance')
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
