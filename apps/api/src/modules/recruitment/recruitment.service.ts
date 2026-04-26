@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { Repository, ObjectLiteral } from 'typeorm';
 import { JobRequisition, JobStatus } from './entities/job-requisition.entity';
 import { Candidate } from './entities/candidate.entity';
@@ -21,9 +21,12 @@ export class RecruitmentService {
   private readonly logger = new Logger(RecruitmentService.name);
 
   constructor(
+    @Inject(forwardRef(() => TenantConnectionService))
     private readonly tenantConnectionService: TenantConnectionService,
     private readonly storageService: StorageService,
+    @Inject(forwardRef(() => PdfService))
     private readonly pdfService: PdfService,
+    @Inject(forwardRef(() => UsersService))
     private readonly usersService: UsersService,
     @InjectQueue('recruitment') private recruitmentQueue: Queue,
   ) {}

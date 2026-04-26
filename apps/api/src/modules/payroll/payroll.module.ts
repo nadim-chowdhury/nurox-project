@@ -15,13 +15,14 @@ import { AdvanceSalaryRequest } from './entities/advance-salary.entity';
 import { EmployeeBonus } from './entities/bonus.entity';
 import { PayrollAudit } from './entities/payroll-audit.entity';
 import { SalaryHistory } from '../hr/entities/salary-history.entity';
+import { AttendanceRecord } from '../attendance/entities/attendance.entity';
+import { Employee } from '../hr/entities/employee.entity';
 import { BullModule } from '@nestjs/bullmq';
 import { PayrollProcessor } from './payroll-processor.service';
 import { HrModule } from '../hr/hr.module';
 import { AttendanceModule } from '../attendance/attendance.module';
 import { LeaveModule } from '../leave/leave.module';
 import { SystemModule } from '../system/system.module';
-import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -39,6 +40,8 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
       EmployeeBonus,
       PayrollAudit,
       SalaryHistory,
+      AttendanceRecord,
+      Employee,
     ]),
     HrModule,
     AttendanceModule,
@@ -47,7 +50,6 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     BullModule.registerQueue({
       name: 'payroll',
     }),
-    EventEmitterModule.forRoot(),
   ],
   controllers: [PayrollController],
   providers: [PayrollService, PayrollComputeService, PayrollProcessor],

@@ -9,14 +9,18 @@ import {
 import { ClsService } from 'nestjs-cls';
 import { AuditService } from '../../modules/system/audit.service';
 import { BaseEntity } from '../entities/base.entity';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
 
 @EventSubscriber()
 @Injectable()
 export class AuditSubscriber implements EntitySubscriberInterface<BaseEntity> {
   constructor(
+    @InjectDataSource()
     private readonly dataSource: DataSource,
+    @Inject(forwardRef(() => ClsService))
     private readonly cls: ClsService,
+    @Inject(forwardRef(() => AuditService))
     private readonly auditService: AuditService,
   ) {
     this.dataSource.subscribers.push(this);

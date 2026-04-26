@@ -3,6 +3,8 @@ import {
   NotFoundException,
   Logger,
   OnModuleInit,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, TreeRepository } from 'typeorm';
@@ -137,6 +139,7 @@ export class HrService implements OnModuleInit {
     private readonly clearanceRepo: Repository<ClearanceChecklist>,
     @InjectRepository(Shift)
     private readonly shiftRepo: Repository<Shift>,
+    @Inject(forwardRef(() => PdfService))
     private readonly pdfService: PdfService,
     @InjectQueue('hr')
     private readonly hrQueue: Queue,

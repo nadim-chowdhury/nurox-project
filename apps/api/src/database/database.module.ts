@@ -19,7 +19,8 @@ import { TenantConnectionService } from './tenant-connection.service';
         synchronize: config.get<boolean>('database.synchronize'),
         logging: config.get<boolean>('database.logging'),
         ssl:
-          config.get<string>('database.ssl') === 'true'
+          config.get<string>('database.ssl') === 'true' || 
+          (config.get<string>('database.host') !== 'localhost' && config.get<string>('database.host') !== '127.0.0.1' && config.get<string>('database.ssl') !== 'false')
             ? { rejectUnauthorized: false }
             : false,
         // Production: use migrations, never synchronize

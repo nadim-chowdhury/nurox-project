@@ -22,6 +22,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserSession } from './entities/user-session.entity';
 import { LoginEvent } from './entities/login-event.entity';
 import { Repository } from 'typeorm';
+import { Inject, forwardRef } from '@nestjs/common';
 
 export interface OAuthProfile {
   email: string;
@@ -39,6 +40,7 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
+    @Inject(forwardRef(() => UsersService))
     private readonly usersService: UsersService,
     @InjectRepository(UserSession)
     private readonly sessionRepo: Repository<UserSession>,

@@ -13,6 +13,7 @@ import { UsersModule } from '../users/users.module';
 import { BullModule } from '@nestjs/bullmq';
 import { RecruitmentProcessor } from './recruitment.processor';
 import { MailerModule } from '../mailer/mailer.module';
+import { DatabaseModule } from '../../database/database.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { MailerModule } from '../mailer/mailer.module';
     SystemModule,
     UsersModule,
     MailerModule,
+    DatabaseModule,
   ],
   controllers: [RecruitmentController],
   providers: [RecruitmentService, RecruitmentProcessor],

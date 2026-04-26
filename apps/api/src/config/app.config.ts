@@ -21,10 +21,15 @@ export const jwtConfig = registerAs('jwt', () => ({
   magicLinkExpiry: process.env.JWT_MAGIC_LINK_EXPIRY || '10m',
 }));
 
-export const redisConfig = registerAs('redis', () => ({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379', 10),
-}));
+export const redisConfig = registerAs('redis', () => {
+  let host = process.env.REDIS_HOST || 'localhost';
+  // Remove protocol prefix if present
+  host = host.replace(/^https?:\/\//, '').split(':')[0].split('/')[0];
+  return {
+    host,
+    port: parseInt(process.env.REDIS_PORT || '6379', 10),
+  };
+});
 
 export const appConfig = registerAs('app', () => ({
   nodeEnv: process.env.NODE_ENV || 'development',

@@ -18,11 +18,12 @@ import { LoginEvent } from './entities/login-event.entity';
 import { Role } from './entities/role.entity';
 import { Membership } from './entities/membership.entity';
 import { PermissionsGuard } from './guards/permissions.guard';
+import { forwardRef } from '@nestjs/common';
 
 @Global()
 @Module({
   imports: [
-    UsersModule,
+    forwardRef(() => UsersModule),
     MailerModule,
     TypeOrmModule.forFeature([UserSession, LoginEvent, Role, Membership]),
     PassportModule.register({ defaultStrategy: 'jwt' }),

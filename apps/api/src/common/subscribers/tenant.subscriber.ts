@@ -8,6 +8,7 @@ import {
 import { Injectable, Logger } from '@nestjs/common';
 import { ClsService } from 'nestjs-cls';
 import { TenantBaseEntity } from '../entities/tenant-base.entity';
+import { InjectDataSource } from '@nestjs/typeorm';
 
 @EventSubscriber()
 @Injectable()
@@ -15,6 +16,7 @@ export class TenantSubscriber implements EntitySubscriberInterface<TenantBaseEnt
   private readonly logger = new Logger(TenantSubscriber.name);
 
   constructor(
+    @InjectDataSource()
     private readonly dataSource: DataSource,
     private readonly cls: ClsService,
   ) {

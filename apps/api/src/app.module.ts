@@ -47,6 +47,7 @@ import { AssetsModule } from './modules/assets/assets.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { CommonModule } from './common/common.module';
 
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ClsModule } from 'nestjs-cls';
 import { ClsMiddleware } from './common/middlewares/cls.middleware';
 import { TenantSubscriber } from './common/subscribers/tenant.subscriber';
@@ -115,6 +116,9 @@ import { TenantInterceptor } from './common/interceptors/tenant.interceptor';
 
     // ─── Task Scheduling (cron jobs) ─────────────────────────────
     ScheduleModule.forRoot(),
+
+    // ─── Events ──────────────────────────────────────────────────
+    EventEmitterModule.forRoot(),
 
     // ─── Queue (BullMQ + Redis) ──────────────────────────────────
     BullModule.forRootAsync({
