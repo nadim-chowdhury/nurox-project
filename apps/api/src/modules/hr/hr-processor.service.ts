@@ -36,11 +36,11 @@ export class HrProcessor extends WorkerHost {
 
     // Find birthdays
     const employees = await (this.hrService as any).employeeRepo.find();
-    
+
     for (const emp of employees) {
       if (emp.dateOfBirth) {
         const dob = new Date(emp.dateOfBirth);
-        if (dob.getDate() === day && (dob.getMonth() + 1) === month) {
+        if (dob.getDate() === day && dob.getMonth() + 1 === month) {
           await this.mailerService.sendMail({
             to: emp.email,
             subject: `Happy Birthday, ${emp.firstName}! 🎂`,
@@ -51,7 +51,11 @@ export class HrProcessor extends WorkerHost {
 
       if (emp.joinDate) {
         const join = new Date(emp.joinDate);
-        if (join.getDate() === day && (join.getMonth() + 1) === month && join.getFullYear() < today.getFullYear()) {
+        if (
+          join.getDate() === day &&
+          join.getMonth() + 1 === month &&
+          join.getFullYear() < today.getFullYear()
+        ) {
           const years = today.getFullYear() - join.getFullYear();
           await this.mailerService.sendMail({
             to: emp.email,
@@ -63,7 +67,10 @@ export class HrProcessor extends WorkerHost {
     }
   }
 
-  private async handleProbationReminder(data: { employeeId: string, daysLeft: number }) {
+  private async handleProbationReminder(data: {
+    employeeId: string;
+    daysLeft: number;
+  }) {
     const employee = await this.hrService.findEmployeeById(data.employeeId);
     this.logger.log(
       `Probation reminder: ${data.daysLeft} days left for ${employee.firstName} ${employee.lastName}`,
@@ -77,7 +84,10 @@ export class HrProcessor extends WorkerHost {
     });
   }
 
-  private async handleContractReminder(data: { employeeId: string, daysLeft: number }) {
+  private async handleContractReminder(data: {
+    employeeId: string;
+    daysLeft: number;
+  }) {
     const employee = await this.hrService.findEmployeeById(data.employeeId);
     this.logger.log(
       `Contract reminder: ${data.daysLeft} days left for ${employee.firstName} ${employee.lastName}`,

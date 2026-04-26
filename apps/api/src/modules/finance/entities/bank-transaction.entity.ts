@@ -34,5 +34,3 @@ export class BankTransaction extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   bankAccountId: string;
 }
-g;
-}

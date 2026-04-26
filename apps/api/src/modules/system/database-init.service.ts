@@ -1,6 +1,5 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { TenantBaseEntity } from '../../common/entities/tenant-base.entity';
 import { enableRLSOnTable } from '../../database/rls.utility';
 import { ConfigService } from '@nestjs/config';
 
@@ -26,13 +25,13 @@ export class DatabaseInitService implements OnModuleInit {
   async applyRLSToAllTenantEntities() {
     this.logger.log('Scanning entities for RLS enablement...');
     const metadatas = this.dataSource.entityMetadatas;
-    
+
     for (const metadata of metadatas) {
       // Check if entity extends TenantBaseEntity
       // We check the prototype chain
       let parent = Object.getPrototypeOf(metadata.target);
       let isTenantScoped = false;
-      
+
       while (parent && parent.name) {
         if (parent.name === 'TenantBaseEntity') {
           isTenantScoped = true;
@@ -43,9 +42,15 @@ export class DatabaseInitService implements OnModuleInit {
 
       if (isTenantScoped) {
         try {
-          await enableRLSOnTable(this.dataSource, metadata.tableName, metadata.schema);
+          await enableRLSOnTable(
+            this.dataSource,
+            metadata.tableName,
+            metadata.schema,
+          );
         } catch (error) {
-          this.logger.error(`Failed to enable RLS on ${metadata.tableName}: ${error.message}`);
+          this.logger.error(
+            `Failed to enable RLS on ${metadata.tableName}: ${error.message}`,
+          );
         }
       }
     }

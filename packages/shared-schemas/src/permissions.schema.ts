@@ -35,6 +35,18 @@ export enum Permission {
   PROJECTS_VIEW = 'projects:view',
   PROJECTS_MANAGE = 'projects:manage',
 
+  // Assets
+  ADMIN_READ = 'assets:read',
+  ADMIN_WRITE = 'assets:write',
+
+  // Documents
+  DOCUMENT_READ = 'documents:read',
+  DOCUMENT_WRITE = 'documents:write',
+
+  // Reports
+  REPORTS_READ = 'reports:read',
+  REPORTS_WRITE = 'reports:write',
+
   // System
   SYSTEM_ADMIN_ACCESS = 'system:admin_access',
 }

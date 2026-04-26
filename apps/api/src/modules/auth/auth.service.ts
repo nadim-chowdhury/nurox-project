@@ -4,6 +4,7 @@ import {
   ConflictException,
   ForbiddenException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -36,7 +37,7 @@ const REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60; // 7 days in seconds
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-  
+
   constructor(
     private readonly usersService: UsersService,
     @InjectRepository(UserSession)
@@ -80,7 +81,7 @@ export class AuthService {
           failureReason: data.failureReason,
         }),
       );
-    } catch (error) {
+    } catch (_error) {
       // logger is not defined here as a class property in original read but used in incrementLockout
       // looking at read_file output, logger is not defined at top level, but it is used.
       // Wait, let me check where logger is defined in auth.service.ts
@@ -130,7 +131,10 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(data.password, SALT_ROUNDS);
     const verificationToken = randomBytes(32).toString('hex');
-    const verificationTokenHash = await bcrypt.hash(verificationToken, SALT_ROUNDS);
+    const verificationTokenHash = await bcrypt.hash(
+      verificationToken,
+      SALT_ROUNDS,
+    );
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     let user;
@@ -156,14 +160,24 @@ export class AuthService {
       });
     }
 
-    await this.mailerService.sendVerificationEmail(user.email, verificationToken);
+    await this.mailerService.sendVerificationEmail(
+      user.email,
+      verificationToken,
+    );
 
     const familyId = randomBytes(16).toString('hex');
-    const tokens = await this.generateTokens(user.id, user.email, user.role, familyId);
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      familyId,
+    );
     await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
-    
+
     // Also create a session for registration auto-login
-    await this.createSession(user.id, tokens.refreshToken, familyId, { userAgent: 'registration' });
+    await this.createSession(user.id, tokens.refreshToken, familyId, {
+      userAgent: 'registration',
+    });
 
     return {
       user: {
@@ -183,14 +197,20 @@ export class AuthService {
   async login(
     email: string,
     password: string,
-    metadata: { userAgent?: string; ipAddress?: string; tenantId?: string } = {},
+    metadata: {
+      userAgent?: string;
+      ipAddress?: string;
+      tenantId?: string;
+    } = {},
   ) {
     const emailLockoutKey = `lockout:email:${email.toLowerCase()}`;
     const ipLockoutKey = `lockout:ip:${metadata.ipAddress}`;
 
     const [emailAttempts, ipAttempts] = await Promise.all([
       this.redisService.get(emailLockoutKey),
-      metadata.ipAddress ? this.redisService.get(ipLockoutKey) : Promise.resolve(null),
+      metadata.ipAddress
+        ? this.redisService.get(ipLockoutKey)
+        : Promise.resolve(null),
     ]);
 
     if (
@@ -211,13 +231,15 @@ export class AuthService {
 
     // IP Allowlist Check
     if (metadata.tenantId && metadata.ipAddress) {
-      const tenant = await this.sessionRepo.manager
+      const tenant = (await this.sessionRepo.manager
         .getRepository('tenants')
-        .findOne({ where: { id: metadata.tenantId } }) as any;
-      
+        .findOne({ where: { id: metadata.tenantId } })) as any;
+
       if (tenant?.ipAllowlist?.length > 0) {
         if (!tenant.ipAllowlist.includes(metadata.ipAddress)) {
-          throw new ForbiddenException('Login not allowed from this IP address');
+          throw new ForbiddenException(
+            'Login not allowed from this IP address',
+          );
         }
       }
     }
@@ -283,7 +305,12 @@ export class AuthService {
     });
 
     const familyId = randomBytes(16).toString('hex');
-    const tokens = await this.generateTokens(user.id, user.email, user.role, familyId);
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      familyId,
+    );
 
     await this.createSession(user.id, tokens.refreshToken, familyId, metadata);
 
@@ -410,29 +437,34 @@ export class AuthService {
       forcePasswordChange: false,
     });
   }
-private async incrementLockout(email: string, ip?: string) {
-  const emailKey = `lockout:email:${email.toLowerCase()}`;
-  const ipKey = `lockout:ip:${ip}`;
+  private async incrementLockout(email: string, ip?: string) {
+    const emailKey = `lockout:email:${email.toLowerCase()}`;
+    const ipKey = `lockout:ip:${ip}`;
 
-  const [emailAttempts, ipAttempts] = await Promise.all([
-    this.redisService.incr(emailKey),
-    ip ? this.redisService.incr(ipKey) : Promise.resolve(0),
-  ]);
+    const [emailAttempts, ipAttempts] = await Promise.all([
+      this.redisService.incr(emailKey),
+      ip ? this.redisService.incr(ipKey) : Promise.resolve(0),
+    ]);
 
-  if (emailAttempts === 1) await this.redisService.expire(emailKey, LOCKOUT_DURATION);
-  if (ip && ipAttempts === 1) await this.redisService.expire(ipKey, LOCKOUT_DURATION);
+    if (emailAttempts === 1)
+      await this.redisService.expire(emailKey, LOCKOUT_DURATION);
+    if (ip && ipAttempts === 1)
+      await this.redisService.expire(ipKey, LOCKOUT_DURATION);
 
-  if (emailAttempts >= MAX_LOGIN_ATTEMPTS || (ip && ipAttempts >= MAX_LOGIN_ATTEMPTS * 2)) {
-    this.logger.warn(`Lockout triggered for email: ${email} or IP: ${ip}`);
+    if (
+      emailAttempts >= MAX_LOGIN_ATTEMPTS ||
+      (ip && ipAttempts >= MAX_LOGIN_ATTEMPTS * 2)
+    ) {
+      this.logger.warn(`Lockout triggered for email: ${email} or IP: ${ip}`);
+    }
   }
-}
 
-/**
+  /**
+ /**
  * Refresh access token using a valid refresh token.
-...
-   * Implements token rotation — issues new refresh token on every use.
-   */
-  async refresh(refreshToken: string, metadata: { ipAddress?: string } = {}) {
+ * Implements token rotation — issues new refresh token on every use.
+ */
+  async refresh(refreshToken: string, _metadata: { ipAddress?: string } = {}) {
     let payload: JwtPayload;
     try {
       payload = this.jwtService.verify<JwtPayload>(refreshToken, {
@@ -450,14 +482,14 @@ private async incrementLockout(email: string, ip?: string) {
       // For simplicity, we check if the familyId exists but the token doesn't.
       // But we need to know the familyId. We can encode familyId in the JWT payload.
       // Or we can just assume if it's not in Redis, it's either expired or reused.
-      
+
       // Better: When we rotate, we can keep the old token in a "rotated" set for a few seconds
       // to handle race conditions, OR we just strictly invalidate on reuse.
-      
+
       // If we want reuse detection, we should store a marker in Redis when a token is used.
       // Let's check if there's any other token in this family.
       // This is complex without the familyId in the JWT.
-      
+
       throw new UnauthorizedException('Refresh token invalid or already used');
     }
 
@@ -472,12 +504,12 @@ private async incrementLockout(email: string, ip?: string) {
       familyId,
     );
 
-    // Rotate: 
+    // Rotate:
     // 1. Delete old token from Redis
     // 2. Add new token to family
     // 3. Store new token session data
     const newTokenHash = this.hashToken(tokens.refreshToken);
-    
+
     await this.redisService.del(`refresh:${tokenHash}`);
     await this.redisService.set(
       `refresh:${newTokenHash}`,
@@ -489,7 +521,9 @@ private async incrementLockout(email: string, ip?: string) {
       REFRESH_TOKEN_TTL,
     );
 
-    await this.redisService.getClient().sadd(`family:${familyId}`, newTokenHash);
+    await this.redisService
+      .getClient()
+      .sadd(`family:${familyId}`, newTokenHash);
     await this.redisService.getClient().srem(`family:${familyId}`, tokenHash);
 
     return tokens;
@@ -561,15 +595,17 @@ private async incrementLockout(email: string, ip?: string) {
     }
 
     await this.sessionRepo.update(sessionId, { isRevoked: true });
-    
+
     // Invalidate the entire family in Redis
     if (session.familyId) {
       const familyKey = `family:${session.familyId}`;
-      const tokenHashes = await this.redisService.getClient().smembers(familyKey);
-      
+      const tokenHashes = await this.redisService
+        .getClient()
+        .smembers(familyKey);
+
       if (tokenHashes.length > 0) {
         const pipeline = this.redisService.getClient().pipeline();
-        tokenHashes.forEach(hash => {
+        tokenHashes.forEach((hash) => {
           pipeline.del(`refresh:${hash}`);
         });
         pipeline.del(familyKey);
@@ -587,20 +623,22 @@ private async incrementLockout(email: string, ip?: string) {
     });
 
     await this.sessionRepo.update({ userId }, { isRevoked: true });
-    
+
     const pipeline = this.redisService.getClient().pipeline();
-    
+
     for (const session of activeSessions) {
       if (session.familyId) {
         const familyKey = `family:${session.familyId}`;
-        const tokenHashes = await this.redisService.getClient().smembers(familyKey);
-        tokenHashes.forEach(hash => {
+        const tokenHashes = await this.redisService
+          .getClient()
+          .smembers(familyKey);
+        tokenHashes.forEach((hash) => {
           pipeline.del(`refresh:${hash}`);
         });
         pipeline.del(familyKey);
       }
     }
-    
+
     await pipeline.exec();
   }
 
@@ -652,107 +690,123 @@ private async incrementLockout(email: string, ip?: string) {
       resetPasswordExpires: null,
     });
   }
-/**
- * Verify email using a token.
- */
-async verifyEmail(email: string, token: string) {
-  const user = await this.usersService.findByEmail(email, {
-    includeVerificationFields: true,
-  });
+  /**
+   * Verify email using a token.
+   */
+  async verifyEmail(email: string, token: string) {
+    const user = await this.usersService.findByEmail(email, {
+      includeVerificationFields: true,
+    });
 
-  if (!user || !user.emailVerificationTokenHash || !user.emailVerificationExpires) {
-    throw new UnauthorizedException('Invalid or expired verification token');
+    if (
+      !user ||
+      !user.emailVerificationTokenHash ||
+      !user.emailVerificationExpires
+    ) {
+      throw new UnauthorizedException('Invalid or expired verification token');
+    }
+
+    if (new Date() > user.emailVerificationExpires) {
+      throw new UnauthorizedException('Verification token has expired');
+    }
+
+    const tokenValid = await bcrypt.compare(
+      token,
+      user.emailVerificationTokenHash,
+    );
+    if (!tokenValid) {
+      throw new UnauthorizedException('Invalid or expired verification token');
+    }
+
+    await this.usersService.update(user.id, {
+      isEmailVerified: true,
+      emailVerificationTokenHash: null,
+      emailVerificationExpires: null,
+    });
   }
 
-  if (new Date() > user.emailVerificationExpires) {
-    throw new UnauthorizedException('Verification token has expired');
+  /**
+   * Resend verification email.
+   */
+  async resendVerification(email: string) {
+    const user = await this.usersService.findByEmail(email);
+    if (!user || user.isEmailVerified) return;
+
+    const verificationToken = randomBytes(32).toString('hex');
+    const hash = await bcrypt.hash(verificationToken, SALT_ROUNDS);
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    await this.usersService.update(user.id, {
+      emailVerificationTokenHash: hash,
+      emailVerificationExpires: expires,
+    });
+
+    await this.mailerService.sendVerificationEmail(
+      user.email,
+      verificationToken,
+    );
   }
 
-  const tokenValid = await bcrypt.compare(token, user.emailVerificationTokenHash);
-  if (!tokenValid) {
-    throw new UnauthorizedException('Invalid or expired verification token');
+  /**
+   * Request an SMS OTP for login.
+   */
+  async requestSmsOtp(phone: string) {
+    const user = await this.usersService.findByPhone(phone);
+    if (!user) return; // Silent return for security
+
+    // Generate 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Store in Redis with 5 min TTL
+    await this.redisService.set(`sms_otp:${phone}`, code, 300);
+
+    await this.smsService.sendOtp(phone, code);
   }
 
-  await this.usersService.update(user.id, {
-    isEmailVerified: true,
-    emailVerificationTokenHash: null,
-    emailVerificationExpires: null,
-  });
-}
+  /**
+   * Login using SMS OTP.
+   */
+  async loginWithSmsOtp(
+    phone: string,
+    code: string,
+    metadata: { userAgent?: string; ipAddress?: string } = {},
+  ) {
+    const storedCode = await this.redisService.get(`sms_otp:${phone}`);
+    if (!storedCode || storedCode !== code) {
+      throw new UnauthorizedException('Invalid or expired OTP');
+    }
 
-/**
- * Resend verification email.
- */
-async resendVerification(email: string) {
-  const user = await this.usersService.findByEmail(email);
-  if (!user || user.isEmailVerified) return;
+    // Invalidate OTP
+    await this.redisService.del(`sms_otp:${phone}`);
 
-  const verificationToken = randomBytes(32).toString('hex');
-  const hash = await bcrypt.hash(verificationToken, SALT_ROUNDS);
-  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const user = await this.usersService.findByPhone(phone);
+    if (!user || user.status !== 'ACTIVE') {
+      throw new UnauthorizedException('User not found or inactive');
+    }
 
-  await this.usersService.update(user.id, {
-    emailVerificationTokenHash: hash,
-    emailVerificationExpires: expires,
-  });
+    const familyId = randomBytes(16).toString('hex');
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      familyId,
+    );
 
-  await this.mailerService.sendVerificationEmail(user.email, verificationToken);
-}
+    await this.createSession(user.id, tokens.refreshToken, familyId, metadata);
 
-/**
- * Request an SMS OTP for login.
- */
-async requestSmsOtp(phone: string) {
-  const user = await this.usersService.findByPhone(phone);
-  if (!user) return; // Silent return for security
-
-  // Generate 6-digit code
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-
-  // Store in Redis with 5 min TTL
-  await this.redisService.set(`sms_otp:${phone}`, code, 300);
-
-  await this.smsService.sendOtp(phone, code);
-}
-
-/**
- * Login using SMS OTP.
- */
-async loginWithSmsOtp(
-  phone: string,
-  code: string,
-  metadata: { userAgent?: string; ipAddress?: string } = {},
-) {
-  const storedCode = await this.redisService.get(`sms_otp:${phone}`);
-  if (!storedCode || storedCode !== code) {
-    throw new UnauthorizedException('Invalid or expired OTP');
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+      },
+      tokens,
+    };
   }
 
-  // Invalidate OTP
-  await this.redisService.del(`sms_otp:${phone}`);
-
-  const user = await this.usersService.findByPhone(phone);
-  if (!user || user.status !== 'ACTIVE') {
-    throw new UnauthorizedException('User not found or inactive');
-  }
-
-  const familyId = randomBytes(16).toString('hex');
-  const tokens = await this.generateTokens(user.id, user.email, user.role, familyId);
-
-  await this.createSession(user.id, tokens.refreshToken, familyId, metadata);
-
-  return {    user: {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role,
-    },
-    tokens,
-  };
-}
-
-/**
+  /**
  * Send a passwordless magic login link.
 ...   */
   async sendMagicLink(email: string) {
@@ -813,7 +867,12 @@ async loginWithSmsOtp(
     }
 
     const familyId = randomBytes(16).toString('hex');
-    const tokens = await this.generateTokens(user.id, user.email, user.role, familyId);
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      familyId,
+    );
 
     await this.createSession(user.id, tokens.refreshToken, familyId, metadata);
 
@@ -978,7 +1037,12 @@ async loginWithSmsOtp(
   /**
    * Generate access + refresh token pair.
    */
-  async generateTokens(userId: string, email: string, role: string, familyId?: string) {
+  async generateTokens(
+    userId: string,
+    email: string,
+    role: string,
+    familyId?: string,
+  ) {
     const jwtPayload = { sub: userId, email, role };
     const refreshPayload = { ...jwtPayload, familyId };
 

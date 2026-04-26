@@ -39,13 +39,11 @@ export class TenantConnectionService {
     try {
       // 1. Set Row-Level Security Context (Default)
       // This works even if the tenant has their own schema, as long as RLS is enabled on tables.
-      await queryRunner.query(
-        `SET app.current_tenant_id = '${this.tenantId}'`,
-      );
+      await queryRunner.query(`SET app.current_tenant_id = '${this.tenantId}'`);
 
       // 2. Switch search_path (Optional/Enterprise)
       // If we determine this tenant uses a separate schema, we set the search_path.
-      // For now, we'll try to use the tenantId as schema name if it's not a UUID, 
+      // For now, we'll try to use the tenantId as schema name if it's not a UUID,
       // but in the future this should be based on a flag in the Tenant entity.
       const tenant = (this.request as any).tenant;
       if (tenant?.schemaNamespace && tenant.schemaNamespace !== 'public') {
@@ -74,14 +72,16 @@ export class TenantConnectionService {
   async getTenantManager(): Promise<EntityManager> {
     const queryRunner = this.defaultDataSource.createQueryRunner();
     await queryRunner.connect();
-    
+
     await queryRunner.query(`SET app.current_tenant_id = '${this.tenantId}'`);
-    
+
     const tenant = (this.request as any).tenant;
     if (tenant?.schemaNamespace && tenant.schemaNamespace !== 'public') {
-        await queryRunner.query(`SET search_path TO "${tenant.schemaNamespace}", "public"`);
+      await queryRunner.query(
+        `SET search_path TO "${tenant.schemaNamespace}", "public"`,
+      );
     }
-    
+
     return queryRunner.manager;
   }
 }

@@ -8,7 +8,7 @@ import { setSocketStatus } from "@/store/slices/uiSlice";
 import { notification as antdNotification } from "antd";
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
-  const { token, user } = useAppSelector((state) => state.auth);
+  const { accessToken: token, user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
 
   useEffect(() => {

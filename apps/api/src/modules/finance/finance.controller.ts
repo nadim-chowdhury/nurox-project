@@ -17,7 +17,7 @@ import { CreateAccountDto } from './dto/create-account.dto';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { CreateJournalEntryDto } from './dto/create-journal.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ModuleGuard, CheckModule } from '../../common/guards/module.guard';
+import { CheckModule } from '../../common/guards/module.guard';
 import { InvoiceStatus } from './entities/invoice.entity';
 import { BillStatus } from './entities/bill.entity';
 import { Response } from 'express';
@@ -275,7 +275,10 @@ export class FinanceController {
   }
 
   @Patch('tax-rates/:id')
-  updateTaxRate(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<TaxRateDto>) {
+  updateTaxRate(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Partial<TaxRateDto>,
+  ) {
     return this.financeService.updateTaxRate(id, dto as any);
   }
 }

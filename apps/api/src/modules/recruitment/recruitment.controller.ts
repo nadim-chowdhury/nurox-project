@@ -134,7 +134,10 @@ export class RecruitmentController {
 
   @Put('candidates/:id')
   @ApiOperation({ summary: 'Update candidate details' })
-  updateCandidate(@Param('id') id: string, @Body() data: Partial<CandidateDto>) {
+  updateCandidate(
+    @Param('id') id: string,
+    @Body() data: Partial<CandidateDto>,
+  ) {
     return this.recruitmentService.updateCandidate(id, data as any);
   }
 

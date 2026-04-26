@@ -5,7 +5,6 @@ import {
   ArrowUpOutlined, 
   ArrowDownOutlined, 
   FileTextOutlined, 
-  CreditCardOutlined,
   BankOutlined,
   BookOutlined
 } from "@ant-design/icons";

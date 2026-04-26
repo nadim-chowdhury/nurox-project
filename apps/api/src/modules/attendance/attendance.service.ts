@@ -11,6 +11,15 @@ import {
   AttendanceMethod,
   AttendanceStatus,
 } from './entities/attendance.entity';
+import {
+  RegularizationRequest,
+  RegularizationStatus,
+} from './entities/regularization.entity';
+import {
+  ShiftAssignment,
+  ShiftRotation,
+} from './entities/shift-assignment.entity';
+import { Shift } from '../hr/entities/shift.entity';
 import { Employee } from '../hr/entities/employee.entity';
 import { Holiday } from './entities/holiday.entity';
 import { Response } from 'express';
@@ -28,6 +37,12 @@ export class AttendanceService {
     private readonly employeeRepo: Repository<Employee>,
     @InjectRepository(Holiday)
     private readonly holidayRepo: Repository<Holiday>,
+    @InjectRepository(RegularizationRequest)
+    private readonly regularizationRepo: Repository<RegularizationRequest>,
+    @InjectRepository(ShiftAssignment)
+    private readonly shiftAssignmentRepo: Repository<ShiftAssignment>,
+    @InjectRepository(ShiftRotation)
+    private readonly shiftRotationRepo: Repository<ShiftRotation>,
   ) {}
 
   async generateCheckInQr(_employeeId: string): Promise<string> {
@@ -139,6 +154,115 @@ export class AttendanceService {
     }
 
     return this.attendanceRepo.save(record);
+  }
+
+  async createRegularization(dto: any): Promise<RegularizationRequest> {
+    const request = this.regularizationRepo.create({
+      ...dto,
+      status: RegularizationStatus.PENDING,
+    }) as any as RegularizationRequest;
+    return this.regularizationRepo.save(request);
+  }
+
+  async approveRegularization(
+    id: string,
+    approvedById: string,
+    status: RegularizationStatus,
+  ) {
+    const request = await this.regularizationRepo.findOne({
+      where: { id },
+      relations: ['employee'],
+    });
+    if (!request)
+      throw new NotFoundException('Regularization request not found');
+
+    request.status = status;
+    request.approvedById = approvedById;
+    request.approvedAt = new Date();
+
+    const saved = await this.regularizationRepo.save(request);
+
+    if (status === RegularizationStatus.APPROVED) {
+      // Correct the attendance record
+      await this.recordAttendance(
+        request.employeeId,
+        AttendanceMethod.MANUAL,
+        'IN',
+        undefined,
+        request.checkIn,
+      );
+      await this.recordAttendance(
+        request.employeeId,
+        AttendanceMethod.MANUAL,
+        'OUT',
+        undefined,
+        request.checkOut,
+      );
+    }
+
+    return saved;
+  }
+
+  async manualHrEntry(
+    employeeId: string,
+    date: string,
+    checkIn?: Date,
+    checkOut?: Date,
+    reason?: string,
+  ) {
+    let record = await this.attendanceRepo.findOne({
+      where: { employeeId, date },
+    });
+
+    if (!record) {
+      record = this.attendanceRepo.create({
+        employeeId,
+        date,
+        checkIn,
+        checkOut,
+        method: AttendanceMethod.MANUAL,
+        remarks: reason || null,
+        status: AttendanceStatus.PRESENT,
+      });
+    } else {
+      if (checkIn) record.checkIn = checkIn;
+      if (checkOut) record.checkOut = checkOut;
+      record.remarks = reason || null;
+    }
+
+    return this.attendanceRepo.save(record);
+  }
+
+  async assignShift(employeeId: string, shiftId: string, startDate: string) {
+    // Deactivate current active shift
+    await this.shiftAssignmentRepo.update(
+      { employeeId, isActive: true },
+      { isActive: false, endDate: startDate },
+    );
+
+    const assignment = this.shiftAssignmentRepo.create({
+      employeeId,
+      shiftId,
+      startDate,
+      isActive: true,
+    });
+    return this.shiftAssignmentRepo.save(assignment);
+  }
+
+  async getEmployeeShift(
+    employeeId: string,
+    _date: string,
+  ): Promise<Shift | null> {
+    const assignment = await this.shiftAssignmentRepo.findOne({
+      where: {
+        employeeId,
+        isActive: true,
+        // In a real app, logic would check if date is within startDate and endDate
+      },
+      relations: ['shift'],
+    });
+
+    return assignment?.shift || null;
   }
 
   async getTeamAttendance(date: string) {

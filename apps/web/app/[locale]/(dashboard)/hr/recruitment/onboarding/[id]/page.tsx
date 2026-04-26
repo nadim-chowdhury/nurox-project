@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { useParams } from "next/navigation";
 import {
   Card,
-  Steps,
   Button,
   Row,
   Col,
@@ -14,11 +12,8 @@ import {
   Upload,
   message,
   Typography,
-  Divider,
-  Space,
 } from "antd";
 import {
-  CheckCircleOutlined,
   UploadOutlined,
   FileTextOutlined,
   IdcardOutlined,
@@ -31,8 +26,6 @@ import { SignaturePad } from "@/components/common/SignaturePad";
 const { Title, Text, Paragraph } = Typography;
 
 export default function OnboardingPortalPage() {
-  const { id } = useParams();
-  const [currentStep, setCurrentStep] = useState(0);
   const [tasks, setTasks] = useState([
     { title: "Personal Information", completed: true, icon: <IdcardOutlined /> },
     { title: "Bank Details", completed: false, icon: <BankOutlined /> },
@@ -71,6 +64,7 @@ export default function OnboardingPortalPage() {
                 <List.Item
                   actions={[
                     <Checkbox
+                      key="completed-checkbox"
                       checked={item.completed}
                       onChange={() => handleTaskToggle(index)}
                     >
@@ -113,7 +107,7 @@ export default function OnboardingPortalPage() {
             <Paragraph>
               Please sign below to confirm your acceptance of the offer and terms.
             </Paragraph>
-            <SignaturePad onSave={(url) => {
+            <SignaturePad onSave={(_url) => {
               message.success("Signature saved successfully");
               handleTaskToggle(4); // Mark E-Signature as done
             }} />

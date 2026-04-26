@@ -16,8 +16,15 @@ import {
   EmployeeSalaryAssignment,
 } from './entities/salary-structure.entity';
 import { TaxConfiguration } from './entities/tax-bracket.entity';
-import { EmployeeLoan, LoanRepayment, LoanStatus } from './entities/loan.entity';
-import { AdvanceSalaryRequest, AdvanceSalaryStatus } from './entities/advance-salary.entity';
+import {
+  EmployeeLoan,
+  LoanRepayment,
+  LoanStatus,
+} from './entities/loan.entity';
+import {
+  AdvanceSalaryRequest,
+  AdvanceSalaryStatus,
+} from './entities/advance-salary.entity';
 import { EmployeeBonus } from './entities/bonus.entity';
 import { PayrollAudit } from './entities/payroll-audit.entity';
 import { SalaryHistory } from '../hr/entities/salary-history.entity';
@@ -32,6 +39,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Employee } from '../hr/entities/employee.entity';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { ClsService } from 'nestjs-cls';
 
 @Injectable()
 export class PayrollService {
@@ -73,6 +81,7 @@ export class PayrollService {
     private readonly eventEmitter: EventEmitter2,
     @InjectQueue('payroll')
     private readonly payrollQueue: Queue,
+    private readonly cls: ClsService,
   ) {}
 
   async createStructure(dto: any): Promise<SalaryStructure> {
@@ -80,7 +89,8 @@ export class PayrollService {
     const saved: any = await this.structureRepo.save(structure);
 
     await this.auditService.log({
-      userId: null, // Should come from req context in real app
+      tenantId: this.cls.get('tenantId'),
+      userId: this.cls.get('userId'),
       action: 'CREATE_SALARY_STRUCTURE',
       module: 'PAYROLL',
       description: `Created salary structure: ${saved.name}`,
@@ -124,7 +134,8 @@ export class PayrollService {
     const saved: any = await this.taxRepo.save(config);
 
     await this.auditService.log({
-      userId: null,
+      tenantId: this.cls.get('tenantId'),
+      userId: this.cls.get('userId'),
       action: 'CREATE_TAX_CONFIG',
       module: 'PAYROLL',
       description: `Created tax configuration for fiscal year ${saved.fiscalYear}`,
@@ -151,18 +162,22 @@ export class PayrollService {
   /**
    * Creates an off-cycle payroll run for a specific employee.
    */
-  async createOffCycleRun(employeeId: string, period: string, type: string): Promise<PayrollRun> {
+  async createOffCycleRun(
+    employeeId: string,
+    period: string,
+    _type: string,
+  ): Promise<PayrollRun> {
     const runId = `OC-${employeeId.slice(0, 4)}-${period}-${Date.now().toString().slice(-4)}`;
-    
+
     const run = this.runRepo.create({
       runId,
       period,
       status: PayrollRunStatus.DRAFT,
       // Metadata could be stored in a JSON field if needed
     });
-    
+
     const savedRun = await this.runRepo.save(run);
-    
+
     // We can immediately process it for this employee
     // In a real app, maybe you want to review first.
     return savedRun;
@@ -195,7 +210,9 @@ export class PayrollService {
 
     for (const assign of assignments) {
       if (assign.employee.isSalaryOnHold) {
-        this.logger.log(`Skipping employee ${assign.employee.firstName} ${assign.employee.lastName} (Salary on hold)`);
+        this.logger.log(
+          `Skipping employee ${assign.employee.firstName} ${assign.employee.lastName} (Salary on hold)`,
+        );
         continue;
       }
 
@@ -223,43 +240,61 @@ export class PayrollService {
       }
 
       // Calculate Arrears
-      const arrears = await this.getArrearsForEmployee(assign.employeeId, run.period);
+      const arrears = await this.getArrearsForEmployee(
+        assign.employeeId,
+        run.period,
+      );
 
       // Fetch active loans and calculate deduction
       const loans = await this.loanRepo.find({
         where: { employeeId: assign.employeeId, status: LoanStatus.ACTIVE },
       });
-      const loanDeduction = loans.reduce((sum, l) => sum + Number(l.monthlyDeduction), 0);
+      const loanDeduction = loans.reduce(
+        (sum, l) => sum + Number(l.monthlyDeduction),
+        0,
+      );
 
       // Fetch approved advances for this period
       const advances = await this.advanceRepo.find({
-        where: { 
-          employeeId: assign.employeeId, 
+        where: {
+          employeeId: assign.employeeId,
           status: AdvanceSalaryStatus.APPROVED,
-          deductionPeriod: run.period 
+          deductionPeriod: run.period,
         },
       });
-      const advanceDeduction = advances.reduce((sum, a) => sum + Number(a.amount), 0);
+      const advanceDeduction = advances.reduce(
+        (sum, a) => sum + Number(a.amount),
+        0,
+      );
 
       // Fetch bonuses for this period
       const bonuses = await this.bonusRepo.find({
-        where: { employeeId: assign.employeeId, payrollPeriod: run.period, isProcessed: false },
+        where: {
+          employeeId: assign.employeeId,
+          payrollPeriod: run.period,
+          isProcessed: false,
+        },
       });
       const totalBonus = bonuses.reduce((sum, b) => sum + Number(b.amount), 0);
 
-      const { items, grossPay, totalDeductions, netPay, employerPfContribution } =
-        this.computeService.calculatePayslipItems(
-          Number(assign.employee.salary),
-          assign.salaryStructure,
-          taxConfig,
-          otHours,
-          (Number(assign.employee.salary) / 160) * 1.5,
-          totalBonus,
-          encashmentDays,
-          arrears,
-          loanDeduction,
-          advanceDeduction,
-        );
+      const {
+        items,
+        grossPay,
+        totalDeductions,
+        netPay,
+        employerPfContribution,
+      } = this.computeService.calculatePayslipItems(
+        Number(assign.employee.salary),
+        assign.salaryStructure,
+        taxConfig,
+        otHours,
+        (Number(assign.employee.salary) / 160) * 1.5,
+        totalBonus,
+        encashmentDays,
+        arrears,
+        loanDeduction,
+        advanceDeduction,
+      );
 
       const payslip = this.payslipRepo.create({
         payrollRunId: run.id,
@@ -270,7 +305,11 @@ export class PayrollService {
         employerPfContribution,
         items,
         payoutCurrency: assign.employee.preferredCurrency || 'USD',
-        exchangeRate: assign.employee.preferredCurrency && assign.employee.preferredCurrency !== 'USD' ? 110.0 : 1, // Mock rate for BDT
+        exchangeRate:
+          assign.employee.preferredCurrency &&
+          assign.employee.preferredCurrency !== 'USD'
+            ? 110.0
+            : 1, // Mock rate for BDT
       });
 
       payslips.push(payslip);
@@ -289,17 +328,22 @@ export class PayrollService {
       await manager.save(run);
 
       // Audit Log
-      await this.logPayrollAudit(run.id, 'COMPUTE', null, { 
-        employeeCount: assignments.length, 
-        totalGross, 
-        totalNet 
+      await this.logPayrollAudit(run.id, 'COMPUTE', null, {
+        employeeCount: assignments.length,
+        totalGross,
+        totalNet,
       });
     });
 
     return run;
   }
 
-  private async logPayrollAudit(runId: string, action: string, before: any, after: any) {
+  private async logPayrollAudit(
+    runId: string,
+    action: string,
+    before: any,
+    after: any,
+  ) {
     await this.auditRepo.save(
       this.auditRepo.create({
         payrollRunId: runId,
@@ -317,15 +361,20 @@ export class PayrollService {
     const oldStatus = run.status;
     run.status = PayrollRunStatus.APPROVED;
     const saved = await this.runRepo.save(run);
-    
-    await this.logPayrollAudit(run.id, 'APPROVE', { status: oldStatus }, { status: run.status });
+
+    await this.logPayrollAudit(
+      run.id,
+      'APPROVE',
+      { status: oldStatus },
+      { status: run.status },
+    );
     return saved;
   }
 
   async finalizeRun(runId: string) {
-    const run = await this.runRepo.findOne({ 
+    const run = await this.runRepo.findOne({
       where: { id: runId },
-      relations: ['payslips'] 
+      relations: ['payslips'],
     });
     if (!run) throw new NotFoundException('Payroll run not found');
 
@@ -334,19 +383,19 @@ export class PayrollService {
       for (const payslip of run.payslips) {
         // Handle Loans
         const activeLoans = await manager.find(EmployeeLoan, {
-          where: { employeeId: payslip.employeeId, status: LoanStatus.ACTIVE }
+          where: { employeeId: payslip.employeeId, status: LoanStatus.ACTIVE },
         });
-        
+
         for (const loan of activeLoans) {
           const repaymentAmount = Number(loan.monthlyDeduction);
-          
+
           // Create repayment record
           const repayment = manager.create(LoanRepayment, {
             loanId: loan.id,
             payrollRunId: run.id,
             amount: repaymentAmount,
             repaymentDate: new Date().toISOString(),
-            status: 'COMPLETED'
+            status: 'COMPLETED',
           });
           await manager.save(repayment);
 
@@ -359,29 +408,32 @@ export class PayrollService {
         }
 
         // Handle Advances
-        await manager.update(AdvanceSalaryRequest, 
-          { 
-            employeeId: payslip.employeeId, 
+        await manager.update(
+          AdvanceSalaryRequest,
+          {
+            employeeId: payslip.employeeId,
             status: AdvanceSalaryStatus.APPROVED,
-            deductionPeriod: run.period
-          }, 
-          { status: AdvanceSalaryStatus.DEDUCTED }
+            deductionPeriod: run.period,
+          },
+          { status: AdvanceSalaryStatus.DEDUCTED },
         );
 
         // Handle Bonuses
-        await manager.update(EmployeeBonus,
+        await manager.update(
+          EmployeeBonus,
           {
             employeeId: payslip.employeeId,
             payrollPeriod: run.period,
-            isProcessed: false
+            isProcessed: false,
           },
-          { isProcessed: true }
+          { isProcessed: true },
         );
 
         // Handle Arrears
-        await manager.update(SalaryHistory,
+        await manager.update(
+          SalaryHistory,
           { employeeId: payslip.employeeId, isProcessedInPayroll: false },
-          { isProcessedInPayroll: true }
+          { isProcessedInPayroll: true },
         );
       }
 
@@ -390,7 +442,12 @@ export class PayrollService {
       await manager.save(run);
 
       // Audit Log
-      await this.logPayrollAudit(run.id, 'FINALIZE', { status: PayrollRunStatus.APPROVED }, { status: run.status });
+      await this.logPayrollAudit(
+        run.id,
+        'FINALIZE',
+        { status: PayrollRunStatus.APPROVED },
+        { status: run.status },
+      );
     });
 
     // Emit event for Finance module to post journals
@@ -535,10 +592,13 @@ export class PayrollService {
   /**
    * Calculates arrears for an employee based on backdated salary revisions.
    */
-  async getArrearsForEmployee(employeeId: string, currentPeriod: string): Promise<number> {
+  async getArrearsForEmployee(
+    employeeId: string,
+    currentPeriod: string,
+  ): Promise<number> {
     const history = await this.salaryHistoryRepo.find({
       where: { employeeId, isProcessedInPayroll: false },
-      order: { effectiveDate: 'ASC' }
+      order: { effectiveDate: 'ASC' },
     });
 
     let totalArrear = 0;
@@ -550,29 +610,31 @@ export class PayrollService {
         // This is a backdated revision. Calculate the diff for months missed.
         // For simplicity: (newSalary - previousSalary) * number of missed months
         const diff = Number(record.newSalary) - Number(record.previousSalary);
-        
+
         // Count full months between effectiveDate and currentPeriodDate
-        const months = (currentPeriodDate.getFullYear() - effectiveDate.getFullYear()) * 12 + (currentPeriodDate.getMonth() - effectiveDate.getMonth());
-        
+        const months =
+          (currentPeriodDate.getFullYear() - effectiveDate.getFullYear()) * 12 +
+          (currentPeriodDate.getMonth() - effectiveDate.getMonth());
+
         if (months > 0) {
           totalArrear += diff * months;
         }
       }
     }
-return totalArrear;
-}
+    return totalArrear;
+  }
 
-/**
-* Generates a bank advice letter for a payroll run.
-*/
-async generateBankLetterPdf(runId: string): Promise<Buffer> {
-const run = await this.runRepo.findOne({
-  where: { id: runId },
-  relations: ['payslips', 'payslips.employee'],
-});
-if (!run) throw new NotFoundException('Payroll run not found');
+  /**
+   * Generates a bank advice letter for a payroll run.
+   */
+  async generateBankLetterPdf(runId: string): Promise<Buffer> {
+    const run = await this.runRepo.findOne({
+      where: { id: runId },
+      relations: ['payslips', 'payslips.employee'],
+    });
+    if (!run) throw new NotFoundException('Payroll run not found');
 
-const template = `
+    const template = `
   <div style="font-family: 'Manrope', sans-serif; padding: 40px; color: #0c1324;">
     <h2 style="text-align: center;">BANK PAYMENT ADVICE</h2>
     <p>To,<br/>The Manager,<br/>Sample Bank Limited,<br/>Main Branch, Dhaka.</p>
@@ -615,21 +677,21 @@ const template = `
   </div>
 `;
 
-const data = {
-  date: new Date().toLocaleDateString(),
-  period: run.period,
-  totalNet: run.totalNet,
-  employees: run.payslips.map(p => ({
-    name: `${p.employee.firstName} ${p.employee.lastName}`,
-    account: p.employee.accountNumber || `${p.employee.employeeId}_ACC`,
-    amount: p.netPay,
-  })),
-};
+    const data = {
+      date: new Date().toLocaleDateString(),
+      period: run.period,
+      totalNet: run.totalNet,
+      employees: run.payslips.map((p) => ({
+        name: `${p.employee.firstName} ${p.employee.lastName}`,
+        account: p.employee.accountNumber || `${p.employee.employeeId}_ACC`,
+        amount: p.netPay,
+      })),
+    };
 
-return this.pdfService.generatePdf(template, data);
-}
+    return this.pdfService.generatePdf(template, data);
+  }
 
-/**
+  /**
 * ADVANCE SALARY WORKFLOW
 ...
    */
@@ -638,12 +700,16 @@ return this.pdfService.generatePdf(template, data);
     const request = this.advanceRepo.create({
       ...dto,
       status: AdvanceSalaryStatus.PENDING,
-      requestedDate: new Date().toISOString()
-    });
+      requestedDate: new Date().toISOString(),
+    }) as any;
     return this.advanceRepo.save(request);
   }
 
-  async updateAdvanceStatus(id: string, status: AdvanceSalaryStatus, approvedById?: string): Promise<AdvanceSalaryRequest> {
+  async updateAdvanceStatus(
+    id: string,
+    status: AdvanceSalaryStatus,
+    approvedById?: string,
+  ): Promise<AdvanceSalaryRequest> {
     const request = await this.advanceRepo.findOne({ where: { id } });
     if (!request) throw new NotFoundException('Advance request not found');
 
@@ -667,7 +733,7 @@ return this.pdfService.generatePdf(template, data);
 
     const summary = {};
 
-    payslips.forEach(p => {
+    payslips.forEach((p) => {
       const deptName = p.employee.department?.name || 'Unassigned';
       if (!summary[deptName]) {
         summary[deptName] = {
@@ -675,10 +741,10 @@ return this.pdfService.generatePdf(template, data);
           gross: 0,
           deductions: 0,
           net: 0,
-          pf: 0
+          pf: 0,
         };
       }
-      
+
       summary[deptName].count++;
       summary[deptName].gross += Number(p.grossPay);
       summary[deptName].deductions += Number(p.totalDeductions);
@@ -690,7 +756,9 @@ return this.pdfService.generatePdf(template, data);
   }
 
   async approveOvertime(attendanceId: string, approvedById: string) {
-    const record = await this.attendanceRepo.findOne({ where: { id: attendanceId } });
+    const record = await this.attendanceRepo.findOne({
+      where: { id: attendanceId },
+    });
     if (!record) throw new NotFoundException('Attendance record not found');
 
     record.isOvertimeApproved = true;
@@ -723,19 +791,27 @@ return this.pdfService.generatePdf(template, data);
    */
   async getPayrollComparison(currentRunId: string, previousRunId: string) {
     const [currentRun, previousRun] = await Promise.all([
-      this.payslipRepo.find({ where: { payrollRunId: currentRunId }, relations: ['employee'] }),
-      this.payslipRepo.find({ where: { payrollRunId: previousRunId }, relations: ['employee'] }),
+      this.payslipRepo.find({
+        where: { payrollRunId: currentRunId },
+        relations: ['employee'],
+      }),
+      this.payslipRepo.find({
+        where: { payrollRunId: previousRunId },
+        relations: ['employee'],
+      }),
     ]);
 
-    const comparison = [];
+    const comparison: any[] = [];
 
-    currentRun.forEach(curr => {
-      const prev = previousRun.find(p => p.employeeId === curr.employeeId);
+    currentRun.forEach((curr) => {
+      const prev = previousRun.find((p) => p.employeeId === curr.employeeId);
       comparison.push({
         employeeName: `${curr.employee.firstName} ${curr.employee.lastName}`,
         currentNet: curr.netPay,
         previousNet: prev ? prev.netPay : 0,
-        variance: prev ? Number(curr.netPay) - Number(prev.netPay) : Number(curr.netPay),
+        variance: prev
+          ? Number(curr.netPay) - Number(prev.netPay)
+          : Number(curr.netPay),
       });
     });
 

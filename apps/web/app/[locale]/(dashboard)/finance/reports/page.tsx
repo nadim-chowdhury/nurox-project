@@ -3,10 +3,8 @@
 import { useState } from "react";
 import { Tabs, Table, DatePicker, Button, Space, Card, Row, Col, Statistic, Modal } from "antd";
 import { 
-  DownloadOutlined, 
   FilePdfOutlined, 
   FileExcelOutlined,
-  SearchOutlined,
   EyeOutlined 
 } from "@ant-design/icons";
 import { 
@@ -29,14 +27,14 @@ export default function Reports() {
 
   // Report Queries
   const { data: trialBalance, isLoading: tbLoading } = useGetTrialBalanceQuery();
-  const { data: incomeStatement, isLoading: isLoading } = useGetIncomeStatementQuery({ 
+  const { data: incomeStatement, isLoading: _isLoading } = useGetIncomeStatementQuery({ 
     startDate: dates[0].toISOString(), 
     endDate: dates[1].toISOString() 
   });
-  const { data: balanceSheet, isLoading: bsLoading } = useGetBalanceSheetQuery({ 
+  const { data: balanceSheet, isLoading: _bsLoading } = useGetBalanceSheetQuery({ 
     asOfDate: asOfDate.toISOString() 
   });
-  const { data: cashFlow, isLoading: cfLoading } = useGetCashFlowQuery({
+  const { data: cashFlow, isLoading: _cfLoading } = useGetCashFlowQuery({
     startDate: dates[0].toISOString(),
     endDate: dates[1].toISOString()
   });

@@ -42,5 +42,3 @@ export class Account extends TenantBaseEntity {
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 }
-ean;
-}

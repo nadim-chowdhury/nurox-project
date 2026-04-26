@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Table, Button, Modal, message, Tag, Space, Select, Input, DatePicker, InputNumber } from "antd";
+import { Table, Button, Modal, message, Tag, Select, Input, DatePicker, InputNumber } from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import { useGetJournalsQuery, useCreateJournalMutation, useGetAccountsQuery } from "@/store/api/financeApi";
 import { useForm, useFieldArray, Controller } from "react-hook-form";

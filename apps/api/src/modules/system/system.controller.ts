@@ -118,10 +118,7 @@ export class SystemController {
   @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update company profile' })
-  async updateCompany(
-    @Req() req: any,
-    @Body() body: CompanyProfileDto,
-  ) {
+  async updateCompany(@Req() req: any, @Body() body: CompanyProfileDto) {
     const parsed = companyProfileSchema.parse(body);
     const tenant = req.tenant;
 

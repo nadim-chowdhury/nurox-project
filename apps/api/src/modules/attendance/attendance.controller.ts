@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Body,
+  Param,
   Query,
   Res,
   UseGuards,
@@ -92,5 +93,45 @@ export class AttendanceController {
     @Res() res: Response,
   ) {
     return this.attendanceService.generateMonthlyReport(month, year, res);
+  }
+
+  @Post('regularization')
+  async createRegularization(@Body() dto: any) {
+    return this.attendanceService.createRegularization(dto);
+  }
+
+  @Post('regularization/:id/approve')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  async approveRegularization(
+    @Param('id') id: string,
+    @Body('approvedById') approvedById: string,
+    @Body('status') status: any,
+  ) {
+    return this.attendanceService.approveRegularization(
+      id,
+      approvedById,
+      status,
+    );
+  }
+
+  @Post('manual')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  async manualEntry(
+    @Body()
+    dto: {
+      employeeId: string;
+      date: string;
+      checkIn?: string;
+      checkOut?: string;
+      reason?: string;
+    },
+  ) {
+    return this.attendanceService.manualHrEntry(
+      dto.employeeId,
+      dto.date,
+      dto.checkIn ? new Date(dto.checkIn) : undefined,
+      dto.checkOut ? new Date(dto.checkOut) : undefined,
+      dto.reason,
+    );
   }
 }

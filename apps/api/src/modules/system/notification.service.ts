@@ -1,7 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Notification, NotificationType, NotificationPriority } from './entities/notification.entity';
+import {
+  Notification,
+  NotificationType,
+  NotificationPriority,
+} from './entities/notification.entity';
 import { NotificationsGateway } from './gateways/notifications.gateway';
 
 @Injectable()
@@ -31,9 +35,14 @@ export class NotificationService {
     return saved;
   }
 
-  async findAll(userId: string, tenantId: string, query: { page?: number; limit?: number; unreadOnly?: boolean }) {
+  async findAll(
+    userId: string,
+    tenantId: string,
+    query: { page?: number; limit?: number; unreadOnly?: boolean },
+  ) {
     const { page = 1, limit = 20, unreadOnly = false } = query;
-    const qb = this.notificationRepo.createQueryBuilder('n')
+    const qb = this.notificationRepo
+      .createQueryBuilder('n')
       .where('n.userId = :userId', { userId })
       .andWhere('n.tenantId = :tenantId', { tenantId });
 
@@ -59,7 +68,9 @@ export class NotificationService {
   }
 
   async markAsRead(id: string, userId: string) {
-    const notification = await this.notificationRepo.findOne({ where: { id, userId } });
+    const notification = await this.notificationRepo.findOne({
+      where: { id, userId },
+    });
     if (!notification) throw new NotFoundException('Notification not found');
 
     notification.isRead = true;
@@ -70,16 +81,20 @@ export class NotificationService {
   async markAllAsRead(userId: string, tenantId: string) {
     return this.notificationRepo.update(
       { userId, tenantId, isRead: false },
-      { isRead: true, readAt: new Date() }
+      { isRead: true, readAt: new Date() },
     );
   }
 
   async countUnread(userId: string, tenantId: string): Promise<number> {
-    return this.notificationRepo.count({ where: { userId, tenantId, isRead: false } });
+    return this.notificationRepo.count({
+      where: { userId, tenantId, isRead: false },
+    });
   }
 
   async delete(id: string, userId: string) {
-    const notification = await this.notificationRepo.findOne({ where: { id, userId } });
+    const notification = await this.notificationRepo.findOne({
+      where: { id, userId },
+    });
     if (!notification) throw new NotFoundException('Notification not found');
     return this.notificationRepo.remove(notification);
   }

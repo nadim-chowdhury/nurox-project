@@ -23,8 +23,10 @@ export class SmsService {
     // TODO: Implement actual Twilio logic here when credentials are ready
     // const client = twilio(accountSid, authToken);
     // await client.messages.create({ body: message, from: sender, to });
-    
-    this.logger.warn(`SMS sending skipped in production: No provider configured.`);
+
+    this.logger.warn(
+      `SMS sending skipped in production: No provider configured.`,
+    );
     return false;
   }
 

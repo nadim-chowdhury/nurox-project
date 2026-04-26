@@ -14,6 +14,7 @@ export enum EmploymentEvent {
   SUSPENDED = 'SUSPENDED',
   RESIGNED = 'RESIGNED',
   TERMINATED = 'TERMINATED',
+  EXITED = 'EXITED',
 }
 
 @Entity('employment_history')

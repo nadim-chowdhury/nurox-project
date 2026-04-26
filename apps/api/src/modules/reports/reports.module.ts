@@ -6,10 +6,7 @@ import { ReportTemplate } from './entities/report-template.entity';
 import { SystemModule } from '../system/system.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([ReportTemplate]),
-    SystemModule,
-  ],
+  imports: [TypeOrmModule.forFeature([ReportTemplate]), SystemModule],
   providers: [ReportsService],
   controllers: [ReportsController],
   exports: [ReportsService],

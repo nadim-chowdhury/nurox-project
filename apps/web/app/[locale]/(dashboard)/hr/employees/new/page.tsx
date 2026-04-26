@@ -13,9 +13,7 @@ import {
   Row,
   Col,
   Result,
-  Space,
   message,
-  Divider,
   Upload,
 } from "antd";
 import {

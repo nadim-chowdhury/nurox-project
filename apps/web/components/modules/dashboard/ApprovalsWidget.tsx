@@ -98,7 +98,7 @@ export function ApprovalsWidget() {
                     <Text strong style={{ color: 'var(--color-on-surface)', fontSize: 13 }}>
                       {item.type}
                     </Text>
-                    <Tag size="small" color={getCategoryColor(item.category)} style={{ fontSize: 10, lineHeight: '16px' }}>
+                    <Tag color={getCategoryColor(item.category)} style={{ fontSize: 10, lineHeight: '16px' }}>
                       {item.category.toUpperCase()}
                     </Tag>
                   </div>

@@ -1,7 +1,17 @@
-import { Injectable, NotFoundException, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, TreeRepository } from 'typeorm';
-import { Employee, EmployeeStatus, Gender } from './entities/employee.entity';
+import {
+  Employee,
+  EmployeeStatus,
+  Gender,
+  EmploymentType,
+} from './entities/employee.entity';
 import { Department } from './entities/department.entity';
 import { Designation } from './entities/designation.entity';
 import {
@@ -31,14 +41,8 @@ import {
   ProfileChangeRequest,
   ProfileChangeStatus,
 } from './entities/profile-change-request.entity';
-import {
-  Resignation,
-  ResignationStatus,
-} from './entities/resignation.entity';
-import {
-  Termination,
-  TerminationType,
-} from './entities/termination.entity';
+import { Resignation, ResignationStatus } from './entities/resignation.entity';
+import { Termination } from './entities/termination.entity';
 import { ExitInterview } from './entities/exit-interview.entity';
 import { ClearanceChecklist } from './entities/clearance-checklist.entity';
 import { Shift } from './entities/shift.entity';
@@ -46,11 +50,11 @@ import { Training, TrainingStatus } from './entities/training.entity';
 import { TrainingCourse } from './entities/training-course.entity';
 import { Skill } from './entities/skill.entity';
 import { SkillCatalog } from './entities/skill-catalog.entity';
-import { ReviewFeedback, FeedbackType } from './entities/review-feedback.entity';
+import { ReviewFeedback } from './entities/review-feedback.entity';
 import { PIPActionPlan } from './entities/pip-action-plan.entity';
 import { ENPSSurvey, ENPSResponse } from './entities/enps.entity';
 import { Handbook, HandbookAcknowledgment } from './entities/handbook.entity';
-import { SuccessionPlan, ReadinessLevel } from './entities/succession-plan.entity';
+import { SuccessionPlan } from './entities/succession-plan.entity';
 import {
   EmploymentHistory,
   EmploymentEvent,
@@ -143,7 +147,7 @@ export class HrService implements OnModuleInit {
       'daily-milestone-check',
       {},
       {
-        repeat: { cron: '0 9 * * *' }, // Daily at 9:00 AM
+        repeat: { pattern: '0 9 * * *' }, // Daily at 9:00 AM
         jobId: 'daily-milestone-check',
         removeOnComplete: true,
       },
@@ -186,11 +190,11 @@ export class HrService implements OnModuleInit {
       if (saved.probationEndDate) {
         const expiryDate = new Date(saved.probationEndDate);
         const reminders = [14, 7, 1];
-        
+
         for (const days of reminders) {
           const reminderDate = new Date(expiryDate);
           reminderDate.setDate(reminderDate.getDate() - days);
-          
+
           const delay = reminderDate.getTime() - Date.now();
           if (delay > 0) {
             await this.hrQueue.add(
@@ -205,11 +209,11 @@ export class HrService implements OnModuleInit {
       if (saved.contractExpiryDate) {
         const expiryDate = new Date(saved.contractExpiryDate);
         const reminders = [90, 30, 7];
-        
+
         for (const days of reminders) {
           const reminderDate = new Date(expiryDate);
           reminderDate.setDate(reminderDate.getDate() - days);
-          
+
           const delay = reminderDate.getTime() - Date.now();
           if (delay > 0) {
             await this.hrQueue.add(
@@ -415,20 +419,6 @@ export class HrService implements OnModuleInit {
     return this.skillRepo.save(skill);
   }
 
-  async getSkillMatrix() {
-    const skills = await this.skillRepo.find({ relations: ['employee'] });
-    // Group by skill name
-    const matrix = {};
-    skills.forEach((s) => {
-      if (!matrix[s.skillName]) matrix[s.skillName] = [];
-      matrix[s.skillName].push({
-        employeeName: `${s.employee.firstName} ${s.employee.lastName}`,
-        proficiency: s.proficiency,
-      });
-    });
-    return matrix;
-  }
-
   async getEmployeeHistory(id: string): Promise<EmploymentHistory[]> {
     await this.findEmployeeById(id);
     return this.employmentHistoryRepo.find({
@@ -544,7 +534,7 @@ export class HrService implements OnModuleInit {
         id: emp.id,
         name: `${emp.firstName} ${emp.lastName}`,
         attributes: {
-          designation: emp.designation?.name || 'N/A',
+          designation: emp.designation?.title || 'N/A',
           department: emp.department?.name || 'N/A',
         },
         avatarUrl: emp.avatarUrl,
@@ -569,14 +559,14 @@ export class HrService implements OnModuleInit {
 
   async createSalaryRevision(dto: any): Promise<SalaryRevision> {
     const employee = await this.findEmployeeById(dto.employeeId);
-    
+
     const revision = this.salaryRevisionRepo.create({
       ...dto,
       currentSalary: employee.salary,
       currentDesignationId: employee.designationId,
-      currentGradeId: (employee as any).gradeId, // Employee has gradeId but might need cast if not in interface
+      currentGradeId: (employee as any).gradeId,
       status: RevisionStatus.DRAFT,
-    });
+    }) as any as SalaryRevision;
 
     return this.salaryRevisionRepo.save(revision);
   }
@@ -588,7 +578,10 @@ export class HrService implements OnModuleInit {
     });
   }
 
-  async updateSalaryRevisionStatus(id: string, dto: any): Promise<SalaryRevision> {
+  async updateSalaryRevisionStatus(
+    id: string,
+    dto: any,
+  ): Promise<SalaryRevision> {
     const revision = await this.salaryRevisionRepo.findOne({
       where: { id },
       relations: ['employee'],
@@ -618,7 +611,9 @@ export class HrService implements OnModuleInit {
       relations: ['employee'],
     });
 
-    if (!revision || revision.status !== RevisionStatus.APPLIED) {
+    if (!revision) throw new NotFoundException('Salary revision not found');
+
+    if (revision.status !== RevisionStatus.APPLIED) {
       // If manually called, we should ensure it's approved first.
       // But usually it's called from updateSalaryRevisionStatus.
     }
@@ -643,7 +638,9 @@ export class HrService implements OnModuleInit {
         previousSalary: revision.currentSalary,
         newSalary: revision.proposedSalary,
         effectiveDate: revision.effectiveDate,
-        reason: revision.proposedDesignationId ? SalaryChangeReason.PROMOTION : SalaryChangeReason.ANNUAL_REVISION,
+        reason: revision.proposedDesignationId
+          ? SalaryChangeReason.PROMOTION
+          : SalaryChangeReason.ANNUAL_REVISION,
         comments: revision.comments || 'Salary revision applied',
       });
       await manager.save(salaryHistory);
@@ -666,11 +663,17 @@ export class HrService implements OnModuleInit {
    * PROBATION WORKFLOW
    */
 
-  async extendProbation(employeeId: string, newEndDate: string, comments: string): Promise<ProbationRecord> {
+  async extendProbation(
+    employeeId: string,
+    newEndDate: string,
+    comments: string,
+  ): Promise<ProbationRecord> {
     const employee = await this.findEmployeeById(employeeId);
-    
-    let record = await this.probationRepo.findOne({ where: { employeeId, status: ProbationStatus.PENDING } });
-    
+
+    let record = await this.probationRepo.findOne({
+      where: { employeeId, status: ProbationStatus.PENDING },
+    });
+
     if (!record) {
       record = this.probationRepo.create({
         employeeId,
@@ -687,19 +690,26 @@ export class HrService implements OnModuleInit {
       record.reviewComments = comments;
     }
 
-    await this.employeeRepo.update(employeeId, { probationEndDate: newEndDate });
-    
-    // Reschedule jobs? 
+    await this.employeeRepo.update(employeeId, {
+      probationEndDate: newEndDate,
+    });
+
+    // Reschedule jobs?
     // In a real app, we should clear old jobs and add new ones.
-    
+
     return this.probationRepo.save(record);
   }
 
-  async completeProbation(employeeId: string, comments: string): Promise<ProbationRecord> {
+  async completeProbation(
+    employeeId: string,
+    comments: string,
+  ): Promise<ProbationRecord> {
     const employee = await this.findEmployeeById(employeeId);
-    
-    let record = await this.probationRepo.findOne({ where: { employeeId, status: ProbationStatus.PENDING } });
-    
+
+    let record = await this.probationRepo.findOne({
+      where: { employeeId, status: ProbationStatus.PENDING },
+    });
+
     if (!record) {
       record = this.probationRepo.create({
         employeeId,
@@ -714,9 +724,9 @@ export class HrService implements OnModuleInit {
     }
 
     await this.employeeRepo.manager.transaction(async (manager) => {
-      await manager.update(Employee, employeeId, { 
+      await manager.update(Employee, employeeId, {
         probationEndDate: null,
-        employmentType: EmployeeStatus.ACTIVE, // Assuming they move to regular
+        employmentType: EmploymentType.FULL_TIME, // Assuming they move to regular
       });
 
       const history = manager.create(EmploymentHistory, {
@@ -737,25 +747,34 @@ export class HrService implements OnModuleInit {
 
   async createTransferRequest(dto: any): Promise<TransferRequest> {
     const employee = await this.findEmployeeById(dto.employeeId);
-    
+
     const request = this.transferRepo.create({
       ...dto,
       oldDepartmentId: employee.departmentId,
       oldBranchId: (employee as any).branchId,
       status: TransferStatus.PENDING,
-    });
+    }) as any as TransferRequest;
 
     return this.transferRepo.save(request);
   }
 
   async findAllTransferRequests(): Promise<TransferRequest[]> {
     return this.transferRepo.find({
-      relations: ['employee', 'newDepartment', 'newBranch', 'oldDepartment', 'oldBranch'],
+      relations: [
+        'employee',
+        'newDepartment',
+        'newBranch',
+        'oldDepartment',
+        'oldBranch',
+      ],
       order: { createdAt: 'DESC' },
     });
   }
 
-  async updateTransferRequestStatus(id: string, dto: any): Promise<TransferRequest> {
+  async updateTransferRequestStatus(
+    id: string,
+    dto: any,
+  ): Promise<TransferRequest> {
     const request = await this.transferRepo.findOne({
       where: { id },
       relations: ['employee'],
@@ -782,7 +801,9 @@ export class HrService implements OnModuleInit {
       relations: ['employee'],
     });
 
-    if (!request || request.status !== TransferStatus.COMPLETED) {
+    if (!request) throw new NotFoundException('Transfer request not found');
+
+    if (request.status !== TransferStatus.COMPLETED) {
       // Logic for applying transfer
     }
 
@@ -809,7 +830,10 @@ export class HrService implements OnModuleInit {
    * SELF-SERVICE PROFILE CHANGES
    */
 
-  async createProfileChangeRequest(employeeId: string, changes: any): Promise<ProfileChangeRequest> {
+  async createProfileChangeRequest(
+    employeeId: string,
+    changes: any,
+  ): Promise<ProfileChangeRequest> {
     const request = this.profileChangeRepo.create({
       employeeId,
       changes,
@@ -825,7 +849,10 @@ export class HrService implements OnModuleInit {
     });
   }
 
-  async updateProfileChangeRequestStatus(id: string, dto: any): Promise<ProfileChangeRequest> {
+  async updateProfileChangeRequestStatus(
+    id: string,
+    dto: any,
+  ): Promise<ProfileChangeRequest> {
     const request = await this.profileChangeRepo.findOne({
       where: { id },
       relations: ['employee'],
@@ -834,7 +861,7 @@ export class HrService implements OnModuleInit {
 
     request.status = dto.status;
     if (dto.rejectionReason) request.rejectionReason = dto.rejectionReason;
-    
+
     if (dto.status === ProfileChangeStatus.APPROVED) {
       request.approvedAt = new Date();
       // Apply changes
@@ -844,8 +871,10 @@ export class HrService implements OnModuleInit {
     return this.profileChangeRepo.save(request);
   }
 
-  private async applyProfileChange(request: ProfileChangeRequest): Promise<void> {
-    await this.employeeRepo.update(request.employeeId, request.changes);
+  private async applyProfileChange(
+    request: ProfileChangeRequest,
+  ): Promise<void> {
+    await this.employeeRepo.update(request.employeeId, request.changes as any);
   }
 
   /**
@@ -858,7 +887,7 @@ export class HrService implements OnModuleInit {
       ...dto,
       status: ResignationStatus.PENDING,
       submissionDate: new Date().toISOString(),
-    });
+    }) as any as Resignation;
     return this.resignationRepo.save(resignation);
   }
 
@@ -882,13 +911,17 @@ export class HrService implements OnModuleInit {
     if (dto.status === ResignationStatus.COMPLETED) {
       await this.employeeRepo.update(resignation.employeeId, {
         status: EmployeeStatus.RESIGNED,
-        endDate: resignation.approvedLastWorkingDay || resignation.requestedLastWorkingDay,
+        endDate:
+          resignation.approvedLastWorkingDay ||
+          resignation.requestedLastWorkingDay,
       });
 
       const history = this.employmentHistoryRepo.create({
         employeeId: resignation.employeeId,
         event: EmploymentEvent.EXITED,
-        effectiveDate: resignation.approvedLastWorkingDay || resignation.requestedLastWorkingDay,
+        effectiveDate:
+          resignation.approvedLastWorkingDay ||
+          resignation.requestedLastWorkingDay,
         comments: 'Resignation completed',
       });
       await this.employmentHistoryRepo.save(history);
@@ -900,7 +933,7 @@ export class HrService implements OnModuleInit {
   async createTermination(dto: any): Promise<Termination> {
     const termination = this.terminationRepo.create({
       ...dto,
-    });
+    }) as any as Termination;
 
     await this.employeeRepo.manager.transaction(async (manager) => {
       await manager.update(Employee, dto.employeeId, {
@@ -920,11 +953,17 @@ export class HrService implements OnModuleInit {
     return this.terminationRepo.save(termination);
   }
 
-  async getClearanceChecklist(employeeId: string): Promise<ClearanceChecklist[]> {
+  async getClearanceChecklist(
+    employeeId: string,
+  ): Promise<ClearanceChecklist[]> {
     return this.clearanceRepo.find({ where: { employeeId } });
   }
 
-  async updateClearanceItem(id: string, isCleared: boolean, remarks?: string): Promise<ClearanceChecklist> {
+  async updateClearanceItem(
+    id: string,
+    isCleared: boolean,
+    remarks?: string,
+  ): Promise<ClearanceChecklist> {
     const item = await this.clearanceRepo.findOne({ where: { id } });
     if (!item) throw new NotFoundException('Clearance item not found');
 
@@ -935,7 +974,10 @@ export class HrService implements OnModuleInit {
     return this.clearanceRepo.save(item);
   }
 
-  async submitExitInterview(employeeId: string, responses: any): Promise<ExitInterview> {
+  async submitExitInterview(
+    employeeId: string,
+    responses: any,
+  ): Promise<ExitInterview> {
     const interview = this.exitInterviewRepo.create({
       employeeId,
       responses,
@@ -952,19 +994,21 @@ export class HrService implements OnModuleInit {
     const checkIn = this.okrCheckInRepo.create({
       ...dto,
       checkInDate: new Date().toISOString(),
-    });
+    }) as unknown as OKRCheckIn;
 
     const saved = await this.okrCheckInRepo.save(checkIn);
 
     // Update current value in KeyResult
-    await this.keyResultRepo.update(dto.keyResultId, { currentValue: dto.value });
+    await this.keyResultRepo.update(dto.keyResultId, {
+      currentValue: dto.value,
+    });
 
     // Recalculate overall OKR progress
-    const keyResult = await this.keyResultRepo.findOne({ 
+    const keyResult = await this.keyResultRepo.findOne({
       where: { id: dto.keyResultId },
-      relations: ['performanceReview']
+      relations: ['performanceReview'],
     });
-    
+
     if (keyResult) {
       await this.calculateOKRProgress(keyResult.performanceReviewId);
     }
@@ -981,18 +1025,23 @@ export class HrService implements OnModuleInit {
     if (!review || !review.keyResults.length) return 0;
 
     let totalProgress = 0;
-    let totalWeight = 0;
+    let _totalWeight = 0;
 
-    review.keyResults.forEach(kr => {
-      const progress = Math.min((Number(kr.currentValue) / Number(kr.targetValue)) * 100, 100);
+    review.keyResults.forEach((kr) => {
+      const progress = Math.min(
+        (Number(kr.currentValue) / Number(kr.targetValue)) * 100,
+        100,
+      );
       totalProgress += progress * (Number(kr.weight) / 100);
-      totalWeight += Number(kr.weight);
+      _totalWeight += Number(kr.weight);
     });
 
-    // If weights don't add up to 100, normalize? 
+    // If weights don't add up to 100, normalize?
     // For now just use the weighted average
     const finalProgress = Math.round(totalProgress);
-    await this.performanceRepo.update(performanceReviewId, { progress: finalProgress });
+    await this.performanceRepo.update(performanceReviewId, {
+      progress: finalProgress,
+    });
 
     return finalProgress;
   }
@@ -1002,7 +1051,7 @@ export class HrService implements OnModuleInit {
    */
 
   async createTrainingCourse(dto: any): Promise<TrainingCourse> {
-    const course = this.courseRepo.create(dto);
+    const course = this.courseRepo.create(dto) as unknown as TrainingCourse;
     return this.courseRepo.save(course);
   }
 
@@ -1010,7 +1059,10 @@ export class HrService implements OnModuleInit {
     return this.courseRepo.find({ where: { isActive: true } });
   }
 
-  async enrollEmployeeInTraining(employeeId: string, courseId: string): Promise<Training> {
+  async enrollEmployeeInTraining(
+    employeeId: string,
+    courseId: string,
+  ): Promise<Training> {
     const course = await this.courseRepo.findOne({ where: { id: courseId } });
     if (!course) throw new NotFoundException('Course not found');
 
@@ -1028,7 +1080,11 @@ export class HrService implements OnModuleInit {
     return this.trainingRepo.save(training);
   }
 
-  async updateTrainingStatus(id: string, status: TrainingStatus, certificateUrl?: string): Promise<Training> {
+  async updateTrainingStatus(
+    id: string,
+    status: TrainingStatus,
+    certificateUrl?: string,
+  ): Promise<Training> {
     const training = await this.trainingRepo.findOne({ where: { id } });
     if (!training) throw new NotFoundException('Training record not found');
 
@@ -1046,7 +1102,7 @@ export class HrService implements OnModuleInit {
    */
 
   async createSkillInCatalog(dto: any): Promise<SkillCatalog> {
-    const skill = this.skillCatalogRepo.create(dto);
+    const skill = this.skillCatalogRepo.create(dto) as any;
     return this.skillCatalogRepo.save(skill);
   }
 
@@ -1054,8 +1110,14 @@ export class HrService implements OnModuleInit {
     return this.skillCatalogRepo.find({ where: { isActive: true } });
   }
 
-  async addSkillToEmployee(employeeId: string, catalogId: string, proficiency: number): Promise<Skill> {
-    const catalogItem = await this.skillCatalogRepo.findOne({ where: { id: catalogId } });
+  async addSkillToEmployee(
+    employeeId: string,
+    catalogId: string,
+    proficiency: number,
+  ): Promise<Skill> {
+    const catalogItem = await this.skillCatalogRepo.findOne({
+      where: { id: catalogId },
+    });
     if (!catalogItem) throw new NotFoundException('Skill not found in catalog');
 
     const skill = this.skillRepo.create({
@@ -1064,7 +1126,7 @@ export class HrService implements OnModuleInit {
       skillName: catalogItem.name,
       proficiency,
       lastAssessed: new Date().toISOString(),
-    });
+    }) as any;
 
     return this.skillRepo.save(skill);
   }
@@ -1077,7 +1139,7 @@ export class HrService implements OnModuleInit {
     // Transform into a matrix format for the grid view
     // Group by employee
     const matrix = {};
-    skills.forEach(s => {
+    skills.forEach((s) => {
       const empName = `${s.employee.firstName} ${s.employee.lastName}`;
       if (!matrix[empName]) matrix[empName] = {};
       matrix[empName][s.skillName] = s.proficiency;
@@ -1091,7 +1153,7 @@ export class HrService implements OnModuleInit {
    */
 
   async submitReviewFeedback(dto: any): Promise<ReviewFeedback> {
-    const feedback = this.feedbackRepo.create(dto);
+    const feedback = this.feedbackRepo.create(dto) as any;
     return this.feedbackRepo.save(feedback);
   }
 
@@ -1100,7 +1162,11 @@ export class HrService implements OnModuleInit {
       where: { performanceReviewId },
     });
 
-    const summary = {
+    const summary: {
+      averageRating: number;
+      breakdown: Record<string, { count: number; avg: number }>;
+      comments: Array<{ type: string; comment: string; date: Date }>;
+    } = {
       averageRating: 0,
       breakdown: {
         PEER: { count: 0, avg: 0 },
@@ -1114,18 +1180,28 @@ export class HrService implements OnModuleInit {
     if (!feedbackList.length) return summary;
 
     let totalRating = 0;
-    feedbackList.forEach(f => {
+    feedbackList.forEach((f) => {
       totalRating += f.rating;
       summary.breakdown[f.type].count += 1;
       summary.breakdown[f.type].avg += f.rating;
-      summary.comments.push({ type: f.type, comment: f.comment, date: f.submittedAt });
+      summary.comments.push({
+        type: f.type,
+        comment: f.comment,
+        date: f.submittedAt,
+      });
     });
 
-    summary.averageRating = Number((totalRating / feedbackList.length).toFixed(2));
-    
-    Object.keys(summary.breakdown).forEach(type => {
+    summary.averageRating = Number(
+      (totalRating / feedbackList.length).toFixed(2),
+    );
+
+    Object.keys(summary.breakdown).forEach((type) => {
       if (summary.breakdown[type].count > 0) {
-        summary.breakdown[type].avg = Number((summary.breakdown[type].avg / summary.breakdown[type].count).toFixed(2));
+        summary.breakdown[type].avg = Number(
+          (summary.breakdown[type].avg / summary.breakdown[type].count).toFixed(
+            2,
+          ),
+        );
       }
     });
 
@@ -1137,18 +1213,24 @@ export class HrService implements OnModuleInit {
    */
 
   async createPIPActionPlan(dto: any): Promise<PIPActionPlan> {
-    const plan = this.pipRepo.create(dto);
+    const plan = this.pipRepo.create(dto) as any;
     return this.pipRepo.save(plan);
   }
 
-  async getPIPActionPlans(performanceReviewId: string): Promise<PIPActionPlan[]> {
+  async getPIPActionPlans(
+    performanceReviewId: string,
+  ): Promise<PIPActionPlan[]> {
     return this.pipRepo.find({
       where: { performanceReviewId },
       order: { reviewDate: 'ASC' },
     });
   }
 
-  async updatePIPActionPlanStatus(id: string, isAchieved: boolean, notes?: string): Promise<PIPActionPlan> {
+  async updatePIPActionPlanStatus(
+    id: string,
+    isAchieved: boolean,
+    notes?: string,
+  ): Promise<PIPActionPlan> {
     const plan = await this.pipRepo.findOne({ where: { id } });
     if (!plan) throw new NotFoundException('PIP plan not found');
 
@@ -1163,7 +1245,7 @@ export class HrService implements OnModuleInit {
    */
 
   async createENPSSurvey(dto: any): Promise<ENPSSurvey> {
-    const survey = this.enpsSurveyRepo.create(dto);
+    const survey = this.enpsSurveyRepo.create(dto) as any;
     return this.enpsSurveyRepo.save(survey);
   }
 
@@ -1172,7 +1254,7 @@ export class HrService implements OnModuleInit {
   }
 
   async submitENPSResponse(dto: any): Promise<ENPSResponse> {
-    const response = this.enpsResponseRepo.create(dto);
+    const response = this.enpsResponseRepo.create(dto) as any;
     return this.enpsResponseRepo.save(response);
   }
 
@@ -1182,13 +1264,14 @@ export class HrService implements OnModuleInit {
       relations: ['department'],
     });
 
-    if (!responses.length) return { score: 0, promoters: 0, passives: 0, detractors: 0 };
+    if (!responses.length)
+      return { score: 0, promoters: 0, passives: 0, detractors: 0 };
 
     let promoters = 0; // 9-10
     let passives = 0; // 7-8
     let detractors = 0; // 0-6
 
-    responses.forEach(r => {
+    responses.forEach((r) => {
       if (r.score >= 9) promoters++;
       else if (r.score >= 7) passives++;
       else detractors++;
@@ -1209,7 +1292,7 @@ export class HrService implements OnModuleInit {
         promoters: Math.round((promoters / total) * 100),
         passives: Math.round((passives / total) * 100),
         detractors: Math.round((detractors / total) * 100),
-      }
+      },
     };
   }
 
@@ -1218,7 +1301,7 @@ export class HrService implements OnModuleInit {
    */
 
   async createHandbook(dto: any): Promise<Handbook> {
-    const handbook = this.handbookRepo.create(dto);
+    const handbook = this.handbookRepo.create(dto) as any;
     return this.handbookRepo.save(handbook);
   }
 
@@ -1226,12 +1309,16 @@ export class HrService implements OnModuleInit {
     return this.handbookRepo.find({ order: { version: 'DESC' } });
   }
 
-  async acknowledgeHandbook(employeeId: string, handbookId: string, metadata: any): Promise<HandbookAcknowledgment> {
+  async acknowledgeHandbook(
+    employeeId: string,
+    handbookId: string,
+    metadata: any,
+  ): Promise<HandbookAcknowledgment> {
     const ack = this.handbookAckRepo.create({
       employeeId,
       handbookId,
       ...metadata,
-    });
+    }) as any;
     return this.handbookAckRepo.save(ack);
   }
 
@@ -1240,18 +1327,22 @@ export class HrService implements OnModuleInit {
    */
 
   async createSuccessionPlan(dto: any): Promise<SuccessionPlan> {
-    const plan = this.successionRepo.create(dto);
+    const plan = this.successionRepo.create(dto) as any;
     return this.successionRepo.save(plan);
   }
 
-  async getSuccessionPlansByDesignation(designationId: string): Promise<SuccessionPlan[]> {
+  async getSuccessionPlansByDesignation(
+    designationId: string,
+  ): Promise<SuccessionPlan[]> {
     return this.successionRepo.find({
       where: { designationId, isActive: true },
       relations: ['successor'],
     });
   }
 
-  async getSuccessionPlansByEmployee(employeeId: string): Promise<SuccessionPlan[]> {
+  async getSuccessionPlansByEmployee(
+    employeeId: string,
+  ): Promise<SuccessionPlan[]> {
     return this.successionRepo.find({
       where: { successorId: employeeId, isActive: true },
       relations: ['designation'],
@@ -1267,12 +1358,12 @@ export class HrService implements OnModuleInit {
       where: { id: performanceReviewId },
       relations: ['employee', 'employee.department'],
     });
-    
+
     const actions = await this.getPIPActionPlans(performanceReviewId);
 
     const template = `
       <h1>Performance Improvement Plan</h1>
-      <p><b>Employee:</b> {{employee.firstName} {{employee.lastName}}</p>
+      <p><b>Employee:</b> {{employee.firstName}} {{employee.lastName}}</p>
       <p><b>Department:</b> {{employee.department.name}}</p>
       <p><b>Period:</b> {{period}}</p>
       <h2>Objectives</h2>

@@ -12,18 +12,12 @@ import {
   HttpStatus,
   UseGuards,
   Res,
+  Req,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { HrService } from './hr.service';
-import {
-  ProfileChangeStatus,
-} from './entities/profile-change-request.entity';
-import {
-  ResignationStatus,
-} from './entities/resignation.entity';
-import {
-  TerminationType,
-} from './entities/termination.entity';
+import { ProfileChangeStatus } from './entities/profile-change-request.entity';
+import { ResignationStatus } from './entities/resignation.entity';
 import { TrainingStatus } from './entities/training.entity';
 import {
   CreateEmployeeDto,
@@ -61,9 +55,7 @@ import { CheckModule } from '../../common/guards/module.guard';
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @CheckModule('hr')
 export class HrController {
-  constructor(
-    private readonly hrService: HrService,
-  ) {}
+  constructor(private readonly hrService: HrService) {}
 
   @Post('employees')
   @RequirePermissions(Permission.HR_CREATE_EMPLOYEE)
@@ -84,7 +76,10 @@ export class HrController {
 
   @Patch('employees/:id')
   @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
-  updateEmployee(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateEmployeeDto>) {
+  updateEmployee(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Partial<CreateEmployeeDto>,
+  ) {
     return this.hrService.updateEmployee(id, dto);
   }
 
@@ -290,10 +285,7 @@ export class HrController {
   }
 
   @Post('employees/:id/resignation')
-  createResignation(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: any,
-  ) {
+  createResignation(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
     return this.hrService.createResignation(id, dto);
   }
 
@@ -301,7 +293,12 @@ export class HrController {
   @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
   updateResignationStatus(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: { status: ResignationStatus; approvedLastWorkingDay?: string; adminComments?: string },
+    @Body()
+    dto: {
+      status: ResignationStatus;
+      approvedLastWorkingDay?: string;
+      adminComments?: string;
+    },
   ) {
     return this.hrService.updateResignationStatus(id, dto);
   }
@@ -393,12 +390,6 @@ export class HrController {
     return this.hrService.addSkillToEmployee(id, catalogId, proficiency);
   }
 
-  @Get('skill-matrix')
-  @RequirePermissions(Permission.HR_VIEW_EMPLOYEES)
-  getSkillMatrix() {
-    return this.hrService.getSkillMatrix();
-  }
-
   @Post('review-feedback')
   submitReviewFeedback(@Body() dto: any) {
     return this.hrService.submitReviewFeedback(dto);
@@ -421,7 +412,10 @@ export class HrController {
   }
 
   @Get('performance-reviews/:id/pip-letter')
-  async downloadPIPLetter(@Param('id', ParseUUIDPipe) id: string, @Res() res: Response) {
+  async downloadPIPLetter(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ) {
     const buffer = await this.hrService.generatePIPLetter(id);
     res.set({
       'Content-Type': 'application/pdf',
@@ -432,7 +426,10 @@ export class HrController {
   }
 
   @Get('trainings/:id/certificate')
-  async downloadCertificate(@Param('id', ParseUUIDPipe) id: string, @Res() res: Response) {
+  async downloadCertificate(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ) {
     const buffer = await this.hrService.generateTrainingCertificate(id);
     res.set({
       'Content-Type': 'application/pdf',

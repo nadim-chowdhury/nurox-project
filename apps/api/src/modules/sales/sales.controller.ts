@@ -38,7 +38,7 @@ export class SalesController {
   @RequirePermissions(Permission.SALES_MANAGE_LEADS)
   createLead(@Body() dto: CreateLeadDto) {
     const parsed = createLeadSchema.parse(dto);
-    return this.salesService.createLead(parsed);
+    return this.salesService.createLead(parsed as any);
   }
 
   @Get('leads')
@@ -60,7 +60,7 @@ export class SalesController {
     @Body() dto: UpdateLeadDto,
   ) {
     const parsed = updateLeadSchema.parse(dto);
-    return this.salesService.updateLead(id, parsed);
+    return this.salesService.updateLead(id, parsed as any);
   }
 
   @Delete('leads/:id')
@@ -74,7 +74,7 @@ export class SalesController {
   @RequirePermissions(Permission.SALES_MANAGE_DEALS)
   createDeal(@Body() dto: CreateDealDto) {
     const parsed = createDealSchema.parse(dto);
-    return this.salesService.createDeal(parsed);
+    return this.salesService.createDeal(parsed as any);
   }
 
   @Get('deals')
@@ -96,7 +96,7 @@ export class SalesController {
     @Body() dto: UpdateDealDto,
   ) {
     const parsed = updateDealSchema.parse(dto);
-    return this.salesService.updateDeal(id, parsed);
+    return this.salesService.updateDeal(id, parsed as any);
   }
 
   @Delete('deals/:id')

@@ -15,7 +15,7 @@ export default async function DashboardPage({
     compare?: string;
   }>;
 }) {
-  const { locale } = await params;
+  const { locale: _locale } = await params;
   const { from, to, compare } = await searchParams;
 
   const startDate = from ? dayjs(from) : dayjs().subtract(30, "d");

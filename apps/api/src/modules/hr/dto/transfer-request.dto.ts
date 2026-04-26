@@ -1,4 +1,10 @@
-import { IsUUID, IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
+import {
+  IsUUID,
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { TransferStatus } from '../entities/transfer-request.entity';
 
 export class CreateTransferRequestDto {

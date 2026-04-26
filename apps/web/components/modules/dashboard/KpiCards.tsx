@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Row, Col, Card, Statistic } from "antd";
 import {
   TeamOutlined,
@@ -22,10 +22,10 @@ export function KpiCards({ dateRange }: Props) {
   const dispatch = useAppDispatch();
   const token = useAppSelector((state) => state.auth.accessToken);
   
-  const params = {
+  const params = useMemo(() => ({
     startDate: dateRange[0].toISOString(),
     endDate: dateRange[1].toISOString(),
-  };
+  }), [dateRange]);
 
   const { data: kpis, isLoading } = useGetKPIsQuery(params);
 

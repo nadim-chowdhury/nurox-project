@@ -20,7 +20,6 @@ import {
   EditOutlined,
   RocketOutlined,
   HistoryOutlined,
-  CheckCircleOutlined,
   ArrowLeftOutlined,
   SwapOutlined,
   StopOutlined,
@@ -246,7 +245,7 @@ export default function EmployeeProfilePage() {
                 {emp.phone}
               </Descriptions.Item>
               <Descriptions.Item label={<span style={{ color: 'var(--color-on-surface-variant)' }}>Manager</span>}>
-                {emp.manager ? `${emp.manager.firstName} ${emp.manager.lastName}` : "N/A"}
+                {(emp as any).manager ? `${(emp as any).manager.firstName} ${(emp as any).manager.lastName}` : "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label={<span style={{ color: 'var(--color-on-surface-variant)' }}>Employment</span>}>
                 {emp.employmentType}

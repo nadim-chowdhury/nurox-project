@@ -9,10 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { LeaveService } from './leave.service';
-import {
-  leaveRequestSchema,
-  type LeaveRequestDto,
-} from '@repo/shared-schemas';
+import { leaveRequestSchema, type LeaveRequestDto } from '@repo/shared-schemas';
 import { LeaveRequestStatus } from './entities/leave.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
@@ -53,5 +50,24 @@ export class LeaveController {
     @Body('approvedBy') approvedBy: string,
   ) {
     return this.leaveService.approveLeave(id, approvedBy, status);
+  }
+
+  @Post('grant-compensatory')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  async grantCompensatory(
+    @Body()
+    dto: {
+      employeeId: string;
+      days: number;
+      expiryDate: string;
+      reason: string;
+    },
+  ) {
+    return this.leaveService.grantCompensatoryLeave(
+      dto.employeeId,
+      dto.days,
+      dto.expiryDate,
+      dto.reason,
+    );
   }
 }

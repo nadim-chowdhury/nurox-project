@@ -7,7 +7,7 @@ import { useAppSelector } from "@/hooks/useRedux";
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const user = useAppSelector((state) => state.auth.user);
-  const tenantId = useAppSelector((state) => state.auth.tenantId);
+  const tenantId = useAppSelector((state) => state.auth.user?.tenantId);
 
   useEffect(() => {
     if (typeof window !== "undefined") {

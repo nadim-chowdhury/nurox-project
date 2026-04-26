@@ -40,13 +40,20 @@ export class TenantSubscriber implements EntitySubscriberInterface<TenantBaseEnt
    */
   beforeUpdate(event: UpdateEvent<TenantBaseEntity>) {
     const tenantId = this.cls.get('tenantId');
-    
+
     // If we are in a tenant context, the entity being updated MUST belong to that tenant.
-    if (tenantId && event.entity && event.entity.tenantId && event.entity.tenantId !== tenantId) {
+    if (
+      tenantId &&
+      event.entity &&
+      event.entity.tenantId &&
+      event.entity.tenantId !== tenantId
+    ) {
       this.logger.error(
         `Security Violation: Attempted to update entity belonging to tenant ${event.entity.tenantId} from context of tenant ${tenantId}`,
       );
-      throw new Error('Tenant isolation violation: Cannot update record from a different tenant context.');
+      throw new Error(
+        'Tenant isolation violation: Cannot update record from a different tenant context.',
+      );
     }
   }
 }

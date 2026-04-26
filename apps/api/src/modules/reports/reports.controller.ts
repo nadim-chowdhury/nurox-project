@@ -4,7 +4,6 @@ import {
   Post,
   Body,
   Param,
-  Query,
   UseGuards,
   Req,
   Res,
@@ -26,34 +25,46 @@ export class ReportsController {
 
   @Post('templates')
   @ApiOperation({ summary: 'Create a new report template' })
-  @RequirePermissions(Permission.ADMIN_WRITE)
+  @RequirePermissions(Permission.REPORTS_WRITE)
   async createTemplate(@Req() req: any, @Body() dto: any) {
     return this.reportsService.createTemplate(req.tenantId, req.user.id, dto);
   }
 
   @Get('templates')
   @ApiOperation({ summary: 'List all report templates' })
-  @RequirePermissions(Permission.ADMIN_READ)
+  @RequirePermissions(Permission.REPORTS_READ)
   async findAllTemplates(@Req() req: any) {
     return this.reportsService.findAllTemplates(req.tenantId);
   }
 
   @Post('execute/:templateId')
   @ApiOperation({ summary: 'Execute a report' })
-  @RequirePermissions(Permission.ADMIN_READ)
-  async executeReport(@Req() req: any, @Param('templateId') templateId: string, @Body() body: { filters?: any[] }) {
-    return this.reportsService.executeReport(req.tenantId, templateId, body.filters);
+  @RequirePermissions(Permission.REPORTS_READ)
+  async executeReport(
+    @Req() req: any,
+    @Param('templateId') templateId: string,
+    @Body() body: { filters?: any[] },
+  ) {
+    return this.reportsService.executeReport(
+      req.tenantId,
+      templateId,
+      body.filters,
+    );
   }
 
   @Get('export/pdf/:templateId')
   @ApiOperation({ summary: 'Export a report to PDF' })
-  @RequirePermissions(Permission.ADMIN_READ)
-  async exportPdf(@Req() req: any, @Param('templateId') templateId: string, @Res() res: Response) {
+  @RequirePermissions(Permission.REPORTS_READ)
+  async exportPdf(
+    @Req() req: any,
+    @Param('templateId') templateId: string,
+    @Res() res: Response,
+  ) {
     const pdf = await this.reportsService.generatePdf(req.tenantId, templateId);
     res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename=report.pdf',
-        'Content-Length': pdf.length,
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename=report.pdf',
+      'Content-Length': pdf.length,
     });
     res.send(pdf);
   }

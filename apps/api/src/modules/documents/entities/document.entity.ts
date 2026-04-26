@@ -16,7 +16,9 @@ export class Document extends TenantBaseEntity {
   @Column({ type: 'uuid', nullable: true })
   folderId: string | null;
 
-  @ManyToOne(() => DocumentFolder, (folder) => folder.documents, { onDelete: 'SET NULL' })
+  @ManyToOne(() => DocumentFolder, (folder) => folder.documents, {
+    onDelete: 'SET NULL',
+  })
   folder: DocumentFolder | null;
 
   @Column({ type: 'uuid' })

@@ -33,34 +33,43 @@ export class TenantMiddleware implements NestMiddleware {
     }
 
     if (!tenantIdentifier || tenantIdentifier === 'public') {
-        // Some routes might be truly public/system-wide
-        req['tenantId'] = null;
-        return next();
+      // Some routes might be truly public/system-wide
+      req['tenantId'] = null;
+      return next();
     }
 
     // 2. Resolve UUID if it's a slug
     // We'll use a simple query for now. In production, this should be cached (Redis/In-memory).
     let tenant: Tenant | null = null;
-    
+
     // Check if it's already a UUID
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(tenantIdentifier);
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        tenantIdentifier,
+      );
 
     if (isUuid) {
-        tenant = await this.dataSource.getRepository(Tenant).findOneBy({ id: tenantIdentifier });
+      tenant = await this.dataSource
+        .getRepository(Tenant)
+        .findOneBy({ id: tenantIdentifier });
     } else {
-        // Try slug first
-        tenant = await this.dataSource.getRepository(Tenant).findOneBy({ schemaNamespace: tenantIdentifier });
-        
-        // If not found, try custom domain
-        if (!tenant) {
-          const customDomain = await this.dataSource.getRepository(TenantCustomDomain).findOne({
+      // Try slug first
+      tenant = await this.dataSource
+        .getRepository(Tenant)
+        .findOneBy({ schemaNamespace: tenantIdentifier });
+
+      // If not found, try custom domain
+      if (!tenant) {
+        const customDomain = await this.dataSource
+          .getRepository(TenantCustomDomain)
+          .findOne({
             where: { hostname: tenantIdentifier, isVerified: true },
             relations: ['tenant'],
           });
-          if (customDomain) {
-            tenant = customDomain.tenant;
-          }
+        if (customDomain) {
+          tenant = customDomain.tenant;
         }
+      }
     }
 
     if (!tenant) {
@@ -75,7 +84,9 @@ export class TenantMiddleware implements NestMiddleware {
     if (tenant.ipAllowlist && tenant.ipAllowlist.length > 0) {
       const clientIp = req.ip || req.socket.remoteAddress;
       if (clientIp && !tenant.ipAllowlist.includes(clientIp)) {
-        throw new ForbiddenException(`Access denied from IP ${clientIp}. This tenant has IP white-listing enabled.`);
+        throw new ForbiddenException(
+          `Access denied from IP ${clientIp}. This tenant has IP white-listing enabled.`,
+        );
       }
     }
 

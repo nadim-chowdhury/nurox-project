@@ -112,12 +112,6 @@ export default function OrgChartPage() {
               },
             })
           }
-          styles={{
-            links: {
-              stroke: "#c3f5ff",
-              strokeWidth: 2,
-            },
-          }}
         />
       </div>
     </div>

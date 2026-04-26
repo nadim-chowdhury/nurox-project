@@ -77,4 +77,3 @@ export class BillLine extends TenantBaseEntity {
   @Column({ type: 'uuid', nullable: true })
   accountId: string | null;
 }
-

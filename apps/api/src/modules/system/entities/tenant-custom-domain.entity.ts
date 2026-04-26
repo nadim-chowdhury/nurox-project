@@ -29,6 +29,9 @@ export class TenantCustomDomain {
   @Column({ type: 'boolean', default: false })
   isVerified: boolean;
 
+  @Column({ type: 'timestamptz', nullable: true })
+  verifiedAt: Date;
+
   @Column({ type: 'varchar', length: 100, nullable: true })
   verificationToken: string;
 

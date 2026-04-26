@@ -37,7 +37,7 @@ export default function middleware(request: NextRequest) {
 
   if (isLocalhost) {
     const parts = hostname.split(".");
-    if (parts.length > 1) {
+    if (parts.length > 1 && parts[0]) {
       tenantId = parts[0];
     }
   } else if (hostname.endsWith(`.${baseDomain}`)) {

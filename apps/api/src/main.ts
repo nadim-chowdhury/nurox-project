@@ -35,7 +35,11 @@ async function bootstrap() {
   app.enableCors({
     origin: (origin, callback) => {
       const subdomainPattern = /^https?:\/\/([\w-]+\.)?nurox\.app$/;
-      if (!origin || subdomainPattern.test(origin) || allowedOrigins.includes(origin)) {
+      if (
+        !origin ||
+        subdomainPattern.test(origin) ||
+        allowedOrigins.includes(origin)
+      ) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));

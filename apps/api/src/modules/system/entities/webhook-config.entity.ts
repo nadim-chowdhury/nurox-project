@@ -3,7 +3,6 @@ import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 
 @Entity('webhook_configs')
 export class WebhookConfig extends TenantBaseEntity {
-
   @Column({ type: 'varchar', length: 255 })
   name: string;
 

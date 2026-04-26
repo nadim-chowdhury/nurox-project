@@ -27,7 +27,7 @@ export function QuickActionButton() {
       icon: <FileTextOutlined />,
       tooltip: "Create Invoice",
       onClick: () => router.push('/finance/invoices'),
-      visible: canPerform(Permission.FINANCE_UPDATE_INVOICES),
+      visible: canPerform(Permission.FINANCE_MANAGE_INVOICES),
     },
     {
       icon: <CalendarOutlined />,
@@ -39,7 +39,7 @@ export function QuickActionButton() {
       icon: <ProjectOutlined />,
       tooltip: "Add Task",
       onClick: () => router.push('/projects/tasks'),
-      visible: canPerform(Permission.PROJECTS_UPDATE),
+      visible: canPerform(Permission.PROJECTS_MANAGE),
     },
   ];
 

@@ -70,4 +70,3 @@ export class InvoiceLine extends TenantBaseEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   lineTotal: number;
 }
-

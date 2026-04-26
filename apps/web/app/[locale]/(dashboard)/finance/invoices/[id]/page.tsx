@@ -9,8 +9,6 @@ import {
   Space,
   Row,
   Col,
-  Tag,
-  Divider,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -150,7 +148,7 @@ const columns: ColumnsType<InvoiceItem> = [
 ];
 
 export default function InvoiceDetailPage() {
-  const params = useParams();
+  const _params = useParams();
   const router = useRouter();
 
   return (

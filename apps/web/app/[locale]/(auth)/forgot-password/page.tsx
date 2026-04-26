@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Form, Input, Button, Typography, Alert, Result } from "antd";
+import { Form, Input, Button, Typography, Result } from "antd";
 import { MailOutlined } from "@ant-design/icons";
 import Link from "next/link";
 

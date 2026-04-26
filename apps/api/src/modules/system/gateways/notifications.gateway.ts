@@ -1,12 +1,11 @@
 import {
   WebSocketGateway,
   WebSocketServer,
-  SubscribeMessage,
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, UseGuards } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
 @WebSocketGateway({
@@ -27,7 +26,9 @@ export class NotificationsGateway
 
   async handleConnection(client: Socket) {
     try {
-      const token = client.handshake.auth.token || client.handshake.headers.authorization?.split(' ')[1];
+      const token =
+        client.handshake.auth.token ||
+        client.handshake.headers.authorization?.split(' ')[1];
       if (!token) {
         client.disconnect();
         return;
@@ -44,9 +45,9 @@ export class NotificationsGateway
 
       await client.join(`user:${userId}`);
       await client.join(`tenant:${tenantId}`);
-      
+
       this.logger.log(`User ${userId} connected to tenant ${tenantId}`);
-    } catch (e) {
+    } catch (_e) {
       client.disconnect();
     }
   }

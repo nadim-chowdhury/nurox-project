@@ -6,12 +6,12 @@ import { useTransferEmployeeMutation, useGetDepartmentsQuery, useGetDesignations
 import dayjs from "dayjs";
 
 interface Props {
-  employeeId: string;
-  visible: boolean;
+  employee: any;
+  open: boolean;
   onClose: () => void;
 }
 
-export const TransferEmployeeModal: React.FC<Props> = ({ employeeId, visible, onClose }) => {
+export const TransferEmployeeModal: React.FC<Props> = ({ employee, open, onClose }) => {
   const [form] = Form.useForm();
   const [transfer, { isLoading }] = useTransferEmployeeMutation();
   const { data: departments } = useGetDepartmentsQuery();
@@ -21,7 +21,7 @@ export const TransferEmployeeModal: React.FC<Props> = ({ employeeId, visible, on
     try {
       const values = await form.validateFields();
       await transfer({
-        id: employeeId,
+        id: employee.id,
         data: {
           ...values,
           effectiveDate: dayjs(values.effectiveDate).toISOString(),
@@ -38,7 +38,7 @@ export const TransferEmployeeModal: React.FC<Props> = ({ employeeId, visible, on
   return (
     <Modal
       title="Transfer / Promote Employee"
-      open={visible}
+      open={open}
       onOk={handleOk}
       onCancel={onClose}
       confirmLoading={isLoading}

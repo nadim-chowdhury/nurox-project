@@ -38,7 +38,7 @@ export class ProjectsController {
   @RequirePermissions(Permission.PROJECTS_MANAGE)
   createProject(@Body() dto: CreateProjectDto) {
     const parsed = createProjectSchema.parse(dto);
-    return this.projectsService.createProject(parsed);
+    return this.projectsService.createProject(parsed as any);
   }
 
   @Get()
@@ -60,7 +60,7 @@ export class ProjectsController {
     @Body() dto: UpdateProjectDto,
   ) {
     const parsed = updateProjectSchema.parse(dto);
-    return this.projectsService.updateProject(id, parsed);
+    return this.projectsService.updateProject(id, parsed as any);
   }
 
   @Delete(':id')
@@ -74,7 +74,7 @@ export class ProjectsController {
   @RequirePermissions(Permission.PROJECTS_MANAGE)
   createTask(@Body() dto: CreateTaskDto) {
     const parsed = createTaskSchema.parse(dto);
-    return this.projectsService.createTask(parsed);
+    return this.projectsService.createTask(parsed as any);
   }
 
   @Patch('tasks/:id')
@@ -84,7 +84,7 @@ export class ProjectsController {
     @Body() dto: UpdateTaskDto,
   ) {
     const parsed = updateTaskSchema.parse(dto);
-    return this.projectsService.updateTask(id, parsed);
+    return this.projectsService.updateTask(id, parsed as any);
   }
 
   @Delete('tasks/:id')

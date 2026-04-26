@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Row, Col, Card, Statistic, Spin, Typography, Space } from "antd";
+import { Row, Col, Card, Spin, Space } from "antd";
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, BarChart, Bar, Legend
@@ -14,7 +14,6 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { KpiCard } from "@/components/common/KpiCard";
 import { useGetHRAnalyticsQuery } from "@/store/api/analyticsApi";
 
-const { Title, Text } = Typography;
 const COLORS = ["#c3f5ff", "#80d8ff", "#6dd58c", "#ffb347", "#ffb4ab"];
 
 export default function HRAnalyticsPage() {
@@ -100,7 +99,7 @@ export default function HRAnalyticsPage() {
                   dataKey="value"
                   nameKey="type"
                 >
-                  {data.genderDiversity.map((entry, index) => (
+                  {data.genderDiversity.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

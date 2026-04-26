@@ -109,4 +109,24 @@ export class MailerService {
       `,
     });
   }
+
+  async sendVerificationEmail(email: string, token: string) {
+    const verifyUrl = `${this.configService.get('app.corsOrigin')}/verify-email?token=${token}`;
+    await this.sendMail({
+      to: email,
+      subject: 'Verify your email — Nurox ERP',
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
+          <h2 style="color: #00b96b;">Email Verification</h2>
+          <p>Thank you for signing up for Nurox ERP. Please verify your email address by clicking the button below.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verifyUrl}" style="background-color: #00b96b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Verify Email</a>
+          </div>
+          <p>If you didn't create an account, you can safely ignore this email.</p>
+          <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+          <p style="font-size: 12px; color: #666;">This is an automated message, please do not reply.</p>
+        </div>
+      `,
+    });
+  }
 }

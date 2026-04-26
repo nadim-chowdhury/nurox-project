@@ -20,9 +20,9 @@ export class UserDashboardService {
   async saveUserWidgets(userId: string, widgets: any[]) {
     // We'll replace all existing widgets for this user to keep it simple
     // or we could use an upsert logic. Upsert is better.
-    
+
     await this.widgetRepo.delete({ userId });
-    
+
     const entities = widgets.map((w, index) => {
       return this.widgetRepo.create({
         userId,

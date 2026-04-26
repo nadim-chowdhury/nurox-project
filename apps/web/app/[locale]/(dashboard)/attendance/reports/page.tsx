@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Row, Col, Card, Statistic, Table } from "antd";
+import { Row, Col, Card, Table } from "antd";
 import { PageHeader } from "@/components/common/PageHeader";
 import { KpiCard } from "@/components/common/KpiCard";
 import { Avatar } from "@/components/common/Avatar";

@@ -1,11 +1,8 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import { Entity, Column } from 'typeorm';
 import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 
 @Entity('payroll_audits')
 export class PayrollAudit extends TenantBaseEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
   @Column({ type: 'uuid' })
   payrollRunId: string;
 
@@ -20,7 +17,4 @@ export class PayrollAudit extends TenantBaseEntity {
 
   @Column({ type: 'jsonb', nullable: true })
   afterValue: any;
-
-  @CreateDateColumn()
-  createdAt: Date;
 }

@@ -1,13 +1,19 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LeaveRequest, LeaveBalance } from './entities/leave.entity';
+import { CompensatoryLeave } from './entities/comp-leave.entity';
 import { Employee } from '../hr/entities/employee.entity';
 import { LeaveService } from './leave.service';
 import { LeaveController } from './leave.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([LeaveRequest, LeaveBalance, Employee]),
+    TypeOrmModule.forFeature([
+      LeaveRequest,
+      LeaveBalance,
+      Employee,
+      CompensatoryLeave,
+    ]),
   ],
   controllers: [LeaveController],
   providers: [LeaveService],

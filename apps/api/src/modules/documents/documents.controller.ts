@@ -27,7 +27,10 @@ export class DocumentsController {
   @Post('upload-url')
   @ApiOperation({ summary: 'Get a pre-signed URL for document upload' })
   @RequirePermissions(Permission.DOCUMENT_WRITE)
-  async getUploadUrl(@Req() req: any, @Body() dto: { name: string; type?: string; folderId?: string }) {
+  async getUploadUrl(
+    @Req() req: any,
+    @Body() dto: { name: string; type?: string; folderId?: string },
+  ) {
     return this.documentsService.getUploadUrl(req.user.id, req.tenantId, dto);
   }
 
@@ -41,15 +44,33 @@ export class DocumentsController {
   @Post(':id/version')
   @ApiOperation({ summary: 'Create a new version for a document' })
   @RequirePermissions(Permission.DOCUMENT_WRITE)
-  async createVersion(@Req() req: any, @Param('id') id: string, @Body() dto: any) {
-    return this.documentsService.createVersion(req.user.id, req.tenantId, id, dto);
+  async createVersion(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() dto: any,
+  ) {
+    return this.documentsService.createVersion(
+      req.user.id,
+      req.tenantId,
+      id,
+      dto,
+    );
   }
 
   @Get(':id/download')
   @ApiOperation({ summary: 'Get a pre-signed URL for document download' })
   @RequirePermissions(Permission.DOCUMENT_READ)
-  async getDownloadUrl(@Req() req: any, @Param('id') id: string, @Query('version') version?: number) {
-    return this.documentsService.getDownloadUrl(req.user.id, req.tenantId, id, version);
+  async getDownloadUrl(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Query('version') version?: number,
+  ) {
+    return this.documentsService.getDownloadUrl(
+      req.user.id,
+      req.tenantId,
+      id,
+      version,
+    );
   }
 
   @Get()
@@ -62,7 +83,10 @@ export class DocumentsController {
   @Post('folders')
   @ApiOperation({ summary: 'Create a new folder' })
   @RequirePermissions(Permission.DOCUMENT_WRITE)
-  async createFolder(@Req() req: any, @Body() dto: { name: string; parentId?: string }) {
+  async createFolder(
+    @Req() req: any,
+    @Body() dto: { name: string; parentId?: string },
+  ) {
     return this.documentsService.createFolder(req.user.id, req.tenantId, dto);
   }
 

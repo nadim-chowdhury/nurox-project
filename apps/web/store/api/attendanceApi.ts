@@ -1,11 +1,8 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "@/lib/api-client";
 import type {
-  AttendanceRecordDto,
   LeaveRequestDto,
   LeaveBalanceDto,
-  HolidayDto,
-  ShiftDto,
 } from "@repo/shared-schemas";
 
 export const attendanceApi = createApi({
@@ -113,6 +110,7 @@ export const {
   useGetTeamAttendanceQuery,
   useCheckInMutation,
   useCheckOutMutation,
+  useGetCheckInQrQuery,
   useLazyGetCheckInQrQuery,
   useBulkImportAttendanceMutation,
   useLazyGetAttendanceReportUrlQuery,

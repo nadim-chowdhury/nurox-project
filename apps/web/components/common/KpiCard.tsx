@@ -9,6 +9,9 @@ interface KpiCardProps extends StatisticProps {
   trendValue?: string;
   trendLabel?: string;
   loading?: boolean;
+  icon?: React.ReactNode;
+  color?: string;
+  extra?: React.ReactNode;
 }
 
 /**
@@ -20,6 +23,9 @@ export function KpiCard({
   trendValue,
   trendLabel = "vs last month",
   loading,
+  icon,
+  color,
+  extra,
   ...props
 }: KpiCardProps) {
   if (loading) {
@@ -32,7 +38,12 @@ export function KpiCard({
 
   return (
     <Card className="kpi-card" style={{ padding: 4 }}>
-      <Statistic {...props} />
+      <Statistic 
+        prefix={icon} 
+        valueStyle={{ color }}
+        {...props} 
+      />
+      {extra && <div style={{ marginTop: 8 }}>{extra}</div>}
       {trend && trendValue && (
         <div
           style={{

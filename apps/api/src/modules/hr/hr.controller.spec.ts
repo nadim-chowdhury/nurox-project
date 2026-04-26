@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { HrController } from './hr.controller';
 import { HrService } from './hr.service';
-import { AttendanceService } from './attendance.service';
+import { AttendanceService } from '../attendance/attendance.service';
 import { Role } from '../auth/entities/role.entity';
 
 describe('HrController', () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Row, Col, Card, Table, Tag, Button, Space, message, DatePicker } from "antd";
+import { Row, Col, Card, Table, Tag, Button, Space, message, DatePicker, Modal } from "antd";
 import {
   ClockCircleOutlined,
   CheckCircleOutlined,
@@ -11,6 +11,7 @@ import {
   UploadOutlined,
   FileExcelOutlined,
   EnvironmentOutlined,
+  QrcodeOutlined,
 } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { KpiCard } from "@/components/common/KpiCard";
@@ -21,6 +22,8 @@ import type { ColumnsType } from "antd/es/table";
 import { useGetTeamAttendanceQuery, useCheckInMutation } from "@/store/api/attendanceApi";
 import { AttendanceEntryModal } from "@/components/modules/hr/attendance/AttendanceEntryModal";
 import { BulkImportModal } from "@/components/modules/hr/attendance/BulkImportModal";
+import { QRKiosk } from "@/components/modules/hr/attendance/QRKiosk";
+import { QRCheckIn } from "@/components/modules/hr/attendance/QRCheckIn";
 import dayjs from "dayjs";
 
 const columns: ColumnsType<any> = [
@@ -104,6 +107,8 @@ export default function AttendancePage() {
 
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [isKioskOpen, setIsKioskOpen] = useState(false);
+  const [isQrOpen, setIsQrOpen] = useState(false);
 
   const present = records?.filter((r) => r.status === "PRESENT").length || 0;
   const late = records?.filter((r) => r.status === "LATE").length || 0;
@@ -137,7 +142,6 @@ export default function AttendancePage() {
   const handleExport = async () => {
       const month = dayjs().month() + 1;
       const year = dayjs().year();
-      // Implementation for direct download or opening the URL
       window.open(`/api/attendance/report?month=${month}&year=${year}`, '_blank');
   };
 
@@ -151,7 +155,10 @@ export default function AttendancePage() {
           { label: "Attendance" },
         ]}
         extra={
-            <Space>
+            <Space wrap>
+                <Button icon={<QrcodeOutlined />} onClick={() => setIsQrOpen(true)}>
+                    My QR
+                </Button>
                 <Button icon={<EnvironmentOutlined />} onClick={handleGeoCheckIn} loading={isGeoLoading}>
                     Geo Check-In
                 </Button>
@@ -167,6 +174,22 @@ export default function AttendancePage() {
             </Space>
         }
       />
+
+      <Card 
+        style={{ marginBottom: 24, background: 'rgba(195, 245, 255, 0.05)', border: '1px dashed var(--color-primary)' }}
+        styles={{ body: { padding: 12 } }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <QrcodeOutlined style={{ fontSize: 24, color: 'var(--color-primary)' }} />
+                <div>
+                    <div style={{ fontWeight: 600, color: 'var(--color-on-surface)' }}>Attendance Kiosk Mode</div>
+                    <div style={{ fontSize: 12, color: 'var(--color-on-surface-variant)' }}>Enable tablet-friendly scanning at office entrance</div>
+                </div>
+            </div>
+            <Button type="primary" onClick={() => setIsKioskOpen(true)}>Launch Kiosk</Button>
+        </div>
+      </Card>
 
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={12} sm={6}>
@@ -226,6 +249,16 @@ export default function AttendancePage() {
 
       <AttendanceEntryModal open={isEntryModalOpen} onClose={() => setIsEntryModalOpen(false)} />
       <BulkImportModal open={isBulkModalOpen} onClose={() => setIsBulkModalOpen(false)} />
+      <QRKiosk open={isKioskOpen} onClose={() => setIsKioskOpen(false)} />
+      <Modal 
+        title="My Check-In QR" 
+        open={isQrOpen} 
+        onCancel={() => setIsQrOpen(false)} 
+        footer={null}
+        width={350}
+      >
+        <QRCheckIn />
+      </Modal>
     </div>
   );
 }

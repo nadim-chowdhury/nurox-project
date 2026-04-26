@@ -17,7 +17,11 @@ export class AnalyticsService {
     private readonly inventoryService: InventoryService,
   ) {}
 
-  async getDashboard(_startDate?: string, _endDate?: string, managerId?: string) {
+  async getDashboard(
+    _startDate?: string,
+    _endDate?: string,
+    managerId?: string,
+  ) {
     const [
       employeeCount,
       revenueMTD,
@@ -73,14 +77,25 @@ export class AnalyticsService {
   async getDepartmentKPIs() {
     // Mock department comparison data
     return [
-      { name: 'Engineering', employees: 45, budget: 120000, spend: 115000, tasks: 88 },
+      {
+        name: 'Engineering',
+        employees: 45,
+        budget: 120000,
+        spend: 115000,
+        tasks: 88,
+      },
       { name: 'Sales', employees: 12, budget: 80000, spend: 92000, tasks: 42 },
       { name: 'HR', employees: 5, budget: 30000, spend: 28000, tasks: 15 },
       { name: 'Finance', employees: 8, budget: 50000, spend: 48000, tasks: 22 },
     ];
   }
 
-  async getComparison(currentStart: string, currentEnd: string, prevStart: string, prevEnd: string) {
+  async getComparison(
+    currentStart: string,
+    currentEnd: string,
+    prevStart: string,
+    prevEnd: string,
+  ) {
     const [current, previous] = await Promise.all([
       this.getKPIs(currentStart, currentEnd),
       this.getKPIs(prevStart, prevEnd),
@@ -100,7 +115,7 @@ export class AnalyticsService {
 
   async getHRAnalytics() {
     const totalEmployees = await this.hrService.getCount();
-    
+
     // Mock data for trends
     return {
       totalEmployees,

@@ -3,12 +3,7 @@ import { baseQueryWithReauth } from "@/lib/api-client";
 import type {
   ProductDto,
   WarehouseDto,
-  ZoneDto,
-  RackDto,
-  BinDto,
-  StockMovementDto,
   StockAdjustmentDto,
-  StockCountDto,
 } from "@repo/shared-schemas";
 
 export const inventoryApi = createApi({

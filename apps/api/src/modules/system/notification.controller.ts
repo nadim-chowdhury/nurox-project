@@ -13,7 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { NotificationService } from './notification.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { GetUser } from '../auth/decorators/get-user.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
@@ -25,7 +25,7 @@ export class NotificationController {
   @Get()
   @ApiOperation({ summary: 'List all notifications for the current user' })
   async findAll(
-    @GetUser('id') userId: string,
+    @CurrentUser('id') userId: string,
     @Headers('x-tenant-id') tenantId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -42,7 +42,7 @@ export class NotificationController {
   @ApiOperation({ summary: 'Mark a notification as read' })
   async markAsRead(
     @Param('id', ParseUUIDPipe) id: string,
-    @GetUser('id') userId: string,
+    @CurrentUser('id') userId: string,
   ) {
     return this.notificationService.markAsRead(id, userId);
   }
@@ -50,7 +50,7 @@ export class NotificationController {
   @Post('read-all')
   @ApiOperation({ summary: 'Mark all notifications as read' })
   async markAllAsRead(
-    @GetUser('id') userId: string,
+    @CurrentUser('id') userId: string,
     @Headers('x-tenant-id') tenantId: string,
   ) {
     return this.notificationService.markAllAsRead(userId, tenantId);
@@ -60,7 +60,7 @@ export class NotificationController {
   @ApiOperation({ summary: 'Delete a notification' })
   async delete(
     @Param('id', ParseUUIDPipe) id: string,
-    @GetUser('id') userId: string,
+    @CurrentUser('id') userId: string,
   ) {
     return this.notificationService.delete(id, userId);
   }

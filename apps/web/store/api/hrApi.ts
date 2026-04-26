@@ -19,11 +19,11 @@ export interface Employee extends EmployeeResponseDto {
   department: any;
   designation: any;
   salary?: number;
-  dateOfBirth?: string;
-  gender?: string;
-  address?: string;
-  contractExpiryDate?: string;
-  probationEndDate?: string;
+  dateOfBirth?: string | null;
+  gender?: string | null;
+  address?: string | null;
+  contractExpiryDate?: string | null;
+  probationEndDate: string | null;
   skills?: any[];
 }
 

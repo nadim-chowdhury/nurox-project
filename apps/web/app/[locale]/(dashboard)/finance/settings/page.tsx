@@ -18,7 +18,7 @@ export default function FinanceSettings() {
       message.success("Tax rate created");
       setIsModalOpen(false);
       form.resetFields();
-    } catch (err: any) {
+    } catch (_err: any) {
       message.error("Failed to create tax rate");
     }
   };
@@ -32,7 +32,7 @@ export default function FinanceSettings() {
                   // Mock ID for current period
                   await closePeriod("current-period-uuid").unwrap();
                   message.success("Period closed and locked.");
-              } catch (err) {
+              } catch (_err) {
                   message.error("Failed to close period.");
               }
           }

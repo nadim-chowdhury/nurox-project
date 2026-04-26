@@ -12,7 +12,9 @@ export class DocumentFolder extends TenantBaseEntity {
   @Column({ type: 'uuid', nullable: true })
   parentId: string | null;
 
-  @ManyToOne(() => DocumentFolder, (folder) => folder.children, { onDelete: 'CASCADE' })
+  @ManyToOne(() => DocumentFolder, (folder) => folder.children, {
+    onDelete: 'CASCADE',
+  })
   parent: DocumentFolder | null;
 
   @OneToMany(() => DocumentFolder, (folder) => folder.parent)

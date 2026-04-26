@@ -41,7 +41,7 @@ export class HealthController {
     return this.health.check([
       // 1. Database
       () => this.db.pingCheck('database'),
-      
+
       // 2. Database Pool Stats
       async (): Promise<HealthIndicatorResult> => {
         const pool = (this.dataSource.driver as any).master;
@@ -59,7 +59,8 @@ export class HealthController {
       async (): Promise<HealthIndicatorResult> => {
         try {
           const info = await this.redis.getClient().info('memory');
-          const usedMemory = info.match(/used_memory_human:(.*)/)?.[1] || 'unknown';
+          const usedMemory =
+            info.match(/used_memory_human:(.*)/)?.[1] || 'unknown';
           return {
             redis: {
               status: 'up',
@@ -84,7 +85,8 @@ export class HealthController {
 
       // 5. WebSocket Connections
       async (): Promise<HealthIndicatorResult> => {
-        const count = this.notificationsGateway.server?.engine.clientsCount || 0;
+        const count =
+          this.notificationsGateway.server?.engine.clientsCount || 0;
         return {
           websockets: {
             status: 'up',
@@ -95,7 +97,7 @@ export class HealthController {
 
       // 6. Memory
       () => this.memory.checkRSS('memory_rss', 512 * 1024 * 1024),
-      
+
       // 7. Disk
       () =>
         this.disk.checkStorage('disk', {

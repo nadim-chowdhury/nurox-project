@@ -26,9 +26,9 @@ export class PayrollProcessor extends WorkerHost {
 
   private async handlePayslipDistribution(data: { runId: string }) {
     this.logger.log(`Distributing payslips for run: ${data.runId}`);
-    
+
     const payslips = await this.payrollService.getPayslipsByRun(data.runId);
-    
+
     for (const payslip of payslips) {
       try {
         await this.mailerService.sendMail({
@@ -40,10 +40,12 @@ export class PayrollProcessor extends WorkerHost {
                  <p>Regards,<br/>Payroll Team</p>`,
         });
       } catch (error) {
-        this.logger.error(`Failed to send payslip to ${payslip.employee.email}: ${error.message}`);
+        this.logger.error(
+          `Failed to send payslip to ${payslip.employee.email}: ${error.message}`,
+        );
       }
     }
-    
+
     this.logger.log(`Completed payslip distribution for run: ${data.runId}`);
   }
 }

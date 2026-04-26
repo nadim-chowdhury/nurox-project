@@ -1,11 +1,9 @@
 "use client";
 
-import { Upload, Button, Table, message, Space, Card, Tag } from "antd";
-import { UploadOutlined, CheckOutlined, SwapOutlined } from "@ant-design/icons";
-import { useState } from "react";
+import { Upload, Button, Table, message, Card } from "antd";
+import { UploadOutlined, SwapOutlined } from "@ant-design/icons";
 
 export default function BankReconciliation() {
-  const [fileList, setFileList] = useState([]);
   
   const handleUpload = (info: any) => {
     if (info.file.status === 'done') {

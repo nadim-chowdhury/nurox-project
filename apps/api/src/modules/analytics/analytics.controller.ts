@@ -63,7 +63,12 @@ export class AnalyticsController {
     @Query('prevStart') prevStart: string,
     @Query('prevEnd') prevEnd: string,
   ) {
-    return this.analyticsService.getComparison(currentStart, currentEnd, prevStart, prevEnd);
+    return this.analyticsService.getComparison(
+      currentStart,
+      currentEnd,
+      prevStart,
+      prevEnd,
+    );
   }
 
   @Get('hr')

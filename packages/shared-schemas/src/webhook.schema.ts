@@ -5,7 +5,7 @@ export const createWebhookSchema = z.object({
   url: z.string().url().max(500),
   events: z.array(z.string()).min(1),
   isActive: z.boolean().optional().default(true),
-  headers: z.record(z.string()).optional().nullable(),
+  headers: z.record(z.string(), z.string()).optional().nullable(),
 });
 
 export type CreateWebhookDto = z.infer<typeof createWebhookSchema>;

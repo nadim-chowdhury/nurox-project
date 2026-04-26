@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, IsNull } from 'typeorm';
 import { Asset } from './entities/asset.entity';
 import { AssetCategory } from './entities/asset-category.entity';
 import { AssetAssignment } from './entities/asset-assignment.entity';
@@ -59,7 +59,12 @@ export class AssetsService {
   async findOneAsset(tenantId: string, id: string) {
     const asset = await this.assetRepo.findOne({
       where: { id, tenantId },
-      relations: ['category', 'assignedEmployee', 'assignments', 'maintenances'],
+      relations: [
+        'category',
+        'assignedEmployee',
+        'assignments',
+        'maintenances',
+      ],
     });
     if (!asset) throw new NotFoundException('Asset not found');
     return asset;
@@ -73,7 +78,7 @@ export class AssetsService {
 
   async assignAsset(tenantId: string, id: string, dto: AssignAssetDto) {
     const asset = await this.findOneAsset(tenantId, id);
-    
+
     return await this.dataSource.transaction(async (manager) => {
       // Create assignment record
       const assignment = manager.create(AssetAssignment, {
@@ -100,7 +105,11 @@ export class AssetsService {
     return await this.dataSource.transaction(async (manager) => {
       // Find active assignment
       const assignment = await manager.findOne(AssetAssignment, {
-        where: { assetId: id, employeeId: asset.assignedEmployeeId!, returnDate: null },
+        where: {
+          assetId: id,
+          employeeId: asset.assignedEmployeeId!,
+          returnDate: IsNull(),
+        },
       });
 
       if (assignment) {
@@ -116,14 +125,20 @@ export class AssetsService {
     });
   }
 
-  async addMaintenance(tenantId: string, id: string, dto: CreateAssetMaintenanceDto) {
-    const asset = await this.findOneAsset(tenantId, id);
-    
+  async addMaintenance(
+    tenantId: string,
+    id: string,
+    dto: CreateAssetMaintenanceDto,
+  ) {
+    const _asset = await this.findOneAsset(tenantId, id);
+
     const maintenance = this.maintenanceRepo.create({
       ...dto,
       assetId: id,
       maintenanceDate: new Date(dto.maintenanceDate),
-      nextMaintenanceDate: dto.nextMaintenanceDate ? new Date(dto.nextMaintenanceDate) : null,
+      nextMaintenanceDate: dto.nextMaintenanceDate
+        ? new Date(dto.nextMaintenanceDate)
+        : null,
     });
 
     return await this.maintenanceRepo.save(maintenance);
@@ -131,7 +146,7 @@ export class AssetsService {
 
   async disposeAsset(tenantId: string, id: string, dto: DisposeAssetDto) {
     const asset = await this.findOneAsset(tenantId, id);
-    
+
     asset.status = 'DISPOSED';
     asset.disposalDate = new Date(dto.disposalDate);
     asset.disposalPrice = dto.disposalPrice;

@@ -1,4 +1,11 @@
-import { IsUUID, IsNumber, IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
+import {
+  IsUUID,
+  IsNumber,
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { RevisionStatus } from '../entities/salary-revision.entity';
 
 export class CreateSalaryRevisionDto {

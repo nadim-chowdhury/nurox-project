@@ -70,7 +70,7 @@ export default function SystemHealthPage() {
               suffix={`/ ${details.db_pool?.totalConnections || 0}`}
               prefix={<DatabaseOutlined />}
             />
-            <Text size="xs" type="secondary">Idle vs Total Connections</Text>
+            <Text type="secondary">Idle vs Total Connections</Text>
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
@@ -80,7 +80,7 @@ export default function SystemHealthPage() {
               value={details.redis?.usedMemory || 'N/A'}
               prefix={<CloudServerOutlined />}
             />
-            <Text size="xs" type="secondary">Used by cache & queues</Text>
+            <Text type="secondary">Used by cache & queues</Text>
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
@@ -90,7 +90,7 @@ export default function SystemHealthPage() {
               value={details.queues?.hr_queue_depth || 0}
               prefix={<ThunderboltOutlined />}
             />
-            <Text size="xs" type="secondary">Pending background jobs</Text>
+            <Text type="secondary">Pending background jobs</Text>
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
@@ -100,7 +100,7 @@ export default function SystemHealthPage() {
               value={details.websockets?.activeConnections || 0}
               prefix={<ApiOutlined />}
             />
-            <Text size="xs" type="secondary">Live connected users</Text>
+            <Text type="secondary">Live connected users</Text>
           </Card>
         </Col>
       </Row>

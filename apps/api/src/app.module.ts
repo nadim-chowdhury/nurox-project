@@ -5,7 +5,7 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from 'nestjs-pino';
@@ -53,7 +53,6 @@ import { TenantSubscriber } from './common/subscribers/tenant.subscriber';
 import { TenantGuard } from './common/guards/tenant.guard';
 import { ModuleGuard } from './common/guards/module.guard';
 import { TenantInterceptor } from './common/interceptors/tenant.interceptor';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   imports: [

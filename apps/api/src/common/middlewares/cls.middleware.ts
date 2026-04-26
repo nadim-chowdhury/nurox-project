@@ -10,7 +10,8 @@ export class ClsMiddleware implements NestMiddleware {
     const user = (req as any).user;
     const userId = user?.id || null;
     const tenantId = (req as any).tenantId || null;
-    const ipAddress = (req.headers['x-forwarded-for'] || req.socket.remoteAddress) as string;
+    const ipAddress = (req.headers['x-forwarded-for'] ||
+      req.socket.remoteAddress) as string;
     const userAgent = req.headers['user-agent'];
 
     this.cls.set('userId', userId);

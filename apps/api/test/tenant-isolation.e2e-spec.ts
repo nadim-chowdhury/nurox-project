@@ -1,7 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import request from 'supertest';
-import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { DataSource } from 'typeorm';
 import { Tenant } from '../src/modules/system/entities/tenant.entity';
@@ -11,7 +9,7 @@ import { Role } from '../src/modules/auth/entities/role.entity';
 import { Employee } from '../src/modules/hr/entities/employee.entity';
 
 describe('Tenant Isolation (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: INestApplication;
   let dataSource: DataSource;
 
   beforeAll(async () => {
@@ -52,8 +50,8 @@ describe('Tenant Isolation (e2e)', () => {
 
     // 3. Create a shared role
     const role = await dataSource.getRepository(Role).save({
-        name: 'ADMIN',
-        permissions: [],
+      name: 'ADMIN',
+      permissions: [],
     });
 
     // 4. Give user membership in both tenants
@@ -65,7 +63,9 @@ describe('Tenant Isolation (e2e)', () => {
     // 5. Create data in Tenant A
     // Note: In real test, we'd use the API to ensure middleware/subscriber runs
     // But here we simulate what the API does
-    await dataSource.createQueryRunner().query(`SET app.current_tenant_id = '${tenantA.id}'`);
+    await dataSource
+      .createQueryRunner()
+      .query(`SET app.current_tenant_id = '${tenantA.id}'`);
     const empA = await dataSource.getRepository(Employee).save({
       firstName: 'Alice',
       lastName: 'A',
@@ -76,7 +76,9 @@ describe('Tenant Isolation (e2e)', () => {
     });
 
     // 6. Create data in Tenant B
-    await dataSource.createQueryRunner().query(`SET app.current_tenant_id = '${tenantB.id}'`);
+    await dataSource
+      .createQueryRunner()
+      .query(`SET app.current_tenant_id = '${tenantB.id}'`);
     const empB = await dataSource.getRepository(Employee).save({
       firstName: 'Bob',
       lastName: 'B',
@@ -87,15 +89,19 @@ describe('Tenant Isolation (e2e)', () => {
     });
 
     // 7. Verify Isolation via API-like context
-    
+
     // Switch to Tenant A context
-    await dataSource.createQueryRunner().query(`SET app.current_tenant_id = '${tenantA.id}'`);
+    await dataSource
+      .createQueryRunner()
+      .query(`SET app.current_tenant_id = '${tenantA.id}'`);
     const employeesInA = await dataSource.getRepository(Employee).find();
     expect(employeesInA.length).toBe(1);
     expect(employeesInA[0].id).toBe(empA.id);
 
     // Switch to Tenant B context
-    await dataSource.createQueryRunner().query(`SET app.current_tenant_id = '${tenantB.id}'`);
+    await dataSource
+      .createQueryRunner()
+      .query(`SET app.current_tenant_id = '${tenantB.id}'`);
     const employeesInB = await dataSource.getRepository(Employee).find();
     expect(employeesInB.length).toBe(1);
     expect(employeesInB[0].id).toBe(empB.id);

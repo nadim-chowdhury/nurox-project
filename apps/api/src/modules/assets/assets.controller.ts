@@ -63,35 +63,55 @@ export class AssetsController {
   @Put(':id')
   @ApiOperation({ summary: 'Update asset details' })
   @RequirePermissions(Permission.ADMIN_WRITE)
-  async updateAsset(@Req() req: any, @Param('id') id: string, @Body() dto: any) {
+  async updateAsset(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() dto: any,
+  ) {
     return this.assetsService.updateAsset(req.tenantId, id, dto);
   }
 
   @Post(':id/assign')
   @ApiOperation({ summary: 'Assign asset to an employee' })
   @RequirePermissions(Permission.ADMIN_WRITE)
-  async assignAsset(@Req() req: any, @Param('id') id: string, @Body() dto: any) {
+  async assignAsset(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() dto: any,
+  ) {
     return this.assetsService.assignAsset(req.tenantId, id, dto);
   }
 
   @Post(':id/return')
   @ApiOperation({ summary: 'Mark asset as returned' })
   @RequirePermissions(Permission.ADMIN_WRITE)
-  async returnAsset(@Req() req: any, @Param('id') id: string, @Body() dto: { returnDate: string }) {
+  async returnAsset(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() dto: { returnDate: string },
+  ) {
     return this.assetsService.returnAsset(req.tenantId, id, dto.returnDate);
   }
 
   @Post(':id/maintenance')
   @ApiOperation({ summary: 'Record asset maintenance' })
   @RequirePermissions(Permission.ADMIN_WRITE)
-  async addMaintenance(@Req() req: any, @Param('id') id: string, @Body() dto: any) {
+  async addMaintenance(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() dto: any,
+  ) {
     return this.assetsService.addMaintenance(req.tenantId, id, dto);
   }
 
   @Post(':id/dispose')
   @ApiOperation({ summary: 'Mark asset as disposed' })
   @RequirePermissions(Permission.ADMIN_WRITE)
-  async disposeAsset(@Req() req: any, @Param('id') id: string, @Body() dto: any) {
+  async disposeAsset(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() dto: any,
+  ) {
     return this.assetsService.disposeAsset(req.tenantId, id, dto);
   }
 }

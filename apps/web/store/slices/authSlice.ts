@@ -8,6 +8,7 @@ export interface AuthUser {
   role: string;
   permissions: string[];
   tenantId: string | null;
+  departmentId?: string | null;
   avatarUrl?: string | null;
   phone?: string | null;
   isTwoFactorEnabled?: boolean;

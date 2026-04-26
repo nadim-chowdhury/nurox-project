@@ -5,8 +5,8 @@ import { Modal, Form, InputNumber, Select, Input, message } from "antd";
 import { useUpdateSalaryMutation } from "@/store/api/hrApi";
 
 interface Props {
-  employeeId: string;
-  visible: boolean;
+  employee: any;
+  open: boolean;
   onClose: () => void;
 }
 
@@ -18,7 +18,7 @@ const salaryReasons = [
   { value: "OTHER", label: "Other" },
 ];
 
-export const UpdateSalaryModal: React.FC<Props> = ({ employeeId, visible, onClose }) => {
+export const UpdateSalaryModal: React.FC<Props> = ({ employee, open, onClose }) => {
   const [form] = Form.useForm();
   const [updateSalary, { isLoading }] = useUpdateSalaryMutation();
 
@@ -26,7 +26,7 @@ export const UpdateSalaryModal: React.FC<Props> = ({ employeeId, visible, onClos
     try {
       const values = await form.validateFields();
       await updateSalary({
-        id: employeeId,
+        id: employee.id,
         ...values,
       }).unwrap();
       message.success("Salary updated successfully");
@@ -40,7 +40,7 @@ export const UpdateSalaryModal: React.FC<Props> = ({ employeeId, visible, onClos
   return (
     <Modal
       title="Salary Revision"
-      open={visible}
+      open={open}
       onOk={handleOk}
       onCancel={onClose}
       confirmLoading={isLoading}

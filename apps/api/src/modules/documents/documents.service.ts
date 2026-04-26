@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Document } from './entities/document.entity';
@@ -19,13 +23,31 @@ export class DocumentsService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async getUploadUrl(userId: string, tenantId: string, dto: { name: string; type?: string; folderId?: string }) {
+  async getUploadUrl(
+    userId: string,
+    tenantId: string,
+    dto: { name: string; type?: string; folderId?: string },
+  ) {
     const key = `tenants/${tenantId}/documents/${Date.now()}-${dto.name}`;
-    const uploadUrl = await this.storageService.getUploadPresignedUrl(key, dto.type || 'application/octet-stream');
+    const uploadUrl = await this.storageService.getUploadPresignedUrl(
+      key,
+      dto.type || 'application/octet-stream',
+    );
     return { uploadUrl, key };
   }
 
-  async createDocument(userId: string, tenantId: string, dto: { name: string; type: string; folderId?: string; fileKey: string; fileSize: number; mimeType: string }) {
+  async createDocument(
+    userId: string,
+    tenantId: string,
+    dto: {
+      name: string;
+      type: string;
+      folderId?: string;
+      fileKey: string;
+      fileSize: number;
+      mimeType: string;
+    },
+  ) {
     return await this.dataSource.transaction(async (manager) => {
       const doc = manager.create(Document, {
         name: dto.name,
@@ -51,13 +73,25 @@ export class DocumentsService {
     });
   }
 
-  async createVersion(userId: string, tenantId: string, documentId: string, dto: { fileKey: string; fileSize: number; mimeType: string; changeNotes?: string }) {
-    const doc = await this.documentRepo.findOne({ where: { id: documentId, tenantId } });
+  async createVersion(
+    userId: string,
+    tenantId: string,
+    documentId: string,
+    dto: {
+      fileKey: string;
+      fileSize: number;
+      mimeType: string;
+      changeNotes?: string;
+    },
+  ) {
+    const doc = await this.documentRepo.findOne({
+      where: { id: documentId, tenantId },
+    });
     if (!doc) throw new NotFoundException('Document not found');
 
     return await this.dataSource.transaction(async (manager) => {
       const nextVersion = doc.latestVersionNumber + 1;
-      
+
       const version = manager.create(DocumentVersion, {
         documentId: doc.id,
         versionNumber: nextVersion,
@@ -76,13 +110,22 @@ export class DocumentsService {
     });
   }
 
-  async getDownloadUrl(userId: string, tenantId: string, documentId: string, versionNumber?: number) {
-    const doc = await this.documentRepo.findOne({ where: { id: documentId, tenantId } });
+  async getDownloadUrl(
+    userId: string,
+    tenantId: string,
+    documentId: string,
+    versionNumber?: number,
+  ) {
+    const doc = await this.documentRepo.findOne({
+      where: { id: documentId, tenantId },
+    });
     if (!doc) throw new NotFoundException('Document not found');
 
     // Simple ownership check for now, can be expanded with PermissionsGuard logic
     if (doc.accessControl === 'OWNER_ONLY' && doc.ownerId !== userId) {
-      throw new ForbiddenException('You do not have permission to download this document');
+      throw new ForbiddenException(
+        'You do not have permission to download this document',
+      );
     }
 
     const version = await this.versionRepo.findOne({
@@ -94,7 +137,9 @@ export class DocumentsService {
 
     if (!version) throw new NotFoundException('Document version not found');
 
-    const downloadUrl = await this.storageService.getDownloadPresignedUrl(version.fileKey);
+    const downloadUrl = await this.storageService.getDownloadPresignedUrl(
+      version.fileKey,
+    );
     return { downloadUrl };
   }
 
@@ -105,7 +150,11 @@ export class DocumentsService {
     });
   }
 
-  async createFolder(userId: string, tenantId: string, dto: { name: string; parentId?: string }) {
+  async createFolder(
+    userId: string,
+    tenantId: string,
+    dto: { name: string; parentId?: string },
+  ) {
     const folder = this.folderRepo.create({
       ...dto,
       tenantId,

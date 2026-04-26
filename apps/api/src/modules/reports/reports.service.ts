@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, SelectQueryBuilder } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { ReportTemplate } from './entities/report-template.entity';
 import { PdfService } from '../system/pdf.service';
 
@@ -26,29 +26,40 @@ export class ReportsService {
     return this.templateRepo.find({ where: { tenantId } });
   }
 
-  async executeReport(tenantId: string, templateId: string, customFilters?: any[]) {
-    const template = await this.templateRepo.findOne({ where: { id: templateId, tenantId } });
+  async executeReport(
+    tenantId: string,
+    templateId: string,
+    customFilters?: any[],
+  ) {
+    const template = await this.templateRepo.findOne({
+      where: { id: templateId, tenantId },
+    });
     if (!template) throw new Error('Report template not found');
 
-    const queryBuilder = this.dataSource.getRepository(template.entityName).createQueryBuilder('entity');
+    const queryBuilder = this.dataSource
+      .getRepository(template.entityName)
+      .createQueryBuilder('entity');
     queryBuilder.where('entity.tenantId = :tenantId', { tenantId });
 
     const allFilters = [...template.config.filters, ...(customFilters || [])];
     allFilters.forEach((filter, index) => {
       const paramName = `param${index}`;
-      queryBuilder.andWhere(`entity.${filter.key} ${filter.operator} :${paramName}`, { [paramName]: filter.value });
+      queryBuilder.andWhere(
+        `entity.${filter.key} ${filter.operator} :${paramName}`,
+        { [paramName]: filter.value },
+      );
     });
 
     if (template.config.sorting) {
-      template.config.sorting.forEach(sort => {
+      template.config.sorting.forEach((sort) => {
         queryBuilder.addOrderBy(`entity.${sort.key}`, sort.order);
       });
     }
 
     const data = await queryBuilder.getMany();
     return {
-        columns: template.config.columns,
-        data,
+      columns: template.config.columns,
+      data,
     };
   }
 
@@ -59,15 +70,19 @@ export class ReportsService {
       <h1>Report</h1>
       <table border="1">
         <thead>
-          <tr>${reportData.columns.map(c => `<th>${c.label}</th>`).join('')}</tr>
+          <tr>${reportData.columns.map((c) => `<th>${c.label}</th>`).join('')}</tr>
         </thead>
         <tbody>
-          ${reportData.data.map(row => `
-            <tr>${reportData.columns.map(c => `<td>${(row as any)[c.key]}</td>`).join('')}</tr>
-          `).join('')}
+          ${reportData.data
+            .map(
+              (row) => `
+            <tr>${reportData.columns.map((c) => `<td>${(row as any)[c.key]}</td>`).join('')}</tr>
+          `,
+            )
+            .join('')}
         </tbody>
       </table>
     `;
-    return this.pdfService.generatePdf(html);
+    return this.pdfService.generatePdf(html, reportData);
   }
 }

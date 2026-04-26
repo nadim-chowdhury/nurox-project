@@ -23,7 +23,7 @@ export class TenantInterceptor implements NestInterceptor {
     }
 
     // Wrap the entire request handler execution in a tenant context.
-    // This ensures that any DB operation within the handler that uses 
+    // This ensures that any DB operation within the handler that uses
     // the tenant manager or follows the RLS pattern will be correctly scoped.
     return from(
       this.tenantConnection.runInTenantContext(async (manager) => {
@@ -31,7 +31,7 @@ export class TenantInterceptor implements NestInterceptor {
         // although standard repositories won't automatically use this manager unless we use a specific pattern.
         const req = context.switchToHttp().getRequest();
         req.tenantManager = manager;
-        
+
         return await next.handle().toPromise();
       }),
     );

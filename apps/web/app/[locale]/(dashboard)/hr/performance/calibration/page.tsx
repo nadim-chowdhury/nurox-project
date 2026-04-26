@@ -6,12 +6,12 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from "recharts";
 import { 
-  BarChartOutlined, DashboardOutlined
+  BarChartOutlined
 } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useGetPerformanceCalibrationQuery } from "@/store/api/analyticsApi";
 
-const { Title, Text, Paragraph } = Typography;
+const { Paragraph } = Typography;
 const COLORS = ["#ffb4ab", "#ffb347", "#c3f5ff", "#80d8ff", "#6dd58c"];
 
 export default function PerformanceCalibrationPage() {

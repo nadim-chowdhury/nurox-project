@@ -5,14 +5,11 @@ import {
   Form,
   Input,
   Select,
-  DatePicker,
   InputNumber,
   Button,
   Card,
   Row,
   Col,
-  Space,
-  Divider,
   message,
 } from "antd";
 import { ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
@@ -42,7 +39,7 @@ export default function EditEmployeePage() {
     emergencyPhone: "+1 (555) 987-6543",
   };
 
-  const handleSubmit = async (values: Record<string, unknown>) => {
+  const handleSubmit = async (_values: Record<string, unknown>) => {
     setLoading(true);
     // Will be: await updateEmployee({ id: params.id, data: values }).unwrap()
     setTimeout(() => {

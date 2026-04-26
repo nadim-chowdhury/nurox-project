@@ -3,7 +3,6 @@ import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
-  Inject,
 } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Membership } from '../../modules/auth/entities/membership.entity';
@@ -35,9 +34,7 @@ export class TenantGuard implements CanActivate {
     });
 
     if (!membership) {
-      throw new ForbiddenException(
-        `You do not have access to this tenant.`,
-      );
+      throw new ForbiddenException(`You do not have access to this tenant.`);
     }
 
     // Attach membership to request for downstream use (like permission checks)

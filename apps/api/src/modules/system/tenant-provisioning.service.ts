@@ -1,4 +1,9 @@
-import { Injectable, Logger, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { Tenant } from './entities/tenant.entity';
 import { TenantModule } from './entities/tenant-module.entity';
@@ -113,7 +118,10 @@ export class TenantProvisioningService {
     for (let month = 0; month < 12; month++) {
       const startDate = new Date(currentYear, month, 1);
       const endDate = new Date(currentYear, month + 1, 0);
-      const name = startDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+      const name = startDate.toLocaleString('default', {
+        month: 'long',
+        year: 'numeric',
+      });
 
       await manager.query(
         `INSERT INTO accounting_periods (id, tenant_id, name, start_date, end_date, status, is_year_end, created_at, updated_at)
@@ -226,7 +234,9 @@ export class TenantProvisioningService {
         await this.dataSource
           .getRepository(TenantCustomDomain)
           .update(domainId, { isVerified: true, verifiedAt: new Date() });
-        this.logger.log(`Custom domain ${domain.hostname} verified successfully.`);
+        this.logger.log(
+          `Custom domain ${domain.hostname} verified successfully.`,
+        );
         return true;
       }
 

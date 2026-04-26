@@ -13,7 +13,6 @@ import {
 } from "antd";
 import { PlusOutlined, UserOutlined, WarningOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
-import { useGetEmployeesQuery } from "@/store/api/hrApi";
 import { AddOkrModal } from "@/components/modules/hr/performance/AddOkrModal";
 import { AddThreeSixtyReviewModal } from "@/components/modules/hr/performance/AddThreeSixtyReviewModal";
 import { InitiatePipModal } from "@/components/modules/hr/performance/InitiatePipModal";

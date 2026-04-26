@@ -112,7 +112,7 @@ const columns: ColumnsType<any> = [
     render: (items: any[]) => (
       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
         {items.map((it, idx) => (
-          <Tag key={idx} size="small" style={{ fontSize: 10 }}>{it.name}</Tag>
+          <Tag key={idx} style={{ fontSize: 10 }}>{it.name}</Tag>
         ))}
       </div>
     )
@@ -124,7 +124,8 @@ export default function PayrollRunDetailPage() {
   const router = useRouter();
   const id = params.id as string;
 
-  const { data: run, isLoading: isRunLoading } = useGetPayrollRunQuery(id);
+  const { data: runData, isLoading: isRunLoading } = useGetPayrollRunQuery(id);
+  const run = runData as any;
   const { data: payslips, isLoading: isPayslipsLoading } = useGetPayslipsByRunQuery(id);
   const { data: summary, isLoading: isSummaryLoading } = useGetPayrollSummaryQuery(id);
   

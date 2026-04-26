@@ -19,17 +19,20 @@ export class RolesService {
    * Resolves all permissions for a role, including those inherited from parents.
    */
   async getEffectivePermissions(role: Role | string): Promise<Permission[]> {
-    const roleEntity = typeof role === 'string' 
-      ? await this.roleRepo.findOne({ where: { id: role } }) 
-      : role;
+    const roleEntity =
+      typeof role === 'string'
+        ? await this.roleRepo.findOne({ where: { id: role } })
+        : role;
 
     if (!roleEntity) return [];
 
     const permissions = new Set<Permission>(roleEntity.permissions);
 
     if (roleEntity.parentRoleId) {
-      const parentPermissions = await this.getEffectivePermissions(roleEntity.parentRoleId);
-      parentPermissions.forEach(p => permissions.add(p));
+      const parentPermissions = await this.getEffectivePermissions(
+        roleEntity.parentRoleId,
+      );
+      parentPermissions.forEach((p) => permissions.add(p));
     }
 
     return Array.from(permissions);

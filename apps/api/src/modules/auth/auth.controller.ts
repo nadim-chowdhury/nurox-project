@@ -95,7 +95,7 @@ export class AuthController {
   ) {
     const parsed = loginSchema.parse(body);
     const tenantId = req.headers['x-tenant-id'] as string;
-    
+
     const result = await this.authService.login(parsed.email, parsed.password, {
       userAgent: req.headers['user-agent'],
       ipAddress: req.ip,

@@ -31,15 +31,25 @@ export class AuditSubscriber implements EntitySubscriberInterface<BaseEntity> {
   }
 
   async afterUpdate(event: UpdateEvent<BaseEntity>) {
-    // If entity is not provided, we can't do much. 
+    // If entity is not provided, we can't do much.
     // TypeORM update event usually has 'entity' (new) and 'databaseEntity' (old)
     if (event.entity && event.databaseEntity) {
-      await this.logAction('UPDATE', event.entity, event.databaseEntity, event.entity);
+      await this.logAction(
+        'UPDATE',
+        event.entity,
+        event.databaseEntity,
+        event.entity,
+      );
     }
   }
 
   async afterRemove(event: RemoveEvent<BaseEntity>) {
-    await this.logAction('DELETE', event.databaseEntity || event.entity, event.databaseEntity || event.entity, null);
+    await this.logAction(
+      'DELETE',
+      event.databaseEntity || event.entity,
+      event.databaseEntity || event.entity,
+      null,
+    );
   }
 
   private async logAction(
@@ -55,7 +65,7 @@ export class AuditSubscriber implements EntitySubscriberInterface<BaseEntity> {
     if (entityType === 'AuditLog') return;
 
     const userId = this.cls.get('userId');
-    const tenantId = this.cls.get('tenantId') || (entity as any).tenantId;
+    const tenantId = this.cls.get('tenantId') || entity.tenantId;
     const ipAddress = this.cls.get('ipAddress');
     const userAgent = this.cls.get('userAgent');
 
@@ -64,17 +74,17 @@ export class AuditSubscriber implements EntitySubscriberInterface<BaseEntity> {
     // For updates, only log changed fields to keep it clean
     let filteredOld = oldValue;
     let filteredNew = newValue;
-    
+
     if (action === 'UPDATE' && oldValue && newValue) {
-        filteredOld = {};
-        filteredNew = {};
-        Object.keys(newValue).forEach(key => {
-            if (newValue[key] !== oldValue[key] && key !== 'updatedAt') {
-                filteredOld[key] = oldValue[key];
-                filteredNew[key] = newValue[key];
-            }
-        });
-        if (Object.keys(filteredNew).length === 0) return; // No meaningful change
+      filteredOld = {};
+      filteredNew = {};
+      Object.keys(newValue).forEach((key) => {
+        if (newValue[key] !== oldValue[key] && key !== 'updatedAt') {
+          filteredOld[key] = oldValue[key];
+          filteredNew[key] = newValue[key];
+        }
+      });
+      if (Object.keys(filteredNew).length === 0) return; // No meaningful change
     }
 
     await this.auditService.log({
