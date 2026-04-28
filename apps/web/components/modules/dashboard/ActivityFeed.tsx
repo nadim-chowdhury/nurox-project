@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Card, Typography, Spin, Empty } from "antd";
+import { Card, Spin, Empty } from "antd";
 import { HistoryOutlined, ClockCircleOutlined } from "@ant-design/icons";
 import { useGetAuditLogsQuery } from "@/store/api/analyticsApi";
 import dayjs from "dayjs";

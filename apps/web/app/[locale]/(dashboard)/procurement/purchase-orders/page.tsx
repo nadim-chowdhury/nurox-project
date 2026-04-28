@@ -66,7 +66,7 @@ export default function PurchaseOrdersPage() {
     try {
       await sendPO(id).unwrap();
       message.success("Purchase order sent to vendor");
-    } catch (error) {
+    } catch (_error) {
       message.error("Failed to send purchase order");
     }
   };
@@ -89,7 +89,7 @@ export default function PurchaseOrdersPage() {
       message.success("Goods received successfully. Inventory updated.");
       setReceiptPo(null);
       grnForm.resetFields();
-    } catch (error) {
+    } catch (_error) {
       message.error("Failed to process receipt");
     }
   };
@@ -106,7 +106,7 @@ export default function PurchaseOrdersPage() {
       message.success("Landed costs allocated successfully");
       setLandedCostGrnId(null);
       landedCostForm.resetFields();
-    } catch (error) {
+    } catch (_error) {
       message.error("Failed to allocate landed costs");
     }
   };
@@ -127,7 +127,7 @@ export default function PurchaseOrdersPage() {
       message.success("Return processed and Debit Note created.");
       setReturnPo(null);
       returnForm.resetFields();
-    } catch (error) {
+    } catch (_error) {
       message.error("Failed to process return");
     }
   };

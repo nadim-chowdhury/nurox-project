@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Table, Checkbox, message, Input, Space, Typography } from "antd";
+import { Table, Checkbox, message, Input, Typography } from "antd";
 import { 
   useGetClearanceChecklistQuery, 
   useUpdateClearanceItemMutation 

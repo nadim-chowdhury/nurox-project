@@ -4,6 +4,8 @@ import { HrController } from './hr.controller';
 import { HrService } from './hr.service';
 import { AttendanceService } from '../attendance/attendance.service';
 import { Role } from '../auth/entities/role.entity';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
 
 describe('HrController', () => {
   let controller: HrController;
@@ -69,7 +71,12 @@ describe('HrController', () => {
           useValue: mockRoleRepository,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(PermissionsGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<HrController>(HrController);
   });

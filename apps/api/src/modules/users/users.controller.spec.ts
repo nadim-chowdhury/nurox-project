@@ -2,8 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { UserPreferencesService } from './user-preferences.service';
+import { UserDashboardService } from './user-dashboard.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Role } from '../auth/entities/role.entity';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -32,13 +35,25 @@ describe('UsersController', () => {
           },
         },
         {
+          provide: UserDashboardService,
+          useValue: {
+            getUserWidgets: jest.fn(),
+            saveUserWidgets: jest.fn(),
+          },
+        },
+        {
           provide: getRepositoryToken(Role),
           useValue: {
             findOne: jest.fn(),
           },
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(PermissionsGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<UsersController>(UsersController);
   });

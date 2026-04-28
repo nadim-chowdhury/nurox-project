@@ -23,7 +23,7 @@ export function ApplicationDetails({ id, onSuccess }: { id: string; onSuccess?: 
     try {
       await updateStatus({ id, status }).unwrap();
       if (onSuccess) onSuccess();
-    } catch (err) {
+    } catch (_err) {
       // Error handled by middleware
     }
   };

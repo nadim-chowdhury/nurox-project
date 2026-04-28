@@ -2,8 +2,7 @@
 
 import React, { useMemo } from "react";
 import Tree from "react-d3-tree";
-import { Card, Empty, Spin } from "antd";
-import { ApartmentOutlined } from "@ant-design/icons";
+import { Empty, Spin } from "antd";
 
 interface OrgChartProps {
   data: any[];

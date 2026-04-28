@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { List, Card, Button, Radio, Space, Modal, Typography, Tag, Progress, Form, Input, message, Row, Col } from "antd";
-import { SmileOutlined, SendOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { List, Card, Button, Radio, Modal, Typography, Tag, Form, Input, message, Row, Col } from "antd";
+import { SmileOutlined, SendOutlined } from "@ant-design/icons";
 import { 
   useGetENPSSurveysQuery,
   useSubmitENPSResponseMutation,
-  useGetENPSAnalyticsQuery
 } from "@/store/api/hrApi";
 import { useAppSelector } from "@/hooks/useRedux";
 

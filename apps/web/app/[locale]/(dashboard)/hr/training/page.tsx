@@ -11,17 +11,16 @@ import {
     Form, 
     Input, 
     Select, 
-    DatePicker, 
     InputNumber,
     message,
     Typography
 } from "antd";
-import { PlusOutlined, BookOutlined, FilePdfOutlined } from "@ant-design/icons";
+import { PlusOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useGetTrainingsQuery, useAddTrainingMutation, useGetEmployeesQuery } from "@/store/api/hrApi";
 import { formatDate } from "@/lib/utils";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 export default function TrainingCatalogPage() {
   const { data: trainings, isLoading } = useGetTrainingsQuery();

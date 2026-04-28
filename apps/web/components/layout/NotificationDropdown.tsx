@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Badge, Dropdown, List, Avatar, Button, Empty, Spin } from "antd";
-import { BellOutlined, CheckOutlined, DeleteOutlined } from "@ant-design/icons";
+import { BellOutlined, DeleteOutlined } from "@ant-design/icons";
 import {
   useGetNotificationsQuery,
   useMarkAsReadMutation,

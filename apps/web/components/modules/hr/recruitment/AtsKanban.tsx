@@ -159,7 +159,7 @@ export function AtsKanban({ initialApplications }: { initialApplications: any[] 
 }
 
 function KanbanColumn({ 
-  id, 
+  id: _id, 
   title, 
   applications, 
   onCardClick 

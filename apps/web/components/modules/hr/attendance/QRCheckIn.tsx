@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Card, Typography, Button, Space, message, Spin, QRCode } from "antd";
+import React from "react";
+import { Card, Spin, QRCode, Button, Typography } from "antd";
 import { QrcodeOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useGetCheckInQrQuery } from "@/store/api/attendanceApi";
 import { useAppSelector } from "@/hooks/useRedux";

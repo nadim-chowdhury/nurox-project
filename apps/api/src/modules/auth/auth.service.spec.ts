@@ -3,10 +3,13 @@ import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { UserSession } from './entities/user-session.entity';
+import { LoginEvent } from './entities/login-event.entity';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { RedisService } from '../redis/redis.service';
 import { MailerService } from '../mailer/mailer.service';
+import { EncryptionService } from '../../common/utils/encryption.util';
+import { SmsService } from '../sms/sms.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -37,6 +40,15 @@ describe('AuthService', () => {
           },
         },
         {
+          provide: getRepositoryToken(LoginEvent),
+          useValue: {
+            findOne: jest.fn(),
+            save: jest.fn(),
+            create: jest.fn(),
+            find: jest.fn(),
+          },
+        },
+        {
           provide: JwtService,
           useValue: {
             signAsync: jest.fn(),
@@ -58,6 +70,15 @@ describe('AuthService', () => {
             del: jest.fn(),
             incr: jest.fn(),
             expire: jest.fn(),
+            getClient: jest.fn(() => ({
+              sadd: jest.fn(),
+              srem: jest.fn(),
+              smembers: jest.fn(),
+              pipeline: jest.fn(() => ({
+                del: jest.fn().mockReturnThis(),
+                exec: jest.fn(),
+              })),
+            })),
           },
         },
         {
@@ -65,6 +86,20 @@ describe('AuthService', () => {
           useValue: {
             sendPasswordResetEmail: jest.fn(),
             sendMagicLinkEmail: jest.fn(),
+            sendVerificationEmail: jest.fn(),
+          },
+        },
+        {
+          provide: EncryptionService,
+          useValue: {
+            encrypt: jest.fn(),
+            decrypt: jest.fn(),
+          },
+        },
+        {
+          provide: SmsService,
+          useValue: {
+            sendOtp: jest.fn(),
           },
         },
       ],

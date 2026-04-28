@@ -126,7 +126,7 @@ export default function LeavePage() {
   ];
 
   const dateCellRender = (value: dayjs.Dayjs) => {
-      const dateStr = value.format("YYYY-MM-DD");
+      const _dateStr = value.format("YYYY-MM-DD");
       const dayLeaves = requests?.filter(r => 
           r.status === "APPROVED" && 
           dayjs(r.startDate).startOf('day').isSameOrBefore(value) && 
@@ -257,3 +257,4 @@ export default function LeavePage() {
     </div>
   );
 }
+

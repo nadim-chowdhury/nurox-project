@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Table, Tag, Button, Space, Card, Modal, Form, Input, Select, InputNumber, message, Avatar } from "antd";
+import { Table, Tag, Button, Space, Card, Modal, Form, Input, Select, InputNumber, message, Avatar, Row, Col } from "antd";
 import { PlusOutlined, InboxOutlined, BarcodeOutlined, ExperimentOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useGetProductsQuery, useCreateProductMutation } from "@/store/api/inventoryApi";
@@ -78,7 +78,7 @@ export default function ProductsPage() {
     {
       title: "Action",
       key: "action",
-      render: (_: any, record: any) => (
+      render: (_: any, _record: any) => (
         <Space>
           <Button icon={<ExperimentOutlined />} size="small">Variants</Button>
           <Button type="link" size="small">Edit</Button>
@@ -171,6 +171,3 @@ export default function ProductsPage() {
     </div>
   );
 }
-
-// Importing Row/Col which were missing from initial check
-import { Row, Col } from "antd";

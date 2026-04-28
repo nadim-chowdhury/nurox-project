@@ -157,7 +157,7 @@ const taskColumns: ColumnsType<Task> = [
 ];
 
 export default function ProjectDetailPage() {
-  const params = useParams();
+  const _params = useParams();
   const router = useRouter();
   const p = mockProject;
 

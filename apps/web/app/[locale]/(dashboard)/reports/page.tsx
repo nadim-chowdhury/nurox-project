@@ -4,8 +4,7 @@ import React from "react";
 import { Row, Col, Card, Table, Progress } from "antd";
 import { PageHeader } from "@/components/common/PageHeader";
 import { KpiCard } from "@/components/common/KpiCard";
-import { StatusTag } from "@/components/common/StatusTag";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import type { ColumnsType } from "antd/es/table";
 
 interface DepartmentReport {

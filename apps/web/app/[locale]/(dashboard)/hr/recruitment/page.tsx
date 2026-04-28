@@ -71,7 +71,7 @@ export default function RecruitmentPage() {
         await updateJobStatus({ id, status: "CLOSED" }).unwrap();
         message.success("Job is now CLOSED");
       }
-    } catch (err) {
+    } catch (_err) {
       message.error("Failed to perform action");
     }
   };

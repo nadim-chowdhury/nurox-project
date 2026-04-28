@@ -32,7 +32,7 @@ const { Title, Text } = Typography;
 
 export default function CandidateProfilePage() {
   const { id } = useParams();
-  const [candidate, setCandidate] = useState({
+  const [candidate] = useState({
     id: id as string,
     firstName: "John",
     lastName: "Doe",

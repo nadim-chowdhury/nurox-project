@@ -39,7 +39,7 @@ export function AttendanceEntryModal({ open, onClose }: Props) {
       message.success("Attendance recorded successfully");
       form.resetFields();
       onClose();
-    } catch (err) {
+    } catch (_err) {
       message.error("Failed to record attendance");
     }
   };

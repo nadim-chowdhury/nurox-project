@@ -3,7 +3,6 @@
 import React from "react";
 import { Modal, Form, Select, DatePicker, Input, Button, Space, message } from "antd";
 import { useApplyLeaveMutation } from "@/store/api/attendanceApi";
-import dayjs from "dayjs";
 
 interface Props {
   open: boolean;

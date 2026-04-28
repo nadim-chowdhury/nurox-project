@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { Table, Tag, Button, Space, Card, Modal, Descriptions, message } from "antd";
+import { Table, Tag, Button, Space, Modal } from "antd";
 import { PlusOutlined, FileSearchOutlined, SwapOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
-import { useGetRfqComparisonQuery, useCreatePRMutation } from "@/store/api/procurementApi";
+import { useGetRfqComparisonQuery } from "@/store/api/procurementApi";
 import { formatCurrency } from "@/lib/utils";
 
 export default function RequisitionsPage() {

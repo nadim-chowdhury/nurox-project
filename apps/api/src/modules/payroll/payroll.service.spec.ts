@@ -7,7 +7,12 @@ import {
   EmployeeSalaryAssignment,
 } from './entities/salary-structure.entity';
 import { TaxConfiguration } from './entities/tax-bracket.entity';
+import { EmployeeLoan, LoanRepayment } from './entities/loan.entity';
+import { AdvanceSalaryRequest } from './entities/advance-salary.entity';
+import { EmployeeBonus } from './entities/bonus.entity';
+import { PayrollAudit } from './entities/payroll-audit.entity';
 import { SalaryHistory } from '../hr/entities/salary-history.entity';
+import { AttendanceRecord } from '../attendance/entities/attendance.entity';
 import { Employee } from '../hr/entities/employee.entity';
 import { AttendanceService } from '../attendance/attendance.service';
 import { LeaveService } from '../leave/leave.service';
@@ -16,9 +21,29 @@ import { PdfService } from '../system/pdf.service';
 import { StorageService } from '../system/storage.service';
 import { AuditService } from '../system/audit.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { getQueueToken } from '@nestjs/bullmq';
+import { ClsService } from 'nestjs-cls';
 
 describe('PayrollService', () => {
   let service: PayrollService;
+
+  const mockRepository = () => ({
+    create: jest.fn(),
+    save: jest.fn(),
+    findOne: jest.fn(),
+    find: jest.fn(),
+    update: jest.fn(),
+    manager: {
+      transaction: jest.fn((cb) =>
+        cb({
+          create: jest.fn((entity, data) => data),
+          save: jest.fn((data) => data),
+          update: jest.fn(),
+          find: jest.fn(),
+        }),
+      ),
+    },
+  });
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -26,65 +51,55 @@ describe('PayrollService', () => {
         PayrollService,
         {
           provide: getRepositoryToken(PayrollRun),
-          useValue: {
-            create: jest.fn(),
-            save: jest.fn(),
-            findOne: jest.fn(),
-            manager: {
-              transaction: jest.fn(),
-            },
-          },
+          useFactory: mockRepository,
         },
         {
           provide: getRepositoryToken(Payslip),
-          useValue: {
-            create: jest.fn(),
-            save: jest.fn(),
-            find: jest.fn(),
-            findOne: jest.fn(),
-            update: jest.fn(),
-          },
+          useFactory: mockRepository,
         },
         {
           provide: getRepositoryToken(SalaryStructure),
-          useValue: {
-            create: jest.fn(),
-            save: jest.fn(),
-            find: jest.fn(),
-          },
+          useFactory: mockRepository,
         },
         {
           provide: getRepositoryToken(SalaryHistory),
-          useValue: {
-            create: jest.fn(),
-            save: jest.fn(),
-          },
+          useFactory: mockRepository,
         },
         {
           provide: getRepositoryToken(EmployeeSalaryAssignment),
-          useValue: {
-            create: jest.fn(),
-            save: jest.fn(),
-            findOne: jest.fn(),
-            find: jest.fn(),
-          },
+          useFactory: mockRepository,
         },
         {
           provide: getRepositoryToken(TaxConfiguration),
-          useValue: {
-            create: jest.fn(),
-            save: jest.fn(),
-            find: jest.fn(),
-            findOne: jest.fn(),
-            update: jest.fn(),
-          },
+          useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(EmployeeLoan),
+          useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(LoanRepayment),
+          useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(AdvanceSalaryRequest),
+          useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(EmployeeBonus),
+          useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(AttendanceRecord),
+          useFactory: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(PayrollAudit),
+          useFactory: mockRepository,
         },
         {
           provide: getRepositoryToken(Employee),
-          useValue: {
-            create: jest.fn(),
-            save: jest.fn(),
-          },
+          useFactory: mockRepository,
         },
         {
           provide: AttendanceService,
@@ -126,6 +141,18 @@ describe('PayrollService', () => {
           provide: EventEmitter2,
           useValue: {
             emit: jest.fn(),
+          },
+        },
+        {
+          provide: getQueueToken('payroll'),
+          useValue: {
+            add: jest.fn(),
+          },
+        },
+        {
+          provide: ClsService,
+          useValue: {
+            get: jest.fn(),
           },
         },
       ],

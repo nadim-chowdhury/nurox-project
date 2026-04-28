@@ -13,7 +13,7 @@ interface Props {
 }
 
 export function OKRGoals({ employeeId }: Props) {
-  const { data: okrs, isLoading } = useGetPerformanceReviewsQuery({ employeeId, type: "OKR" });
+  const { data: okrs, isLoading: _isLoading } = useGetPerformanceReviewsQuery({ employeeId, type: "OKR" });
   const [addCheckIn, { isLoading: isCheckingIn }] = useAddOKRCheckInMutation();
   const [checkInModal, setCheckInModal] = useState<{ open: boolean, keyResult: any }>({ open: false, keyResult: null });
   const [form] = Form.useForm();

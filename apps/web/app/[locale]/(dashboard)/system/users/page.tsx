@@ -27,7 +27,7 @@ export default function UsersPage() {
   const { tablePagination, queryParams } = usePagination();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
-  const { canPerform, Permission, isAdmin } = usePermission();
+  const { canPerform: _canPerform, Permission: _Permission, isAdmin } = usePermission();
   const [form] = Form.useForm();
 
   const { data, isLoading, isFetching, refetch } = useGetUsersQuery({

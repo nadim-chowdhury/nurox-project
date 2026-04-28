@@ -18,7 +18,7 @@ export default function WarehousesPage() {
       message.success("Warehouse registered");
       setIsModalVisible(false);
       form.resetFields();
-    } catch (error) {
+    } catch (_error) {
       message.error("Failed to register warehouse");
     }
   };
@@ -38,12 +38,12 @@ export default function WarehousesPage() {
     {
       title: "Location",
       key: "location",
-      render: (_: any, record: any) => `${record.city || ""}, ${record.country || ""}`,
+      render: (_: any, _record: any) => `${_record.city || ""}, ${_record.country || ""}`,
     },
     {
       title: "Action",
       key: "action",
-      render: (_: any, record: any) => (
+      render: (_: any, _record: any) => (
         <Space>
           <Button icon={<PartitionOutlined />} size="small">Layout</Button>
           <Button type="link" size="small">Details</Button>

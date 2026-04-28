@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card, Table, Tag, Rate, Spin, Typography, Button, Modal, Form, Select, message, Input } from "antd";
+import { Card, Table, Rate, Spin, Typography, Button, Modal, Form, Select, message, Input } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useGetSkillMatrixQuery, useAddSkillMutation, useGetEmployeesQuery } from "@/store/api/hrApi";

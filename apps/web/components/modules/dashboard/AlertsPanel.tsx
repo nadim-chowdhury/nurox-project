@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Card, Badge, Typography, Spin, Empty, Button } from "antd";
+import { Card, Badge, Spin, Empty, Button } from "antd";
 import {
   WarningOutlined,
   ExclamationCircleOutlined,

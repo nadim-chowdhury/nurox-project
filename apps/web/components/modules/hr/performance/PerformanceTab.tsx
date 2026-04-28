@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { List, Card, Button, Rate, Space, Modal, Typography, Tag, Progress, Divider, Row, Col } from "antd";
-import { PlusOutlined, UserOutlined, MessageOutlined, BarChartOutlined } from "@ant-design/icons";
+import { List, Card, Typography, Tag, Progress, Divider, Row, Col } from "antd";
+import { MessageOutlined } from "@ant-design/icons";
 import { 
   useGetPerformanceReviewsQuery,
   useGetReviewSummaryQuery,
-  useSubmitReviewFeedbackMutation
 } from "@/store/api/hrApi";
 
 const { Text, Title } = Typography;

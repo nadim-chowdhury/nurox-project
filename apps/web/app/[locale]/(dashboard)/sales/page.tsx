@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Row, Col, Card, Button } from "antd";
+import { Row, Col, Card } from "antd";
 import {
   ShoppingCartOutlined,
   UserOutlined,
@@ -10,7 +10,6 @@ import {
   DollarOutlined,
   BarChartOutlined,
   FunnelPlotOutlined,
-  RightOutlined,
 } from "@ant-design/icons";
 import Link from "next/link";
 import { PageHeader } from "@/components/common/PageHeader";

@@ -1,11 +1,10 @@
 "use client";
 
 import React from "react";
-import { Row, Col, Card, Progress, List, Tag, Button } from "antd";
+import { Row, Col, Card, List, Button } from "antd";
 import {
   InboxOutlined,
   ShopOutlined,
-  SwapOutlined,
   WarningOutlined,
   HistoryOutlined,
 } from "@ant-design/icons";

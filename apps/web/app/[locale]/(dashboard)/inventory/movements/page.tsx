@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Table, Tag, Button, Space, Card, Modal, Form, Select, Input, message, Steps } from "antd";
-import { PlusOutlined, CheckCircleOutlined, AuditOutlined, PlayCircleOutlined } from "@ant-design/icons";
+import { Table, Tag, Button, Space, Modal, Form, Select, Input } from "antd";
+import { PlusOutlined, CheckCircleOutlined, AuditOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useGetWarehousesQuery } from "@/store/api/inventoryApi";
 

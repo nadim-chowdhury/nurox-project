@@ -13,7 +13,6 @@ import { TenantProvisioningService } from './tenant-provisioning.service';
 import { StorageService } from './storage.service';
 import { AuditService } from './audit.service';
 import { NotificationService } from './notification.service';
-import { AuditSubscriber } from '../../common/subscribers/audit.subscriber';
 import { PdfService } from './pdf.service';
 import { SystemController } from './system.controller';
 import { HealthController } from './health.controller';

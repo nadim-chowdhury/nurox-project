@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { List, Card, Button, Modal, Typography, Tag, Space, message, Divider, Row, Col } from "antd";
-import { BookOutlined, CheckCircleOutlined, EyeOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
+import { List, Card, Button, Modal, Typography, Tag, message, Row, Col } from "antd";
+import { EyeOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
 import { 
   useGetHandbooksQuery,
   useAcknowledgeHandbookMutation

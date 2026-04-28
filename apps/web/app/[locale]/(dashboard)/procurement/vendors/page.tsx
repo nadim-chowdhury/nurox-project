@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Table, Button, Tag, Space, Modal, Form, Input, InputNumber, Select, message, Row, Col } from "antd";
-import { PlusOutlined, TeamOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
+import { PlusOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useGetVendorsQuery, useCreateVendorMutation } from "@/store/api/procurementApi";
 import { formatCurrency } from "@/lib/utils";
@@ -69,7 +69,7 @@ export default function VendorsPage() {
     {
       title: "Action",
       key: "action",
-      render: (_: any, record: any) => (
+      render: (_: any, _record: any) => (
         <Button type="link" size="small">View Profile</Button>
       ),
     },

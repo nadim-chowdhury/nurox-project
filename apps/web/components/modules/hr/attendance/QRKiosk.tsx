@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { Modal, Typography, Space, message, Result, Spin } from "antd";
+import { Modal, Typography, message, Result, Spin } from "antd";
 import { Scanner } from "@yudiel/react-qr-scanner";
-import { QrcodeOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { QrcodeOutlined } from "@ant-design/icons";
 import { useCheckInMutation } from "@/store/api/attendanceApi";
 
 const { Title, Text } = Typography;

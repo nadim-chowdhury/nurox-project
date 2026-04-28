@@ -39,7 +39,7 @@ export function BulkImportModal({ open, onClose }: Props) {
       message.success(`Successfully imported ${data.length} records`);
       setData([]);
       onClose();
-    } catch (err) {
+    } catch (_err) {
       message.error("Import failed");
     }
   };

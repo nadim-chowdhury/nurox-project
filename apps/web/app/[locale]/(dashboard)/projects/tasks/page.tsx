@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { Card, Tag, Button, Avatar, Space, Progress } from "antd";
-import { PlusOutlined, ProjectOutlined } from "@ant-design/icons";
+import { Card, Tag, Button, Avatar, Space } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/tables/DataTable";
 import type { ColumnsType } from "antd/es/table";

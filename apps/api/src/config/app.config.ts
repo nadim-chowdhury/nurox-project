@@ -24,7 +24,10 @@ export const jwtConfig = registerAs('jwt', () => ({
 export const redisConfig = registerAs('redis', () => {
   let host = process.env.REDIS_HOST || 'localhost';
   // Remove protocol prefix if present
-  host = host.replace(/^https?:\/\//, '').split(':')[0].split('/')[0];
+  host = host
+    .replace(/^https?:\/\//, '')
+    .split(':')[0]
+    .split('/')[0];
   return {
     host,
     port: parseInt(process.env.REDIS_PORT || '6379', 10),

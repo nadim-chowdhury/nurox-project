@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function SkillsTab({ employeeId }: Props) {
-  const { data: emp, isLoading: isEmpLoading } = useGetEmployeeQuery(employeeId);
+  const { data: emp, isLoading: _isEmpLoading } = useGetEmployeeQuery(employeeId);
   const { data: catalog } = useGetSkillCatalogQuery();
   const [addSkill, { isLoading: isAdding }] = useAddEmployeeSkillMutation();
   const [isModalOpen, setIsModalOpen] = useState(false);

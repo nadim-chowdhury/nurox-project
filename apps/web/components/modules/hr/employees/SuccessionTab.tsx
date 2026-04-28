@@ -2,7 +2,7 @@
 
 import React from "react";
 import { List, Card, Typography, Tag, Space, Progress } from "antd";
-import { RocketOutlined, ArrowRightOutlined, StarOutlined } from "@ant-design/icons";
+import { RocketOutlined, StarOutlined } from "@ant-design/icons";
 import { 
   useGetSuccessionPlansQuery 
 } from "@/store/api/hrApi";

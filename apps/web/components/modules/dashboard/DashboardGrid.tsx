@@ -91,7 +91,7 @@ interface DashboardGridProps {
 }
 
 export function DashboardGrid({ dateRange }: DashboardGridProps) {
-  const { isAdmin, role } = usePermission();
+  const { isAdmin: _isAdmin, role: _role } = usePermission();
   const { data: widgets, isLoading: isWidgetsLoading } = useGetDashboardWidgetsQuery();
   const [saveWidgets] = useSaveDashboardWidgetsMutation();
   const [items, setItems] = useState<string[]>(DEFAULT_LAYOUT);
@@ -131,7 +131,7 @@ export function DashboardGrid({ dateRange }: DashboardGridProps) {
           isVisible: true
         }));
         await saveWidgets(widgetPayload).unwrap();
-      } catch (err) {
+      } catch (_err) {
         // Silently fail or log
       }
     }

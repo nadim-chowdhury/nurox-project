@@ -17,7 +17,7 @@ export default function PayslipsPage() {
     try {
       const response = await getDownloadUrl(id).unwrap();
       window.open(response.url, "_blank");
-    } catch (err) {
+    } catch (_err) {
       message.error("Failed to get download URL");
     }
   };

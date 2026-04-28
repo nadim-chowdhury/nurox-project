@@ -3,6 +3,8 @@ import { SalesController } from './sales.controller';
 import { SalesService } from './sales.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Role } from '../auth/entities/role.entity';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
 
 describe('SalesController', () => {
   let controller: SalesController;
@@ -33,7 +35,12 @@ describe('SalesController', () => {
           },
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(PermissionsGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<SalesController>(SalesController);
   });

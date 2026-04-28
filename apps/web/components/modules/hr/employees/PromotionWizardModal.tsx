@@ -70,8 +70,8 @@ export function PromotionWizardModal({ employee, open, onClose }: Props) {
       onClose();
       setCurrentStep(0);
       form.resetFields();
-    } catch (err: any) {
-      message.error(err.data?.message || "Failed to submit promotion request");
+    } catch (_err: any) {
+      message.error(_err.data?.message || "Failed to submit promotion request");
     }
   };
 

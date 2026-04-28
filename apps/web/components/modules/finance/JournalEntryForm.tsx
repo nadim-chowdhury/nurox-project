@@ -16,7 +16,7 @@ export function JournalEntryForm() {
     handleSubmit,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors: _errors },
   } = useForm({
     resolver: zodResolver(journalEntrySchema),
     defaultValues: {
@@ -73,20 +73,20 @@ export function JournalEntryForm() {
             {
               title: "Account",
               dataIndex: "accountId",
-              render: (_, __, index) => (
+              render: (_, __, _index) => (
                 <Input placeholder="Select Account" />
               ),
             },
             {
               title: "Description",
               dataIndex: "description",
-              render: (_, __, index) => <Input placeholder="Line memo" />,
+              render: (_, __, _index) => <Input placeholder="Line memo" />,
             },
             {
               title: "Debit",
               dataIndex: "debit",
               width: 150,
-              render: (_, __, index) => (
+              render: (_, __, _index) => (
                 <Input
                   type="number"
                   step="0.01"
@@ -98,7 +98,7 @@ export function JournalEntryForm() {
               title: "Credit",
               dataIndex: "credit",
               width: 150,
-              render: (_, __, index) => (
+              render: (_, __, _index) => (
                 <Input
                   type="number"
                   step="0.01"
@@ -109,12 +109,12 @@ export function JournalEntryForm() {
             {
               title: "",
               width: 50,
-              render: (_, __, index) => (
+              render: (_, __, _index) => (
                 <Button
                   type="text"
                   danger
                   icon={<DeleteOutlined />}
-                  onClick={() => remove(index)}
+                  onClick={() => remove(_index)}
                   disabled={fields.length <= 2}
                 />
               ),

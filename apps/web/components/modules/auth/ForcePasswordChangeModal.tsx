@@ -11,7 +11,7 @@ interface ForcePasswordChangeModalProps {
   onSuccess: () => void;
 }
 
-export function ForcePasswordChangeModal({ visible, user, onSuccess }: ForcePasswordChangeModalProps) {
+export function ForcePasswordChangeModal({ visible, user: _user, onSuccess }: ForcePasswordChangeModalProps) {
   const [form] = Form.useForm();
   const [changePassword, { isLoading }] = useChangePasswordMutation();
 

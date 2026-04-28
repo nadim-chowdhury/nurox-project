@@ -8,7 +8,6 @@ import {
   createEmployeeSchema, 
   employeePersonalSchema, 
   employmentDetailsSchema, 
-  compensationDetailsSchema 
 } from "@repo/shared-schemas";
 import { useCreateEmployeeMutation, useGetDepartmentsQuery } from "@/store/api/hrApi";
 import { useGetBranchesQuery } from "@/store/api/systemApi";
