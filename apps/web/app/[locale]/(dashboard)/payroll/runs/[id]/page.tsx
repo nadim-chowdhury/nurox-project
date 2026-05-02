@@ -25,9 +25,8 @@ import {
 import { useParams, useRouter } from "next/navigation";
 import { PageHeader } from "@/components/common/PageHeader";
 import { KpiCard } from "@/components/common/KpiCard";
-import { StatusTag } from "@/components/common/StatusTag";
 import { Avatar } from "@/components/common/Avatar";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { 
   useGetPayrollRunQuery, 
   useGetPayslipsByRunQuery,
@@ -36,7 +35,8 @@ import {
   useProcessPayrollRunMutation,
   useApprovePayrollRunMutation,
   useFinalizePayrollRunMutation,
-  usePublishPayslipsMutation
+  usePublishPayslipsMutation,
+  usePayPayrollRunMutation
 } from "@/store/api/payrollApi";
 import type { ColumnsType } from "antd/es/table";
 
@@ -135,10 +135,11 @@ export default function PayrollRunDetailPage() {
   const [approveRun, { isLoading: isApproving }] = useApprovePayrollRunMutation();
   const [finalizeRun, { isLoading: isFinalizing }] = useFinalizePayrollRunMutation();
   const [publishPayslips, { isLoading: isPublishing }] = usePublishPayslipsMutation();
+  const [payRun, { isLoading: isPaying }] = usePayPayrollRunMutation();
 
   const handleProcess = async () => {
     try {
-      await processRun(id).unwrap();
+      await processRun({ id }).unwrap();
       message.success("Payroll computation completed");
     } catch (err: any) {
       message.error(err.data?.message || "Failed to process payroll");
@@ -172,12 +173,23 @@ export default function PayrollRunDetailPage() {
     }
   };
 
+  const handleMarkAsPaid = async () => {
+    try {
+      await payRun(id).unwrap();
+      message.success("Payroll run marked as PAID");
+    } catch (err: any) {
+      message.error(err.data?.message || "Failed to mark as paid");
+    }
+  };
+
   const getStep = (status: string) => {
     switch (status) {
       case "DRAFT": return 0;
+      case "PROCESSING": return 1;
       case "REVIEW": return 2;
       case "APPROVED": return 3;
       case "PROCESSED": return 4;
+      case "PAID": return 5;
       default: return 0;
     }
   };
@@ -226,8 +238,11 @@ export default function PayrollRunDetailPage() {
                 <Button icon={<DownloadOutlined />} onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}/payroll/runs/${id}/bank-transfer`, '_blank')}>
                   Bank Transfer
                 </Button>
-                <Button type="primary" icon={<SendOutlined />} onClick={handlePublish} loading={isPublishing}>
+                <Button icon={<SendOutlined />} onClick={handlePublish} loading={isPublishing}>
                   Publish Payslips
+                </Button>
+                <Button type="primary" icon={<CheckOutlined />} onClick={handleMarkAsPaid} loading={isPaying}>
+                  Mark as Paid
                 </Button>
               </>
             )}
@@ -246,6 +261,7 @@ export default function PayrollRunDetailPage() {
             { title: "Review", description: "Manager review" },
             { title: "Approved", description: "Finalized" },
             { title: "Processed", description: "Posted to GL" },
+            { title: "Paid", description: "Disbursed" },
           ]}
         />
       </Card>

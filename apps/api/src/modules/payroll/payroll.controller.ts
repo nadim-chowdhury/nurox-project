@@ -94,8 +94,23 @@ export class PayrollController {
 
   @Post('runs/:id/process')
   @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
-  processRun(@Param('id', ParseUUIDPipe) id: string) {
-    return this.payrollService.processRun(id);
+  processRun(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body()
+    filters?: {
+      employeeId?: string;
+      branchId?: string;
+      departmentId?: string;
+      gradeId?: string;
+    },
+  ) {
+    return this.payrollService.processRun(id, filters);
+  }
+
+  @Post('runs/:id/pay')
+  @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
+  markAsPaid(@Param('id', ParseUUIDPipe) id: string) {
+    return this.payrollService.markAsPaid(id);
   }
 
   @Post('runs/:id/approve')

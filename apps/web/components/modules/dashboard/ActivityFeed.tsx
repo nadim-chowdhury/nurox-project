@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { Card, Spin, Empty } from "antd";
-import { HistoryOutlined, ClockCircleOutlined } from "@ant-design/icons";
+import { Card, Spin, Empty, Avatar, Tooltip } from "antd";
+import { HistoryOutlined, ClockCircleOutlined, UserOutlined } from "@ant-design/icons";
 import { useGetAuditLogsQuery } from "@/store/api/analyticsApi";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -16,7 +16,7 @@ interface Props {
 export function ActivityFeed({ dateRange }: Props) {
   const { data, isLoading } = useGetAuditLogsQuery({ 
     page: 1, 
-    limit: 10,
+    limit: 50,
     startDate: dateRange[0].toISOString(),
     endDate: dateRange[1].toISOString(),
   });
@@ -60,28 +60,25 @@ export function ActivityFeed({ dateRange }: Props) {
                 display: "flex",
                 alignItems: "center",
                 gap: 14,
-                padding: "14px 20px",
+                padding: "12px 20px",
                 borderBottom:
                   i < data.data.length - 1
                     ? "1px solid var(--ghost-border)"
                     : "none",
               }}
             >
-              <div
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  background: getTypeColor(item.action),
-                  flexShrink: 0,
-                }}
+              <Avatar 
+                size="small" 
+                src={item.userAvatar} 
+                icon={<UserOutlined />} 
+                style={{ background: getTypeColor(item.action), flexShrink: 0 }}
               />
               <div style={{ flex: 1 }}>
                 <div style={{ color: "var(--color-on-surface)", fontSize: 13 }}>
-                  {item.description}
+                  <span style={{ fontWeight: 600 }}>{item.userName || 'User'}</span> {item.description}
                 </div>
                 <div style={{ color: "var(--color-on-surface-variant)", fontSize: 11 }}>
-                   by {item.userId || 'System'} in {item.module}
+                   in {item.module}
                 </div>
               </div>
               <span

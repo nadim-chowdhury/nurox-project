@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { List, Card, Button, Checkbox, Space, Modal, Typography, Tag, Form, Input, DatePicker, message, Row, Col, Divider } from "antd";
-import { PlusOutlined, WarningOutlined, CalendarOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { PlusOutlined, WarningOutlined, CalendarOutlined, CheckCircleOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { 
   useGetPerformanceReviewsQuery,
   useGetPIPActionsQuery,
@@ -72,10 +72,21 @@ export function PIPTab({ employeeId }: Props) {
                   borderColor: selectedPip?.id === item.id ? 'var(--color-error)' : 'var(--ghost-border)'
                 }}
               >
-                <Space>
-                  <WarningOutlined style={{ color: 'var(--color-error)' }} />
-                  <Text strong>{item.period}</Text>
-                </Space>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Space>
+                        <WarningOutlined style={{ color: 'var(--color-error)' }} />
+                        <Text strong>{item.period}</Text>
+                    </Space>
+                    <Button 
+                        size="small" 
+                        type="text" 
+                        icon={<FilePdfOutlined />} 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(`${process.env.NEXT_PUBLIC_API_URL}/hr/performance-reviews/${item.id}/pip-letter`, "_blank");
+                        }}
+                    />
+                </div>
                 <Paragraph ellipsis={{ rows: 2 }} style={{ fontSize: 12, marginTop: 8, marginBottom: 0 }}>
                   {item.objective}
                 </Paragraph>

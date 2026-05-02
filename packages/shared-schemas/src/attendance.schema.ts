@@ -34,7 +34,7 @@ export const attendanceRecordSchema = z.object({
     lng: z.number(),
     address: z.string().optional(),
   }).optional(),
-  status: z.enum(["PRESENT", "ABSENT", "LATE", "EARLY_EXIT", "ON_LEAVE"]).default("PRESENT"),
+  status: z.enum(["PRESENT", "ABSENT", "LATE", "EARLY_EXIT", "ON_LEAVE", "HALF_DAY"]).default("PRESENT"),
   isOvertime: z.boolean().default(false),
   overtimeMinutes: z.number().int().default(0),
 });

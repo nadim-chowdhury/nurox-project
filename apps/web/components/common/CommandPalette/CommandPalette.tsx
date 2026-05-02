@@ -104,6 +104,14 @@ export function CommandPalette() {
             </Command.Group>
 
             <Command.Group heading="Settings">
+              <Command.Item
+                onSelect={() => {
+                  router.push("/system/health");
+                  dispatch(toggleCommandPalette());
+                }}
+              >
+                System Health
+              </Command.Item>
               <Command.Item>Theme Settings</Command.Item>
               <Command.Item>Manage Users (Admin)</Command.Item>
             </Command.Group>

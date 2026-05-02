@@ -6,7 +6,9 @@ export enum PayrollRunStatus {
   DRAFT = 'DRAFT',
   REVIEW = 'REVIEW',
   APPROVED = 'APPROVED',
+  PROCESSING = 'PROCESSING',
   PROCESSED = 'PROCESSED',
+  PAID = 'PAID',
   CANCELLED = 'CANCELLED',
 }
 

@@ -72,12 +72,28 @@ export class AuthService {
       if (ua.includes('mobi')) deviceType = 'mobile';
       else if (ua.includes('tablet')) deviceType = 'tablet';
 
+      // Simulate Geo-IP lookup for city and country
+      // In production, use a library like 'geoip-lite' or a service like ipapi.co
+      let city = 'Unknown';
+      let country = 'Unknown';
+
+      if (
+        data.ipAddress &&
+        data.ipAddress !== '::1' &&
+        data.ipAddress !== '127.0.0.1'
+      ) {
+        city = 'Dhaka'; // Mocked
+        country = 'Bangladesh'; // Mocked
+      }
+
       await this.loginEventRepo.save(
         this.loginEventRepo.create({
           userId: data.userId,
           email: data.email.toLowerCase(),
           ipAddress: data.ipAddress,
           userAgent: data.userAgent,
+          city,
+          country,
           deviceType,
           result: data.result,
           failureReason: data.failureReason,

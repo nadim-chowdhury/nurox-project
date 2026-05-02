@@ -103,6 +103,12 @@ export const attendanceApi = createApi({
       }),
       invalidatesTags: ["LeaveRequest", "LeaveBalance"],
     }),
+    getAttendanceAnalytics: builder.query<any, { month: number; year: number }>({
+      query: (params) => ({
+        url: "/attendance/analytics",
+        params,
+      }),
+    }),
   }),
 });
 
@@ -118,4 +124,5 @@ export const {
   useGetLeaveBalancesQuery,
   useGetLeaveRequestsQuery,
   useApproveLeaveMutation,
+  useGetAttendanceAnalyticsQuery,
 } = attendanceApi;

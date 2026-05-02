@@ -15,6 +15,7 @@ export enum AttendanceStatus {
   LATE = 'LATE',
   EARLY_EXIT = 'EARLY_EXIT',
   ON_LEAVE = 'ON_LEAVE',
+  HALF_DAY = 'HALF_DAY',
 }
 
 @Entity('attendance_records')

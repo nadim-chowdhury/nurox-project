@@ -10,6 +10,8 @@ import {
 import { Employee } from '../hr/entities/employee.entity';
 import { AttendanceService } from './attendance.service';
 import { AttendanceController } from './attendance.controller';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -21,6 +23,13 @@ import { AttendanceController } from './attendance.controller';
       ShiftAssignment,
       ShiftRotation,
     ]),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>('jwt.accessSecret')!,
+      }),
+    }),
   ],
   controllers: [AttendanceController],
   providers: [AttendanceService],

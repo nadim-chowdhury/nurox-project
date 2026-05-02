@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button, Space, Tooltip } from "antd";
+import { Button, Space, Tooltip, Tag } from "antd";
 import {
   PlusOutlined,
   EditOutlined,
@@ -124,7 +124,16 @@ export default function EmployeesPage() {
         { text: "Suspended", value: "SUSPENDED" },
       ],
       onFilter: (value, record) => record.status === value,
-      render: (status: string) => <StatusTag status={status} />,
+      render: (status: string, record: any) => (
+        <Space direction="vertical" size={0}>
+          <StatusTag status={status} />
+          {record.isSalaryOnHold && (
+            <Tag color="error" style={{ fontSize: 10, marginTop: 4 }}>
+              SALARY ON HOLD
+            </Tag>
+          )}
+        </Space>
+      ),
     },
     {
       title: "Joined",

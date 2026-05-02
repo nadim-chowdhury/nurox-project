@@ -55,9 +55,29 @@ export const payrollApi = createApi({
       invalidatesTags: ["PayrollRun"],
     }),
 
-    processPayrollRun: builder.mutation<PayrollRunDto, string>({
-      query: (id) => ({
+    processPayrollRun: builder.mutation<
+      PayrollRunDto,
+      {
+        id: string;
+        filters?: {
+          employeeId?: string;
+          branchId?: string;
+          departmentId?: string;
+          gradeId?: string;
+        };
+      }
+    >({
+      query: ({ id, filters }) => ({
         url: `/payroll/runs/${id}/process`,
+        method: "POST",
+        body: filters,
+      }),
+      invalidatesTags: ["PayrollRun"],
+    }),
+
+    payPayrollRun: builder.mutation<PayrollRunDto, string>({
+      query: (id) => ({
+        url: `/payroll/runs/${id}/pay`,
         method: "POST",
       }),
       invalidatesTags: ["PayrollRun"],
@@ -164,6 +184,7 @@ export const {
   useGetPayrollRunQuery,
   useCreatePayrollRunMutation,
   useProcessPayrollRunMutation,
+  usePayPayrollRunMutation,
   useApprovePayrollRunMutation,
   useFinalizePayrollRunMutation,
   usePublishPayslipsMutation,

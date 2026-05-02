@@ -116,6 +116,10 @@ export const authApi = createApi({
       query: () => "/auth/sessions",
     }),
 
+    getLoginHistory: builder.query<any[], void>({
+      query: () => "/auth/login-history",
+    }),
+
     revokeSession: builder.mutation<{ message: string }, string>({
       query: (sessionId) => ({
         url: `/auth/sessions/${sessionId}`,
@@ -192,6 +196,7 @@ export const {
   useChangePasswordMutation,
   useLogoutMutation,
   useGetMeQuery,
+  useGetLoginHistoryQuery,
   useForgotPasswordMutation,
   useResetPasswordMutation,
   useGetSessionsQuery,

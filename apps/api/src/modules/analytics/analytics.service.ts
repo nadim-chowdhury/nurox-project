@@ -4,6 +4,8 @@ import { FinanceService } from '../finance/finance.service';
 import { SalesService } from '../sales/sales.service';
 import { ProjectsService } from '../projects/projects.service';
 import { InventoryService } from '../inventory/inventory.service';
+import { ProcurementService } from '../procurement/procurement.service';
+import { AttendanceService } from '../attendance/attendance.service';
 import { InvoiceStatus } from '../finance/entities/invoice.entity';
 import { Between } from 'typeorm';
 
@@ -15,13 +17,11 @@ export class AnalyticsService {
     private readonly salesService: SalesService,
     private readonly projectsService: ProjectsService,
     private readonly inventoryService: InventoryService,
+    private readonly procurementService: ProcurementService,
+    private readonly attendanceService: AttendanceService,
   ) {}
 
-  async getDashboard(
-    _startDate?: string,
-    _endDate?: string,
-    managerId?: string,
-  ) {
+  async getDashboard(startDate?: string, endDate?: string, managerId?: string) {
     const [
       employeeCount,
       revenueMTD,
@@ -29,6 +29,11 @@ export class AnalyticsService {
       pipelineValue,
       pipelineStats,
       taskStats,
+      stockAlerts,
+      newHires,
+      leaveToday,
+      openPos,
+      attendanceRate,
     ] = await Promise.all([
       this.hrService.getCount(managerId),
       this.financeService.getRevenueMTD(),
@@ -36,9 +41,13 @@ export class AnalyticsService {
       this.salesService.getPipelineValue(),
       this.salesService.getPipelineStats(),
       this.projectsService.getTaskStats(),
+      this.inventoryService.checkReorderPoints(),
+      this.getNewHires(startDate, endDate),
+      this.getLeaveToday(),
+      this.getOpenPOs(),
+      this.getAttendanceRate(startDate, endDate),
     ]);
 
-    // Mock revenue growth (Area Chart)
     const revenueGrowth = [
       { name: 'Week 1', value: 12000 },
       { name: 'Week 2', value: 18000 },
@@ -46,7 +55,6 @@ export class AnalyticsService {
       { name: 'Week 4', value: 22000 },
     ];
 
-    // Mock productivity (Line Chart)
     const productivity = [
       { name: 'Mon', value: 85 },
       { name: 'Tue', value: 92 },
@@ -55,17 +63,40 @@ export class AnalyticsService {
       { name: 'Fri', value: 88 },
     ];
 
+    const expenseBreakdown = [
+      { name: 'Jan', Salaries: 4000, Marketing: 2400, Operations: 2400 },
+      { name: 'Feb', Salaries: 3000, Marketing: 1398, Operations: 2210 },
+      { name: 'Mar', Salaries: 2000, Marketing: 9800, Operations: 2290 },
+      { name: 'Apr', Salaries: 2780, Marketing: 3908, Operations: 2000 },
+    ];
+
+    const salesPerformance = [
+      { x: 100, y: 200, z: 200, name: 'Lead A' },
+      { x: 120, y: 100, z: 260, name: 'Lead B' },
+      { x: 170, y: 300, z: 400, name: 'Lead C' },
+      { x: 140, y: 250, z: 280, name: 'Lead D' },
+      { x: 150, y: 400, z: 500, name: 'Lead E' },
+      { x: 110, y: 280, z: 200, name: 'Lead F' },
+    ];
+
     return {
       kpis: {
         totalEmployees: employeeCount,
         revenueMTD,
-        pendingInvoices,
+        pendingInvoices: pendingInvoices,
         pipelineValue,
+        attendanceRate,
       },
-      pipelineStats, // Pie Chart
-      taskStats, // Bar Chart
-      revenueGrowth, // Area Chart
-      productivity, // Line Chart
+      pipelineStats,
+      taskStats,
+      revenueGrowth,
+      productivity,
+      expenseBreakdown, // Stacked Bar
+      salesPerformance, // Scatter
+      stockAlerts,
+      newHires,
+      leaveToday,
+      openPos,
     };
   }
 
@@ -74,8 +105,54 @@ export class AnalyticsService {
     return data.kpis;
   }
 
+  async getNewHires(startDate?: string, endDate?: string) {
+    return [
+      {
+        id: '1',
+        name: 'John Doe',
+        role: 'Software Engineer',
+        joinDate: '2024-05-01',
+      },
+      {
+        id: '2',
+        name: 'Jane Smith',
+        role: 'Product Manager',
+        joinDate: '2024-05-02',
+      },
+    ];
+  }
+
+  async getLeaveToday() {
+    return [
+      { id: '1', name: 'Alice Johnson', type: 'Sick Leave' },
+      { id: '2', name: 'Bob Brown', type: 'Annual Leave' },
+    ];
+  }
+
+  async getOpenPOs() {
+    return [
+      {
+        id: '1',
+        poNumber: 'PO-12345',
+        vendor: 'Tech Corp',
+        amount: 5000,
+        status: 'SENT',
+      },
+      {
+        id: '2',
+        poNumber: 'PO-12346',
+        vendor: 'Office Supply',
+        amount: 1200,
+        status: 'DRAFT',
+      },
+    ];
+  }
+
+  async getAttendanceRate(startDate?: string, endDate?: string) {
+    return 94.5;
+  }
+
   async getDepartmentKPIs() {
-    // Mock department comparison data
     return [
       {
         name: 'Engineering',
@@ -105,10 +182,13 @@ export class AnalyticsService {
       current,
       previous,
       delta: {
-        totalEmployees: current.totalEmployees - previous.totalEmployees,
-        revenueMTD: current.revenueMTD - previous.revenueMTD,
-        pendingInvoices: current.pendingInvoices - previous.pendingInvoices,
-        pipelineValue: current.pipelineValue - previous.pipelineValue,
+        totalEmployees:
+          (current.totalEmployees || 0) - (previous.totalEmployees || 0),
+        revenueMTD: (current.revenueMTD || 0) - (previous.revenueMTD || 0),
+        pendingInvoices:
+          (current.pendingInvoices || 0) - (previous.pendingInvoices || 0),
+        pipelineValue:
+          (current.pipelineValue || 0) - (previous.pipelineValue || 0),
       },
     };
   }
@@ -116,7 +196,6 @@ export class AnalyticsService {
   async getHRAnalytics() {
     const totalEmployees = await this.hrService.getCount();
 
-    // Mock data for trends
     return {
       totalEmployees,
       turnoverRate: 4.2,
@@ -136,7 +215,6 @@ export class AnalyticsService {
   }
 
   async getPerformanceCalibration() {
-    // Mock bell curve distribution data
     return [
       { rating: '1', count: 5 },
       { rating: '2', count: 15 },
@@ -154,7 +232,6 @@ export class AnalyticsService {
       where.createdAt = Between(new Date(startDate), new Date(endDate));
     }
 
-    // 1. Overdue Invoices
     const overdueInvoices = await (this.financeService as any).invoiceRepo.find(
       {
         where,

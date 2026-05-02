@@ -91,7 +91,7 @@ export default function middleware(request: NextRequest) {
 
   if (!hasRefreshToken) {
     const loginUrl = new URL(`/${defaultLocale}/login`, request.url);
-    loginUrl.searchParams.set("redirect", pathname);
+    loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
   }
 

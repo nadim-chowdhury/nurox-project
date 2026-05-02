@@ -32,7 +32,7 @@ export function KpiCards({ dateRange }: Props) {
   useEffect(() => {
     if (!token) return;
     
-    const socket = getSocket(token);
+    const socket = getSocket(token, "analytics");
     if (!socket) return;
 
     socket.on("kpi_update", (updatedKpis) => {

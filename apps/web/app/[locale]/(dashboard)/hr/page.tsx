@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Row, Col, Card, Button } from "antd";
+import { Row, Col, Card, Button, Space } from "antd";
 import {
   TeamOutlined,
   ApartmentOutlined,
@@ -10,6 +10,10 @@ import {
   UserAddOutlined,
   RightOutlined,
   PlusOutlined,
+  BookOutlined,
+  DotChartOutlined,
+  SafetyCertificateOutlined,
+  LineChartOutlined,
 } from "@ant-design/icons";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -23,13 +27,6 @@ const modules = [
     icon: <TeamOutlined style={{ fontSize: 28, color: "#c3f5ff" }} />,
     href: "/hr/employees",
     count: "284",
-  },
-  {
-    title: "Directory",
-    description: "Searchable team directory and contacts",
-    icon: <TeamOutlined style={{ fontSize: 28, color: "#e3eeff" }} />,
-    href: "/hr/directory",
-    count: "Connect",
   },
   {
     title: "Departments",
@@ -46,18 +43,39 @@ const modules = [
     count: "32",
   },
   {
-    title: "Recruitment",
-    description: "Job postings and applicant tracking",
-    icon: <UserAddOutlined style={{ fontSize: 28, color: "#ffb347" }} />,
-    href: "/hr/recruitment",
-    count: "6 open",
-  },
-  {
     title: "Performance",
     description: "Reviews, goals, and appraisals",
     icon: <TrophyOutlined style={{ fontSize: 28, color: "#e3eeff" }} />,
     href: "/hr/performance",
     count: "87%",
+  },
+  {
+    title: "Training",
+    description: "Course library and certifications",
+    icon: <BookOutlined style={{ fontSize: 28, color: "#c3f5ff" }} />,
+    href: "/hr/training",
+    count: "15 courses",
+  },
+  {
+    title: "Skills",
+    description: "Organization-wide skill matrix",
+    icon: <DotChartOutlined style={{ fontSize: 28, color: "#80d8ff" }} />,
+    href: "/hr/skills",
+    count: "Capability",
+  },
+  {
+    title: "Analytics",
+    description: "Deep insights into HR data",
+    icon: <LineChartOutlined style={{ fontSize: 28, color: "#6dd58c" }} />,
+    href: "/hr/analytics",
+    count: "Insights",
+  },
+  {
+    title: "Policies",
+    description: "Company handbooks and policies",
+    icon: <SafetyCertificateOutlined style={{ fontSize: 28, color: "#ffb347" }} />,
+    href: "/hr/handbook/builder",
+    count: "v1.2",
   },
 ];
 

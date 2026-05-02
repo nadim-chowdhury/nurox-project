@@ -39,15 +39,17 @@ import dayjs from "dayjs";
 import { 
   employeePersonalSchema, 
   employmentDetailsSchema, 
-  compensationDetailsSchema 
+  compensationDetailsSchema,
+  emergencyContactSchema,
+  documentsSchema
 } from "@repo/shared-schemas";
 
 const STEPS = [
   { title: "Personal", icon: <UserOutlined />, schema: employeePersonalSchema },
   { title: "Employment", icon: <BankOutlined />, schema: employmentDetailsSchema },
   { title: "Compensation", icon: <DollarOutlined />, schema: compensationDetailsSchema },
-  { title: "Emergency", icon: <SafetyOutlined />, schema: null },
-  { title: "Documents", icon: <FileTextOutlined />, schema: null },
+  { title: "Emergency", icon: <SafetyOutlined />, schema: emergencyContactSchema },
+  { title: "Documents", icon: <FileTextOutlined />, schema: documentsSchema },
 ];
 
 const labelStyle = { color: "var(--color-on-surface-variant)", fontSize: 13 };
@@ -90,14 +92,17 @@ export default function NewEmployeePage() {
 
   const next = async () => {
     try {
-      const values = await form.validateFields();
+      const values = await form.getFieldsValue(); // Get current step values
+      // Only validate current step fields
+      await form.validateFields(Object.keys(values));
+      
       const isValid = await validateStep(current, values);
       if (!isValid) return;
 
       setAllValues((prev) => ({ ...prev, ...values }));
       setCurrent((c) => c + 1);
-    } catch {
-      // Ant Design internal validation failed
+    } catch (err) {
+      console.error("Step validation failed", err);
     }
   };
 
@@ -377,11 +382,12 @@ export default function NewEmployeePage() {
                 </Form.Item>
               </Col>
               <Col xs={24} sm={12}>
-                <Form.Item name="emergencyContactRelationship" label={<span style={labelStyle}>Relationship</span>}>
+                <Form.Item name="emergencyContactRelation" label={<span style={labelStyle}>Relationship</span>}>
                   <Select placeholder="Select" options={[
                       { value: "SPOUSE", label: "Spouse" },
                       { value: "PARENT", label: "Parent" },
                       { value: "SIBLING", label: "Sibling" },
+                      { value: "FRIEND", label: "Friend" },
                       { value: "OTHER", label: "Other" },
                   ]} />
                 </Form.Item>

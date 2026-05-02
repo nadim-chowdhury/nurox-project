@@ -7,6 +7,7 @@ import {
   Query,
   Res,
   UseGuards,
+  ConflictException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { AttendanceService } from './attendance.service';
@@ -23,7 +24,7 @@ import { CheckModule } from '../../common/guards/module.guard';
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
-  @Get('qr')
+  @Post('qr')
   async getCheckInQr(@Body('employeeId') employeeId: string) {
     const token = await this.attendanceService.generateCheckInQr(employeeId);
     return { token };
@@ -33,7 +34,7 @@ export class AttendanceController {
   async checkIn(
     @Body()
     dto: {
-      employeeId: string;
+      employeeId?: string;
       method: AttendanceMethod;
       token?: string;
       location?: any;
@@ -41,8 +42,9 @@ export class AttendanceController {
     },
   ) {
     if (dto.method === AttendanceMethod.QR && dto.token) {
-      return this.attendanceService.checkInViaQr(dto.employeeId, dto.token);
+      return this.attendanceService.checkInViaQr(dto.token);
     }
+    if (!dto.employeeId) throw new ConflictException('Employee ID is required');
     return this.attendanceService.recordAttendance(
       dto.employeeId,
       dto.method,
@@ -133,5 +135,14 @@ export class AttendanceController {
       dto.checkOut ? new Date(dto.checkOut) : undefined,
       dto.reason,
     );
+  }
+
+  @Get('analytics')
+  @RequirePermissions(Permission.HR_VIEW_EMPLOYEES)
+  async getAnalytics(
+    @Query('month') month: number,
+    @Query('year') year: number,
+  ) {
+    return this.attendanceService.getAnalytics(month, year);
   }
 }

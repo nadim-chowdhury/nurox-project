@@ -29,6 +29,15 @@ export class Shift extends BaseEntity {
   @Column({ type: 'int', default: 15 })
   gracePeriodMinutes: number;
 
+  @Column({ type: 'time', nullable: true })
+  halfDayCutoffTime: string; // e.g. "12:00"
+
+  @Column({ type: 'int', default: 0 })
+  earlyDepartureAllowance: number;
+
+  @Column({ type: 'int', default: 60 })
+  breakTimeMinutes: number;
+
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 }

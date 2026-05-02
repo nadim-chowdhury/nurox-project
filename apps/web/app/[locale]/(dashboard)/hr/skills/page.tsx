@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card, Table, Rate, Spin, Typography, Button, Modal, Form, Select, message, Input } from "antd";
+import { Card, Table, Rate, Spin, Typography, Button, Modal, Form, Select, message, Input, Tooltip, Progress, Space } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useGetSkillMatrixQuery, useAddSkillMutation, useGetEmployeesQuery } from "@/store/api/hrApi";
@@ -32,26 +32,47 @@ export default function SkillMatrixPage() {
 
   const columns = [
     {
-      title: "Skill",
+      title: "Skill Name",
       dataIndex: "skillName",
       key: "skillName",
       render: (text: string) => <Text strong>{text}</Text>,
     },
     {
-      title: "Employees & Proficiency",
+      title: "Proficiency Distribution",
       dataIndex: "employees",
       key: "employees",
       render: (employees: any[]) => (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
           {employees.map((e, i) => (
-            <Card key={i} size="small" style={{ width: 220, background: 'var(--color-surface-variant)', border: 'none' }}>
-              <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>{e.employeeName}</div>
-              <Rate disabled defaultValue={e.proficiency} style={{ fontSize: 12 }} />
-            </Card>
+            <Tooltip key={i} title={`Proficiency: ${e.proficiency}/5`}>
+              <Card size="small" style={{ width: 140, background: 'var(--color-surface-variant)', border: 'none', padding: '4px 8px' }}>
+                <div style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.employeeName}</div>
+                <div style={{ color: e.proficiency >= 4 ? 'var(--color-success)' : 'var(--color-warning)', fontSize: 11 }}>Level {e.proficiency}</div>
+              </Card>
+            </Tooltip>
           ))}
         </div>
       ),
     },
+    {
+        title: "Gap Analysis",
+        key: "gap",
+        width: 200,
+        render: (_: any, record: any) => {
+            const lowProficiency = record.employees.filter((e: any) => e.proficiency < 4).length;
+            const total = record.employees.length;
+            const gapPercent = Math.round((lowProficiency / total) * 100);
+            
+            return (
+                <Space direction="vertical" size={0} style={{ width: '100%' }}>
+                    <Text type={gapPercent > 50 ? "danger" : "secondary"} style={{ fontSize: 12 }}>
+                        {gapPercent}% Skill Gap
+                    </Text>
+                    <Progress percent={100 - gapPercent} size="small" showInfo={false} strokeColor={gapPercent > 50 ? "var(--color-error)" : "var(--color-primary)"} />
+                </Space>
+            );
+        }
+    }
   ];
 
   const dataSource = matrix ? Object.keys(matrix).map(skillName => ({

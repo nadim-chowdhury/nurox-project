@@ -21,6 +21,9 @@ export const employeeStatusEnum = z.enum([
   "INACTIVE",
   "SUSPENDED",
   "TERMINATED",
+  "RESIGNED",
+  "RETIRED",
+  "DECEASED",
   "PENDING_INVITE",
 ]);
 
@@ -122,11 +125,30 @@ export const pipSchema = z.object({
 export type PipDto = z.infer<typeof pipSchema>;
 
 /**
+ * Emergency Contact Details (Step 4 of Wizard)
+ */
+export const emergencyContactSchema = z.object({
+  emergencyContactName: z.string().min(1, "Contact name is required").max(100).trim(),
+  emergencyContactPhone: z.string().min(1, "Contact phone is required").max(20).trim(),
+  emergencyContactRelation: z.enum(["SPOUSE", "PARENT", "SIBLING", "FRIEND", "OTHER"]).optional(),
+});
+
+/**
+ * Documents & Contract (Step 5 of Wizard)
+ */
+export const documentsSchema = z.object({
+  contractUrl: z.string().url().optional().nullable(),
+  contractExpiryDate: z.string().datetime().optional().nullable(),
+});
+
+/**
  * Full Create Employee Schema (Multi-step combination)
  */
 export const createEmployeeSchema = employeePersonalSchema
   .merge(employmentDetailsSchema)
-  .merge(compensationDetailsSchema);
+  .merge(compensationDetailsSchema)
+  .merge(emergencyContactSchema)
+  .merge(documentsSchema);
 
 export type CreateEmployeeDto = z.infer<typeof createEmployeeSchema>;
 

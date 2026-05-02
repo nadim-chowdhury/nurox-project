@@ -24,7 +24,7 @@ import { Employee } from '../hr/entities/employee.entity';
 import { Holiday } from './entities/holiday.entity';
 import { Response } from 'express';
 import * as ExcelJS from 'exceljs';
-import * as crypto from 'crypto';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AttendanceService {
@@ -43,18 +43,24 @@ export class AttendanceService {
     private readonly shiftAssignmentRepo: Repository<ShiftAssignment>,
     @InjectRepository(ShiftRotation)
     private readonly shiftRotationRepo: Repository<ShiftRotation>,
+    private readonly jwtService: JwtService,
   ) {}
 
-  async generateCheckInQr(_employeeId: string): Promise<string> {
-    // In a real app, generate a signed, time-limited token
-    const token = crypto.randomBytes(32).toString('hex');
-    // Store in Redis with TTL
-    return token;
+  async generateCheckInQr(employeeId: string): Promise<string> {
+    const payload = { sub: employeeId, purpose: 'attendance_qr' };
+    return this.jwtService.sign(payload, { expiresIn: '30m' });
   }
 
-  async checkInViaQr(employeeId: string, _token: string) {
-    // Validate token from Redis
-    return this.recordAttendance(employeeId, AttendanceMethod.QR, 'IN');
+  async checkInViaQr(token: string) {
+    try {
+      const payload = this.jwtService.verify(token);
+      if (payload.purpose !== 'attendance_qr') {
+        throw new ConflictException('Invalid QR token');
+      }
+      return this.recordAttendance(payload.sub, AttendanceMethod.QR, 'IN');
+    } catch (err) {
+      throw new ConflictException('QR token expired or invalid');
+    }
   }
 
   async recordAttendance(
@@ -105,6 +111,14 @@ export class AttendanceService {
       }
     }
 
+    // IP-based validation placeholder
+    const allowedIps = ['127.0.0.1', '::1']; // Example
+    // In real app, get client IP from request context
+    const clientIp = '127.0.0.1';
+    if (method === AttendanceMethod.QR && !allowedIps.includes(clientIp)) {
+      this.logger.warn(`Check-in attempted from unauthorized IP: ${clientIp}`);
+    }
+
     if (type === 'IN') {
       if (record && record.checkIn)
         throw new ConflictException('Already checked in today');
@@ -131,7 +145,13 @@ export class AttendanceService {
           shiftStart.getTime() +
             (employee.shift.gracePeriodMinutes || 15) * 60000,
         );
-        if (now > graceEnd) {
+        const halfDayCutoff = employee.shift.halfDayCutoffTime
+          ? new Date(`${today}T${employee.shift.halfDayCutoffTime}:00`)
+          : null;
+
+        if (halfDayCutoff && now > halfDayCutoff) {
+          record.status = AttendanceStatus.HALF_DAY;
+        } else if (now > graceEnd) {
           record.status = AttendanceStatus.LATE;
         }
       }
@@ -139,14 +159,27 @@ export class AttendanceService {
       if (!record || !record.checkIn)
         throw new ConflictException('No check-in record found for today');
 
-      record.checkOut = timestamp || new Date();
+      const now = timestamp || new Date();
+      record.checkOut = now;
       record.location = location as any;
 
-      // Calculate overtime if check-out is after shift end
-      if (employee.shift && record.checkOut) {
+      if (employee.shift) {
         const shiftEnd = new Date(`${today}T${employee.shift.endTime}:00`);
-        if (record.checkOut > shiftEnd) {
-          const diffMs = record.checkOut.getTime() - shiftEnd.getTime();
+        const earlyAllowance =
+          shiftEnd.getTime() -
+          (employee.shift.earlyDepartureAllowance || 0) * 60000;
+
+        if (now.getTime() < earlyAllowance) {
+          // If already late/half-day, keep that status or combine?
+          // Usually, early exit is a penalty too.
+          if (record.status === AttendanceStatus.PRESENT) {
+            record.status = AttendanceStatus.EARLY_EXIT;
+          }
+        }
+
+        // Calculate overtime if check-out is after shift end
+        if (now > shiftEnd) {
+          const diffMs = now.getTime() - shiftEnd.getTime();
           record.overtimeMinutes = Math.floor(diffMs / 60000);
           record.isOvertime = record.overtimeMinutes > 30;
         }
@@ -323,6 +356,38 @@ export class AttendanceService {
 
     await workbook.xlsx.write(res);
     res.end();
+  }
+
+  async getAnalytics(month: number, year: number) {
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+
+    const records = await this.attendanceRepo.find({
+      where: { date: Between(startDate, endDate) },
+    });
+
+    const totalPossibleDays = records.length; // Simplified
+    const lateCount = records.filter(
+      (r) => r.status === AttendanceStatus.LATE,
+    ).length;
+    const absentCount = records.filter(
+      (r) => r.status === AttendanceStatus.ABSENT,
+    ).length;
+    const halfDayCount = records.filter(
+      (r) => r.status === AttendanceStatus.HALF_DAY,
+    ).length;
+
+    return {
+      absenteeismRate: totalPossibleDays
+        ? (absentCount / totalPossibleDays) * 100
+        : 0,
+      lateRate: totalPossibleDays ? (lateCount / totalPossibleDays) * 100 : 0,
+      trends: {
+        late: lateCount,
+        absent: absentCount,
+        halfDay: halfDayCount,
+      },
+    };
   }
 
   private getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {

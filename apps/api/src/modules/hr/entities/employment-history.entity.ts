@@ -6,6 +6,7 @@ import { Designation } from './designation.entity';
 
 export enum EmploymentEvent {
   HIRED = 'HIRED',
+  REHIRED = 'REHIRED',
   PROMOTED = 'PROMOTED',
   TRANSFERRED = 'TRANSFERRED',
   DESIGNATION_CHANGE = 'DESIGNATION_CHANGE',

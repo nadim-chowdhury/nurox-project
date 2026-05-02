@@ -1,77 +1,15 @@
 "use client";
 
-import React from "react";
-import { Card, Tag, Button } from "antd";
+import React, { useState } from "react";
+import { Card, Tag, Button, Modal } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/tables/DataTable";
+import { SalaryStructureBuilder } from "@/components/modules/payroll/SalaryStructureBuilder";
+import { useGetStructuresQuery } from "@/store/api/payrollApi";
 import type { ColumnsType } from "antd/es/table";
 
-interface SalaryStructure {
-  id: string;
-  name: string;
-  baseSalary: number;
-  allowances: number;
-  deductions: number;
-  netSalary: number;
-  employees: number;
-  status: string;
-}
-
-const mockStructures: SalaryStructure[] = [
-  {
-    id: "1",
-    name: "Senior Engineer",
-    baseSalary: 8000,
-    allowances: 2500,
-    deductions: 1800,
-    netSalary: 8700,
-    employees: 32,
-    status: "ACTIVE",
-  },
-  {
-    id: "2",
-    name: "Mid-Level Engineer",
-    baseSalary: 5500,
-    allowances: 1500,
-    deductions: 1200,
-    netSalary: 5800,
-    employees: 50,
-    status: "ACTIVE",
-  },
-  {
-    id: "3",
-    name: "Manager",
-    baseSalary: 9000,
-    allowances: 3000,
-    deductions: 2100,
-    netSalary: 9900,
-    employees: 18,
-    status: "ACTIVE",
-  },
-  {
-    id: "4",
-    name: "Junior Staff",
-    baseSalary: 3000,
-    allowances: 800,
-    deductions: 600,
-    netSalary: 3200,
-    employees: 95,
-    status: "ACTIVE",
-  },
-  {
-    id: "5",
-    name: "Executive",
-    baseSalary: 15000,
-    allowances: 5000,
-    deductions: 3800,
-    netSalary: 16200,
-    employees: 6,
-    status: "ACTIVE",
-  },
-];
-
-const columns: ColumnsType<SalaryStructure> = [
+const columns: ColumnsType<any> = [
   {
     title: "Structure",
     dataIndex: "name",
@@ -82,65 +20,31 @@ const columns: ColumnsType<SalaryStructure> = [
     ),
   },
   {
-    title: "Base Salary",
-    dataIndex: "baseSalary",
-    align: "right" as const,
-    render: (v: number) => (
-      <span
-        className="font-display"
-        style={{ color: "var(--color-on-surface)" }}
-      >
-        ${v.toLocaleString()}
-      </span>
+    title: "Components",
+    dataIndex: "components",
+    render: (components: any[]) => (
+      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+        {components.map((c, i) => (
+          <Tag key={i} color={c.type === "EARNING" ? "blue" : "orange"}>
+            {c.name} ({c.amountType === "PERCENTAGE" ? `${c.value}%` : `$${c.value}`})
+          </Tag>
+        ))}
+      </div>
     ),
   },
   {
-    title: "Allowances",
-    dataIndex: "allowances",
-    align: "right" as const,
-    render: (v: number) => (
-      <span style={{ color: "var(--color-success)" }}>
-        +${v.toLocaleString()}
-      </span>
+    title: "Default",
+    dataIndex: "isDefault",
+    render: (v: boolean) => (
+      <Tag color={v ? "green" : "default"}>{v ? "YES" : "NO"}</Tag>
     ),
-  },
-  {
-    title: "Deductions",
-    dataIndex: "deductions",
-    align: "right" as const,
-    render: (v: number) => (
-      <span style={{ color: "var(--color-error)" }}>
-        -${v.toLocaleString()}
-      </span>
-    ),
-  },
-  {
-    title: "Net Salary",
-    dataIndex: "netSalary",
-    sorter: (a, b) => a.netSalary - b.netSalary,
-    align: "right" as const,
-    render: (v: number) => (
-      <span className="font-display" style={{ color: "var(--color-primary)" }}>
-        ${v.toLocaleString()}
-      </span>
-    ),
-  },
-  {
-    title: "Employees",
-    dataIndex: "employees",
-    align: "right" as const,
-    render: (v: number) => (
-      <span style={{ color: "var(--color-on-surface-variant)" }}>{v}</span>
-    ),
-  },
-  {
-    title: "Status",
-    dataIndex: "status",
-    render: (s: string) => <Tag color="success">{s}</Tag>,
   },
 ];
 
 export default function SalaryStructuresPage() {
+  const { data: structures, isLoading } = useGetStructuresQuery();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   return (
     <div className="animate-fade-in-up">
       <PageHeader
@@ -152,7 +56,11 @@ export default function SalaryStructuresPage() {
           { label: "Salary Structures" },
         ]}
         extra={
-          <Button type="primary" icon={<PlusOutlined />}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setIsModalOpen(true)}
+          >
             New Structure
           </Button>
         }
@@ -163,12 +71,23 @@ export default function SalaryStructuresPage() {
           borderColor: "var(--ghost-border)",
         }}
       >
-        <DataTable<SalaryStructure>
+        <DataTable<any>
           columns={columns}
-          dataSource={mockStructures}
+          dataSource={structures}
+          loading={isLoading}
           rowKey="id"
         />
       </Card>
+
+      <Modal
+        title="Create Salary Structure"
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        footer={null}
+        width={900}
+      >
+        <SalaryStructureBuilder onSuccess={() => setIsModalOpen(false)} />
+      </Modal>
     </div>
   );
 }

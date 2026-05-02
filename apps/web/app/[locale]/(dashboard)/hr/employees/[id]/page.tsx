@@ -54,6 +54,7 @@ import { ExitInterviewModal } from "@/components/modules/hr/employees/ExitInterv
 import { UpdateSalaryModal } from "@/components/modules/hr/employees/UpdateSalaryModal";
 import { PromotionWizardModal } from "@/components/modules/hr/employees/PromotionWizardModal";
 import { ProbationActionModal } from "@/components/modules/hr/employees/ProbationActionModal";
+import { RehireEmployeeModal } from "@/components/modules/hr/employees/RehireEmployeeModal";
 
 export default function EmployeeProfilePage() {
   const params = useParams();
@@ -67,6 +68,7 @@ export default function EmployeeProfilePage() {
   const [probationVisible, setProbationVisible] = useState(false);
   const [resignationVisible, setResignationVisible] = useState(false);
   const [exitInterviewVisible, setExitInterviewVisible] = useState(false);
+  const [rehireVisible, setRehireVisible] = useState(false);
   const [probationMode, setProbationMode] = useState<"extend" | "complete">("extend");
 
   const { data: emp, isLoading: isEmpLoading } = useGetEmployeeQuery(id);
@@ -81,6 +83,8 @@ export default function EmployeeProfilePage() {
   }
 
   if (!emp) return <div>Employee not found</div>;
+
+  const isInactive = emp.status === 'TERMINATED' || emp.status === 'RESIGNED' || emp.status === 'RETIRED';
 
   return (
     <div className="animate-fade-in-up">
@@ -101,43 +105,56 @@ export default function EmployeeProfilePage() {
             >
               Back
             </Button>
-            <Button
-              icon={<RocketOutlined />}
-              onClick={() => setPromotionVisible(true)}
-            >
-              Promotion
-            </Button>
-            <Button
-              icon={<SwapOutlined />}
-              onClick={() => setTransferVisible(true)}
-            >
-              Transfer
-            </Button>
-            <Button
-              icon={<LogoutOutlined />}
-              onClick={() => setResignationVisible(true)}
-            >
-              Resign
-            </Button>
-            <Button
-              icon={<FileSearchOutlined />}
-              onClick={() => setExitInterviewVisible(true)}
-            >
-              Exit Interview
-            </Button>
-            <Button
-              icon={<DollarCircleOutlined />}
-              onClick={() => setSalaryVisible(true)}
-            >
-              Revise Salary
-            </Button>
-            <Button
-              danger
-              icon={<StopOutlined />}
-              onClick={() => setTerminateVisible(true)}
-            >
-              Terminate
-            </Button>
+            
+            {isInactive ? (
+              <Button
+                type="primary"
+                icon={<RocketOutlined />}
+                onClick={() => setRehireVisible(true)}
+              >
+                Re-hire Employee
+              </Button>
+            ) : (
+              <>
+                <Button
+                  icon={<RocketOutlined />}
+                  onClick={() => setPromotionVisible(true)}
+                >
+                  Promotion
+                </Button>
+                <Button
+                  icon={<SwapOutlined />}
+                  onClick={() => setTransferVisible(true)}
+                >
+                  Transfer
+                </Button>
+                <Button
+                  icon={<LogoutOutlined />}
+                  onClick={() => setResignationVisible(true)}
+                >
+                  Resign
+                </Button>
+                <Button
+                  icon={<FileSearchOutlined />}
+                  onClick={() => setExitInterviewVisible(true)}
+                >
+                  Exit Interview
+                </Button>
+                <Button
+                  icon={<DollarCircleOutlined />}
+                  onClick={() => setSalaryVisible(true)}
+                >
+                  Revise Salary
+                </Button>
+                <Button
+                  danger
+                  icon={<StopOutlined />}
+                  onClick={() => setTerminateVisible(true)}
+                >
+                  Terminate
+                </Button>
+              </>
+            )}
           </Space>
         }
       />
@@ -174,7 +191,7 @@ export default function EmployeeProfilePage() {
             value={emp.probationEndDate ? formatDate(emp.probationEndDate) : "N/A"}
             icon={<HistoryOutlined />}
             color="var(--color-error)"
-            extra={emp.probationEndDate && (
+            extra={emp.probationEndDate && !isInactive && (
               <Space style={{ marginTop: 8 }}>
                 <Button size="small" type="link" onClick={() => { setProbationMode("extend"); setProbationVisible(true); }}>Extend</Button>
                 <Button size="small" type="link" onClick={() => { setProbationMode("complete"); setProbationVisible(true); }}>Complete</Button>
@@ -392,6 +409,11 @@ export default function EmployeeProfilePage() {
         employee={emp}
         open={exitInterviewVisible}
         onClose={() => setExitInterviewVisible(false)}
+      />
+      <RehireEmployeeModal
+        employee={emp}
+        open={rehireVisible}
+        onClose={() => setRehireVisible(false)}
       />
     </div>
   );

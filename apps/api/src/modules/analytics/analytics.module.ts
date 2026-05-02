@@ -6,6 +6,9 @@ import { FinanceModule } from '../finance/finance.module';
 import { SalesModule } from '../sales/sales.module';
 import { ProjectsModule } from '../projects/projects.module';
 import { InventoryModule } from '../inventory/inventory.module';
+import { ProcurementModule } from '../procurement/procurement.module';
+import { AttendanceModule } from '../attendance/attendance.module';
+import { AnalyticsGateway } from './analytics.gateway';
 
 @Module({
   imports: [
@@ -14,9 +17,11 @@ import { InventoryModule } from '../inventory/inventory.module';
     SalesModule,
     ProjectsModule,
     InventoryModule,
+    ProcurementModule,
+    AttendanceModule,
   ],
   controllers: [AnalyticsController],
-  providers: [AnalyticsService],
+  providers: [AnalyticsService, AnalyticsGateway],
   exports: [AnalyticsService],
 })
 export class AnalyticsModule {}

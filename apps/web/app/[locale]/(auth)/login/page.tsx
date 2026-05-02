@@ -9,7 +9,7 @@ import {
   WindowsOutlined,
 } from "@ant-design/icons";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useLoginMutation } from "@/store/api/authApi";
 import { ForcePasswordChangeModal } from "@/components/modules/auth/ForcePasswordChangeModal";
 
@@ -17,6 +17,8 @@ const { Title, Text } = Typography;
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const [login, { isLoading, error }] = useLoginMutation();
   const [showForcePassword, setShowForcePassword] = React.useState(false);
   const [tempUser, setTempUser] = React.useState<any>(null);
@@ -28,7 +30,7 @@ export default function LoginPage() {
         setTempUser(result.user);
         setShowForcePassword(true);
       } else {
-        router.push("/dashboard");
+        router.push(callbackUrl);
       }
     } catch {
       // Error state handled by RTK Query
@@ -224,6 +226,17 @@ export default function LoginPage() {
             }}
           >
             Microsoft
+          </Button>
+          <Button
+            block
+            variant="dashed"
+            color="primary"
+            style={{ height: 44 }}
+            onClick={() => {
+              window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"}/auth/saml`;
+            }}
+          >
+            Company SSO (SAML)
           </Button>
         </Space>
 

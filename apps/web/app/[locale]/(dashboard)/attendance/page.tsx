@@ -25,6 +25,7 @@ import { BulkImportModal } from "@/components/modules/hr/attendance/BulkImportMo
 import { QRKiosk } from "@/components/modules/hr/attendance/QRKiosk";
 import { QRCheckIn } from "@/components/modules/hr/attendance/QRCheckIn";
 import dayjs from "dayjs";
+import { useRouter } from "next/navigation";
 
 const columns: ColumnsType<any> = [
   {
@@ -101,6 +102,7 @@ const columns: ColumnsType<any> = [
 ];
 
 export default function AttendancePage() {
+  const router = useRouter();
   const [date, setDate] = useState(dayjs().format("YYYY-MM-DD"));
   const { data: records, isLoading } = useGetTeamAttendanceQuery({ date });
   const [checkIn, { isLoading: isGeoLoading }] = useCheckInMutation();
@@ -167,6 +169,9 @@ export default function AttendancePage() {
                 </Button>
                 <Button icon={<UploadOutlined />} onClick={() => setIsBulkModalOpen(true)}>
                     Bulk Import
+                </Button>
+                <Button icon={<CalendarOutlined />} onClick={() => router.push("/attendance/holidays")}>
+                    Holidays
                 </Button>
                 <Button type="primary" icon={<FileExcelOutlined />} onClick={handleExport}>
                     Monthly Report

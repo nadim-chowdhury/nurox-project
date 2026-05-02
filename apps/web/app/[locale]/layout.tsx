@@ -4,8 +4,10 @@ import { AntdProvider } from "@/components/providers/AntdProvider";
 import { ReduxProvider } from "@/components/providers/ReduxProvider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { SocketProvider } from "@/components/providers/SocketProvider";
+import { ShortcutProvider } from "@/components/providers/ShortcutProvider";
 import { PostHogProvider } from "@/components/providers/PostHogProvider";
 import { CommandPalette } from "@/components/common/CommandPalette/CommandPalette";
+import { OfflineBanner } from "@/components/common/OfflineBanner";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
@@ -80,10 +82,13 @@ export default async function RootLayout({
               <AuthProvider>
                 <AntdProvider locale={locale} direction={direction}>
                   <SocketProvider>
-                    <ErrorBoundary>
-                      {children}
-                    </ErrorBoundary>
-                    <CommandPalette />
+                    <ShortcutProvider>
+                      <OfflineBanner />
+                      <ErrorBoundary>
+                        {children}
+                      </ErrorBoundary>
+                      <CommandPalette />
+                    </ShortcutProvider>
                   </SocketProvider>
                 </AntdProvider>
               </AuthProvider>

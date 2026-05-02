@@ -18,6 +18,7 @@ import type {
 export interface Employee extends EmployeeResponseDto {
   department: any;
   designation: any;
+  manager?: any;
   salary?: number;
   dateOfBirth?: string | null;
   gender?: string | null;
@@ -210,6 +211,18 @@ export const hrApi = createApi({
       ],
     }),
 
+    rehireEmployee: builder.mutation<Employee, { id: string; data: any }>({
+      query: ({ id, data }) => ({
+        url: `/hr/employees/${id}/rehire`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: (_, __, { id }) => [
+        { type: "Employee", id },
+        { type: "History", id },
+      ],
+    }),
+
     getTrainings: builder.query<any[], void>({
       query: () => "/hr/trainings",
       providesTags: ["Training"],
@@ -232,6 +245,37 @@ export const hrApi = createApi({
     getDesignations: builder.query<any[], void>({
       query: () => "/hr/designations",
       providesTags: ["Designation"],
+    }),
+
+    getGrades: builder.query<any[], void>({
+      query: () => "/hr/grades",
+      providesTags: ["Grade"],
+    }),
+
+    createGrade: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/hr/grades",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Grade"],
+    }),
+
+    updateGrade: builder.mutation<any, { id: string; data: any }>({
+      query: ({ id, data }) => ({
+        url: `/hr/grades/${id}`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["Grade"],
+    }),
+
+    deleteGrade: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/hr/grades/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Grade"],
     }),
 
     getDepartment: builder.query<DepartmentDto, string>({
@@ -398,6 +442,15 @@ export const hrApi = createApi({
       providesTags: ["TrainingCourse"],
     }),
 
+    createTrainingCourse: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/hr/training-courses",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["TrainingCourse"],
+    }),
+
     enrollInTraining: builder.mutation<any, { id: string; courseId: string }>({
       query: ({ id, ...body }) => ({
         url: `/hr/employees/${id}/enroll`,
@@ -491,6 +544,15 @@ export const hrApi = createApi({
       providesTags: ["Handbook"],
     }),
 
+    createHandbook: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/hr/handbooks",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Handbook"],
+    }),
+
     acknowledgeHandbook: builder.mutation<any, { id: string; handbookId: string }>({
       query: ({ id, ...body }) => ({
         url: `/hr/employees/${id}/handbook-ack`,
@@ -536,11 +598,16 @@ export const {
   useGetSalaryHistoryQuery,
   useTransferEmployeeMutation,
   useTerminateEmployeeMutation,
+  useRehireEmployeeMutation,
   useGetTrainingsQuery,
   useGetSkillMatrixQuery,
   useGetOrgChartQuery,
   useGetDepartmentsQuery,
   useGetDesignationsQuery,
+  useGetGradesQuery,
+  useCreateGradeMutation,
+  useUpdateGradeMutation,
+  useDeleteGradeMutation,
   useGetDepartmentQuery,
   useCreateDepartmentMutation,
   useUpdateDepartmentMutation,
@@ -561,6 +628,7 @@ export const {
   useGetPerformanceReviewsQuery,
   useAddOKRCheckInMutation,
   useGetTrainingCoursesQuery,
+  useCreateTrainingCourseMutation,
   useEnrollInTrainingMutation,
   useUpdateEmployeeTrainingStatusMutation,
   useGetSkillCatalogQuery,
@@ -574,6 +642,7 @@ export const {
   useSubmitENPSResponseMutation,
   useGetENPSAnalyticsQuery,
   useGetHandbooksQuery,
+  useCreateHandbookMutation,
   useAcknowledgeHandbookMutation,
   useCreateSuccessionPlanMutation,
   useGetSuccessionPlansQuery,

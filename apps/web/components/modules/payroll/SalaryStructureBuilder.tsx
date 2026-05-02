@@ -5,7 +5,7 @@ import { Form, Input, Select, Button, Space, Card, InputNumber, Switch, Table, D
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import { useCreateStructureMutation } from "@/store/api/payrollApi";
 
-export const SalaryStructureBuilder: React.FC = () => {
+export const SalaryStructureBuilder: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
   const [form] = Form.useForm();
   const [createStructure, { isLoading }] = useCreateStructureMutation();
 
@@ -14,6 +14,7 @@ export const SalaryStructureBuilder: React.FC = () => {
       await createStructure(values).unwrap();
       message.success("Salary structure created successfully!");
       form.resetFields();
+      if (onSuccess) onSuccess();
     } catch (err: any) {
       message.error(err.data?.message || "Failed to create structure");
     }
@@ -42,7 +43,11 @@ export const SalaryStructureBuilder: React.FC = () => {
           {(fields, { add, remove }) => (
             <>
               {fields.map(({ key, name, ...restField }) => (
-                <Space key={key} style={{ display: "flex", marginBottom: 8 }} align="baseline">
+                <Space
+                  key={key}
+                  style={{ display: "flex", marginBottom: 8 }}
+                  align="baseline"
+                >
                   <Form.Item
                     {...restField}
                     name={[name, "name"]}
@@ -78,11 +83,12 @@ export const SalaryStructureBuilder: React.FC = () => {
                   >
                     <InputNumber placeholder="Value" />
                   </Form.Item>
-                  <Form.Item
-                    {...restField}
-                    name={[name, "dependsOn"]}
-                  >
-                    <Select placeholder="Depends On" style={{ width: 120 }} allowClear>
+                  <Form.Item {...restField} name={[name, "dependsOn"]}>
+                    <Select
+                      placeholder="Depends On"
+                      style={{ width: 120 }}
+                      allowClear
+                    >
                       <Select.Option value="Basic">Basic</Select.Option>
                       <Select.Option value="HRA">HRA</Select.Option>
                       <Select.Option value="Transport">Transport</Select.Option>
@@ -96,14 +102,60 @@ export const SalaryStructureBuilder: React.FC = () => {
                   >
                     <Switch size="small" />
                   </Form.Item>
-                  <DeleteOutlined onClick={() => remove(name)} style={{ color: "red" }} />
+                  <DeleteOutlined
+                    onClick={() => remove(name)}
+                    style={{ color: "red" }}
+                  />
                 </Space>
               ))}
-              <Form.Item>
-                <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+              <div style={{ display: "flex", gap: 10 }}>
+                <Button
+                  type="dashed"
+                  onClick={() => add()}
+                  block
+                  icon={<PlusOutlined />}
+                >
                   Add Component
                 </Button>
-              </Form.Item>
+                <Button
+                  type="dashed"
+                  onClick={() => {
+                    add({
+                      name: "HRA",
+                      type: "EARNING",
+                      amountType: "PERCENTAGE",
+                      value: 40,
+                      isTaxable: true,
+                      dependsOn: "Basic",
+                    });
+                    add({
+                      name: "Transport Allowance",
+                      type: "EARNING",
+                      amountType: "FIXED",
+                      value: 5000,
+                      isTaxable: true,
+                    });
+                    add({
+                      name: "Medical Allowance",
+                      type: "EARNING",
+                      amountType: "FIXED",
+                      value: 3000,
+                      isTaxable: true,
+                    });
+                    add({
+                      name: "Provident Fund",
+                      type: "STATUTORY",
+                      amountType: "PERCENTAGE",
+                      value: 10,
+                      isTaxable: false,
+                      dependsOn: "Basic",
+                    });
+                  }}
+                  icon={<PlusOutlined />}
+                >
+                  Add Standard Components
+                </Button>
+              </div>
             </>
           )}
         </Form.List>

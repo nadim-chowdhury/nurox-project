@@ -183,24 +183,55 @@ export class PayrollService {
     return savedRun;
   }
 
-  async processRun(runId: string, employeeId?: string) {
+  async processRun(
+    runId: string,
+    filters?: {
+      employeeId?: string;
+      branchId?: string;
+      departmentId?: string;
+      gradeId?: string;
+    },
+  ) {
     const run = await this.runRepo.findOne({ where: { id: runId } });
     if (!run) throw new NotFoundException('Payroll run not found');
     if (run.status !== PayrollRunStatus.DRAFT)
       throw new ConflictException('Run is already processed or cancelled');
+
+    run.status = PayrollRunStatus.PROCESSING;
+    await this.runRepo.save(run);
 
     const taxConfig = await this.taxRepo.findOne({
       where: { isActive: true },
       relations: ['brackets'],
     });
 
-    const assignmentWhere: any = { isActive: true };
-    if (employeeId) assignmentWhere.employeeId = employeeId;
+    const qb = this.assignmentRepo
+      .createQueryBuilder('assignment')
+      .innerJoinAndSelect('assignment.employee', 'employee')
+      .innerJoinAndSelect('assignment.salaryStructure', 'structure')
+      .innerJoinAndSelect('structure.components', 'components')
+      .where('assignment.isActive = :isActive', { isActive: true });
 
-    const assignments = await this.assignmentRepo.find({
-      where: assignmentWhere,
-      relations: ['salaryStructure', 'salaryStructure.components', 'employee'],
-    });
+    if (filters?.employeeId) {
+      qb.andWhere('employee.id = :employeeId', {
+        employeeId: filters.employeeId,
+      });
+    }
+    if (filters?.branchId) {
+      qb.andWhere('employee.branchId = :branchId', {
+        branchId: filters.branchId,
+      });
+    }
+    if (filters?.departmentId) {
+      qb.andWhere('employee.departmentId = :departmentId', {
+        departmentId: filters.departmentId,
+      });
+    }
+    if (filters?.gradeId) {
+      qb.andWhere('employee.gradeId = :gradeId', { gradeId: filters.gradeId });
+    }
+
+    const assignments = await qb.getMany();
 
     let totalGross = 0;
     let totalDeduction = 0;
@@ -336,6 +367,28 @@ export class PayrollService {
     });
 
     return run;
+  }
+
+  async markAsPaid(runId: string) {
+    const run = await this.runRepo.findOne({ where: { id: runId } });
+    if (!run) throw new NotFoundException('Payroll run not found');
+    if (run.status !== PayrollRunStatus.PROCESSED)
+      throw new ConflictException(
+        'Run must be PROCESSED before it can be marked as PAID',
+      );
+
+    run.status = PayrollRunStatus.PAID;
+    run.payDate = new Date().toISOString().split('T')[0];
+    const saved = await this.runRepo.save(run);
+
+    await this.logPayrollAudit(
+      run.id,
+      'PAY',
+      { status: PayrollRunStatus.PROCESSED },
+      { status: run.status },
+    );
+
+    return saved;
   }
 
   private async logPayrollAudit(
@@ -579,11 +632,22 @@ export class PayrollService {
       relations: ['employee'],
     });
 
-    let content =
-      'Receiver Name\tReceiver Account\tAmount\tBank Name\tBranch Name\tRouting Number\n';
-
+    const groups = new Map<string, Payslip[]>();
     for (const p of payslips) {
-      content += `${p.employee.firstName} ${p.employee.lastName}\t${p.employee.employeeId}_ACC\t${p.netPay}\tSample Bank\tMain Branch\t123456789\n`;
+      const bank = p.employee.bankName || 'Unknown Bank';
+      if (!groups.has(bank)) groups.set(bank, []);
+      groups.get(bank)!.push(p);
+    }
+
+    let content = '';
+    for (const [bank, slips] of groups.entries()) {
+      content += `=== BANK: ${bank} ===\n`;
+      content +=
+        'Receiver Name\tReceiver Account\tAmount\tBank Name\tBranch Name\tRouting Number\n';
+      for (const p of slips) {
+        content += `${p.employee.firstName} ${p.employee.lastName}\t${p.employee.accountNumber || 'N/A'}\t${p.netPay}\t${p.employee.bankName || 'N/A'}\t${p.employee.bankBranch || 'N/A'}\t${p.employee.routingNumber || 'N/A'}\n`;
+      }
+      content += '\n';
     }
 
     return content;

@@ -17,5 +17,9 @@
   "packageManager": "pnpm@9.0.0",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "@types/passport-saml": "^1.1.7",
+    "passport-saml": "^3.2.4"
   }
 }

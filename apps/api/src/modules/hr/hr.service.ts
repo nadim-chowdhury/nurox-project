@@ -1,11 +1,13 @@
 import {
   Injectable,
   NotFoundException,
+  BadRequestException,
   Logger,
   OnModuleInit,
   Inject,
   forwardRef,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, TreeRepository } from 'typeorm';
 import {
@@ -16,6 +18,7 @@ import {
 } from './entities/employee.entity';
 import { Department } from './entities/department.entity';
 import { Designation } from './entities/designation.entity';
+import { Grade } from './entities/grade.entity';
 import {
   PerformanceReview,
   PerformanceReviewStatus,
@@ -139,10 +142,13 @@ export class HrService implements OnModuleInit {
     private readonly clearanceRepo: Repository<ClearanceChecklist>,
     @InjectRepository(Shift)
     private readonly shiftRepo: Repository<Shift>,
+    @InjectRepository(Grade)
+    private readonly gradeRepo: Repository<Grade>,
     @Inject(forwardRef(() => PdfService))
     private readonly pdfService: PdfService,
     @InjectQueue('hr')
     private readonly hrQueue: Queue,
+    private readonly configService: ConfigService,
   ) {}
 
   async onModuleInit() {
@@ -159,16 +165,30 @@ export class HrService implements OnModuleInit {
   }
 
   async createEmployee(dto: CreateEmployeeDto): Promise<Employee> {
+    const hrConf = this.configService.get('hr');
+
     return await this.employeeRepo.manager.transaction(async (manager) => {
       const { baseSalary, ...rest } = dto;
+
+      // Auto-calculate probation if not provided
+      let probationEndDate = dto.probationEndDate;
+      if (!probationEndDate && dto.employmentType) {
+        const duration = hrConf.probationDuration[dto.employmentType] || 90;
+        const end = new Date(dto.joinDate || Date.now());
+        end.setDate(end.getDate() + duration);
+        probationEndDate = end.toISOString();
+      }
+
       const employee = manager.create(Employee, {
         ...(rest as any),
         salary: baseSalary,
         gender: dto.gender as Gender,
+        probationEndDate,
         employeeId:
           dto.employeeCode || `EMP-${Date.now().toString().slice(-4)}`,
         status: EmployeeStatus.ACTIVE,
       });
+      // ... rest of createEmployee
 
       const saved = await manager.save(employee);
 
@@ -514,6 +534,36 @@ export class HrService implements OnModuleInit {
   async removeDesignation(id: string): Promise<void> {
     await this.findDesignationById(id);
     await this.designationRepo.softDelete(id);
+  }
+
+  /**
+   * GRADES CRUD
+   */
+
+  async createGrade(dto: any): Promise<Grade> {
+    const grade = this.gradeRepo.create(dto as Partial<Grade>);
+    return this.gradeRepo.save(grade);
+  }
+
+  async findAllGrades(): Promise<Grade[]> {
+    return this.gradeRepo.find({ order: { level: 'ASC' } });
+  }
+
+  async findGradeById(id: string): Promise<Grade> {
+    const grade = await this.gradeRepo.findOne({ where: { id } });
+    if (!grade) throw new NotFoundException('Grade not found');
+    return grade;
+  }
+
+  async updateGrade(id: string, dto: any): Promise<Grade> {
+    await this.findGradeById(id);
+    await this.gradeRepo.update(id, dto);
+    return this.findGradeById(id);
+  }
+
+  async removeGrade(id: string): Promise<void> {
+    await this.findGradeById(id);
+    await this.gradeRepo.softDelete(id);
   }
 
   async getCount(managerId?: string): Promise<number> {
@@ -1349,6 +1399,50 @@ export class HrService implements OnModuleInit {
     return this.successionRepo.find({
       where: { successorId: employeeId, isActive: true },
       relations: ['designation'],
+    });
+  }
+
+  /**
+   * RE-HIRING WORKFLOW
+   */
+  async rehireEmployee(
+    employeeId: string,
+    dto: Partial<CreateEmployeeDto>,
+  ): Promise<Employee> {
+    const employee = await this.findEmployeeById(employeeId);
+
+    if (
+      employee.status !== EmployeeStatus.TERMINATED &&
+      employee.status !== EmployeeStatus.RESIGNED
+    ) {
+      throw new BadRequestException(
+        'Only terminated or resigned employees can be re-hired',
+      );
+    }
+
+    return await this.employeeRepo.manager.transaction(async (manager) => {
+      // 1. Update Employee Record
+      const updateData: any = {
+        status: EmployeeStatus.ACTIVE,
+        joinDate: dto.joinDate || new Date().toISOString(),
+        salary: dto.baseSalary || employee.salary,
+        ...dto,
+      };
+
+      delete updateData.baseSalary; // Map to entity field
+
+      await manager.update(Employee, employeeId, updateData);
+
+      // 2. Add History
+      const history = manager.create(EmploymentHistory, {
+        employeeId,
+        event: EmploymentEvent.REHIRED,
+        effectiveDate: updateData.joinDate,
+        comments: 'Employee re-hired',
+      });
+      await manager.save(history);
+
+      return this.findEmployeeById(employeeId);
     });
   }
 

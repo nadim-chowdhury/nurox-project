@@ -73,3 +73,13 @@ export const s3Config = registerAs('s3', () => ({
   bucket: process.env.S3_BUCKET || 'nurox-erp',
   publicUrl: process.env.S3_PUBLIC_URL || 'http://localhost:9000/nurox-erp',
 }));
+
+export const hrConfig = registerAs('hr', () => ({
+  probationDuration: {
+    FULL_TIME: 90, // days
+    PART_TIME: 90,
+    CONTRACT: 30,
+    INTERN: 30,
+    PROBATION: 180,
+  },
+}));

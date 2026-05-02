@@ -32,6 +32,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Tenant } from './entities/tenant.entity';
 import { Branch } from './entities/branch.entity';
+import { WorkingCalendar } from './entities/working-calendar.entity';
+import { Holiday } from './entities/holiday.entity';
 import { TenantModule } from './entities/tenant-module.entity';
 
 @ApiTags('System')
@@ -42,6 +44,10 @@ export class SystemController {
     private readonly tenantRepository: Repository<Tenant>,
     @InjectRepository(Branch)
     private readonly branchRepository: Repository<Branch>,
+    @InjectRepository(WorkingCalendar)
+    private readonly calendarRepository: Repository<WorkingCalendar>,
+    @InjectRepository(Holiday)
+    private readonly holidayRepository: Repository<Holiday>,
     @InjectRepository(TenantModule)
     private readonly moduleRepository: Repository<TenantModule>,
     private readonly tenantProvisioningService: TenantProvisioningService,
@@ -180,5 +186,92 @@ export class SystemController {
     return this.moduleRepository.find({
       where: { tenantId: req.tenantId, isEnabled: true },
     });
+  }
+
+  // --- Working Calendars ---
+
+  @Get('calendars')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async findAllCalendars() {
+    return this.calendarRepository.find({
+      relations: ['branch'],
+      order: { isDefault: 'DESC', name: 'ASC' },
+    });
+  }
+
+  @Post('calendars')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
+  @ApiBearerAuth()
+  async createCalendar(@Body() body: any) {
+    const calendar = this.calendarRepository.create(body);
+    return this.calendarRepository.save(calendar);
+  }
+
+  @Patch('calendars/:id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
+  @ApiBearerAuth()
+  async updateCalendar(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: any,
+  ) {
+    await this.calendarRepository.update(id, body);
+    return this.calendarRepository.findOne({ where: { id } });
+  }
+
+  @Delete('calendars/:id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
+  @ApiBearerAuth()
+  async removeCalendar(@Param('id', ParseUUIDPipe) id: string) {
+    await this.calendarRepository.delete(id);
+    return { success: true };
+  }
+
+  // --- Holidays ---
+
+  @Get('holidays')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async findAllHolidays(@Query('branchId') branchId?: string) {
+    const where: any = {};
+    if (branchId) where.branchId = branchId;
+    return this.holidayRepository.find({
+      where,
+      relations: ['branch'],
+      order: { date: 'ASC' },
+    });
+  }
+
+  @Post('holidays')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
+  @ApiBearerAuth()
+  async createHoliday(@Body() body: any) {
+    const holiday = this.holidayRepository.create(body);
+    return this.holidayRepository.save(holiday);
+  }
+
+  @Patch('holidays/:id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
+  @ApiBearerAuth()
+  async updateHoliday(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: any,
+  ) {
+    await this.holidayRepository.update(id, body);
+    return this.holidayRepository.findOne({ where: { id } });
+  }
+
+  @Delete('holidays/:id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
+  @ApiBearerAuth()
+  async removeHoliday(@Param('id', ParseUUIDPipe) id: string) {
+    await this.holidayRepository.delete(id);
+    return { success: true };
   }
 }

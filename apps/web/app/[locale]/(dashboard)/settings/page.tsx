@@ -33,6 +33,11 @@ import {
   DeleteOutlined,
   UserAddOutlined,
   FileTextOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+  HistoryOutlined,
+  SafetyCertificateOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Avatar } from "@/components/common/Avatar";
@@ -1112,6 +1117,88 @@ function RolesTab() {
   );
 }
 
+function PreferencesTab() {
+  const { data: preferences } = useGetPreferencesQuery();
+  const [setPreference] = useSetPreferenceMutation();
+
+  const handlePreferenceChange = async (key: string, value: any) => {
+    try {
+      await setPreference({ key, value }).unwrap();
+      message.success("Preference updated");
+    } catch {
+      message.error("Failed to update preference");
+    }
+  };
+
+  return (
+    <Card style={cardStyle} styles={{ body: { padding: 32 } }}>
+      <h3
+        style={{
+          fontFamily: "var(--font-display)",
+          color: "var(--color-on-surface)",
+          marginBottom: 24,
+        }}
+      >
+        User Preferences
+      </h3>
+      <Form layout="vertical" initialValues={preferences}>
+        <Row gutter={24}>
+          <Col span={12}>
+            <Form.Item label="Language" name="language">
+              <Select
+                options={[
+                  { label: "English", value: "en" },
+                  { label: "Bengali", value: "bn" },
+                  { label: "Arabic", value: "ar" },
+                ]}
+                onChange={(val) => handlePreferenceChange("language", val)}
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item label="Theme" name="theme">
+              <Select
+                options={[
+                  { label: "Deep Space (Dark)", value: "dark" },
+                  { label: "Light", value: "light" },
+                  { label: "System Default", value: "system" },
+                ]}
+                onChange={(val) => handlePreferenceChange("theme", val)}
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item label="Date Format" name="dateFormat">
+              <Select
+                options={[
+                  { label: "MM/DD/YYYY", value: "MM/DD/YYYY" },
+                  { label: "DD/MM/YYYY", value: "DD/MM/YYYY" },
+                  { label: "YYYY-MM-DD", value: "YYYY-MM-DD" },
+                ]}
+                onChange={(val) => handlePreferenceChange("dateFormat", val)}
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item label="Timezone" name="timezone">
+              <Select
+                showSearch
+                options={[
+                  { label: "UTC", value: "UTC" },
+                  { label: "America/New_York", value: "America/New_York" },
+                  { label: "Asia/Dhaka", value: "Asia/Dhaka" },
+                  { label: "Asia/Dubai", value: "Asia/Dubai" },
+                ]}
+                onChange={(val) => handlePreferenceChange("timezone", val)}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+      </Form>
+    </Card>
+  );
+}
+
 function NotificationsTab() {
   return (
     <Card style={cardStyle} styles={{ body: { padding: 32 } }}>
@@ -1243,6 +1330,139 @@ function IntegrationsTab() {
   );
 }
 
+function LoginHistoryTab() {
+  const { data: history, isLoading } = useGetLoginHistoryQuery();
+
+  return (
+    <Card style={cardStyle} styles={{ body: { padding: 32 } }}>
+      <h3
+        style={{
+          fontFamily: "var(--font-display)",
+          color: "var(--color-on-surface)",
+          marginBottom: 24,
+        }}
+      >
+        Login Activity
+      </h3>
+      <p
+        style={{
+          color: "var(--color-on-surface-variant)",
+          fontSize: 13,
+          marginBottom: 24,
+        }}
+      >
+        Your recent sign-in activity. If you see anything suspicious, revoke
+        active sessions or change your password.
+      </p>
+
+      {isLoading ? (
+        <div style={{ padding: 24, textAlign: "center" }}>Loading...</div>
+      ) : (
+        history?.map((event) => (
+          <div
+            key={event.id}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "16px 0",
+              borderBottom: "1px solid var(--ghost-border)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  background: "var(--ghost-bg)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 18,
+                  color: event.result === 'SUCCESS' ? 'var(--color-success)' : 'var(--color-error)',
+                }}
+              >
+                {event.result === 'SUCCESS' ? <CheckCircleOutlined /> : <ExclamationCircleOutlined />}
+              </div>
+              <div>
+                <div
+                  style={{
+                    color: "var(--color-on-surface)",
+                    fontSize: 14,
+                    fontWeight: 500,
+                  }}
+                >
+                  {event.result === 'SUCCESS' ? 'Successful Login' : `Failed Login (${event.failureReason})`}
+                </div>
+                <div
+                  style={{
+                    color: "var(--color-on-surface-variant)",
+                    fontSize: 12,
+                  }}
+                >
+                  {event.city}, {event.country} • {event.ipAddress} • {dayjs(event.createdAt).format('MMM D, YYYY h:mm A')}
+                </div>
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 12, color: 'var(--color-on-surface-variant)' }}>{event.deviceType}</div>
+            </div>
+          </div>
+        ))
+      )}
+    </Card>
+  );
+}
+
+function SSOTab() {
+  return (
+    <Card style={cardStyle} styles={{ body: { padding: 32 } }}>
+      <h3
+        style={{
+          fontFamily: "var(--font-display)",
+          color: "var(--color-on-surface)",
+          marginBottom: 8,
+        }}
+      >
+        SAML Single Sign-On
+      </h3>
+      <p
+        style={{
+          color: "var(--color-on-surface-variant)",
+          fontSize: 13,
+          marginBottom: 24,
+        }}
+      >
+        Allow your employees to log in with your organization's identity
+        provider (Azure AD, Okta, etc.)
+      </p>
+
+      <Form layout="vertical" size="large" initialValues={{ enabled: false }}>
+        <Form.Item name="enabled" label="Enable SAML SSO" valuePropName="checked">
+          <Switch />
+        </Form.Item>
+        
+        <Divider />
+        
+        <Form.Item label="IdP Entry Point (SSO URL)" name="entryPoint">
+          <Input placeholder="https://idp.example.com/adfs/ls/" />
+        </Form.Item>
+        
+        <Form.Item label="Issuer (Entity ID)" name="issuer">
+          <Input placeholder="nurox-erp" />
+        </Form.Item>
+        
+        <Form.Item label="Public Certificate" name="cert">
+          <Input.TextArea rows={4} placeholder="Paste your IdP X.509 certificate here..." />
+        </Form.Item>
+        
+        <Button type="primary" icon={<SaveOutlined />}>Save SSO Config</Button>
+      </Form>
+    </Card>
+  );
+}
+
 export default function SettingsPage() {
   return (
     <div className="animate-fade-in-up">
@@ -1266,6 +1486,15 @@ export default function SettingsPage() {
               </span>
             ),
             children: <ProfileTab />,
+          },
+          {
+            key: "preferences",
+            label: (
+              <span>
+                <SettingOutlined /> Preferences
+              </span>
+            ),
+            children: <PreferencesTab />,
           },
           {
             key: "company",
@@ -1313,6 +1542,15 @@ export default function SettingsPage() {
             children: <SessionsTab />,
           },
           {
+            key: "history",
+            label: (
+              <span>
+                <HistoryOutlined /> Login History
+              </span>
+            ),
+            children: <LoginHistoryTab />,
+          },
+          {
             key: "roles",
             label: (
               <span>
@@ -1320,6 +1558,15 @@ export default function SettingsPage() {
               </span>
             ),
             children: <RolesTab />,
+          },
+          {
+            key: "sso",
+            label: (
+              <span>
+                <SafetyCertificateOutlined /> SSO (SAML)
+              </span>
+            ),
+            children: <SSOTab />,
           },
           {
             key: "notifications",

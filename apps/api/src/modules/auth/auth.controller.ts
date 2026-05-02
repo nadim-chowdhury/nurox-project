@@ -380,6 +380,42 @@ export class AuthController {
     );
   }
 
+  @Get('saml')
+  @UseGuards(AuthGuard('saml'))
+  @ApiOperation({ summary: 'Login with SAML' })
+  async samlAuth() {}
+
+  @Post('saml/callback')
+  @UseGuards(AuthGuard('saml'))
+  @ApiOperation({ summary: 'SAML auth callback' })
+  async samlAuthRedirect(@Req() req: Request, @Res() res: Response) {
+    const user = await this.authService.validateOAuthUser(
+      req.user as OAuthProfile,
+    );
+    const familyId = randomBytes(16).toString('hex');
+    const tokens = await this.authService.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      familyId,
+    );
+
+    res.cookie(
+      REFRESH_COOKIE_NAME,
+      tokens.refreshToken,
+      REFRESH_COOKIE_OPTIONS,
+    );
+
+    const frontendUrl = (
+      process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:3000'
+    )
+      .split(',')[0]
+      .trim();
+    return res.redirect(
+      `${frontendUrl}/auth/callback?token=${tokens.accessToken}`,
+    );
+  }
+
   @Get('2fa/setup')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

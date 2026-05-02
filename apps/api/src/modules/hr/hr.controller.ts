@@ -41,6 +41,8 @@ import { Permission } from '../auth/enums/permissions.enum';
 import { QueryEmployeeDto } from './dto/query-employee.dto';
 import { CreateDesignationDto } from './dto/create-designation.dto';
 import { UpdateDesignationDto } from './dto/update-designation.dto';
+import { CreateGradeDto } from './dto/create-grade.dto';
+import { UpdateGradeDto } from './dto/update-grade.dto';
 import {
   CreateSalaryRevisionDto,
   UpdateSalaryRevisionStatusDto,
@@ -238,6 +240,15 @@ export class HrController {
     @Body('comments') comments: string,
   ) {
     return this.hrService.completeProbation(id, comments);
+  }
+
+  @Post('employees/:id/rehire')
+  @RequirePermissions(Permission.HR_CREATE_EMPLOYEE)
+  rehireEmployee(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Partial<CreateEmployeeDto>,
+  ) {
+    return this.hrService.rehireEmployee(id, dto);
   }
 
   @Post('transfers')
@@ -572,5 +583,43 @@ export class HrController {
   @HttpCode(HttpStatus.NO_CONTENT)
   removeDesignation(@Param('id', ParseUUIDPipe) id: string) {
     return this.hrService.removeDesignation(id);
+  }
+
+  /**
+   * GRADES CRUD
+   */
+
+  @Post('grades')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  createGrade(@Body() dto: CreateGradeDto) {
+    return this.hrService.createGrade(dto);
+  }
+
+  @Get('grades')
+  @RequirePermissions(Permission.HR_VIEW_EMPLOYEES)
+  findAllGrades() {
+    return this.hrService.findAllGrades();
+  }
+
+  @Get('grades/:id')
+  @RequirePermissions(Permission.HR_VIEW_EMPLOYEES)
+  findGrade(@Param('id', ParseUUIDPipe) id: string) {
+    return this.hrService.findGradeById(id);
+  }
+
+  @Patch('grades/:id')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  updateGrade(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateGradeDto,
+  ) {
+    return this.hrService.updateGrade(id, dto);
+  }
+
+  @Delete('grades/:id')
+  @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  removeGrade(@Param('id', ParseUUIDPipe) id: string) {
+    return this.hrService.removeGrade(id);
   }
 }

@@ -62,6 +62,18 @@ export class Tenant {
   @Column({ type: 'simple-array', nullable: true })
   ipAllowlist: string[];
 
+  @Column({ type: 'boolean', default: false })
+  isSamlEnabled: boolean;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  samlEntryPoint: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  samlIssuer: string;
+
+  @Column({ type: 'text', nullable: true })
+  samlCert: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

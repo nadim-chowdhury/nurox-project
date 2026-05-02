@@ -9,6 +9,7 @@ import { RolesController } from './roles.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { MicrosoftStrategy } from './strategies/microsoft.strategy';
+import { SamlStrategy } from './strategies/saml.strategy';
 import { UsersModule } from '../users/users.module';
 import { MailerModule } from '../mailer/mailer.module';
 
@@ -45,6 +46,7 @@ import { forwardRef } from '@nestjs/common';
     JwtStrategy,
     GoogleStrategy,
     MicrosoftStrategy,
+    SamlStrategy,
     PermissionsGuard,
   ],
   exports: [AuthService, RolesService, PermissionsGuard, TypeOrmModule],

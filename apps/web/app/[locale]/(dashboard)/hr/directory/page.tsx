@@ -103,9 +103,17 @@ export default function TeamDirectoryPage() {
                     <Title level={5} style={{ margin: '16px 0 4px', color: 'var(--color-on-surface)' }}>
                       {emp.firstName} {emp.lastName}
                     </Title>
-                    <Text type="secondary" style={{ fontSize: 13, marginBottom: 16, display: 'block' }}>
+                    <Text type="secondary" style={{ fontSize: 13, marginBottom: 8, display: 'block' }}>
                       {emp.designation?.title || 'Team Member'}
                     </Text>
+                    {emp.manager && (
+                      <div style={{ marginBottom: 16 }}>
+                        <Text style={{ fontSize: 11, color: 'var(--color-on-surface-variant)' }}>Reports to:</Text>
+                        <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-primary)' }}>
+                          {emp.manager.firstName} {emp.manager.lastName}
+                        </div>
+                      </div>
+                    )}
                     
                     <div style={{ width: '100%', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 16 }}>
                       <Space direction="vertical" size={8} style={{ width: '100%', alignItems: 'flex-start' }}>

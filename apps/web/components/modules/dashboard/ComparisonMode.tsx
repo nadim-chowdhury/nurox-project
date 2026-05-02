@@ -30,7 +30,7 @@ export function ComparisonMode({ dateRange }: Props) {
 
   const items = [
     { title: "Headcount", current: data.current.totalEmployees, previous: data.previous.totalEmployees, delta: data.delta.totalEmployees },
-    { title: "Revenue", current: data.current.revenueMTD, previous: data.previous.revenueMTD, delta: data.delta.totalEmployees, prefix: "$" },
+    { title: "Revenue", current: data.current.revenueMTD, previous: data.previous.revenueMTD, delta: data.delta.revenueMTD, prefix: "$" },
     { title: "Pipeline", current: data.current.pipelineValue, previous: data.previous.pipelineValue, delta: data.delta.pipelineValue, prefix: "$" },
     { title: "Invoices", current: data.current.pendingInvoices, previous: data.previous.pendingInvoices, delta: data.delta.pendingInvoices },
   ];

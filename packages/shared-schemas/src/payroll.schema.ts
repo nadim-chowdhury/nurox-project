@@ -40,7 +40,9 @@ export const payrollRunStatusEnum = z.enum([
   "DRAFT",
   "REVIEW",
   "APPROVED",
+  "PROCESSING",
   "PROCESSED",
+  "PAID",
   "CANCELLED",
 ]);
 
