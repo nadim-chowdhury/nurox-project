@@ -14,6 +14,7 @@ import { StorageService } from './storage.service';
 import { AuditService } from './audit.service';
 import { NotificationService } from './notification.service';
 import { PdfService } from './pdf.service';
+import { GoogleCalendarService } from './google-calendar.service';
 import { SystemController } from './system.controller';
 import { HealthController } from './health.controller';
 import { NotificationController } from './notification.controller';
@@ -43,6 +44,7 @@ import { DatabaseInitService } from './database-init.service';
     AuditService,
     // AuditSubscriber,
     PdfService,
+    GoogleCalendarService,
     NotificationsGateway,
     NotificationService,
     DatabaseInitService,
@@ -53,6 +55,7 @@ import { DatabaseInitService } from './database-init.service';
     AuditService,
     // AuditSubscriber,
     PdfService,
+    GoogleCalendarService,
     NotificationsGateway,
     NotificationService,
   ],

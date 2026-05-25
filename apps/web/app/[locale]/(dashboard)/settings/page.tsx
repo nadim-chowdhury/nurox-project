@@ -50,6 +50,8 @@ import {
   useDeleteUserMutation,
   useLazyGetAvatarUploadUrlQuery,
   useUpdateUserMutation,
+  useGetPreferencesQuery,
+  useSetPreferenceMutation,
 } from "@/store/api/usersApi";
 import {
   useGetSessionsQuery,
@@ -59,6 +61,7 @@ import {
   useSetup2FAMutation,
   useEnable2FAMutation,
   useChangePasswordMutation,
+  useGetLoginHistoryQuery,
 } from "@/store/api/authApi";
 import {
   useGetBranchesQuery,

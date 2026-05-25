@@ -17,8 +17,14 @@ export class OnboardingChecklist extends TenantBaseEntity {
   @JoinColumn({ name: 'candidateId' })
   candidate: Candidate;
 
+  @Column({ type: 'uuid', nullable: true })
+  templateId: string | null;
+
   @Column({ type: 'jsonb', default: [] })
   tasks: any[];
+
+  @Column({ type: 'jsonb', nullable: true })
+  documentMetadata: Record<string, string> | null;
 
   @Column({ type: 'int', default: 0 })
   progress: number;
@@ -29,4 +35,13 @@ export class OnboardingChecklist extends TenantBaseEntity {
     default: OnboardingStatus.NOT_STARTED,
   })
   status: OnboardingStatus;
+
+  @Column({ type: 'uuid', nullable: true })
+  buddyId: string | null;
+
+  @Column({ type: 'uuid', array: true, default: [] })
+  assignedAssetIds: string[];
+
+  @Column({ type: 'timestamp', nullable: true })
+  startDate: Date | null;
 }

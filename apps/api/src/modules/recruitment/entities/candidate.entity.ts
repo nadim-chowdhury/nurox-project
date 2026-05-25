@@ -22,6 +22,12 @@ export class Candidate extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   source: string | null;
 
+  @Column({ type: 'uuid', nullable: true })
+  referredById: string | null;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  referralBonus: number;
+
   @Column({ type: 'text', array: true, nullable: true })
   skills: string[] | null;
 

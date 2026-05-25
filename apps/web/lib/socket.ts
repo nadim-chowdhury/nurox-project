@@ -34,7 +34,7 @@ export const disconnectSocket = (namespace?: string) => {
     }
   } else {
     Object.keys(sockets).forEach((ns) => {
-      sockets[ns].disconnect();
+      sockets[ns]?.disconnect();
       delete sockets[ns];
     });
   }

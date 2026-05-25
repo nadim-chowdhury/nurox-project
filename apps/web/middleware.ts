@@ -19,6 +19,7 @@ const PUBLIC_ROUTES = [
   "/register",
   "/forgot-password",
   "/reset-password",
+  "/careers",
 ];
 const REFRESH_COOKIE = "nurox_refresh_token";
 

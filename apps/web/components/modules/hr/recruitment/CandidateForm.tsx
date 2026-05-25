@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Form, Input, Button, Space, message, Upload } from "antd";
+import { Form, Input, Button, Space, message, Upload, Select } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { useCreateCandidateMutation, useGetResumeUploadUrlMutation } from "@/store/api/recruitmentApi";
 
@@ -59,6 +59,16 @@ export function CandidateForm({ onSuccess }: { onSuccess: (candidate: any) => vo
 
       <Form.Item name="phone" label="Phone">
         <Input placeholder="+1234567890" />
+      </Form.Item>
+
+      <Form.Item name="source" label="Source" initialValue="Other">
+        <Select placeholder="Where did they hear about us?">
+          <Select.Option value="LinkedIn">LinkedIn</Select.Option>
+          <Select.Option value="Indeed">Indeed</Select.Option>
+          <Select.Option value="Career Portal">Career Portal</Select.Option>
+          <Select.Option value="Referral">Referral</Select.Option>
+          <Select.Option value="Other">Other</Select.Option>
+        </Select>
       </Form.Item>
 
       <Form.Item label="Resume">

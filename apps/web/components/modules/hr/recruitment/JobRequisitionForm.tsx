@@ -1,23 +1,36 @@
 "use client";
 
 import React from "react";
-import { Form, Input, Select, InputNumber, Button, Space, Card, Row, Col, message } from "antd";
+import { Form, Input, Select, InputNumber, Button, Space, Card, Row, Col, message, Divider } from "antd";
 import { useCreateJobMutation } from "@/store/api/recruitmentApi";
-import { useGetDepartmentsQuery } from "@/store/api/hrApi";
+import { useGetDepartmentsQuery, useGetDesignationsQuery } from "@/store/api/hrApi";
 import { useGetUsersQuery } from "@/store/api/usersApi";
-
-const { TextArea } = Input;
+import { RichTextEditor } from "@/components/common/RichTextEditor";
+import { ApplicationFormBuilder } from "./ApplicationFormBuilder";
 
 export function JobRequisitionForm({ onSuccess }: { onSuccess?: () => void }) {
   const [form] = Form.useForm();
   const [createJob, { isLoading }] = useCreateJobMutation();
   const { data: departments } = useGetDepartmentsQuery();
+  const { data: designations } = useGetDesignationsQuery();
   const { data: usersResponse } = useGetUsersQuery({ page: 1, limit: 100, sortBy: "firstName", sortOrder: "ASC" });
   const users = usersResponse?.data;
 
   const onFinish = async (values: any) => {
     try {
-      await createJob(values).unwrap();
+      // Structure the approval chain based on the specific fields
+      const approverIds = [
+        values.reportingManagerId,
+        values.hrManagerId,
+        values.financeManagerId
+      ].filter(Boolean);
+
+      const payload = {
+        ...values,
+        approverIds, // We'll pass this and handle it on backend or in the submit call
+      };
+
+      await createJob(payload).unwrap();
       message.success("Job requisition created as DRAFT");
       form.resetFields();
       if (onSuccess) onSuccess();
@@ -27,7 +40,7 @@ export function JobRequisitionForm({ onSuccess }: { onSuccess?: () => void }) {
   };
 
   return (
-    <Card title="New Job Requisition" bordered={false}>
+    <div style={{ maxHeight: "70vh", overflowY: "auto", padding: "4px" }}>
       <Form
         form={form}
         layout="vertical"
@@ -53,13 +66,29 @@ export function JobRequisitionForm({ onSuccess }: { onSuccess?: () => void }) {
               label="Department"
               rules={[{ required: true, message: "Please select department" }]}
             >
-              <Select placeholder="Select department">
+              <Select placeholder="Select department" showSearch filterOption={(input, option) => (option?.children as unknown as string).toLowerCase().includes(input.toLowerCase())}>
                 {departments?.map((dept) => (
                   <Select.Option key={dept.id} value={dept.id}>{dept.name}</Select.Option>
                 ))}
               </Select>
             </Form.Item>
           </Col>
+          <Col span={12}>
+            <Form.Item
+              name="designationId"
+              label="Designation"
+              rules={[{ required: true, message: "Please select designation" }]}
+            >
+              <Select placeholder="Select designation" showSearch filterOption={(input, option) => (option?.children as unknown as string).toLowerCase().includes(input.toLowerCase())}>
+                {designations?.map((desig) => (
+                  <Select.Option key={desig.id} value={desig.id}>{desig.title}</Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
           <Col span={12}>
             <Form.Item
               name="location"
@@ -69,27 +98,6 @@ export function JobRequisitionForm({ onSuccess }: { onSuccess?: () => void }) {
               <Input placeholder="e.g. Remote, New York, etc." />
             </Form.Item>
           </Col>
-        </Row>
-
-        <Row gutter={16}>
-          <Col span={24}>
-            <Form.Item
-              name="approverIds"
-              label="Approval Chain"
-              tooltip="Select users who need to approve this requisition"
-            >
-              <Select mode="multiple" placeholder="Select approvers">
-                {users?.map((user: any) => (
-                  <Select.Option key={user.id} value={user.id}>
-                    {user.firstName} {user.lastName}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Row gutter={16}>
           <Col span={12}>
             <Form.Item name="employmentType" label="Employment Type">
               <Select>
@@ -100,25 +108,70 @@ export function JobRequisitionForm({ onSuccess }: { onSuccess?: () => void }) {
               </Select>
             </Form.Item>
           </Col>
-          <Col span={12}>
-            <Form.Item name="vacancies" label="Number of Vacancies">
-              <InputNumber min={1} style={{ width: "100%" }} />
+        </Row>
+
+        <Divider>Approval Workflow</Divider>
+        <Row gutter={16}>
+          <Col span={8}>
+            <Form.Item
+              name="reportingManagerId"
+              label="Reporting Manager"
+              rules={[{ required: true, message: "Required" }]}
+            >
+              <Select placeholder="Select Manager" showSearch>
+                {users?.map((u: any) => (
+                  <Select.Option key={u.id} value={u.id}>{u.firstName} {u.lastName}</Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col span={8}>
+            <Form.Item
+              name="hrManagerId"
+              label="HR Approver"
+              rules={[{ required: true, message: "Required" }]}
+            >
+              <Select placeholder="Select HR" showSearch>
+                {users?.map((u: any) => (
+                  <Select.Option key={u.id} value={u.id}>{u.firstName} {u.lastName}</Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col span={8}>
+            <Form.Item
+              name="financeManagerId"
+              label="Finance Approver"
+              rules={[{ required: true, message: "Required" }]}
+            >
+              <Select placeholder="Select Finance" showSearch>
+                {users?.map((u: any) => (
+                  <Select.Option key={u.id} value={u.id}>{u.firstName} {u.lastName}</Select.Option>
+                ))}
+              </Select>
             </Form.Item>
           </Col>
         </Row>
 
+        <Divider>
+Compensation & Vacancies</Divider>
         <Row gutter={16}>
-          <Col span={8}>
+          <Col span={6}>
+            <Form.Item name="vacancies" label="Vacancies">
+              <InputNumber min={1} style={{ width: "100%" }} />
+            </Form.Item>
+          </Col>
+          <Col span={6}>
             <Form.Item name="minSalary" label="Min Salary">
               <InputNumber style={{ width: "100%" }} />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col span={6}>
             <Form.Item name="maxSalary" label="Max Salary">
               <InputNumber style={{ width: "100%" }} />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col span={6}>
             <Form.Item name="currency" label="Currency">
               <Input />
             </Form.Item>
@@ -130,18 +183,24 @@ export function JobRequisitionForm({ onSuccess }: { onSuccess?: () => void }) {
           label="Job Description"
           rules={[{ required: true, message: "Please enter job description" }]}
         >
-          <TextArea rows={6} placeholder="Describe the role, responsibilities, and requirements..." />
+          <RichTextEditor placeholder="Enter job description, requirements, responsibilities..." />
+        </Form.Item>
+
+        <Divider>
+Application Form Customization</Divider>
+        <Form.Item name="applicationFormConfig">
+          <ApplicationFormBuilder />
         </Form.Item>
 
         <Form.Item>
           <Space>
-            <Button type="primary" htmlType="submit" loading={isLoading}>
-              Save as Draft
+            <Button type="primary" htmlType="submit" loading={isLoading} size="large">
+              Create Requisition
             </Button>
-            <Button onClick={() => form.resetFields()}>Reset</Button>
+            <Button onClick={() => form.resetFields()} size="large">Reset</Button>
           </Space>
         </Form.Item>
       </Form>
-    </Card>
+    </div>
   );
 }

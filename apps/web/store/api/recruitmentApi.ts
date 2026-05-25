@@ -4,7 +4,7 @@ import { baseQueryWithReauth } from "@/lib/api-client";
 export const recruitmentApi = createApi({
   reducerPath: "recruitmentApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["Job", "Application", "Candidate", "Interview", "Offer", "Onboarding"],
+  tagTypes: ["Job", "Application", "Candidate", "Interview", "Offer", "Onboarding", "OnboardingTemplate"],
   endpoints: (builder) => ({
     // Jobs
     getJobs: builder.query<any[], void>({
@@ -15,7 +15,7 @@ export const recruitmentApi = createApi({
       query: (body) => ({ url: "/recruitment/jobs", method: "POST", body }),
       invalidatesTags: ["Job"],
     }),
-    submitJobForApproval: builder.mutation<any, { id: string; approverIds: string[] }>({
+    submitJobForApproval: builder.mutation<any, { id: string; approverIds?: string[] }>({
       query: ({ id, ...body }) => ({
         url: `/recruitment/jobs/${id}/submit`,
         method: "PUT",
@@ -61,6 +61,13 @@ export const recruitmentApi = createApi({
       }),
       invalidatesTags: (_, __, { id }) => [{ type: "Application", id }, "Application"],
     }),
+    parseResume: builder.mutation<any, string>({
+      query: (id) => ({
+        url: `/recruitment/applications/${id}/parse`,
+        method: "POST",
+      }),
+      invalidatesTags: (_, __, id) => [{ type: "Application", id }, "Application"],
+    }),
 
     // Candidates
     getCandidates: builder.query<any[], void>({
@@ -78,6 +85,13 @@ export const recruitmentApi = createApi({
     getResumeUploadUrl: builder.mutation<any, { id: string; fileName: string; contentType: string }>({
       query: ({ id, ...body }) => ({
         url: `/recruitment/candidates/${id}/resume-url`,
+        method: "POST",
+        body,
+      }),
+    }),
+    getDocumentUploadUrl: builder.mutation<any, { fileName: string; contentType: string }>({
+      query: (body) => ({
+        url: "/recruitment/onboarding/document-url",
         method: "POST",
         body,
       }),
@@ -124,13 +138,72 @@ export const recruitmentApi = createApi({
       query: (candidateId) => `/recruitment/onboarding/candidate/${candidateId}`,
       providesTags: ["Onboarding"],
     }),
-    updateOnboardingTask: builder.mutation<any, { id: string; taskTitle: string; isCompleted: boolean }>({
+    createOnboarding: builder.mutation<any, { candidateId: string; templateId?: string }>({
+      query: (body) => ({
+        url: "/recruitment/onboarding",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Onboarding"],
+    }),
+    updateOnboardingTask: builder.mutation<
+      any,
+      { id: string; taskTitle: string; isCompleted: boolean }
+    >({
       query: ({ id, ...body }) => ({
         url: `/recruitment/onboarding/${id}/tasks`,
         method: "PUT",
         body,
       }),
       invalidatesTags: ["Onboarding"],
+    }),
+
+    // Onboarding Templates
+    getOnboardingTemplates: builder.query<any[], void>({
+      query: () => "/recruitment/onboarding/templates",
+      providesTags: ["OnboardingTemplate"],
+    }),
+    createOnboardingTemplate: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/recruitment/onboarding/templates",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["OnboardingTemplate"],
+    }),
+    updateOnboardingTemplate: builder.mutation<any, { id: string } & any>({
+      query: ({ id, ...body }) => ({
+        url: `/recruitment/onboarding/templates/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["OnboardingTemplate"],
+    }),
+
+    // Public Career Portal
+    getPublicJobs: builder.query<any[], void>({
+      query: () => "/public/recruitment/jobs",
+    }),
+    getPublicJob: builder.query<any, string>({
+      query: (id) => `/public/recruitment/jobs/${id}`,
+    }),
+    getPublicResumeUploadUrl: builder.mutation<any, { fileName: string; contentType: string }>({
+      query: (body) => ({
+        url: "/public/recruitment/resume-url",
+        method: "POST",
+        body,
+      }),
+    }),
+    applyForJob: builder.mutation<any, { candidate: any; application: any }>({
+      query: (body) => ({
+        url: "/public/recruitment/apply",
+        method: "POST",
+        body,
+      }),
+    }),
+    getAnalytics: builder.query<any, void>({
+      query: () => "/recruitment/analytics",
+      providesTags: ["Application", "Candidate", "Interview"],
     }),
   }),
 });
@@ -145,6 +218,7 @@ export const {
   useGetApplicationsQuery,
   useGetApplicationQuery,
   useUpdateApplicationStatusMutation,
+  useParseResumeMutation,
   useGetCandidatesQuery,
   useCreateCandidateMutation,
   useGetCandidateQuery,
@@ -157,4 +231,13 @@ export const {
   useSignOfferMutation,
   useGetOnboardingQuery,
   useUpdateOnboardingTaskMutation,
+  useGetOnboardingTemplatesQuery,
+  useCreateOnboardingTemplateMutation,
+  useUpdateOnboardingTemplateMutation,
+  useGetDocumentUploadUrlMutation,
+  useGetPublicJobsQuery,
+  useGetPublicJobQuery,
+  useGetPublicResumeUploadUrlMutation,
+  useApplyForJobMutation,
+  useGetAnalyticsQuery,
 } = recruitmentApi;

@@ -20,6 +20,7 @@ import {
   mailConfig,
   oauthConfig,
   s3Config,
+  aiConfig,
 } from './config/app.config';
 import { validate } from './config/env.validation';
 import { DatabaseModule } from './database/database.module';
@@ -68,6 +69,7 @@ import { TenantInterceptor } from './common/interceptors/tenant.interceptor';
         mailConfig,
         oauthConfig,
         s3Config,
+        aiConfig,
       ],
       validate, // Zod-based env validation (replaces Joi)
     }),

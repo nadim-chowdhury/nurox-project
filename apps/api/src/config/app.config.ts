@@ -83,3 +83,7 @@ export const hrConfig = registerAs('hr', () => ({
     PROBATION: 180,
   },
 }));
+
+export const aiConfig = registerAs('ai', () => ({
+  openaiApiKey: process.env.OPENAI_API_KEY,
+}));

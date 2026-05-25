@@ -1,7 +1,9 @@
 "use client";
 
 import React from "react";
-import { Form, DatePicker, Select, Input, Button, Space, message, Rate } from "antd";
+import { Form, DatePicker, Select, Input, Button, Space, message, Rate, Typography } from "antd";
+
+const { Title } = Typography;
 import { useScheduleInterviewMutation, useSubmitInterviewFeedbackMutation } from "@/store/api/recruitmentApi";
 import { useGetUsersQuery } from "@/store/api/usersApi";
 import { useForm, Controller } from "react-hook-form";
@@ -47,6 +49,19 @@ export function InterviewForm({ applicationId, onSuccess }: { applicationId: str
       </Form.Item>
 
       <Form.Item
+        name="stage"
+        label="Interview Stage"
+        rules={[{ required: true, message: "Please select stage" }]}
+      >
+        <Select placeholder="Select stage">
+          <Select.Option value="PHONE_SCREEN">Phone Screen</Select.Option>
+          <Select.Option value="INTERVIEW_1">Interview 1</Select.Option>
+          <Select.Option value="INTERVIEW_2">Interview 2</Select.Option>
+          <Select.Option value="TECHNICAL_TEST">Technical Test</Select.Option>
+        </Select>
+      </Form.Item>
+
+      <Form.Item
         name="timeRange"
         label="Time Range"
         rules={[{ required: true, message: "Please select interview time" }]}
@@ -71,9 +86,12 @@ export function InterviewForm({ applicationId, onSuccess }: { applicationId: str
 }
 
 const feedbackSchema = z.object({
-  rating: z.number().min(1, "Rating is required").max(5),
+  rating: z.number().min(1, "Overall rating is required").max(5),
   feedback: z.string().min(10, "Feedback must be at least 10 characters"),
+  scorecard: z.record(z.string(), z.number()).optional(),
 });
+
+const DIMENSIONS = ["Technical Skills", "Soft Skills", "Culture Fit", "Experience Match"];
 
 type FeedbackValues = z.infer<typeof feedbackSchema>;
 
@@ -85,6 +103,12 @@ export function InterviewFeedbackForm({ interviewId, onSuccess }: { interviewId:
     defaultValues: {
       rating: 0,
       feedback: "",
+      scorecard: {
+        "Technical Skills": 0,
+        "Soft Skills": 0,
+        "Culture Fit": 0,
+        "Experience Match": 0,
+      },
     }
   });
 
@@ -100,9 +124,25 @@ export function InterviewFeedbackForm({ interviewId, onSuccess }: { interviewId:
   };
 
   return (
-    <form onSubmit={handleSubmit(onFinish)} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <form onSubmit={handleSubmit(onFinish)} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <div style={{ backgroundColor: "#fafafa", padding: 16, borderRadius: 8 }}>
+        <Title level={5} style={{ marginTop: 0 }}>Scorecard</Title>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          {DIMENSIONS.map((dim) => (
+            <div key={dim}>
+              <label style={{ display: "block", marginBottom: 4, fontSize: 13, color: "#666" }}>{dim}</label>
+              <Controller
+                name={`scorecard.${dim}` as any}
+                control={control}
+                render={({ field }) => <Rate {...field} style={{ fontSize: 16 }} />}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div>
-        <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>Rating (1-5)</label>
+        <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>Overall Rating</label>
         <Controller
           name="rating"
           control={control}
@@ -129,7 +169,7 @@ export function InterviewFeedbackForm({ interviewId, onSuccess }: { interviewId:
       </div>
 
       <div>
-        <Button type="primary" htmlType="submit" loading={isLoading} block>
+        <Button type="primary" htmlType="submit" loading={isLoading} block size="large">
           Submit Feedback
         </Button>
       </div>

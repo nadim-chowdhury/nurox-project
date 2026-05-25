@@ -44,9 +44,13 @@ interface Application {
 const COLUMNS = [
   { id: "APPLIED", title: "Applied" },
   { id: "SCREENED", title: "Screened" },
-  { id: "INTERVIEW", title: "Interview" },
+  { id: "PHONE_SCREEN", title: "Phone Screen" },
+  { id: "INTERVIEW_1", title: "Interview 1" },
+  { id: "INTERVIEW_2", title: "Interview 2" },
+  { id: "TECHNICAL_TEST", title: "Tech Test" },
   { id: "OFFER", title: "Offer" },
   { id: "HIRED", title: "Hired" },
+  { id: "REJECTED", title: "Rejected" },
 ];
 
 export function AtsKanban({ initialApplications }: { initialApplications: any[] }) {

@@ -8,6 +8,7 @@ import { OfferLetter } from './entities/offer-letter.entity';
 import { OnboardingChecklist } from './entities/onboarding-checklist.entity';
 import { RecruitmentService } from './recruitment.service';
 import { RecruitmentController } from './recruitment.controller';
+import { PublicRecruitmentController } from './public-recruitment.controller';
 import { SystemModule } from '../system/system.module';
 import { UsersModule } from '../users/users.module';
 import { BullModule } from '@nestjs/bullmq';
@@ -33,7 +34,7 @@ import { DatabaseModule } from '../../database/database.module';
     MailerModule,
     DatabaseModule,
   ],
-  controllers: [RecruitmentController],
+  controllers: [RecruitmentController, PublicRecruitmentController],
   providers: [RecruitmentService, RecruitmentProcessor],
   exports: [RecruitmentService],
 })

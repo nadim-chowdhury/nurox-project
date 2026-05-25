@@ -12,6 +12,7 @@ import {
   SendOutlined,
   UnlockOutlined,
   StopOutlined,
+  PieChartOutlined,
 } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/tables/DataTable";
@@ -21,29 +22,38 @@ import { StatusTag } from "@/components/common/StatusTag";
 import { formatDate } from "@/lib/utils";
 import type { ColumnsType } from "antd/es/table";
 import { AtsKanban } from "@/components/modules/hr/recruitment/AtsKanban";
+import { RecruitmentAnalytics } from "@/components/modules/hr/recruitment/RecruitmentAnalytics";
 import { JobRequisitionForm } from "@/components/modules/hr/recruitment/JobRequisitionForm";
 import { CandidateForm } from "@/components/modules/hr/recruitment/CandidateForm";
+import { OnboardingTemplateBuilder } from "@/components/modules/hr/recruitment/OnboardingTemplateBuilder";
 import { 
   useGetJobsQuery, 
   useGetApplicationsQuery, 
   useGetCandidatesQuery,
   useSubmitJobForApprovalMutation,
   useOpenJobMutation,
-  useUpdateJobStatusMutation
+  useUpdateJobStatusMutation,
+  useGetOnboardingTemplatesQuery,
+  useCreateOnboardingTemplateMutation,
+  useUpdateOnboardingTemplateMutation
 } from "@/store/api/recruitmentApi";
 
 export default function RecruitmentPage() {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("1");
-  const [modalType, setModalType] = useState<"job" | "candidate" | null>(null);
+  const [modalType, setModalType] = useState<"job" | "candidate" | "template" | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
 
   const { data: jobs, isLoading: isJobsLoading } = useGetJobsQuery();
   const { data: applications, isLoading: isAppsLoading } = useGetApplicationsQuery();
   const { data: candidates, isLoading: isCandidatesLoading } = useGetCandidatesQuery();
+  const { data: templates, isLoading: isTemplatesLoading } = useGetOnboardingTemplatesQuery();
   
   const [submitForApproval] = useSubmitJobForApprovalMutation();
   const [openJob] = useOpenJobMutation();
   const [updateJobStatus] = useUpdateJobStatusMutation();
+  const [createTemplate] = useCreateOnboardingTemplateMutation();
+  const [updateTemplate] = useUpdateOnboardingTemplateMutation();
 
   const filteredJobs = jobs?.filter((j) =>
     j.title.toLowerCase().includes(search.toLowerCase()),
@@ -62,7 +72,7 @@ export default function RecruitmentPage() {
   const handleJobAction = async (id: string, action: string) => {
     try {
       if (action === "submit") {
-        await submitForApproval({ id, approverIds: [] }).unwrap();
+        await submitForApproval({ id }).unwrap();
         message.success("Job submitted for approval");
       } else if (action === "open") {
         await openJob(id).unwrap();
@@ -82,7 +92,14 @@ export default function RecruitmentPage() {
       dataIndex: "title",
       key: "title",
       width: 200,
-      render: (v: string) => <span style={{ fontWeight: 500 }}>{v}</span>,
+      render: (v: string, record) => (
+        <Space direction="vertical" size={0}>
+          <span style={{ fontWeight: 600 }}>{v}</span>
+          <span style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>
+            {record.designation?.title || "No Designation"}
+          </span>
+        </Space>
+      ),
     },
     {
       title: "Department",
@@ -301,6 +318,56 @@ export default function RecruitmentPage() {
                 />
               </>
             )
+          },
+          {
+            key: "4",
+            label: "Analytics",
+            children: <RecruitmentAnalytics />,
+          },
+          {
+            key: "5",
+            label: "Onboarding Templates",
+            children: (
+              <div style={{ padding: "16px 0" }}>
+                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+                  <Button 
+                    type="primary" 
+                    icon={<PlusOutlined />} 
+                    onClick={() => {
+                      setSelectedTemplate(null);
+                      setModalType("template");
+                    }}
+                  >
+                    New Template
+                  </Button>
+                </div>
+                <DataTable
+                  columns={[
+                    { title: "Template Name", dataIndex: "name", key: "name" },
+                    { title: "Employment Type", dataIndex: "employmentType", key: "type" },
+                    { title: "Tasks", dataIndex: "tasks", key: "tasks", render: (tasks) => tasks?.length || 0 },
+                    { 
+                      title: "Action", 
+                      key: "action", 
+                      render: (_, record) => (
+                        <Button 
+                          type="link" 
+                          onClick={() => {
+                            setSelectedTemplate(record);
+                            setModalType("template");
+                          }}
+                        >
+                          Edit
+                        </Button>
+                      ) 
+                    },
+                  ]}
+                  dataSource={templates}
+                  rowKey="id"
+                  loading={isTemplatesLoading}
+                />
+              </div>
+            )
           }
         ]}
       />
@@ -309,12 +376,31 @@ export default function RecruitmentPage() {
         open={!!modalType}
         onCancel={() => setModalType(null)}
         footer={null}
-        width={modalType === "job" ? 800 : 500}
+        width={modalType === "template" ? 1000 : 800}
         destroyOnClose
-        title={modalType === "job" ? "New Job Requisition" : "Add New Candidate"}
+        title={
+          modalType === "job" 
+            ? "New Job Requisition" 
+            : modalType === "candidate" 
+            ? "Add New Candidate" 
+            : "Onboarding Template"
+        }
       >
         {modalType === "job" && <JobRequisitionForm onSuccess={() => setModalType(null)} />}
         {modalType === "candidate" && <CandidateForm onSuccess={() => setModalType(null)} />}
+        {modalType === "template" && (
+          <OnboardingTemplateBuilder 
+            initialData={selectedTemplate} 
+            onSave={async (data) => {
+              if (selectedTemplate) {
+                await updateTemplate({ id: selectedTemplate.id, ...data }).unwrap();
+              } else {
+                await createTemplate(data).unwrap();
+              }
+              setModalType(null);
+            }} 
+          />
+        )}
       </Modal>
     </div>
   );

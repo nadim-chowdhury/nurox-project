@@ -8,7 +8,10 @@ import { OfferLetter } from './offer-letter.entity';
 export enum ApplicationStatus {
   APPLIED = 'APPLIED',
   SCREENED = 'SCREENED',
-  INTERVIEW = 'INTERVIEW',
+  PHONE_SCREEN = 'PHONE_SCREEN',
+  INTERVIEW_1 = 'INTERVIEW_1',
+  INTERVIEW_2 = 'INTERVIEW_2',
+  TECHNICAL_TEST = 'TECHNICAL_TEST',
   OFFER = 'OFFER',
   HIRED = 'HIRED',
   REJECTED = 'REJECTED',
@@ -43,6 +46,9 @@ export class Application extends TenantBaseEntity {
 
   @Column({ type: 'text', nullable: true })
   notes: string | null;
+
+  @Column({ type: 'jsonb', nullable: true })
+  timeline: any[];
 
   @OneToMany(() => Interview, (interview) => interview.application)
   interviews: Interview[];

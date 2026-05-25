@@ -67,6 +67,9 @@ export class JobRequisition extends TenantBaseEntity {
   @Column({ type: 'jsonb', nullable: true })
   approvalChain: any[];
 
+  @Column({ type: 'jsonb', nullable: true })
+  applicationFormConfig: any[];
+
   @OneToMany(() => Application, (app) => app.job)
   applications: Application[];
 }

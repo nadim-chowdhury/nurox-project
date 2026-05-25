@@ -30,6 +30,9 @@ export class Interview extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 255, nullable: true })
   location: string | null;
 
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  stage: string | null;
+
   @Column({
     type: 'enum',
     enum: InterviewStatus,
@@ -42,4 +45,7 @@ export class Interview extends TenantBaseEntity {
 
   @Column({ type: 'int', nullable: true })
   rating: number | null;
+
+  @Column({ type: 'jsonb', nullable: true })
+  scorecard: Record<string, number> | null;
 }

@@ -113,6 +113,31 @@ export class RecruitmentController {
   }
 
   // Candidates
+  @Post('applications/:id/parse')
+  @ApiOperation({ summary: 'Parse resume and score candidate using AI' })
+  parseResumeAndScore(@Param('id') id: string) {
+    return this.recruitmentService.parseResumeAndScore(id);
+  }
+
+  // Onboarding Templates
+  @Get('onboarding/templates')
+  @ApiOperation({ summary: 'List all onboarding templates' })
+  findAllOnboardingTemplates() {
+    return this.recruitmentService.findAllOnboardingTemplates();
+  }
+
+  @Post('onboarding/templates')
+  @ApiOperation({ summary: 'Create a new onboarding template' })
+  createOnboardingTemplate(@Body() data: any) {
+    return this.recruitmentService.createOnboardingTemplate(data);
+  }
+
+  @Put('onboarding/templates/:id')
+  @ApiOperation({ summary: 'Update an onboarding template' })
+  updateOnboardingTemplate(@Param('id') id: string, @Body() data: any) {
+    return this.recruitmentService.updateOnboardingTemplate(id, data);
+  }
+
   @Get('candidates')
   @ApiOperation({ summary: 'List all candidates' })
   findAllCandidates() {
@@ -175,11 +200,13 @@ export class RecruitmentController {
     @Param('id') id: string,
     @Body('feedback') feedback: string,
     @Body('rating') rating: number,
+    @Body('scorecard') scorecard?: Record<string, number>,
   ) {
     return this.recruitmentService.updateInterviewFeedback(
       id,
       feedback,
       rating,
+      scorecard,
     );
   }
 
@@ -209,21 +236,49 @@ export class RecruitmentController {
   // Onboarding
   @Post('onboarding')
   @ApiOperation({ summary: 'Create onboarding checklist' })
-  createOnboardingChecklist(@Body('candidateId') candidateId: string) {
-    return this.recruitmentService.createOnboardingChecklist(candidateId);
+  createOnboardingChecklist(
+    @Body()
+    data: {
+      candidateId: string;
+      templateId?: string;
+      startDate?: Date;
+      buddyId?: string;
+      assignedAssetIds?: string[];
+    },
+  ) {
+    return this.recruitmentService.createOnboardingChecklist(
+      data.candidateId,
+      data,
+    );
   }
 
-  @Put('onboarding/:id/tasks')
+  @Post('onboarding/:id/tasks')
   @ApiOperation({ summary: 'Update onboarding task status' })
   updateOnboardingTask(
     @Param('id') id: string,
     @Body('taskTitle') taskTitle: string,
     @Body('isCompleted') isCompleted: boolean,
+    @Body('documentKey') documentKey?: string,
   ) {
     return this.recruitmentService.updateOnboardingTask(
       id,
       taskTitle,
       isCompleted,
+      documentKey,
+    );
+  }
+
+  @Post('onboarding/document-url')
+  @ApiOperation({
+    summary: 'Get presigned URL for general onboarding document upload',
+  })
+  getDocumentUploadUrl(
+    @Body('fileName') fileName: string,
+    @Body('contentType') contentType: string,
+  ) {
+    return this.recruitmentService.getPublicResumeUploadUrl(
+      fileName,
+      contentType,
     );
   }
 
@@ -231,5 +286,11 @@ export class RecruitmentController {
   @ApiOperation({ summary: 'Get onboarding checklist by candidate ID' })
   findOnboardingByCandidate(@Param('candidateId') candidateId: string) {
     return this.recruitmentService.findOnboardingByCandidate(candidateId);
+  }
+
+  @Get('analytics')
+  @ApiOperation({ summary: 'Get recruitment analytics' })
+  getAnalytics() {
+    return this.recruitmentService.getAnalytics();
   }
 }

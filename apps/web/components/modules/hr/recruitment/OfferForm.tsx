@@ -1,13 +1,14 @@
 "use client";
 
 import React from "react";
-import { Form, Input, InputNumber, DatePicker, Button, Space, message } from "antd";
-import { useCreateOfferMutation, useGenerateOfferPdfMutation } from "@/store/api/recruitmentApi";
+import { Form, Input, InputNumber, DatePicker, Button, Space, message, Select } from "antd";
+import { useCreateOfferMutation, useGenerateOfferPdfMutation, useGetOnboardingTemplatesQuery } from "@/store/api/recruitmentApi";
 
 export function OfferForm({ applicationId, onSuccess }: { applicationId: string; onSuccess?: () => void }) {
   const [form] = Form.useForm();
   const [createOffer, { isLoading: isCreating }] = useCreateOfferMutation();
   const [generatePdf, { isLoading: isGenerating }] = useGenerateOfferPdfMutation();
+  const { data: templates } = useGetOnboardingTemplatesQuery();
 
   const onFinish = async (values: any) => {
     try {
@@ -17,6 +18,7 @@ export function OfferForm({ applicationId, onSuccess }: { applicationId: string;
         expiryDate: values.expiryDate.toISOString(),
         baseSalary: values.baseSalary,
         currency: values.currency,
+        onboardingTemplateId: values.onboardingTemplateId,
       }).unwrap();
 
       message.success("Offer created, generating PDF...");
@@ -67,6 +69,18 @@ export function OfferForm({ applicationId, onSuccess }: { applicationId: string;
         rules={[{ required: true, message: "Please select expiry date" }]}
       >
         <DatePicker style={{ width: "100%" }} />
+      </Form.Item>
+
+      <Form.Item
+        name="onboardingTemplateId"
+        label="Onboarding Plan"
+        rules={[{ required: true, message: "Please select an onboarding plan" }]}
+      >
+        <Select placeholder="Select onboarding template">
+          {templates?.map((t: any) => (
+            <Select.Option key={t.id} value={t.id}>{t.name} ({t.employmentType})</Select.Option>
+          ))}
+        </Select>
       </Form.Item>
 
       <Form.Item>

@@ -64,6 +64,7 @@ export const hrApi = createApi({
     "ENPS",
     "Handbook",
     "Succession",
+    "Grade",
   ],
   endpoints: (builder) => ({
     getEmployees: builder.query<EmployeeListResponse, EmployeeListParams>({

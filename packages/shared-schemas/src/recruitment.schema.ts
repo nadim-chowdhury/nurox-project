@@ -4,7 +4,18 @@ import { employmentTypeEnum } from "./hr.schema";
 export const jobStatusEnum = z.enum(["DRAFT", "PENDING_APPROVAL", "APPROVED", "OPEN", "PAUSED", "CLOSED", "CANCELLED"]);
 export type JobStatus = z.infer<typeof jobStatusEnum>;
 
-export const applicantStatusEnum = z.enum(["APPLIED", "SCREENED", "INTERVIEW", "OFFER", "HIRED", "REJECTED", "WITHDRAWN"]);
+export const applicantStatusEnum = z.enum([
+  "APPLIED",
+  "SCREENED",
+  "PHONE_SCREEN",
+  "INTERVIEW_1",
+  "INTERVIEW_2",
+  "TECHNICAL_TEST",
+  "OFFER",
+  "HIRED",
+  "REJECTED",
+  "WITHDRAWN",
+]);
 export type ApplicantStatus = z.infer<typeof applicantStatusEnum>;
 
 export const interviewStatusEnum = z.enum(["SCHEDULED", "COMPLETED", "CANCELLED", "NO_SHOW"]);
@@ -23,6 +34,7 @@ export const jobRequisitionSchema = z.object({
   maxSalary: z.number().optional().nullable(),
   currency: z.string().default("USD"),
   status: jobStatusEnum.default("DRAFT"),
+  approverIds: z.array(z.string().uuid()).optional(),
   approvalChain: z.array(z.object({
     userId: z.string().uuid(),
     status: z.enum(["PENDING", "APPROVED", "REJECTED"]).default("PENDING"),
@@ -85,6 +97,25 @@ export const offerLetterSchema = z.object({
 
 export type OfferLetterDto = z.infer<typeof offerLetterSchema>;
 
+export const onboardingTaskTemplateSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().optional(),
+  daysOffset: z.number().int().default(0),
+  ownerRole: z.string().optional(),
+  isRequired: z.boolean().default(true),
+});
+
+export const onboardingTemplateSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().min(1),
+  description: z.string().optional(),
+  employmentType: employmentTypeEnum,
+  tasks: z.array(onboardingTaskTemplateSchema),
+  isActive: z.boolean().default(true),
+});
+
+export type OnboardingTemplateDto = z.infer<typeof onboardingTemplateSchema>;
+
 export const onboardingTaskSchema = z.object({
   id: z.string().uuid().optional(),
   title: z.string().min(1),
@@ -92,12 +123,14 @@ export const onboardingTaskSchema = z.object({
   isCompleted: z.boolean().default(false),
   completedAt: z.string().datetime().optional().nullable(),
   assignedToId: z.string().uuid().optional().nullable(),
+  dueDate: z.string().datetime().optional().nullable(),
   documentKey: z.string().optional(), // S3 key for uploaded document
 });
 
 export const onboardingChecklistSchema = z.object({
   id: z.string().uuid().optional(),
   candidateId: z.string().uuid(),
+  templateId: z.string().uuid().optional(),
   tasks: z.array(onboardingTaskSchema),
   progress: z.number().min(0).max(100).default(0),
   status: z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETED"]).default("NOT_STARTED"),

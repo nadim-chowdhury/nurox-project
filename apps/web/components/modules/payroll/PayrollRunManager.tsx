@@ -35,7 +35,7 @@ export const PayrollRunManager: React.FC = () => {
 
   const handleProcess = async (id: string) => {
     try {
-      await processRun(id).unwrap();
+      await processRun({ id }).unwrap();
       message.success("Payroll processed successfully!");
     } catch (err: any) {
       message.error(err.data?.message || "Processing failed");

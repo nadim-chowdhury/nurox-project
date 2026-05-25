@@ -57,6 +57,9 @@ const envSchema = z.object({
   S3_SECRET_KEY: z.string().optional(),
   S3_BUCKET: z.string().optional(),
   S3_REGION: z.string().default('us-east-1'),
+
+  // AI
+  OPENAI_API_KEY: z.string().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;
