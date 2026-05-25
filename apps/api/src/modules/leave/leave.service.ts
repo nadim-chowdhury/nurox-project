@@ -104,6 +104,32 @@ export class LeaveService {
     return this.balanceRepo.save(balance);
   }
 
+  async initializeBalances(employeeId: string) {
+    const employee = await this.leaveRepo.manager.findOne(Employee, {
+      where: { id: employeeId },
+    });
+    if (!employee) throw new NotFoundException('Employee not found');
+
+    const leaveTypes = [LeaveType.ANNUAL, LeaveType.CASUAL, LeaveType.SICK];
+    const balances: LeaveBalance[] = [];
+
+    for (const type of leaveTypes) {
+      const existing = await this.balanceRepo.findOne({
+        where: {
+          employeeId,
+          leaveType: type,
+          fiscalYear: '2025-26',
+        },
+      });
+
+      if (!existing) {
+        balances.push(await this.createProRatedBalance(employee, type));
+      }
+    }
+
+    return balances;
+  }
+
   async approveLeave(
     id: string,
     approvedById: string,

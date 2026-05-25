@@ -854,6 +854,13 @@ export class RecruitmentService {
           completedAt: null,
           dueDate: null,
         },
+        {
+          title: 'Equipment Provisioning',
+          description: 'Pick up laptop, mobile, and security badge from IT',
+          isCompleted: false,
+          completedAt: null,
+          dueDate: null,
+        },
       ];
     }
 
@@ -952,16 +959,20 @@ export class RecruitmentService {
         }
 
         // 4. Initialize Leave Balance (Annual, Sick, Casual)
-        // Note: In real app, we would fetch employee record linked to the user
-        // For prototype, we'll try to find or create a mock employee record if needed
-        // but here we call the service directly with candidate info if it accepts it.
         try {
-          // Assuming we have an employee record by now (auto-created during invite or separate step)
-          // For now, we'll log it as a prototype step.
           this.logger.log(
             `[ONBOARDING] Initializing leave balances for ${candidate.email}`,
           );
-          // await this.leaveService.initializeBalances(candidate.id);
+          // Since we might not have the employeeId yet (as invite is async or handles it),
+          // we'll simulate finding the employee record if it was auto-created.
+          // For this prototype, we'll try to find by email.
+          const employeeRepo = await this.getRepo<any>('employees' as any); // Dynamic repo for prototype
+          const employee = await employeeRepo.findOne({
+            where: { email: candidate.email },
+          });
+          if (employee) {
+            await this.leaveService.initializeBalances(employee.id);
+          }
         } catch (err) {
           this.logger.error(
             `Failed to initialize leave balance: ${err.message}`,
@@ -973,7 +984,17 @@ export class RecruitmentService {
           this.logger.log(
             `[ONBOARDING] Assigning default salary structure for ${candidate.email}`,
           );
-          // await this.payrollService.assignStructure(candidate.id, 'DEFAULT_STRUCTURE_ID');
+          const employeeRepo = await this.getRepo<any>('employees' as any);
+          const employee = await employeeRepo.findOne({
+            where: { email: candidate.email },
+          });
+          if (employee) {
+            // Find a default structure or use a hardcoded one for prototype
+            await this.payrollService.assignStructure(
+              employee.id,
+              '66e13886-c956-4c4d-91b4-2b737194f48b',
+            );
+          }
         } catch (err) {
           this.logger.error(
             `Failed to assign salary structure: ${err.message}`,

@@ -87,3 +87,7 @@ export const hrConfig = registerAs('hr', () => ({
 export const aiConfig = registerAs('ai', () => ({
   openaiApiKey: process.env.OPENAI_API_KEY,
 }));
+
+export const financeConfig = registerAs('finance', () => ({
+  fixerApiKey: process.env.FIXER_API_KEY,
+}));

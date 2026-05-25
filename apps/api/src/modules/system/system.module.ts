@@ -50,6 +50,7 @@ import { DatabaseInitService } from './database-init.service';
     DatabaseInitService,
   ],
   exports: [
+    TypeOrmModule,
     TenantProvisioningService,
     StorageService,
     AuditService,

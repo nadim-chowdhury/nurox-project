@@ -53,6 +53,30 @@ export const financeApi = createApi({
       invalidatesTags: ["Journal", "Account"],
     }),
 
+    reviewJournal: builder.mutation<any, string>({
+      query: (id) => ({
+        url: `/finance/journals/${id}/review`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Journal"],
+    }),
+
+    approveJournal: builder.mutation<any, string>({
+      query: (id) => ({
+        url: `/finance/journals/${id}/approve`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Journal"],
+    }),
+
+    postJournal: builder.mutation<any, string>({
+      query: (id) => ({
+        url: `/finance/journals/${id}/post`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Journal", "Account"],
+    }),
+
     getInvoices: builder.query<any, { page?: number; limit?: number }>({
       query: (params) => ({
         url: "/finance/invoices",
@@ -77,6 +101,71 @@ export const financeApi = createApi({
         body: { status },
       }),
       invalidatesTags: ["Invoice", "Journal", "Account"],
+    }),
+
+    getBills: builder.query<any, { page?: number; limit?: number }>({
+      query: (params) => ({
+        url: "/finance/bills",
+        params,
+      }),
+      providesTags: ["Bill"],
+    }),
+
+    createBill: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/finance/bills",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Bill"],
+    }),
+
+    updateBillStatus: builder.mutation<any, { id: string; status: string }>({
+      query: ({ id, status }) => ({
+        url: `/finance/bills/${id}/status`,
+        method: "PATCH",
+        body: { status },
+      }),
+      invalidatesTags: ["Bill", "Journal", "Account"],
+    }),
+
+    getBankAccounts: builder.query<any[], void>({
+      query: () => "/finance/bank-accounts",
+      providesTags: ["Account"],
+    }),
+
+    getBankTransactions: builder.query<any[], string>({
+      query: (id) => `/finance/bank-accounts/${id}/transactions`,
+      providesTags: ["Journal"],
+    }),
+
+    getUnreconciledJournals: builder.query<any[], string>({
+      query: (id) => `/finance/bank-accounts/${id}/unreconciled-journals`,
+      providesTags: ["Journal"],
+    }),
+
+    importBankStatement: builder.mutation<
+      any,
+      { bankAccountId: string; transactions: any[] }
+    >({
+      query: ({ bankAccountId, transactions }) => ({
+        url: `/finance/banking/${bankAccountId}/import`,
+        method: "POST",
+        body: { transactions },
+      }),
+      invalidatesTags: ["Journal", "Account"],
+    }),
+
+    reconcileTransaction: builder.mutation<
+      any,
+      { transactionId: string; journalEntryId: string }
+    >({
+      query: ({ transactionId, journalEntryId }) => ({
+        url: `/finance/banking/reconcile/${transactionId}`,
+        method: "POST",
+        body: { journalEntryId },
+      }),
+      invalidatesTags: ["Journal", "Account"],
     }),
 
     getTaxRates: builder.query<TaxRateDto[], void>({
@@ -146,6 +235,143 @@ export const financeApi = createApi({
       providesTags: ["Report"],
     }),
 
+    getAPAgingReport: builder.query<any, void>({
+      query: () => "/finance/reports/ap-aging",
+      providesTags: ["Report"],
+    }),
+
+    getExpenseClaims: builder.query<any[], void>({
+      query: () => "/finance/expense-claims",
+      providesTags: ["Report"],
+    }),
+
+    createExpenseClaim: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/finance/expense-claims",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Report"],
+    }),
+
+    approveExpenseClaim: builder.mutation<
+      any,
+      { id: string; approverId: string }
+    >({
+      query: ({ id, approverId }) => ({
+        url: `/finance/expense-claims/${id}/approve`,
+        method: "POST",
+        body: { approverId },
+      }),
+      invalidatesTags: ["Report", "Journal", "Account"],
+    }),
+
+    getPettyCashFunds: builder.query<any[], void>({
+      query: () => "/finance/petty-cash/funds",
+      providesTags: ["Account"],
+    }),
+
+    createPettyCashFund: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/finance/petty-cash/funds",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Account"],
+    }),
+
+    getPettyCashTransactions: builder.query<any[], string>({
+      query: (id) => `/finance/petty-cash/funds/${id}/transactions`,
+      providesTags: ["Journal"],
+    }),
+
+    recordPettyCashTransaction: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/finance/petty-cash/transactions",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Journal", "Account"],
+    }),
+
+    getRecurringInvoices: builder.query<any[], void>({
+      query: () => "/finance/recurring-invoices",
+      providesTags: ["Invoice"],
+    }),
+
+    createRecurringInvoice: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/finance/recurring-invoices",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Invoice"],
+    }),
+
+    getRecurringJournals: builder.query<any[], void>({
+      query: () => "/finance/recurring-journals",
+      providesTags: ["Journal"],
+    }),
+
+    createRecurringJournal: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/finance/recurring-journals",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Journal"],
+    }),
+
+    getPaymentBatches: builder.query<any[], void>({
+      query: () => "/finance/payment-batches",
+      providesTags: ["Bill"],
+    }),
+
+    createPaymentBatch: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/finance/payment-batches",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Bill", "Journal", "Account"],
+    }),
+
+    getCostCenters: builder.query<any[], void>({
+      query: () => "/finance/cost-centers",
+      providesTags: ["Report"],
+    }),
+
+    getCostCenterPL: builder.query<any, { id: string; startDate: string; endDate: string }>({
+      query: ({ id, ...params }) => ({
+        url: `/finance/cost-centers/${id}/pl`,
+        params,
+      }),
+      providesTags: ["Report"],
+    }),
+
+    getVATReturn: builder.query<any, { startDate: string; endDate: string }>({
+      query: (params) => ({
+        url: "/finance/reports/vat-return",
+        params,
+      }),
+      providesTags: ["Report"],
+    }),
+
+    getTDSReport: builder.query<any, { startDate: string; endDate: string }>({
+      query: (params) => ({
+        url: "/finance/reports/tds-report",
+        params,
+      }),
+      providesTags: ["Report"],
+    }),
+
+    exportInvoicePdf: builder.query<Blob, string>({
+      query: (id) => ({
+        url: `/finance/invoices/${id}/pdf`,
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+
     getGeneralLedger: builder.query<
       any,
       {
@@ -171,9 +397,20 @@ export const {
   useCreateAccountMutation,
   useGetJournalsQuery,
   useCreateJournalMutation,
+  useReviewJournalMutation,
+  useApproveJournalMutation,
+  usePostJournalMutation,
   useGetInvoicesQuery,
   useCreateInvoiceMutation,
   useUpdateInvoiceStatusMutation,
+  useGetBillsQuery,
+  useCreateBillMutation,
+  useUpdateBillStatusMutation,
+  useGetBankAccountsQuery,
+  useGetBankTransactionsQuery,
+  useGetUnreconciledJournalsQuery,
+  useImportBankStatementMutation,
+  useReconcileTransactionMutation,
   useGetTaxRatesQuery,
   useCreateTaxRateMutation,
   useClosePeriodMutation,
@@ -183,5 +420,25 @@ export const {
   useGetCashFlowQuery,
   useGetBudgetVsActualQuery,
   useGetARAgingReportQuery,
+  useGetAPAgingReportQuery,
+  useGetExpenseClaimsQuery,
+  useCreateExpenseClaimMutation,
+  useApproveExpenseClaimMutation,
+  useGetPettyCashFundsQuery,
+  useCreatePettyCashFundMutation,
+  useGetPettyCashTransactionsQuery,
+  useRecordPettyCashTransactionMutation,
+  useGetRecurringInvoicesQuery,
+  useCreateRecurringInvoiceMutation,
+  useGetRecurringJournalsQuery,
+  useCreateRecurringJournalMutation,
+  useGetPaymentBatchesQuery,
+  useCreatePaymentBatchMutation,
+  useGetCostCentersQuery,
+  useGetCostCenterPLQuery,
+  useGetVATReturnQuery,
+  useGetTDSReportQuery,
+  useExportInvoicePdfQuery,
+  useLazyExportInvoicePdfQuery,
   useGetGeneralLedgerQuery,
 } = financeApi;

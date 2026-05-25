@@ -3,17 +3,22 @@ import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 
 export enum InvoiceStatus {
   DRAFT = 'DRAFT',
+  PROFORMA = 'PROFORMA',
   SENT = 'SENT',
   PAID = 'PAID',
   PARTIALLY_PAID = 'PARTIALLY_PAID',
   OVERDUE = 'OVERDUE',
   CANCELLED = 'CANCELLED',
+  VOID = 'VOID',
 }
 
 @Entity('invoices')
 export class Invoice extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 30, unique: true })
   invoiceNumber: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  customerId: string | null;
 
   @Column({ type: 'varchar', length: 150 })
   customerName: string;
@@ -42,6 +47,12 @@ export class Invoice extends TenantBaseEntity {
   @Column({ type: 'enum', enum: InvoiceStatus, default: InvoiceStatus.DRAFT })
   status: InvoiceStatus;
 
+  @Column({ type: 'boolean', default: false })
+  isProforma: boolean;
+
+  @Column({ type: 'boolean', default: true })
+  isTaxInvoice: boolean;
+
   @Column({ type: 'text', nullable: true })
   notes: string | null;
 
@@ -69,4 +80,7 @@ export class InvoiceLine extends TenantBaseEntity {
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   lineTotal: number;
+
+  @Column({ type: 'uuid', nullable: true })
+  taxRateId: string | null;
 }

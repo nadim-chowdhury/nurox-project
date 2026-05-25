@@ -11,9 +11,23 @@ import { Bill, BillLine } from './entities/bill.entity';
 import { TaxRate } from './entities/tax-rate.entity';
 import { AccountingPeriod } from './entities/accounting-period.entity';
 import { BankTransaction } from './entities/bank-transaction.entity';
+import { BankAccount } from './entities/bank-account.entity';
 import { Budget } from './entities/budget.entity';
+import { CurrencyRate } from './entities/currency-rate.entity';
+import { RecurringJournal } from './entities/recurring-journal.entity';
+import { RecurringInvoice } from './entities/recurring-invoice.entity';
+import { CreditNote } from './entities/credit-note.entity';
+import { ExpenseClaim } from './entities/expense-claim.entity';
+import {
+  PettyCashFund,
+  PettyCashTransaction,
+} from './entities/petty-cash.entity';
+import { Grn as GRN } from '../procurement/entities/grn.entity';
+import { PurchaseOrder } from '../procurement/entities/purchase-order.entity';
 import { SystemModule } from '../system/system.module';
 import { ARReminderProcessor } from './ar-reminder.processor';
+import { RecurringJournalProcessor } from './recurring-journal.processor';
+import { RecurringInvoiceProcessor } from './recurring-invoice.processor';
 
 @Module({
   imports: [
@@ -28,15 +42,33 @@ import { ARReminderProcessor } from './ar-reminder.processor';
       TaxRate,
       AccountingPeriod,
       BankTransaction,
+      BankAccount,
       Budget,
+      CurrencyRate,
+      RecurringJournal,
+      RecurringInvoice,
+      CreditNote,
+      ExpenseClaim,
+      PettyCashFund,
+      PettyCashTransaction,
+      GRN,
+      PurchaseOrder,
     ]),
-    BullModule.registerQueue({
-      name: 'ar_reminders',
-    }),
+    BullModule.registerQueue(
+      { name: 'ar_reminders' },
+      { name: 'recurring_journals' },
+      { name: 'recurring_invoices' },
+    ),
     SystemModule,
   ],
   controllers: [FinanceController],
-  providers: [FinanceService, ARReminderProcessor, CurrencyConversionService],
+  providers: [
+    FinanceService,
+    ARReminderProcessor,
+    RecurringJournalProcessor,
+    RecurringInvoiceProcessor,
+    CurrencyConversionService,
+  ],
   exports: [FinanceService, CurrencyConversionService],
 })
 export class FinanceModule {}

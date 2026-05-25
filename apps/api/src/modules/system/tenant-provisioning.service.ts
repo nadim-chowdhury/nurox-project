@@ -12,6 +12,8 @@ import { Role } from '../auth/entities/role.entity';
 import { Permission, RolePermissions } from '../auth/enums/permissions.enum';
 import * as dns from 'dns';
 import { promisify } from 'util';
+import * as crypto from 'crypto';
+import { GET_COA_BY_COUNTRY, CoATemplateItem } from '../finance/coa-templates';
 
 const resolveTxt = promisify(dns.resolveTxt);
 
@@ -33,6 +35,7 @@ export class TenantProvisioningService {
     schemaNamespace: string;
     domain: string;
     modules?: string[];
+    country?: string;
   }): Promise<Tenant> {
     return await this.dataSource.transaction(async (manager) => {
       // 1. Check if tenant already exists
@@ -78,7 +81,7 @@ export class TenantProvisioningService {
       await this.seedDefaultRoles(manager, savedTenant.id);
 
       // 6. Seed default tenant data (COA, Leave Types, Fiscal Year)
-      await this.seedDefaultTenantData(manager, savedTenant.id);
+      await this.seedDefaultTenantData(manager, savedTenant.id, data.country);
 
       this.logger.log(
         `Tenant ${data.name} provisioned successfully with schema ${data.schemaNamespace}`,
@@ -94,26 +97,42 @@ export class TenantProvisioningService {
   private async seedDefaultTenantData(
     manager: EntityManager,
     tenantId: string,
+    country = 'US',
   ): Promise<void> {
     // 1. Seed Chart of Accounts
-    const defaultAccounts = [
-      { code: '1000', name: 'Cash', type: 'ASSET' },
-      { code: '1100', name: 'Accounts Receivable', type: 'ASSET' },
-      { code: '2000', name: 'Accounts Payable', type: 'LIABILITY' },
-      { code: '3000', name: 'Retained Earnings', type: 'EQUITY' },
-      { code: '4000', name: 'Sales Revenue', type: 'REVENUE' },
-      { code: '5000', name: 'Cost of Goods Sold', type: 'EXPENSE' },
-      { code: '6000', name: 'Operating Expenses', type: 'EXPENSE' },
-    ];
+    const coaTemplate = GET_COA_BY_COUNTRY(country);
 
-    for (const accData of defaultAccounts) {
+    const seedAccount = async (
+      item: CoATemplateItem,
+      parentId: string | null = null,
+    ) => {
+      const id = crypto.randomUUID();
       await manager.query(
-        `INSERT INTO chart_of_accounts (id, tenant_id, code, name, type, currency, balance, is_active, created_at, updated_at)
-         VALUES (gen_random_uuid(), '${tenantId}', '${accData.code}', '${accData.name}', '${accData.type}', 'USD', 0, true, now(), now())`,
+        `INSERT INTO chart_of_accounts (id, tenant_id, code, name, type, parentId, currency, balance, is_active, created_at, updated_at)
+         VALUES ('${id}', '${tenantId}', '${item.code}', '${item.name}', '${item.type}', ${parentId ? `'${parentId}'` : 'NULL'}, 'USD', 0, true, now(), now())`,
+      );
+
+      if (item.children && item.children.length > 0) {
+        for (const child of item.children) {
+          await seedAccount(child, id);
+        }
+      }
+    };
+
+    for (const item of coaTemplate) {
+      await seedAccount(item);
+    }
+
+    // 2. Seed default Tax Rates
+    const taxRates = this.getDefaultTaxRates(country);
+    for (const tr of taxRates) {
+      await manager.query(
+        `INSERT INTO tax_rates (id, tenant_id, name, rate, description, is_active, created_at, updated_at)
+         VALUES ('${crypto.randomUUID()}', '${tenantId}', '${tr.name}', ${tr.rate}, '${tr.description}', true, now(), now())`,
       );
     }
 
-    // 2. Seed default Accounting Periods for the current year
+    // 3. Seed default Accounting Periods for the current year
     const currentYear = new Date().getFullYear();
     for (let month = 0; month < 12; month++) {
       const startDate = new Date(currentYear, month, 1);
@@ -130,6 +149,40 @@ export class TenantProvisioningService {
     }
 
     this.logger.log(`Seeded default data for tenant ${tenantId}`);
+  }
+
+  private getDefaultTaxRates(
+    country: string,
+  ): { name: string; rate: number; description: string }[] {
+    switch (country.toUpperCase()) {
+      case 'BD':
+        return [
+          { name: 'VAT 15%', rate: 15, description: 'Standard VAT rate' },
+          { name: 'VAT 5%', rate: 5, description: 'Reduced VAT rate' },
+          { name: 'TDS 10%', rate: 10, description: 'Tax Deducted at Source' },
+        ];
+      case 'IN':
+        return [
+          { name: 'GST 18%', rate: 18, description: 'Standard GST rate' },
+          { name: 'GST 12%', rate: 12, description: 'Reduced GST rate' },
+          { name: 'GST 5%', rate: 5, description: 'Lower GST rate' },
+        ];
+      case 'UK':
+        return [
+          { name: 'VAT 20%', rate: 20, description: 'Standard VAT rate' },
+          { name: 'VAT 5%', rate: 5, description: 'Reduced VAT rate' },
+        ];
+      case 'US':
+      default:
+        return [
+          { name: 'Sales Tax 0%', rate: 0, description: 'No sales tax' },
+          {
+            name: 'Sales Tax 8.875%',
+            rate: 8.875,
+            description: 'NYC Sales Tax',
+          },
+        ];
+    }
   }
 
   /**

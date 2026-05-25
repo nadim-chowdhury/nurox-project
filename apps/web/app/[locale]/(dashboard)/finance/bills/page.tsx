@@ -1,215 +1,74 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button, Space } from "antd";
-import { PlusOutlined, EditOutlined, EyeOutlined } from "@ant-design/icons";
+import { Button, Space, Modal, Form, Input, InputNumber, DatePicker, Select, message, Tag } from "antd";
+import { PlusOutlined, EyeOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
-import { DataTable } from "@/components/tables/DataTable";
-import { TableToolbar } from "@/components/tables/TableToolbar";
-import { StatusTag } from "@/components/common/StatusTag";
-import { formatCurrency, formatDate } from "@/lib/utils";
-import type { ColumnsType } from "antd/es/table";
+import { useGetBillsQuery, useCreateBillMutation, useGetAccountsQuery, useUpdateBillStatusMutation } from "@/store/api/financeApi";
+import dayjs from "dayjs";
 
-interface Bill {
-  id: string;
-  vendor: string;
-  billNo: string;
-  issueDate: string;
-  dueDate: string;
-  amount: number;
-  status: string;
-  category: string;
-}
-
-const mockBills: Bill[] = [
-  {
-    id: "1",
-    vendor: "AWS",
-    billNo: "AWS-2026-04",
-    issueDate: "2026-04-01",
-    dueDate: "2026-04-30",
-    amount: 4520,
-    status: "unpaid",
-    category: "Cloud Services",
-  },
-  {
-    id: "2",
-    vendor: "WeWork",
-    billNo: "WW-2026-04",
-    issueDate: "2026-04-01",
-    dueDate: "2026-04-15",
-    amount: 8500,
-    status: "paid",
-    category: "Office Rent",
-  },
-  {
-    id: "3",
-    vendor: "Figma Inc",
-    billNo: "FIG-2026-Q2",
-    issueDate: "2026-04-01",
-    dueDate: "2026-06-30",
-    amount: 1200,
-    status: "unpaid",
-    category: "Software",
-  },
-  {
-    id: "4",
-    vendor: "Office Depot",
-    billNo: "OD-98234",
-    issueDate: "2026-03-28",
-    dueDate: "2026-04-10",
-    amount: 650,
-    status: "overdue",
-    category: "Supplies",
-  },
-  {
-    id: "5",
-    vendor: "Google Workspace",
-    billNo: "GW-2026-04",
-    issueDate: "2026-04-01",
-    dueDate: "2026-04-30",
-    amount: 2100,
-    status: "unpaid",
-    category: "Software",
-  },
-  {
-    id: "6",
-    vendor: "Electric Co",
-    billNo: "ELC-2026-03",
-    issueDate: "2026-03-30",
-    dueDate: "2026-04-20",
-    amount: 890,
-    status: "paid",
-    category: "Utilities",
-  },
-];
+const { Option } = Select;
 
 export default function BillsPage() {
-  const [search, setSearch] = useState("");
-  const filtered = mockBills.filter(
-    (b) =>
-      b.vendor.toLowerCase().includes(search.toLowerCase()) ||
-      b.billNo.toLowerCase().includes(search.toLowerCase()),
-  );
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useGetBillsQuery({ page, limit: 10 });
+  const { data: accounts } = useGetAccountsQuery();
+  const [createBill] = useCreateBillMutation();
+  const [updateStatus] = useUpdateBillStatusMutation();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form] = Form.useForm();
 
-  const columns: ColumnsType<Bill> = [
-    {
-      title: "Vendor",
-      dataIndex: "vendor",
-      key: "vendor",
-      width: 180,
-      render: (v: string) => (
-        <span
-          style={{
-            color: "var(--color-on-surface)",
-            fontWeight: 500,
-            fontSize: 13,
-          }}
-        >
-          {v}
-        </span>
-      ),
-    },
-    {
-      title: "Bill #",
-      dataIndex: "billNo",
-      key: "billNo",
-      width: 150,
-      render: (v: string) => (
-        <span
-          style={{
-            color: "var(--color-primary)",
-            fontSize: 13,
-            fontFamily: "var(--font-display)",
-          }}
-        >
-          {v}
-        </span>
-      ),
-    },
-    {
-      title: "Category",
-      dataIndex: "category",
-      key: "category",
-      width: 140,
-      render: (v: string) => (
-        <span
-          style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
-        >
-          {v}
-        </span>
-      ),
-    },
-    {
-      title: "Issue Date",
-      dataIndex: "issueDate",
-      key: "issue",
-      width: 120,
-      render: (d: string) => (
-        <span
-          style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
-        >
-          {formatDate(d)}
-        </span>
-      ),
-    },
-    {
-      title: "Due Date",
-      dataIndex: "dueDate",
-      key: "due",
-      width: 120,
-      render: (d: string) => (
-        <span
-          style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
-        >
-          {formatDate(d)}
-        </span>
-      ),
-    },
-    {
-      title: "Amount",
-      dataIndex: "amount",
-      key: "amount",
-      width: 120,
-      sorter: (a, b) => a.amount - b.amount,
-      render: (v: number) => (
-        <span
-          style={{
-            fontFamily: "var(--font-display)",
-            color: "var(--color-primary)",
-            fontWeight: 600,
-          }}
-        >
-          {formatCurrency(v)}
-        </span>
-      ),
-    },
-    {
-      title: "Status",
+  const handleCreate = async (values: any) => {
+    try {
+      const payload = {
+        ...values,
+        issueDate: values.issueDate.toISOString(),
+        dueDate: values.dueDate.toISOString(),
+      };
+      await createBill(payload).unwrap();
+      message.success("Bill recorded successfully");
+      setIsModalOpen(false);
+      form.resetFields();
+    } catch (err: any) {
+      message.error(err.data?.message || "Failed to record bill");
+    }
+  };
+
+  const handleMarkPaid = async (id: string) => {
+    try {
+      await updateStatus({ id, status: "PAID" }).unwrap();
+      message.success("Bill marked as PAID");
+    } catch (err: any) {
+      message.error(err.data?.message || "Failed to update status");
+    }
+  };
+
+  const columns = [
+    { title: "Bill #", dataIndex: "billNumber" },
+    { title: "Vendor", dataIndex: "vendorName" },
+    { title: "Issue Date", dataIndex: "issueDate", render: (d: string) => dayjs(d).format("YYYY-MM-DD") },
+    { title: "Due Date", dataIndex: "dueDate", render: (d: string) => dayjs(d).format("YYYY-MM-DD") },
+    { title: "Amount", dataIndex: "totalAmount", render: (v: number) => `$${(v || 0).toFixed(2)}` },
+    { 
+      title: "Status", 
       dataIndex: "status",
-      key: "status",
-      width: 100,
-      render: (s: string) => <StatusTag status={s} />,
+      render: (s: string) => {
+        let color = "default";
+        if (s === "PAID") color = "success";
+        if (s === "PARTIALLY_PAID") color = "warning";
+        if (s === "OVERDUE") color = "error";
+        return <Tag color={color}>{s}</Tag>;
+      }
     },
     {
-      title: "",
+      title: "Actions",
       key: "actions",
-      width: 80,
-      align: "right" as const,
-      render: () => (
-        <Space size={4}>
-          <Button
-            type="text"
-            size="small"
-            icon={<EyeOutlined />}
-            style={{ color: "var(--color-on-surface-variant)" }}
-          />
-          <Button
-            type="text"
-            size="small"
-            icon={<EditOutlined />}
-            style={{ color: "var(--color-on-surface-variant)" }}
-          />
+      render: (_: any, record: any) => (
+        <Space>
+          <Button icon={<EyeOutlined />} size="small">View</Button>
+          {record.status !== "PAID" && (
+            <Button size="small" onClick={() => handleMarkPaid(record.id)}>Mark Paid</Button>
+          )}
         </Space>
       ),
     },
@@ -219,25 +78,125 @@ export default function BillsPage() {
     <div className="animate-fade-in-up">
       <PageHeader
         title="Bills"
-        subtitle={`${filtered.length} bills`}
+        subtitle="Manage vendor bills and accounts payable"
         breadcrumbs={[
           { label: "Home", href: "/dashboard" },
           { label: "Finance", href: "/finance" },
           { label: "Bills" },
         ]}
         extra={
-          <Button type="primary" icon={<PlusOutlined />}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>
             Record Bill
           </Button>
         }
       />
-      <TableToolbar
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Search vendors or bill numbers..."
-        showExport
-      />
-      <DataTable<Bill> columns={columns} dataSource={filtered} rowKey="id" />
+      
+      <div className="bg-white p-4 rounded shadow-sm">
+        <DataTable
+          columns={columns}
+          dataSource={data?.data}
+          rowKey="id"
+          loading={isLoading}
+          pagination={{
+            total: data?.meta?.total,
+            current: page,
+            pageSize: 10,
+            onChange: (p: number) => setPage(p),
+          }}
+        />
+      </div>
+
+      <Modal
+        title="Record Vendor Bill"
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        onOk={() => form.submit()}
+        width={800}
+      >
+        <Form form={form} layout="vertical" onFinish={handleCreate}>
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item name="billNumber" label="Bill Number" rules={[{ required: true }]}>
+              <Input placeholder="VND-2026-001" />
+            </Form.Item>
+            <Form.Item name="vendorName" label="Vendor Name" rules={[{ required: true }]}>
+              <Input />
+            </Form.Item>
+            <Form.Item name="issueDate" label="Issue Date" rules={[{ required: true }]}>
+              <DatePicker className="w-full" />
+            </Form.Item>
+            <Form.Item name="dueDate" label="Due Date" rules={[{ required: true }]}>
+              <DatePicker className="w-full" />
+            </Form.Item>
+          </div>
+
+          <Form.List name="lines" initialValue={[{ description: "", quantity: 1, unitPrice: 0, accountId: "" }]}>
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ key, name, ...restField }) => (
+                  <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
+                    <Form.Item
+                      {...restField}
+                      name={[name, 'accountId']}
+                      rules={[{ required: true, message: 'Missing account' }]}
+                    >
+                      <Select placeholder="Account" style={{ width: 200 }} showSearch optionFilterProp="children">
+                        {accounts?.filter(a => a.type === 'EXPENSE' || a.type === 'ASSET').map(a => (
+                          <Option key={a.id} value={a.id}>{a.code} - {a.name}</Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[name, 'description']}
+                      rules={[{ required: true, message: 'Missing description' }]}
+                    >
+                      <Input placeholder="Description" style={{ width: 250 }} />
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[name, 'quantity']}
+                      rules={[{ required: true, message: 'Missing quantity' }]}
+                    >
+                      <InputNumber placeholder="Qty" min={1} />
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[name, 'unitPrice']}
+                      rules={[{ required: true, message: 'Missing price' }]}
+                    >
+                      <InputNumber placeholder="Price" min={0} precision={2} />
+                    </Form.Item>
+                    <Button type="text" danger onClick={() => remove(name)} icon={<PlusOutlined rotate={45} />} />
+                  </Space>
+                ))}
+                <Form.Item>
+                  <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                    Add Line Item
+                  </Button>
+                </Form.Item>
+              </>
+            )}
+          </Form.List>
+
+          <Form.Item name="notes" label="Notes">
+            <Input.TextArea />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }
+
+// Simple wrapper since DataTable might be a local component we want to keep using or replace
+function DataTable({ columns, dataSource, rowKey, loading, pagination }: any) {
+    return (
+        <Table
+            columns={columns}
+            dataSource={dataSource}
+            rowKey={rowKey}
+            loading={loading}
+            pagination={pagination}
+        />
+    );
+}
+import { Table } from "antd";

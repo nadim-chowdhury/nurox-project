@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { Table, Button, Modal, message, Tag, Space, Form, Input, DatePicker, InputNumber } from "antd";
-import { PlusOutlined, EyeOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { PlusOutlined, EyeOutlined, CheckCircleOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { 
   useGetInvoicesQuery, 
   useCreateInvoiceMutation, 
-  useUpdateInvoiceStatusMutation 
+  useUpdateInvoiceStatusMutation,
+  useLazyExportInvoicePdfQuery
 } from "@/store/api/financeApi";
 import dayjs from "dayjs";
 
@@ -15,8 +16,23 @@ export default function Invoices() {
   const { data, isLoading } = useGetInvoicesQuery({ page, limit: 10 });
   const [createInvoice] = useCreateInvoiceMutation();
   const [updateStatus] = useUpdateInvoiceStatusMutation();
+  const [triggerExport] = useLazyExportInvoicePdfQuery();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
+
+  const handleDownloadPdf = async (id: string, invoiceNumber: string) => {
+    try {
+      const blob = await triggerExport(id).unwrap();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Invoice-${invoiceNumber}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (_err) {
+      message.error("Failed to generate PDF");
+    }
+  };
 
   const handleCreate = async (values: any) => {
     try {
@@ -66,6 +82,13 @@ export default function Invoices() {
       render: (_: any, record: any) => (
         <Space>
           <Button icon={<EyeOutlined />} size="small">View</Button>
+          <Button 
+            icon={<FilePdfOutlined />} 
+            size="small" 
+            onClick={() => handleDownloadPdf(record.id, record.invoiceNumber)}
+          >
+            PDF
+          </Button>
           {record.status !== "PAID" && (
             <Button 
               icon={<CheckCircleOutlined />} 

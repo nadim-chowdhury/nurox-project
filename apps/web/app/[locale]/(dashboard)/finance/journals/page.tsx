@@ -1,9 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Table, Button, Modal, message, Tag, Select, Input, DatePicker, InputNumber } from "antd";
+import { Table, Button, Modal, message, Tag, Select, Input, DatePicker, InputNumber, Space } from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
-import { useGetJournalsQuery, useCreateJournalMutation, useGetAccountsQuery } from "@/store/api/financeApi";
+import { 
+  useGetJournalsQuery, 
+  useCreateJournalMutation, 
+  useGetAccountsQuery,
+  useReviewJournalMutation,
+  useApproveJournalMutation,
+  usePostJournalMutation
+} from "@/store/api/financeApi";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { journalEntrySchema } from "@repo/shared-schemas";
@@ -14,6 +21,9 @@ export default function JournalEntries() {
   const { data, isLoading } = useGetJournalsQuery({ page, limit: 10 });
   const { data: accounts } = useGetAccountsQuery();
   const [createJournal] = useCreateJournalMutation();
+  const [reviewJournal] = useReviewJournalMutation();
+  const [approveJournal] = useApproveJournalMutation();
+  const [postJournal] = usePostJournalMutation();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { control, handleSubmit, watch, reset, formState: { errors } } = useForm({
@@ -43,28 +53,52 @@ export default function JournalEntries() {
   const handleCreate = async (values: any) => {
     try {
       await createJournal(values).unwrap();
-      message.success("Journal entry posted");
+      message.success("Journal entry saved as DRAFT");
       setIsModalOpen(false);
       reset();
     } catch (err: any) {
-      message.error(err.data?.message || "Failed to post journal entry");
+      message.error(err.data?.message || "Failed to save journal entry");
     }
+  };
+
+  const handleAction = async (id: string, action: "review" | "approve" | "post") => {
+      try {
+          if (action === "review") await reviewJournal(id).unwrap();
+          if (action === "approve") await approveJournal(id).unwrap();
+          if (action === "post") await postJournal(id).unwrap();
+          message.success(`Journal ${action}ed successfully`);
+      } catch (err: any) {
+          message.error(err.data?.message || `Failed to ${action} journal`);
+      }
   };
 
   const columns = [
     { title: "Date", dataIndex: "entryDate", render: (date: string) => dayjs(date).format("YYYY-MM-DD") },
     { title: "Number", dataIndex: "entryNumber" },
-    { title: "Description", dataIndex: "description" },
-    { title: "Reference", dataIndex: "reference" },
-    { title: "Total Debit", dataIndex: "totalDebit", render: (val: number) => `$${val.toFixed(2)}` },
-    { title: "Total Credit", dataIndex: "totalCredit", render: (val: number) => `$${val.toFixed(2)}` },
+    { title: "Description", dataIndex: "description", ellipsis: true },
+    { title: "Amount", dataIndex: "totalDebit", render: (val: number, record: any) => `${record.currency || 'USD'} ${val.toFixed(2)}` },
     { 
       title: "Status", 
       dataIndex: "status",
-      render: (status: string) => (
-        <Tag color={status === "POSTED" ? "green" : "orange"}>{status}</Tag>
-      )
+      render: (status: string) => {
+          let color = "orange";
+          if (status === "POSTED") color = "green";
+          if (status === "REJECTED") color = "red";
+          if (status === "APPROVED") color = "blue";
+          return <Tag color={color}>{status}</Tag>;
+      }
     },
+    {
+        title: "Actions",
+        key: "actions",
+        render: (_: any, record: any) => (
+            <Space>
+                {record.status === "DRAFT" && <Button size="small" onClick={() => handleAction(record.id, "review")}>Submit</Button>}
+                {record.status === "PENDING_REVIEW" && <Button size="small" type="primary" onClick={() => handleAction(record.id, "approve")}>Approve</Button>}
+                {record.status === "APPROVED" && <Button size="small" type="primary" onClick={() => handleAction(record.id, "post")}>Post</Button>}
+            </Space>
+        )
+    }
   ];
 
   return (
@@ -85,7 +119,7 @@ export default function JournalEntries() {
           total: data?.meta?.total,
           current: page,
           pageSize: 10,
-          onChange: (p) => setPage(p),
+          onChange: (p: number) => setPage(p),
         }}
       />
 
@@ -93,7 +127,7 @@ export default function JournalEntries() {
         title="New Journal Entry"
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
-        onOk={handleSubmit(handleCreate)}
+        onOk={() => handleSubmit(handleCreate)()}
         width={1000}
       >
         <div className="space-y-4">
@@ -211,10 +245,10 @@ export default function JournalEntries() {
             )}
           </div>
           {errors.lines?.root && (
-            <p className="text-red-500 text-sm">{errors.lines.root.message}</p>
+            <p className="text-red-500 text-sm">{(errors.lines.root as any).message}</p>
           )}
           {errors && Object.keys(errors).length > 0 && !errors.lines?.root && (
-             <p className="text-red-500 text-sm">Please check the form for errors. {errors.root?.message}</p>
+             <p className="text-red-500 text-sm">Please check the form for errors. {(errors.root as any)?.message}</p>
           )}
         </div>
       </Modal>

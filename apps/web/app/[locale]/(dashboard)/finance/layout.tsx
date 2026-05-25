@@ -28,8 +28,8 @@ export default function FinanceLayout({ children }: FinanceLayoutProps) {
       icon: <AppstoreOutlined />,
     },
     {
-      key: "accounts",
-      label: "Chart of Accounts",
+      key: "chart-of-accounts",
+      label: "CoA",
       icon: <BookOutlined />,
     },
     {
@@ -38,8 +38,18 @@ export default function FinanceLayout({ children }: FinanceLayoutProps) {
       icon: <FileTextOutlined />,
     },
     {
+      key: "recurring-journals",
+      label: "Rec. Journals",
+      icon: <FileTextOutlined />,
+    },
+    {
       key: "invoices",
       label: "Invoices",
+      icon: <FileTextOutlined />,
+    },
+    {
+      key: "recurring-invoices",
+      label: "Rec. Invoices",
       icon: <FileTextOutlined />,
     },
     {
@@ -48,14 +58,39 @@ export default function FinanceLayout({ children }: FinanceLayoutProps) {
       icon: <WalletOutlined />,
     },
     {
-      key: "reports",
-      label: "Reports",
-      icon: <BarChartOutlined />,
+      key: "payment-batches",
+      label: "Payments",
+      icon: <WalletOutlined />,
+    },
+    {
+      key: "banking",
+      label: "Banking",
+      icon: <WalletOutlined />,
     },
     {
       key: "reconciliation",
       label: "Reconciliation",
       icon: <SwapOutlined />,
+    },
+    {
+      key: "expense-claims",
+      label: "Expenses",
+      icon: <FileTextOutlined />,
+    },
+    {
+      key: "petty-cash",
+      label: "Petty Cash",
+      icon: <WalletOutlined />,
+    },
+    {
+      key: "reports",
+      label: "Reports",
+      icon: <BarChartOutlined />,
+    },
+    {
+      key: "cost-centers",
+      label: "Cost Centers",
+      icon: <BarChartOutlined />,
     },
     {
       key: "settings",

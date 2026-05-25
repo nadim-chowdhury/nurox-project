@@ -24,6 +24,10 @@ export class CreateInvoiceLineDto {
   @IsNumber()
   @Min(0)
   unitPrice: number;
+
+  @IsOptional()
+  @IsString()
+  taxRateId?: string;
 }
 
 export class CreateInvoiceDto {
@@ -48,6 +52,12 @@ export class CreateInvoiceDto {
   @IsOptional()
   @IsEnum(InvoiceStatus)
   status?: InvoiceStatus;
+
+  @IsOptional()
+  isProforma?: boolean;
+
+  @IsOptional()
+  isTaxInvoice?: boolean;
 
   @IsOptional()
   @IsString()

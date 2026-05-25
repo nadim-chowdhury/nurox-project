@@ -90,12 +90,151 @@ export class FinanceController {
     return this.financeService.findInvoiceById(id);
   }
 
+  @Get('invoices/:id/export/pdf')
+  async exportInvoicePdf(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ) {
+    const buffer = await this.financeService.exportInvoicePdf(id);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename=invoice-${id}.pdf`,
+      'Content-Length': buffer.length,
+    });
+    res.end(buffer);
+  }
+
+  @Post('credit-notes')
+  createCreditNote(@Body() dto: any) {
+    return this.financeService.createCreditNote(dto);
+  }
+
   @Patch('invoices/:id/status')
   updateInvoiceStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body('status') status: InvoiceStatus,
   ) {
     return this.financeService.updateInvoiceStatus(id, status);
+  }
+
+  @Post('invoices/:id/convert-proforma')
+  convertProforma(@Param('id', ParseUUIDPipe) id: string) {
+    return this.financeService.convertProformaToInvoice(id);
+  }
+
+  @Post('recurring-invoices')
+  createRecurringInvoice(@Body() dto: any) {
+    return this.financeService.createRecurringInvoice(dto);
+  }
+
+  @Get('recurring-invoices')
+  findAllRecurringInvoices() {
+    return this.financeService.findAllRecurringInvoices();
+  }
+
+  @Get('recurring-invoices/:id')
+  findRecurringInvoice(@Param('id', ParseUUIDPipe) id: string) {
+    return this.financeService.findRecurringInvoiceById(id);
+  }
+
+  @Patch('recurring-invoices/:id')
+  updateRecurringInvoice(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: any,
+  ) {
+    return this.financeService.updateRecurringInvoice(id, dto);
+  }
+
+  @Delete('recurring-invoices/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  removeRecurringInvoice(@Param('id', ParseUUIDPipe) id: string) {
+    return this.financeService.removeRecurringInvoice(id);
+  }
+
+  @Post('expense-claims')
+  createExpenseClaim(@Body() dto: any) {
+    return this.financeService.createExpenseClaim(dto);
+  }
+
+  @Get('expense-claims')
+  findAllExpenseClaims() {
+    return this.financeService.findAllExpenseClaims();
+  }
+
+  @Get('expense-claims/:id')
+  findExpenseClaim(@Param('id', ParseUUIDPipe) id: string) {
+    return this.financeService.findExpenseClaimById(id);
+  }
+
+  @Post('expense-claims/:id/approve')
+  approveExpenseClaim(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('approverId') approverId: string,
+  ) {
+    return this.financeService.approveExpenseClaim(id, approverId);
+  }
+
+  @Post('expense-claims/:id/reject')
+  rejectExpenseClaim(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('reason') reason: string,
+  ) {
+    return this.financeService.rejectExpenseClaim(id, reason);
+  }
+
+  @Post('expense-claims/:id/pay')
+  payExpenseClaim(@Param('id', ParseUUIDPipe) id: string) {
+    return this.financeService.payExpenseClaim(id);
+  }
+
+  @Post('petty-cash/funds')
+  createPettyCashFund(@Body() dto: any) {
+    return this.financeService.createPettyCashFund(dto);
+  }
+
+  @Get('petty-cash/funds')
+  findAllPettyCashFunds() {
+    return this.financeService.findAllPettyCashFunds();
+  }
+
+  @Post('petty-cash/transactions')
+  recordPettyCashTransaction(@Body() dto: any) {
+    return this.financeService.recordPettyCashTransaction(dto);
+  }
+
+  @Get('petty-cash/funds/:id/transactions')
+  findPettyCashTransactions(@Param('id', ParseUUIDPipe) id: string) {
+    return this.financeService.findPettyCashTransactions(id);
+  }
+
+  @Post('bank-accounts')
+  createBankAccount(@Body() dto: any) {
+    return this.financeService.createBankAccount(dto);
+  }
+
+  @Get('bank-accounts')
+  findAllBankAccounts() {
+    return this.financeService.findAllBankAccounts();
+  }
+
+  @Get('bank-accounts/:id/transactions')
+  findBankTransactions(@Param('id', ParseUUIDPipe) id: string) {
+    return this.financeService.findBankTransactions(id);
+  }
+
+  @Get('bank-accounts/:id/unreconciled-journals')
+  findUnreconciledJournals(@Param('id', ParseUUIDPipe) id: string) {
+    return this.financeService.findUnreconciledJournalLines(id);
+  }
+
+  @Post('bank-accounts/:id/auto-match')
+  autoMatch(@Param('id', ParseUUIDPipe) id: string) {
+    return this.financeService.autoMatchTransactions(id);
+  }
+
+  @Get('bank-accounts/:id/reconciliation-report')
+  getReconciliationReport(@Param('id', ParseUUIDPipe) id: string) {
+    return this.financeService.getReconciliationReport(id);
   }
 
   @Delete('invoices/:id')
@@ -123,6 +262,29 @@ export class FinanceController {
   @Get('journals/:id')
   findJournal(@Param('id', ParseUUIDPipe) id: string) {
     return this.financeService.findJournalById(id);
+  }
+
+  @Post('journals/:id/review')
+  reviewJournal(@Param('id', ParseUUIDPipe) id: string) {
+    return this.financeService.reviewJournal(id);
+  }
+
+  @Post('journals/:id/approve')
+  approveJournal(@Param('id', ParseUUIDPipe) id: string) {
+    return this.financeService.approveJournal(id);
+  }
+
+  @Post('journals/:id/post')
+  postJournal(@Param('id', ParseUUIDPipe) id: string) {
+    return this.financeService.postJournal(id);
+  }
+
+  @Post('journals/:id/reject')
+  rejectJournal(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('reason') reason: string,
+  ) {
+    return this.financeService.rejectJournal(id, reason);
   }
 
   @Delete('journals/:id')
@@ -159,13 +321,45 @@ export class FinanceController {
   }
 
   @Get('reports/trial-balance')
-  getTrialBalance() {
-    return this.financeService.getTrialBalance();
+  getTrialBalance(
+    @Query('asOfDate') asOfDate?: string,
+    @Query('comparativeDate') comparativeDate?: string,
+  ) {
+    return this.financeService.getTrialBalance(asOfDate, comparativeDate);
+  }
+
+  @Post('periods/:id/reopen')
+  reopenPeriod(@Param('id', ParseUUIDPipe) id: string) {
+    return this.financeService.reopenPeriod(id);
   }
 
   @Get('reports/ar-aging')
   getARAgingReport() {
     return this.financeService.getARAgingReport();
+  }
+
+  @Get('reports/ap-aging')
+  getAPAgingReport() {
+    return this.financeService.getAPAgingReport();
+  }
+
+  @Post('payments')
+  recordPayment(@Body() dto: any) {
+    return this.financeService.recordPayment(dto);
+  }
+
+  @Get('payments/:id/export/tds-challan')
+  async exportTDSChallan(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ) {
+    const buffer = await this.financeService.exportTDSChallan(id);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename=tds-challan-${id}.pdf`,
+      'Content-Length': buffer.length,
+    });
+    res.end(buffer);
   }
 
   @Get('reports/income-statement')
@@ -194,6 +388,14 @@ export class FinanceController {
     return this.financeService.getBudgetVsActualReport(period);
   }
 
+  @Get('reports/vat-return')
+  getVATReturn(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ) {
+    return this.financeService.computeVATReturn(startDate, endDate);
+  }
+
   @Post('reminders/schedule')
   scheduleReminders() {
     return this.financeService.scheduleARReminders();
@@ -202,6 +404,11 @@ export class FinanceController {
   @Post('periods/:id/close')
   closePeriod(@Param('id', ParseUUIDPipe) id: string) {
     return this.financeService.closePeriod(id);
+  }
+
+  @Post('revalue-currency')
+  revalueCurrency(@Body('asOfDate') asOfDate: string) {
+    return this.financeService.revalueForeignCurrencyBalances(asOfDate);
   }
 
   @Get('reports/general-ledger/:accountId')

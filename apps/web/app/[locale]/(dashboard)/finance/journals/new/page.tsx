@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo } from "react";
 import {
   Form,
   Input,
@@ -14,6 +14,7 @@ import {
   Space,
   Table,
   message,
+  Typography,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -24,75 +25,65 @@ import {
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/common/PageHeader";
 import { formatCurrency } from "@/lib/utils";
+import { useForm, Controller, useFieldArray, SubmitHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { journalEntrySchema, type JournalEntryDto } from "@repo/shared-schemas";
+import { useGetAccountsQuery, useCreateJournalMutation } from "@/store/api/financeApi";
+import { RichTextEditor } from "@/components/common/RichTextEditor";
+import dayjs from "dayjs";
 
+const { Text } = Typography;
 const labelStyle = { color: "var(--color-on-surface-variant)", fontSize: 13 };
-
-interface JournalLine {
-  key: string;
-  account: string;
-  description: string;
-  debit: number;
-  credit: number;
-}
 
 export default function NewJournalPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [lines, setLines] = useState<JournalLine[]>([
-    { key: "1", account: "", description: "", debit: 0, credit: 0 },
-    { key: "2", account: "", description: "", debit: 0, credit: 0 },
-  ]);
+  const { data: accountsData } = useGetAccountsQuery();
+  const [createJournal, { isLoading: isSubmitting }] = useCreateJournalMutation();
 
-  const addLine = () =>
-    setLines((prev) => [
-      ...prev,
-      {
-        key: Date.now().toString(),
-        account: "",
-        description: "",
-        debit: 0,
-        credit: 0,
-      },
-    ]);
-  const removeLine = (key: string) =>
-    setLines((prev) => prev.filter((l) => l.key !== key));
-  const updateLine = (
-    key: string,
-    field: keyof JournalLine,
-    value: string | number,
-  ) =>
-    setLines((prev) =>
-      prev.map((l) => (l.key === key ? { ...l, [field]: value } : l)),
-    );
+  const {
+    control,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<JournalEntryDto>({
+    resolver: zodResolver(journalEntrySchema) as any,
+    defaultValues: {
+      entryDate: dayjs().toISOString(),
+      lines: [
+        { accountId: "", debit: 0, credit: 0 },
+        { accountId: "", debit: 0, credit: 0 },
+      ],
+    } as any,
+  });
 
-  const totalDebit = lines.reduce((a, l) => a + l.debit, 0);
-  const totalCredit = lines.reduce((a, l) => a + l.credit, 0);
-  const isBalanced = totalDebit === totalCredit && totalDebit > 0;
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "lines",
+  });
 
-  const handleSubmit = async () => {
-    if (!isBalanced) {
-      message.error("Debits and credits must be equal");
-      return;
-    }
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      message.success("Journal entry created");
+  const lines = watch("lines");
+  const totalDebit = useMemo(() => lines?.reduce((a, l) => a + (l.debit || 0), 0) || 0, [lines]);
+  const totalCredit = useMemo(() => lines?.reduce((a, l) => a + (l.credit || 0), 0) || 0, [lines]);
+  const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01 && totalDebit > 0;
+
+  const onSubmit: SubmitHandler<JournalEntryDto> = async (data) => {
+    try {
+      await createJournal(data).unwrap();
+      message.success("Journal entry posted successfully");
       router.push("/finance/journals");
-    }, 1000);
+    } catch (error: any) {
+      message.error(error.data?.message || "Failed to post journal entry");
+    }
   };
 
-  const accounts = [
-    { value: "1000", label: "1000 — Cash" },
-    { value: "1100", label: "1100 — Accounts Receivable" },
-    { value: "2000", label: "2000 — Accounts Payable" },
-    { value: "3000", label: "3000 — Owner's Equity" },
-    { value: "4000", label: "4000 — Revenue" },
-    { value: "5000", label: "5000 — COGS" },
-    { value: "6000", label: "6000 — Operating Expenses" },
-    { value: "6100", label: "6100 — Salary Expense" },
-    { value: "6200", label: "6200 — Rent Expense" },
-  ];
+  const accountOptions = useMemo(
+    () =>
+      accountsData?.map((acc) => ({
+        value: acc.id,
+        label: `${acc.code} — ${acc.name}`,
+      })) || [],
+    [accountsData]
+  );
 
   return (
     <div className="animate-fade-in-up">
@@ -124,20 +115,48 @@ export default function NewJournalPage() {
         }}
         styles={{ body: { padding: 24 } }}
       >
-        <Row gutter={[24, 0]}>
+        <Row gutter={[24, 24]}>
           <Col xs={24} sm={8}>
-            <Form.Item label={<span style={labelStyle}>Date</span>}>
-              <DatePicker style={{ width: "100%" }} size="large" />
+            <Form.Item label={<span style={labelStyle}>Date</span>} required>
+              <Controller
+                name="entryDate"
+                control={control}
+                render={({ field }) => (
+                  <DatePicker
+                    style={{ width: "100%" }}
+                    size="large"
+                    value={field.value ? dayjs(field.value) : null}
+                    onChange={(date) => field.onChange(date?.toISOString())}
+                  />
+                )}
+              />
             </Form.Item>
           </Col>
-          <Col xs={24} sm={8}>
+          <Col xs={24} sm={16}>
             <Form.Item label={<span style={labelStyle}>Reference</span>}>
-              <Input placeholder="JV-2026-001" size="large" />
+              <Controller
+                name="reference"
+                control={control}
+                render={({ field }) => (
+                  <Input {...field} value={field.value || ""} placeholder="JV-2026-001" size="large" />
+                )}
+              />
             </Form.Item>
           </Col>
-          <Col xs={24} sm={8}>
-            <Form.Item label={<span style={labelStyle}>Memo</span>}>
-              <Input placeholder="Monthly salary allocation" size="large" />
+          <Col xs={24}>
+            <Form.Item label={<span style={labelStyle}>Narration / Memo</span>}>
+              <Controller
+                name="description"
+                control={control}
+                render={({ field }) => (
+                  <RichTextEditor
+                    value={field.value || ""}
+                    onChange={field.onChange}
+                    placeholder="Provide a detailed explanation for this entry..."
+                    height={150}
+                  />
+                )}
+              />
             </Form.Item>
           </Col>
         </Row>
@@ -164,36 +183,43 @@ export default function NewJournalPage() {
         styles={{ body: { padding: 0 } }}
       >
         <Table
-          dataSource={lines}
-          rowKey="key"
+          dataSource={fields}
+          rowKey="id"
           pagination={false}
           size="middle"
           columns={[
             {
               title: "Account",
-              key: "account",
-              width: 250,
-              render: (_, r) => (
-                <Select
-                  style={{ width: "100%" }}
-                  options={accounts}
-                  placeholder="Select account"
-                  value={r.account || undefined}
-                  onChange={(v) => updateLine(r.key, "account", v)}
+              key: "accountId",
+              width: 300,
+              render: (_: any, __: any, index: number) => (
+                <Controller
+                  name={`lines.${index}.accountId`}
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      {...field}
+                      showSearch
+                      style={{ width: "100%" }}
+                      options={accountOptions}
+                      placeholder="Select account"
+                      optionFilterProp="label"
+                    />
+                  )}
                 />
               ),
             },
             {
               title: "Description",
-              key: "desc",
-              width: 250,
-              render: (_, r) => (
-                <Input
-                  placeholder="Line description"
-                  value={r.description}
-                  onChange={(e) =>
-                    updateLine(r.key, "description", e.target.value)
-                  }
+              key: "description",
+              width: 300,
+              render: (_: any, __: any, index: number) => (
+                <Controller
+                  name={`lines.${index}.description`}
+                  control={control}
+                  render={({ field }) => (
+                    <Input {...field} value={field.value || ""} placeholder="Line description" />
+                  )}
                 />
               ),
             },
@@ -201,15 +227,21 @@ export default function NewJournalPage() {
               title: "Debit",
               key: "debit",
               width: 150,
-              render: (_, r) => (
-                <InputNumber
-                  style={{ width: "100%" }}
-                  min={0}
-                  value={r.debit}
-                  onChange={(v) => updateLine(r.key, "debit", v ?? 0)}
-                  formatter={(v) =>
-                    `$ ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                  }
+              render: (_: any, __: any, index: number) => (
+                <Controller
+                  name={`lines.${index}.debit`}
+                  control={control}
+                  render={({ field }) => (
+                    <InputNumber
+                      {...field}
+                      style={{ width: "100%" }}
+                      min={0}
+                      formatter={(v) =>
+                        `$ ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                      }
+                      parser={(v) => Number(v!.replace(/\$\s?|(,*)/g, ""))}
+                    />
+                  )}
                 />
               ),
             },
@@ -217,15 +249,21 @@ export default function NewJournalPage() {
               title: "Credit",
               key: "credit",
               width: 150,
-              render: (_, r) => (
-                <InputNumber
-                  style={{ width: "100%" }}
-                  min={0}
-                  value={r.credit}
-                  onChange={(v) => updateLine(r.key, "credit", v ?? 0)}
-                  formatter={(v) =>
-                    `$ ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                  }
+              render: (_: any, __: any, index: number) => (
+                <Controller
+                  name={`lines.${index}.credit`}
+                  control={control}
+                  render={({ field }) => (
+                    <InputNumber
+                      {...field}
+                      style={{ width: "100%" }}
+                      min={0}
+                      formatter={(v) =>
+                        `$ ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                      }
+                      parser={(v) => Number(v!.replace(/\$\s?|(,*)/g, ""))}
+                    />
+                  )}
                 />
               ),
             },
@@ -233,14 +271,14 @@ export default function NewJournalPage() {
               title: "",
               key: "actions",
               width: 50,
-              render: (_, r) =>
-                lines.length > 2 ? (
+              render: (_: any, __: any, index: number) =>
+                fields.length > 2 ? (
                   <Button
                     type="text"
                     size="small"
                     icon={<DeleteOutlined />}
                     danger
-                    onClick={() => removeLine(r.key)}
+                    onClick={() => remove(index)}
                   />
                 ) : null,
             },
@@ -251,57 +289,32 @@ export default function NewJournalPage() {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
+                padding: "8px 16px"
               }}
             >
-              <Button type="dashed" icon={<PlusOutlined />} onClick={addLine}>
+              <Button type="dashed" icon={<PlusOutlined />} onClick={() => append({ accountId: "", debit: 0, credit: 0 })}>
                 Add Line
               </Button>
               <Space size={32}>
-                <span
-                  style={{
-                    color: "var(--color-on-surface-variant)",
-                    fontSize: 13,
-                  }}
-                >
+                <span style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}>
                   Total Debit:{" "}
-                  <strong
-                    style={{
-                      color: "#6dd58c",
-                      fontFamily: "var(--font-display)",
-                    }}
-                  >
+                  <strong style={{ color: "#6dd58c", fontFamily: "var(--font-display)" }}>
                     {formatCurrency(totalDebit)}
                   </strong>
                 </span>
-                <span
-                  style={{
-                    color: "var(--color-on-surface-variant)",
-                    fontSize: 13,
-                  }}
-                >
+                <span style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}>
                   Total Credit:{" "}
-                  <strong
-                    style={{
-                      color: "#c3f5ff",
-                      fontFamily: "var(--font-display)",
-                    }}
-                  >
+                  <strong style={{ color: "#c3f5ff", fontFamily: "var(--font-display)" }}>
                     {formatCurrency(totalCredit)}
                   </strong>
                 </span>
-                {!isBalanced && totalDebit + totalCredit > 0 && (
-                  <span
-                    style={{ color: "#ffb4ab", fontSize: 12, fontWeight: 600 }}
-                  >
-                    ⚠ Unbalanced
-                  </span>
+                {!isBalanced && (totalDebit > 0 || totalCredit > 0) && (
+                  <Text type="danger" strong>
+                    ⚠ Unbalanced (Diff: {formatCurrency(Math.abs(totalDebit - totalCredit))})
+                  </Text>
                 )}
                 {isBalanced && (
-                  <span
-                    style={{ color: "#6dd58c", fontSize: 12, fontWeight: 600 }}
-                  >
-                    ✓ Balanced
-                  </span>
+                  <Text type="success" strong>✓ Balanced</Text>
                 )}
               </Space>
             </div>
@@ -314,13 +327,18 @@ export default function NewJournalPage() {
         <Button
           type="primary"
           icon={<SaveOutlined />}
-          loading={loading}
-          onClick={handleSubmit}
+          loading={isSubmitting}
+          onClick={handleSubmit(onSubmit)}
           disabled={!isBalanced}
         >
           Post Journal Entry
         </Button>
       </div>
+      {Object.keys(errors).length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          <Text type="danger">Please fix the errors before posting: {JSON.stringify(errors)}</Text>
+        </div>
+      )}
     </div>
   );
 }

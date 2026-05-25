@@ -61,6 +61,8 @@ export const invoiceSchema = z.object({
   issueDate: z.string().datetime(),
   dueDate: z.string().datetime(),
   status: invoiceStatusEnum.default("DRAFT"),
+  isProforma: z.boolean().default(false),
+  isTaxInvoice: z.boolean().default(true),
   lines: z.array(invoiceLineSchema).min(1),
   notes: z.string().optional().nullable(),
 });

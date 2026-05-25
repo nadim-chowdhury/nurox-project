@@ -48,6 +48,19 @@ export class CreateJournalEntryDto {
   @IsString()
   reference?: string;
 
+  @IsOptional()
+  @IsString()
+  @MaxLength(3)
+  currency?: string;
+
+  @IsOptional()
+  @IsNumber()
+  exchangeRate?: number;
+
+  @IsOptional()
+  @IsString()
+  status?: string;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateJournalLineDto)
