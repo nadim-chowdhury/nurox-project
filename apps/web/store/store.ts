@@ -29,6 +29,8 @@ import { notificationApi } from "./api/notificationApi";
 import { financeApi } from "./api/financeApi";
 import { assetsApi } from "./api/assetsApi";
 import { documentsApi } from "./api/documentsApi";
+import { chatApi } from "./api/chatApi";
+import { auditApi } from "./api/auditApi";
 
 /**
  * Persist config — only the auth slice is persisted to localStorage.
@@ -39,13 +41,13 @@ const persistConfig = {
   key: "nurox",
   storage,
   whitelist: [
-    "auth", 
+    "auth",
     "ui",
     "hrApi",
     "projectsApi",
     "salesApi",
     "inventoryApi",
-    "financeApi"
+    "financeApi",
   ],
 };
 
@@ -69,6 +71,8 @@ const rootReducer = combineReducers({
   [financeApi.reducerPath]: financeApi.reducer,
   [assetsApi.reducerPath]: assetsApi.reducer,
   [documentsApi.reducerPath]: documentsApi.reducer,
+  [chatApi.reducerPath]: chatApi.reducer,
+  [auditApi.reducerPath]: auditApi.reducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
@@ -97,7 +101,9 @@ export const store = configureStore({
       .concat(notificationApi.middleware)
       .concat(financeApi.middleware)
       .concat(assetsApi.middleware)
-      .concat(documentsApi.middleware),
+      .concat(documentsApi.middleware)
+      .concat(chatApi.middleware)
+      .concat(auditApi.middleware),
   devTools: process.env.NODE_ENV !== "production",
 });
 

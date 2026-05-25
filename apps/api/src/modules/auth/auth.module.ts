@@ -9,7 +9,9 @@ import { RolesController } from './roles.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { MicrosoftStrategy } from './strategies/microsoft.strategy';
+import { GoogleSamlStrategy } from './strategies/google-saml.strategy';
 import { SamlStrategy } from './strategies/saml.strategy';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UsersModule } from '../users/users.module';
 import { MailerModule } from '../mailer/mailer.module';
 
@@ -32,9 +34,11 @@ import { forwardRef } from '@nestjs/common';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('jwt.accessSecret')!,
+        privateKey: config.get<string>('jwt.accessPrivateKey')!,
+        publicKey: config.get<string>('jwt.accessPublicKey')!,
         signOptions: {
           expiresIn: config.get<string>('jwt.accessExpiry')! as any,
+          algorithm: 'RS256',
         },
       }),
     }),
@@ -46,7 +50,9 @@ import { forwardRef } from '@nestjs/common';
     JwtStrategy,
     GoogleStrategy,
     MicrosoftStrategy,
+    GoogleSamlStrategy,
     SamlStrategy,
+    JwtAuthGuard,
     PermissionsGuard,
   ],
   exports: [AuthService, RolesService, PermissionsGuard, TypeOrmModule],

@@ -1,0 +1,76 @@
+api:
+  image:
+    repository: ghcr.io/nadim-chowdhury/nurox-project/api
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1024Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+web:
+  image:
+    repository: ghcr.io/nadim-chowdhury/nurox-project/web
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+  hosts:
+    - host: api.nurox.app
+      paths:
+        - path: /
+          pathType: Prefix
+          service: api
+    - host: app.nurox.app
+      paths:
+        - path: /
+          pathType: Prefix
+          service: web
+  tls:
+    - secretName: nurox-app-tls
+      hosts:
+        - "*.nurox.app"
+
+config:
+  NODE_ENV: production
+  DB_HOST: postgres-service
+  DB_PORT: "5432"
+  DB_USERNAME: nurox
+  DB_DATABASE: nurox_db
+  REDIS_HOST: redis-service
+  REDIS_PORT: "6379"
+
+secrets:
+  # In a real environment, use Vault or external-secrets.
+  # These are placeholders that will be replaced via CI/CD.
+  DB_PASSWORD: ""
+  JWT_ACCESS_SECRET: ""
+  JWT_REFRESH_SECRET: ""
+
+backup:
+  enabled: true
+  schedule: "0 2 * * *" # Daily at 2 AM
+  retentionDays: 30

@@ -17,6 +17,9 @@ import { Training } from './training.entity';
 import { Skill } from './skill.entity';
 import { EmploymentHistory } from './employment-history.entity';
 import { Shift } from './shift.entity';
+import { EncryptionTransformer } from '../../../common/transformers/encryption.transformer';
+
+const encryptionTransformer = new EncryptionTransformer();
 
 export enum EmployeeStatus {
   ACTIVE = 'ACTIVE',
@@ -90,8 +93,29 @@ export class Employee extends TenantBaseEntity {
   })
   status: EmployeeStatus;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  salary: number;
+  @Column({
+    type: 'varchar',
+    length: 255,
+    default: '0',
+    transformer: encryptionTransformer,
+  })
+  salary: number | string;
+
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    transformer: encryptionTransformer,
+  })
+  nationalId: string | null;
+
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    transformer: encryptionTransformer,
+  })
+  taxIdentificationNumber: string | null;
 
   @Column({ type: 'date', nullable: true })
   probationEndDate: string | null;
@@ -131,10 +155,20 @@ export class Employee extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   bankBranch: string | null;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    transformer: encryptionTransformer,
+  })
   accountNumber: string | null;
 
-  @Column({ type: 'varchar', length: 20, nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    transformer: encryptionTransformer,
+  })
   routingNumber: string | null;
 
   @Column({ type: 'boolean', default: false })

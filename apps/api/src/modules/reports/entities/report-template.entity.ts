@@ -12,6 +12,9 @@ export class ReportTemplate extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 50 })
   module: string; // e.g., 'HR', 'FINANCE', 'INVENTORY'
 
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  category: string;
+
   @Column({ type: 'varchar', length: 100 })
   entityName: string; // e.g., 'Employee', 'Invoice'
 
@@ -20,6 +23,11 @@ export class ReportTemplate extends TenantBaseEntity {
     columns: { key: string; label: string; type?: string }[];
     filters: { key: string; operator: string; value: any }[];
     grouping?: string[];
+    aggregations?: {
+      key: string;
+      type: 'SUM' | 'AVG' | 'COUNT' | 'MIN' | 'MAX';
+    }[];
+    joins?: { entity: string; condition: string }[];
     sorting?: { key: string; order: 'ASC' | 'DESC' }[];
   };
 
@@ -28,4 +36,10 @@ export class ReportTemplate extends TenantBaseEntity {
 
   @Column({ type: 'boolean', default: false })
   isPublic: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  isShared: boolean;
+
+  @Column({ type: 'simple-array', nullable: true })
+  rolesAllowed: string[];
 }

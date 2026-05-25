@@ -11,6 +11,7 @@ import {
   Param,
   Delete,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Response, Request } from 'express';
@@ -87,6 +88,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 attempts per 15 mins
   @ApiOperation({ summary: 'Login with email and password' })
   async login(
     @Body() body: LoginDto,

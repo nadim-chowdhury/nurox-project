@@ -10,6 +10,7 @@ import { TenantModule } from './entities/tenant-module.entity';
 import { TenantCustomDomain } from './entities/tenant-custom-domain.entity';
 import { Role } from '../auth/entities/role.entity';
 import { Permission, RolePermissions } from '../auth/enums/permissions.enum';
+import { ReportTemplate } from '../reports/entities/report-template.entity';
 import * as dns from 'dns';
 import { promisify } from 'util';
 import * as crypto from 'crypto';
@@ -82,6 +83,9 @@ export class TenantProvisioningService {
 
       // 6. Seed default tenant data (COA, Leave Types, Fiscal Year)
       await this.seedDefaultTenantData(manager, savedTenant.id, data.country);
+
+      // 7. Seed standard built-in reports
+      await this.seedDefaultReports(manager, savedTenant.id);
 
       this.logger.log(
         `Tenant ${data.name} provisioned successfully with schema ${data.schemaNamespace}`,
@@ -249,6 +253,66 @@ export class TenantProvisioningService {
     this.logger.log(
       `Seeded ${systemRoles.length} default roles for tenant ${tenantId}`,
     );
+  }
+
+  /**
+   * Seeds the standard built-in reports for the tenant.
+   */
+  private async seedDefaultReports(
+    manager: EntityManager,
+    tenantId: string,
+  ): Promise<void> {
+    const defaultReports = [
+      {
+        name: 'Headcount Summary',
+        description: 'Total number of active employees grouped by department',
+        module: 'HR',
+        category: 'HR',
+        entityName: 'Employee',
+        isPublic: true,
+        isShared: true,
+        createdByUserId: 'system',
+        config: {
+          columns: [
+            { key: 'departmentId', label: 'Department' },
+            { key: 'id_count', label: 'Total Employees', type: 'number' },
+          ],
+          filters: [{ key: 'status', operator: '=', value: 'ACTIVE' }],
+          grouping: ['departmentId'],
+          aggregations: [{ key: 'id', type: 'COUNT' as const }],
+        },
+      },
+      {
+        name: 'Income Statement',
+        description: 'Standard income and expense summary',
+        module: 'FINANCE',
+        category: 'Finance',
+        entityName: 'JournalEntry',
+        isPublic: true,
+        isShared: true,
+        createdByUserId: 'system',
+        rolesAllowed: ['ADMIN', 'FINANCE_MANAGER'],
+        config: {
+          columns: [
+            { key: 'accountId', label: 'Account' },
+            { key: 'amount_sum', label: 'Total Amount', type: 'number' },
+          ],
+          filters: [], // Would normally filter by date range dynamically
+          grouping: ['accountId'],
+          aggregations: [{ key: 'amount', type: 'SUM' as const }],
+        },
+      },
+    ];
+
+    for (const report of defaultReports) {
+      const template = manager.create(ReportTemplate, {
+        ...report,
+        tenantId,
+      });
+      await manager.save(template);
+    }
+
+    this.logger.log(`Seeded standard reports for tenant ${tenantId}`);
   }
 
   /**

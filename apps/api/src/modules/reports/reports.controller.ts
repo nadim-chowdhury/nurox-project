@@ -7,6 +7,7 @@ import {
   UseGuards,
   Req,
   Res,
+  StreamableFile,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
@@ -67,5 +68,41 @@ export class ReportsController {
       'Content-Length': pdf.length,
     });
     res.send(pdf);
+  }
+
+  @Get('export/xlsx/:templateId')
+  @ApiOperation({ summary: 'Export a report to XLSX' })
+  @RequirePermissions(Permission.REPORTS_READ)
+  async exportXlsx(
+    @Req() req: any,
+    @Param('templateId') templateId: string,
+    @Res() res: Response,
+  ) {
+    const workbook = await this.reportsService.exportXlsx(
+      req.tenantId,
+      templateId,
+    );
+    res.set({
+      'Content-Type':
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': 'attachment; filename=report.xlsx',
+    });
+    await workbook.xlsx.write(res);
+    res.end();
+  }
+
+  @Get('export/csv/:templateId')
+  @ApiOperation({ summary: 'Export a report to CSV' })
+  @RequirePermissions(Permission.REPORTS_READ)
+  async exportCsv(
+    @Req() req: any,
+    @Param('templateId') templateId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    res.set({
+      'Content-Type': 'text/csv',
+      'Content-Disposition': 'attachment; filename=report.csv',
+    });
+    return this.reportsService.exportCsv(req.tenantId, templateId);
   }
 }

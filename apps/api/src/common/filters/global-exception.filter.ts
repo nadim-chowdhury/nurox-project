@@ -34,11 +34,14 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         ? (message as { message: string }).message
         : message;
 
+    const correlationId = request.headers['x-correlation-id'] || 'N/A';
+
     const errorResponse = {
       statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
       method: request.method,
+      correlationId,
       message:
         status === (HttpStatus.INTERNAL_SERVER_ERROR as number) && isProduction
           ? 'Internal server error'

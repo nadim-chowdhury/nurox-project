@@ -8,21 +8,19 @@ import { RedisService } from '../../modules/redis/redis.service';
 
 @Injectable()
 export class MaintenanceMiddleware implements NestMiddleware {
-  constructor(private readonly redis: RedisService) {}
+  constructor(private readonly redisService: RedisService) {}
 
   async use(req: Request, res: Response, next: NextFunction) {
-    const isMaintenance = await this.redis.get('system:maintenance:enabled');
+    // Exclude superadmin routes from maintenance mode
+    if (req.path.startsWith('/superadmin')) {
+      return next();
+    }
 
+    const isMaintenance = await this.redisService.get('global:maintenance');
     if (isMaintenance === 'true') {
-      const eta = await this.redis.get('system:maintenance:eta');
-      const reason = await this.redis.get('system:maintenance:reason');
-
-      throw new ServiceUnavailableException({
-        message: 'System is currently under maintenance.',
-        reason: reason || 'Routine updates',
-        eta: eta || 'Unknown',
-        statusCode: 503,
-      });
+      throw new ServiceUnavailableException(
+        'System is currently under maintenance. Please try again later.',
+      );
     }
 
     next();

@@ -1,0 +1,29 @@
+{{- if .Values.backup.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-db-backup
+spec:
+  schedule: "{{ .Values.backup.schedule }}"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: pg-dump
+            image: postgres:16
+            command:
+            - /bin/sh
+            - -c
+            - |
+              TIMESTAMP=`date +%Y%m%d%H%M`
+              pg_dump -h $DB_HOST -U $DB_USERNAME $DB_DATABASE | gzip > /tmp/backup-$TIMESTAMP.sql.gz
+              # Upload to MinIO/S3 using curl or awscli if installed
+              echo "Backup completed"
+            envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-config
+            - secretRef:
+                name: {{ .Release.Name }}-secret
+          restartPolicy: OnFailure
+{{- end }}

@@ -16,6 +16,8 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TenantProvisioningService } from './tenant-provisioning.service';
 import { AuditService } from './audit.service';
 import { StorageService } from './storage.service';
+import { ApiKeyService } from './api-key.service';
+import { BulkImportService } from './bulk-import.service';
 import {
   companyProfileSchema,
   createBranchSchema,
@@ -53,6 +55,8 @@ export class SystemController {
     private readonly tenantProvisioningService: TenantProvisioningService,
     private readonly auditService: AuditService,
     private readonly storageService: StorageService,
+    private readonly apiKeyService: ApiKeyService,
+    private readonly bulkImportService: BulkImportService,
   ) {}
 
   @Get('upload-url')
@@ -186,6 +190,47 @@ export class SystemController {
     return this.moduleRepository.find({
       where: { tenantId: req.tenantId, isEnabled: true },
     });
+  }
+
+  // --- API Keys ---
+  @Post('api-keys')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Generate a new API key' })
+  async createApiKey(
+    @Req() req: any,
+    @Body() body: { name: string; scopes?: string[] },
+  ) {
+    const { rawKey, apiKeyEntity } = await this.apiKeyService.generateKey(
+      body.name,
+      req.tenantId,
+      body.scopes,
+    );
+    // Important: We only return the rawKey once. It is not stored in plaintext.
+    return {
+      key: rawKey,
+      entity: apiKeyEntity,
+    };
+  }
+
+  // --- Bulk Import ---
+  @Post('import/:entityType')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Queue a bulk import from a CSV file' })
+  async bulkImport(
+    @Req() req: any,
+    @Param('entityType') entityType: string,
+    @Body() body: { filePath: string }, // Path to the uploaded CSV temp file
+  ) {
+    const jobId = await this.bulkImportService.queueImportFromCsv(
+      body.filePath,
+      entityType,
+      req.tenantId,
+    );
+    return { jobId, message: 'Bulk import queued successfully' };
   }
 
   // --- Working Calendars ---

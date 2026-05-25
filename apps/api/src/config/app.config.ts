@@ -1,4 +1,5 @@
 import { registerAs } from '@nestjs/config';
+import * as crypto from 'crypto';
 
 export const databaseConfig = registerAs('database', () => ({
   host: process.env.DB_HOST || 'localhost',
@@ -11,15 +12,43 @@ export const databaseConfig = registerAs('database', () => ({
   ssl: process.env.DB_SSL || 'false',
 }));
 
-export const jwtConfig = registerAs('jwt', () => ({
-  accessSecret: process.env.JWT_ACCESS_SECRET,
-  accessExpiry: process.env.JWT_ACCESS_EXPIRY || '15m',
-  refreshSecret: process.env.JWT_REFRESH_SECRET,
-  refreshExpiry: process.env.JWT_REFRESH_EXPIRY || '7d',
-  magicLinkSecret:
-    process.env.JWT_MAGIC_LINK_SECRET || process.env.JWT_REFRESH_SECRET,
-  magicLinkExpiry: process.env.JWT_MAGIC_LINK_EXPIRY || '10m',
-}));
+export const jwtConfig = registerAs('jwt', () => {
+  let privateKey = process.env.JWT_ACCESS_PRIVATE_KEY;
+  let publicKey = process.env.JWT_ACCESS_PUBLIC_KEY;
+
+  if (!privateKey || !publicKey) {
+    if (process.env.NODE_ENV !== 'production') {
+      // Auto-generate keys for local dev
+      const { publicKey: pub, privateKey: priv } = crypto.generateKeyPairSync(
+        'rsa',
+        {
+          modulusLength: 2048,
+          publicKeyEncoding: { type: 'spki', format: 'pem' },
+          privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+        },
+      );
+      privateKey = priv;
+      publicKey = pub;
+    } else {
+      throw new Error(
+        'JWT_ACCESS_PRIVATE_KEY and JWT_ACCESS_PUBLIC_KEY must be provided in production',
+      );
+    }
+  }
+
+  return {
+    accessPrivateKey: privateKey,
+    accessPublicKey: publicKey,
+    accessExpiry: process.env.JWT_ACCESS_EXPIRY || '15m',
+    refreshSecret: process.env.JWT_REFRESH_SECRET || 'super-secret-refresh-key',
+    refreshExpiry: process.env.JWT_REFRESH_EXPIRY || '7d',
+    magicLinkSecret:
+      process.env.JWT_MAGIC_LINK_SECRET ||
+      process.env.JWT_REFRESH_SECRET ||
+      'magic-secret',
+    magicLinkExpiry: process.env.JWT_MAGIC_LINK_EXPIRY || '10m',
+  };
+});
 
 export const redisConfig = registerAs('redis', () => {
   let host = process.env.REDIS_HOST || 'localhost';

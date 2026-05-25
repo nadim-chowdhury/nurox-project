@@ -41,4 +41,32 @@ export class PdfService {
       throw error;
     }
   }
+
+  /**
+   * Generates a PDF by visiting a URL with Puppeteer.
+   */
+  async generatePdfFromUrl(url: string): Promise<Buffer> {
+    try {
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      });
+
+      const page = await browser.newPage();
+      await page.goto(url, { waitUntil: 'networkidle0' });
+
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: { top: '20mm', right: '20mm', bottom: '20mm', left: '20mm' },
+      });
+
+      await browser.close();
+      return Buffer.from(pdfBuffer);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Error generating PDF from URL: ${message}`);
+      throw error;
+    }
+  }
 }

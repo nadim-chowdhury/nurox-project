@@ -43,4 +43,14 @@ export class AuditLog extends TenantBaseEntity {
 
   @Column({ type: 'text', nullable: true })
   userAgent: string | null;
+
+  @Index()
+  @Column({ type: 'uuid', nullable: true })
+  correlationId: string | null;
+
+  @Column({ type: 'int', nullable: true })
+  durationMs: number | null;
+
+  @Column({ type: 'text', nullable: true })
+  signature: string | null;
 }

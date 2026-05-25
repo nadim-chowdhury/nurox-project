@@ -9,8 +9,10 @@ import {
 import { ClsService } from 'nestjs-cls';
 import { AuditService } from '../../modules/system/audit.service';
 import { BaseEntity } from '../entities/base.entity';
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
+import { RedisService } from '../../modules/redis/redis.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @EventSubscriber()
 @Injectable()
@@ -22,6 +24,9 @@ export class AuditSubscriber implements EntitySubscriberInterface<BaseEntity> {
     private readonly cls: ClsService,
     @Inject(forwardRef(() => AuditService))
     private readonly auditService: AuditService,
+    @Inject(forwardRef(() => RedisService))
+    private readonly redisService: RedisService,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     this.dataSource.subscribers.push(this);
   }
@@ -72,6 +77,13 @@ export class AuditSubscriber implements EntitySubscriberInterface<BaseEntity> {
     const tenantId = this.cls.get('tenantId') || entity.tenantId;
     const ipAddress = this.cls.get('ipAddress');
     const userAgent = this.cls.get('userAgent');
+    const correlationId = this.cls.get('correlationId');
+    const requestStartTime = this.cls.get('requestStartTime');
+
+    let durationMs: number | null = null;
+    if (requestStartTime) {
+      durationMs = Date.now() - requestStartTime;
+    }
 
     if (!tenantId) return; // Cannot log without tenant context
 
@@ -103,7 +115,28 @@ export class AuditSubscriber implements EntitySubscriberInterface<BaseEntity> {
       newValue: filteredNew,
       ipAddress,
       userAgent,
+      correlationId,
+      durationMs,
     });
+
+    if (action === 'DELETE' && userId) {
+      const deleteKey = `bulk:delete:${tenantId}:${userId}`;
+      const deleteCount = await this.redisService.incr(deleteKey);
+      if (deleteCount === 1) {
+        await this.redisService.expire(deleteKey, 60);
+      }
+      if (deleteCount > 50) {
+        Logger.warn(
+          `Bulk Operation Alert: User ${userId} has deleted ${deleteCount} records in 1 minute`,
+        );
+        this.eventEmitter.emit('bulk.operation.alert', {
+          tenantId,
+          userId,
+          action,
+          count: deleteCount,
+        });
+      }
+    }
   }
 
   private getModuleFromEntityType(entityType: string): string {

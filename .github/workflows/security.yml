@@ -1,0 +1,56 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main", "develop"]
+  schedule:
+    - cron: "0 0 * * 0" # Weekly scan on Sunday at midnight
+
+jobs:
+  security-audit:
+    name: Dependency Audit & SAST
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run npm audit (via pnpm)
+        run: pnpm audit --audit-level=critical
+
+      # Optional: Run Snyk scan (Requires SNYK_TOKEN secret)
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=critical
+        continue-on-error: true # Set to true if you don't want to block PRs initially
+
+      # Optional: OWASP Dependency Check
+      - name: OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: "nurox-erp"
+          path: "."
+          format: "HTML"
+        continue-on-error: true
+
+      - name: Upload OWASP Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: reports/dependency-check-report.html

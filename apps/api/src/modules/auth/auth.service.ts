@@ -23,6 +23,7 @@ import { UserSession } from './entities/user-session.entity';
 import { LoginEvent } from './entities/login-event.entity';
 import { Repository } from 'typeorm';
 import { Inject, forwardRef } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 export interface OAuthProfile {
   email: string;
@@ -52,6 +53,7 @@ export class AuthService {
     private readonly mailerService: MailerService,
     private readonly encryptionService: EncryptionService,
     private readonly smsService: SmsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   private hashToken(token: string): string {
@@ -320,6 +322,13 @@ export class AuthService {
       ipAddress: metadata.ipAddress,
       userAgent: metadata.userAgent,
       result: 'SUCCESS',
+    });
+
+    this.eventEmitter.emit('user.login', {
+      userId: user.id,
+      tenantId: metadata.tenantId || '',
+      ipAddress: metadata.ipAddress,
+      userAgent: metadata.userAgent,
     });
 
     const familyId = randomBytes(16).toString('hex');
@@ -1066,8 +1075,9 @@ export class AuthService {
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(jwtPayload, {
-        secret: this.config.get<string>('jwt.accessSecret'),
+        secret: this.config.get<string>('jwt.accessPrivateKey'),
         expiresIn: this.config.get<string>('jwt.accessExpiry') as any,
+        algorithm: 'RS256',
       }),
       this.jwtService.signAsync(refreshPayload, {
         secret: this.config.get<string>('jwt.refreshSecret'),

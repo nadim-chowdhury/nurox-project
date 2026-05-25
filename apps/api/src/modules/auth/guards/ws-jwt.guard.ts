@@ -30,7 +30,8 @@ export class WsJwtGuard implements CanActivate {
       }
 
       const payload = await this.jwtService.verifyAsync(authToken, {
-        secret: this.config.get<string>('jwt.accessSecret'),
+        secret: this.config.get<string>('jwt.accessPublicKey'),
+        algorithms: ['RS256'],
       });
 
       // Attach user to the client object

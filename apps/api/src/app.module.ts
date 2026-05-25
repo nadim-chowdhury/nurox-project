@@ -9,7 +9,13 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from 'nestjs-pino';
+import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis';
 import { BullModule } from '@nestjs/bullmq';
+import { BullBoardModule } from '@bull-board/nestjs';
+import { ExpressAdapter } from '@bull-board/express';
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import * as path from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import {
@@ -31,6 +37,7 @@ import { MailerModule } from './modules/mailer/mailer.module';
 import { SmsModule } from './modules/sms/sms.module';
 import { TenantMiddleware } from './common/middlewares/tenant.middleware';
 import { MaintenanceMiddleware } from './common/middlewares/maintenance.middleware';
+import { CsrfMiddleware } from './common/middlewares/csrf.middleware';
 import { UsersModule } from './modules/users/users.module';
 import { HrModule } from './modules/hr/hr.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
@@ -46,7 +53,13 @@ import { ProcurementModule } from './modules/procurement/procurement.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { AssetsModule } from './modules/assets/assets.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ChatModule } from './modules/chat/chat.module';
+import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { CommonModule } from './common/common.module';
+
+import { SentryModule } from '@sentry/nestjs/setup';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ClsModule } from 'nestjs-cls';
@@ -54,10 +67,18 @@ import { ClsMiddleware } from './common/middlewares/cls.middleware';
 import { TenantSubscriber } from './common/subscribers/tenant.subscriber';
 import { TenantGuard } from './common/guards/tenant.guard';
 import { ModuleGuard } from './common/guards/module.guard';
+import { ApiKeyThrottlerGuard } from './common/guards/api-key-throttler.guard';
 import { TenantInterceptor } from './common/interceptors/tenant.interceptor';
 
 @Module({
   imports: [
+    SentryModule.forRoot(),
+    PrometheusModule.register({
+      path: '/metrics',
+      defaultMetrics: {
+        enabled: true,
+      },
+    }),
     // ─── Configuration ───────────────────────────────────────────
     ConfigModule.forRoot({
       isGlobal: true,
@@ -102,7 +123,18 @@ import { TenantInterceptor } from './common/interceptors/tenant.interceptor';
             correlationId: req.headers?.['x-correlation-id'] ?? undefined,
           }),
           redact: {
-            paths: ['req.headers.authorization', 'req.headers.cookie'],
+            paths: [
+              'req.headers.authorization',
+              'req.headers.cookie',
+              'req.body.password',
+              'req.body.newPassword',
+              'req.body.currentPassword',
+              'req.body.email',
+              'req.body.phone',
+              'req.body.nationalId',
+              'req.body.accountNumber',
+              'req.body.routingNumber',
+            ],
             censor: '[REDACTED]',
           },
         },
@@ -111,10 +143,20 @@ import { TenantInterceptor } from './common/interceptors/tenant.interceptor';
     }),
 
     // ─── Rate Limiting (Redis-backed in production) ──────────────
-    ThrottlerModule.forRoot([
-      { name: 'short', ttl: 1000, limit: 10 }, // 10 req/sec burst
-      { name: 'medium', ttl: 60000, limit: 200 }, // 200 req/min sustained
-    ]),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        throttlers: [
+          { name: 'short', ttl: 1000, limit: 10 }, // 10 req/sec burst
+          { name: 'medium', ttl: 60000, limit: 200 }, // 200 req/min sustained
+        ],
+        storage: new ThrottlerStorageRedisService({
+          host: config.get<string>('redis.host'),
+          port: config.get<number>('redis.port'),
+        }),
+      }),
+    }),
 
     // ─── Task Scheduling (cron jobs) ─────────────────────────────
     ScheduleModule.forRoot(),
@@ -132,6 +174,20 @@ import { TenantInterceptor } from './common/interceptors/tenant.interceptor';
         },
       }),
       inject: [ConfigService],
+    }),
+
+    // ─── Bull Board for UI ───────────────────────────────────────
+    BullBoardModule.forRoot({
+      route: '/admin/queues',
+      adapter: ExpressAdapter,
+    }),
+
+    // ─── GraphQL ─────────────────────────────────────────────────
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      autoSchemaFile: path.join(process.cwd(), 'src/schema.gql'),
+      playground: true, // Optional: Enable in dev mode only
+      path: '/graphql', // The endpoint
     }),
 
     // ─── Core Infrastructure ─────────────────────────────────────
@@ -159,12 +215,15 @@ import { TenantInterceptor } from './common/interceptors/tenant.interceptor';
     DocumentsModule,
     AssetsModule,
     ReportsModule,
+    NotificationsModule,
+    ChatModule,
+    IntegrationsModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
     // Global rate limit guard — applies to all endpoints
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: ApiKeyThrottlerGuard },
     { provide: APP_GUARD, useClass: ModuleGuard },
     { provide: APP_INTERCEPTOR, useClass: TenantInterceptor },
     TenantSubscriber,
@@ -173,7 +232,9 @@ import { TenantInterceptor } from './common/interceptors/tenant.interceptor';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(ClsMiddleware, MaintenanceMiddleware).forRoutes('*');
+    consumer
+      .apply(ClsMiddleware, MaintenanceMiddleware, CsrfMiddleware)
+      .forRoutes('*');
     consumer
       .apply(TenantMiddleware)
       .exclude(
@@ -195,6 +256,7 @@ export class AppModule implements NestModule {
         { path: 'payroll/(.*)', method: RequestMethod.ALL },
         { path: 'system/(.*)', method: RequestMethod.ALL },
         { path: 'analytics/(.*)', method: RequestMethod.ALL },
+        { path: 'chat/(.*)', method: RequestMethod.ALL },
       );
   }
 }

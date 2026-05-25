@@ -27,7 +27,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('jwt.accessSecret')!,
+        publicKey: config.get<string>('jwt.accessPublicKey')!,
+        verifyOptions: { algorithms: ['RS256'] },
       }),
     }),
   ],

@@ -1,60 +1,76 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { useAppSelector, useAppDispatch } from "@/hooks/useRedux";
-import { getSocket, disconnectSocket } from "@/lib/socket";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { io, Socket } from "socket.io-client";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
+import { message } from "antd";
 import { notificationApi } from "@/store/api/notificationApi";
-import { setSocketStatus } from "@/store/slices/uiSlice";
-import { notification as antdNotification } from "antd";
+import { useDispatch } from "react-redux";
 
-export function SocketProvider({ children }: { children: React.ReactNode }) {
-  const { accessToken: token, user } = useAppSelector((state) => state.auth);
-  const dispatch = useAppDispatch();
+interface SocketContextType {
+  socket: Socket | null;
+  isConnected: boolean;
+}
+
+const SocketContext = createContext<SocketContextType>({
+  socket: null,
+  isConnected: false,
+});
+
+export const useSocket = () => useContext(SocketContext);
+
+export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const token = useSelector((state: RootState) => state.auth.accessToken);
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    if (token && user) {
-      dispatch(setSocketStatus("connecting"));
-      const socket = getSocket(token);
+    if (!token) return;
 
-      if (socket) {
-        if (socket.connected) {
-          dispatch(setSocketStatus("connected"));
-        }
+    // We assume backend WS is on same domain or we can pass an env var.
+    // Usually it's process.env.NEXT_PUBLIC_API_URL
+    const socketUrl =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-        socket.on("connect", () => {
-          dispatch(setSocketStatus("connected"));
-        });
+    const socketInstance = io(socketUrl, {
+      auth: { token }, // JWT for authentication in handleConnection
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 10,
+    });
 
-        socket.on("disconnect", () => {
-          dispatch(setSocketStatus("disconnected"));
-        });
+    socketInstance.on("connect", () => {
+      setIsConnected(true);
+    });
 
-        socket.on("connect_error", () => {
-          dispatch(setSocketStatus("disconnected"));
-        });
+    socketInstance.on("disconnect", () => {
+      setIsConnected(false);
+    });
 
-        // Listen for notifications
-        socket.on("newNotification", (data: any) => {
-          // Invalidate cache so UI refreshes
-          dispatch(notificationApi.util.invalidateTags(["Notification"]));
-          
-          // Show toast notification
-          antdNotification.info({
-            message: data.title,
-            description: data.message,
-            placement: "topRight",
-          });
-        });
-      }
-    }
+    socketInstance.on("notification", (payload) => {
+      // Show toast
+      message.info({
+        content: payload.title,
+        description: payload.message, // note: antd message only supports content string, we'll just format it
+        duration: 5,
+      } as any); // using any for description property if we use antd notification instead it would be better
+
+      // Invalidate RTK query to update the Notification Center count
+      dispatch(notificationApi.util.invalidateTags(["Notification"]));
+    });
+
+    setSocket(socketInstance);
 
     return () => {
-      if (token) {
-        disconnectSocket();
-        dispatch(setSocketStatus("disconnected"));
-      }
+      socketInstance.disconnect();
     };
-  }, [token, user, dispatch]);
+  }, [token, dispatch]);
 
-  return <>{children}</>;
-}
+  return (
+    <SocketContext.Provider value={{ socket, isConnected }}>
+      {children}
+    </SocketContext.Provider>
+  );
+};

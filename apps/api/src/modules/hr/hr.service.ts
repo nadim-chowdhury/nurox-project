@@ -203,7 +203,7 @@ export class HrService implements OnModuleInit {
       const salaryHistory = manager.create(SalaryHistory, {
         employeeId: saved.id,
         previousSalary: 0,
-        newSalary: saved.salary,
+        newSalary: Number(saved.salary),
         effectiveDate: saved.joinDate,
         reason: SalaryChangeReason.INITIAL_OFFER,
         comments: 'Starting salary',
@@ -357,7 +357,7 @@ export class HrService implements OnModuleInit {
     return await this.employeeRepo.manager.transaction(async (manager) => {
       const history = manager.create(SalaryHistory, {
         employeeId: id,
-        previousSalary: employee.salary,
+        previousSalary: Number(employee.salary),
         newSalary,
         effectiveDate: new Date().toISOString(), // Default to now
         reason,
@@ -688,8 +688,8 @@ export class HrService implements OnModuleInit {
       // 2. Add Salary History
       const salaryHistory = manager.create(SalaryHistory, {
         employeeId: revision.employeeId,
-        previousSalary: revision.currentSalary,
-        newSalary: revision.proposedSalary,
+        previousSalary: Number(revision.currentSalary),
+        newSalary: Number(revision.proposedSalary),
         effectiveDate: revision.effectiveDate,
         reason: revision.proposedDesignationId
           ? SalaryChangeReason.PROMOTION

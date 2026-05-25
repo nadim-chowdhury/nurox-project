@@ -33,6 +33,7 @@ import { ClearanceChecklist } from './entities/clearance-checklist.entity';
 import { Shift } from './entities/shift.entity';
 import { BullModule } from '@nestjs/bullmq';
 import { SystemModule } from '../system/system.module';
+import { EmployeeResolver } from './resolvers/employee.resolver';
 
 @Module({
   imports: [
@@ -74,7 +75,7 @@ import { SystemModule } from '../system/system.module';
     SystemModule,
   ],
   controllers: [HrController],
-  providers: [HrService, BiometricService, HrProcessor],
+  providers: [HrService, BiometricService, HrProcessor, EmployeeResolver],
   exports: [HrService, TypeOrmModule],
 })
 export class HrModule {}

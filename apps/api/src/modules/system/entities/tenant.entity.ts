@@ -74,6 +74,41 @@ export class Tenant {
   @Column({ type: 'text', nullable: true })
   samlCert: string;
 
+  @Column({ type: 'varchar', length: 10, default: 'US' })
+  dataResidency: string; // 'BD', 'EU', 'US'
+
+  @Column({ type: 'int', default: 730 })
+  auditLogRetentionDays: number;
+
+  @Column({ type: 'boolean', default: false })
+  mfaEnforced: boolean;
+
+  @Column({ type: 'int', default: 60 })
+  sessionTimeoutMinutes: number;
+
+  @Column({ type: 'int', default: 3 })
+  maxConcurrentSessions: number;
+
+  @Column({ type: 'jsonb', nullable: true })
+  passwordPolicy: {
+    minLength: number;
+    requireUppercase: boolean;
+    requireNumbers: boolean;
+    requireSymbols: boolean;
+    expiryDays: number;
+    noReuseCount: number;
+  };
+
+  @Column({ type: 'jsonb', nullable: true })
+  smtpConfig: {
+    host: string;
+    port: number;
+    secure: boolean;
+    user: string;
+    pass: string;
+    fromEmail: string;
+  };
+
   @CreateDateColumn()
   createdAt: Date;
 
