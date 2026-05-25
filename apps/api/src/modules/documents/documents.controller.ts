@@ -96,4 +96,36 @@ export class DocumentsController {
   async findAllFolders(@Req() req: any, @Query('parentId') parentId?: string) {
     return this.documentsService.findAllFolders(req.tenantId, parentId);
   }
+
+  @Post(':id/sign')
+  @ApiOperation({ summary: 'Electronically sign a document' })
+  @RequirePermissions(Permission.DOCUMENT_WRITE)
+  async signDocument(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() dto: { signatureBase64: string; signerName: string; ipAddress: string },
+  ) {
+    return this.documentsService.signDocument(req.user.id, req.tenantId, id, dto);
+  }
+
+  @Post(':id/soft-delete')
+  @ApiOperation({ summary: 'Soft delete a document (move to recycle bin)' })
+  @RequirePermissions(Permission.DOCUMENT_WRITE)
+  async softDelete(@Req() req: any, @Param('id') id: string) {
+    return this.documentsService.softDelete(req.tenantId, id);
+  }
+
+  @Post(':id/restore')
+  @ApiOperation({ summary: 'Restore a document from the recycle bin' })
+  @RequirePermissions(Permission.DOCUMENT_WRITE)
+  async restoreDocument(@Req() req: any, @Param('id') id: string) {
+    return this.documentsService.restore(req.tenantId, id);
+  }
+
+  @Get('recycle-bin')
+  @ApiOperation({ summary: 'List documents in the recycle bin' })
+  @RequirePermissions(Permission.DOCUMENT_READ)
+  async getRecycleBin(@Req() req: any) {
+    return this.documentsService.getRecycleBin(req.tenantId);
+  }
 }

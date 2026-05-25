@@ -12,7 +12,10 @@ export const vendorSchema = z.object({
   paymentTerms: z.string().optional().nullable(),
   creditLimit: z.number().min(0).default(0),
   kycStatus: z.enum(["PENDING", "VERIFIED", "REJECTED"]).default("PENDING"),
+  category: z.enum(["PREFERRED", "BLACKLISTED", "APPROVED", "STANDARD"]).default("STANDARD"),
+  approvalStatus: z.enum(["PENDING", "APPROVED", "REJECTED"]).default("PENDING"),
   taxId: z.string().optional().nullable(),
+  bankDetails: z.record(z.string(), z.any()).optional().nullable(),
   isActive: z.boolean().default(true),
 });
 
@@ -91,6 +94,7 @@ export const purchaseOrderLineSchema = z.object({
   discountAmount: z.number().default(0),
   totalAmount: z.number(),
   receivedQuantity: z.number().default(0),
+  cancelledQuantity: z.number().default(0),
 });
 
 export const purchaseOrderSchema = z.object({
@@ -108,6 +112,7 @@ export const purchaseOrderSchema = z.object({
   paymentTerms: z.string().optional().nullable(),
   shippingAddress: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  cancellationReason: z.string().optional().nullable(),
   version: z.number().default(1),
   lines: z.array(purchaseOrderLineSchema),
 });
@@ -123,6 +128,8 @@ export const grnLineSchema = z.object({
   variantId: z.string().uuid().optional().nullable(),
   poLineId: z.string().uuid(),
   receivedQuantity: z.number().min(1),
+  acceptedQuantity: z.number().default(0),
+  rejectedQuantity: z.number().default(0),
   unitCost: z.number().optional().nullable(),
   batchNumber: z.string().optional().nullable(),
   expiryDate: z.string().datetime().optional().nullable(),
@@ -154,3 +161,42 @@ export const debitNoteSchema = z.object({
 });
 
 export type DebitNoteDto = z.infer<typeof debitNoteSchema>;
+
+export const approvalMatrixSchema = z.object({
+  id: z.string().uuid().optional(),
+  departmentId: z.string().uuid().optional().nullable(),
+  minAmount: z.number().default(0),
+  maxAmount: z.number().optional().nullable(),
+  requiredRole: z.string().min(1), // e.g., MANAGER, DEPT_HEAD, PROCUREMENT
+});
+
+export type ApprovalMatrixDto = z.infer<typeof approvalMatrixSchema>;
+
+export const vendorEvaluationSchema = z.object({
+  id: z.string().uuid().optional(),
+  vendorId: z.string().uuid(),
+  evaluatorId: z.string().uuid(),
+  evaluationDate: z.string().datetime(),
+  deliveryScore: z.number().min(1).max(5),
+  qualityScore: z.number().min(1).max(5),
+  pricingScore: z.number().min(1).max(5),
+  responsivenessScore: z.number().min(1).max(5),
+  notes: z.string().optional().nullable(),
+});
+
+export type VendorEvaluationDto = z.infer<typeof vendorEvaluationSchema>;
+
+export const vendorBillSchema = z.object({
+  id: z.string().uuid().optional(),
+  vendorId: z.string().uuid(),
+  poId: z.string().uuid(),
+  grnId: z.string().uuid().optional().nullable(),
+  billNumber: z.string().min(1),
+  billDate: z.string().datetime(),
+  dueDate: z.string().datetime(),
+  currency: z.string().default("USD"),
+  totalAmount: z.number().min(0),
+  status: z.enum(["DRAFT", "PENDING_PAYMENT", "PAID", "CANCELLED"]).default("DRAFT"),
+});
+
+export type VendorBillDto = z.infer<typeof vendorBillSchema>;

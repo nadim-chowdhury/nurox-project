@@ -1,6 +1,7 @@
 import { Entity, Column, OneToMany } from 'typeorm';
 import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
-import { Task } from './task.entity'; // Moved back
+import { Task } from './task.entity';
+import { Milestone } from './milestone.entity';
 
 export enum ProjectStatus {
   NOT_STARTED = 'NOT_STARTED',
@@ -17,6 +18,9 @@ export class Project extends TenantBaseEntity {
 
   @Column({ type: 'varchar', length: 150, nullable: true })
   client: string | null;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  type: string | null;
 
   @Column({ type: 'text', nullable: true })
   description: string | null;
@@ -38,11 +42,20 @@ export class Project extends TenantBaseEntity {
   progress: number; // 0-100 derived value
 
   @Column({ type: 'decimal', precision: 14, scale: 2, nullable: true })
-  budget: number | null;
+  budgetCost: number | null;
+
+  @Column({ type: 'decimal', precision: 14, scale: 2, nullable: true })
+  budgetTime: number | null;
+
+  @Column({ type: 'varchar', length: 10, default: 'USD' })
+  currency: string;
 
   @Column({ type: 'uuid', nullable: true })
   managerId: string | null;
 
   @OneToMany(() => Task, (t) => t.project, { cascade: true })
   tasks: Task[];
+
+  @OneToMany(() => Milestone, (m) => m.project, { cascade: true })
+  milestones: Milestone[];
 }

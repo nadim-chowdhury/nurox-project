@@ -24,6 +24,13 @@ import { Rack } from './entities/rack.entity';
 
 import { StockCount } from './entities/stock-count.entity';
 import { StockCountItem } from './entities/stock-count-item.entity';
+import { GoodsReceipt } from './entities/goods-receipt.entity';
+import { GoodsIssue } from './entities/goods-issue.entity';
+import { GoodsReturn } from './entities/goods-return.entity';
+import { StockTransfer, StockTransferStatus } from './entities/stock-transfer.entity';
+import { SerialNumber } from './entities/serial-number.entity';
+import { Bom } from './entities/bom.entity';
+import { UomGroup } from './entities/uom-group.entity';
 
 @Injectable()
 export class InventoryService implements OnModuleInit {
@@ -63,7 +70,17 @@ export class InventoryService implements OnModuleInit {
         jobId: 'daily_reorder_check',
       },
     );
-    this.logger.log('Scheduled daily reorder point checks');
+    await this.alertQueue.add(
+      'check_expiry_dates',
+      {},
+      {
+        repeat: {
+          pattern: '0 0 * * *',
+        },
+        jobId: 'daily_expiry_check',
+      },
+    );
+    this.logger.log('Scheduled daily reorder point and expiry checks');
   }
 
   async createProduct(dto: Partial<Product>): Promise<Product> {
@@ -510,5 +527,67 @@ export class InventoryService implements OnModuleInit {
       }
     }
     return alerts;
+  }
+
+  async checkExpiryDates() {
+    const now = new Date();
+    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    
+    const nearExpiryBatches = await this.batchRepo
+      .createQueryBuilder('b')
+      .where('b.remainingQuantity > 0')
+      .andWhere('b.expiryDate IS NOT NULL')
+      .andWhere('b.expiryDate <= :thirtyDays', { thirtyDays: thirtyDaysFromNow })
+      .getMany();
+
+    const alerts = nearExpiryBatches.map(batch => ({
+      batchId: batch.id,
+      productId: batch.productId,
+      batchNumber: batch.batchNumber,
+      expiryDate: batch.expiryDate,
+      remainingQuantity: batch.remainingQuantity,
+    }));
+
+    if (alerts.length > 0) {
+      this.logger.warn(`Found ${alerts.length} batches nearing expiry`);
+    }
+
+    return alerts;
+  }
+
+  async getStockValuation() {
+    // Current stock x average cost per product; balance sheet-ready
+    const valuation = await this.batchRepo
+      .createQueryBuilder('b')
+      .leftJoinAndSelect('b.product', 'product')
+      .where('b.remainingQuantity > 0')
+      .select('product.id', 'productId')
+      .addSelect('product.name', 'productName')
+      .addSelect('product.sku', 'sku')
+      .addSelect('SUM(b.remainingQuantity)', 'totalQuantity')
+      .addSelect('SUM(b.remainingQuantity * b.unitCost)', 'totalValue')
+      .groupBy('product.id')
+      .getRawMany();
+
+    const grandTotal = valuation.reduce((sum, item) => sum + Number(item.totalValue), 0);
+
+    return {
+      items: valuation,
+      grandTotal,
+    };
+  }
+
+  async generateBarcode(productId: string) {
+    const product = await this.productRepo.findOne({ where: { id: productId } });
+    if (!product) throw new NotFoundException('Product not found');
+
+    // Mock ZPL generation for thermal printers
+    const barcodeData = product.barcode || product.sku;
+    const zpl = `^XA\n^FO50,50^ADN,36,20^FD${product.name}^FS\n^FO50,100^BCN,100,Y,N,N^FD${barcodeData}^FS\n^XZ`;
+    
+    return {
+      productId: product.id,
+      zpl,
+    };
   }
 }

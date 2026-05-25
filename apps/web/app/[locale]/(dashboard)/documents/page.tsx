@@ -1,126 +1,97 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button, Space, Tag } from "antd";
+import { Button, Space, Tag, Layout, Tree, Spin, message, Modal, Upload } from "antd";
 import {
   PlusOutlined,
   DownloadOutlined,
   EyeOutlined,
   DeleteOutlined,
+  FolderOpenOutlined,
   FileTextOutlined,
   FilePdfOutlined,
   FileExcelOutlined,
   FileImageOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/tables/DataTable";
-import { TableToolbar } from "@/components/tables/TableToolbar";
 import { Avatar } from "@/components/common/Avatar";
 import { formatDate } from "@/lib/utils";
 import type { ColumnsType } from "antd/es/table";
+import { 
+  useGetFoldersQuery, 
+  useGetDocumentsQuery, 
+  useGetUploadUrlMutation, 
+  useCreateDocumentMutation,
+  useCreateFolderMutation,
+  useGetDownloadUrlQuery,
+  useSoftDeleteDocumentMutation,
+} from "@/store/api/documentsApi";
+import { useRouter } from "next/navigation";
 
-interface Document {
-  id: string;
-  name: string;
-  type: string;
-  category: string;
-  uploadedBy: string;
-  uploadedAt: string;
-  size: string;
-}
+const { Sider, Content } = Layout;
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
-  pdf: <FilePdfOutlined style={{ color: "#ffb4ab" }} />,
-  xlsx: <FileExcelOutlined style={{ color: "#6dd58c" }} />,
-  docx: <FileTextOutlined style={{ color: "#80d8ff" }} />,
-  png: <FileImageOutlined style={{ color: "#ffb347" }} />,
-  jpg: <FileImageOutlined style={{ color: "#ffb347" }} />,
+  "application/pdf": <FilePdfOutlined style={{ color: "#ffb4ab" }} />,
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": <FileExcelOutlined style={{ color: "#6dd58c" }} />,
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": <FileTextOutlined style={{ color: "#80d8ff" }} />,
+  "image/png": <FileImageOutlined style={{ color: "#ffb347" }} />,
+  "image/jpeg": <FileImageOutlined style={{ color: "#ffb347" }} />,
 };
 
-const mockDocs: Document[] = [
-  {
-    id: "1",
-    name: "Employee Handbook 2026.pdf",
-    type: "pdf",
-    category: "HR Policy",
-    uploadedBy: "Fatima Khan",
-    uploadedAt: "2026-04-15",
-    size: "2.4 MB",
-  },
-  {
-    id: "2",
-    name: "Q1 Financial Report.xlsx",
-    type: "xlsx",
-    category: "Finance",
-    uploadedBy: "Michael Chen",
-    uploadedAt: "2026-04-10",
-    size: "1.8 MB",
-  },
-  {
-    id: "3",
-    name: "NDA Template.docx",
-    type: "docx",
-    category: "Legal",
-    uploadedBy: "Fatima Khan",
-    uploadedAt: "2026-03-22",
-    size: "340 KB",
-  },
-  {
-    id: "4",
-    name: "Office Floor Plan.png",
-    type: "png",
-    category: "Operations",
-    uploadedBy: "David Miller",
-    uploadedAt: "2026-03-15",
-    size: "5.1 MB",
-  },
-  {
-    id: "5",
-    name: "Leave Policy Update.pdf",
-    type: "pdf",
-    category: "HR Policy",
-    uploadedBy: "Fatima Khan",
-    uploadedAt: "2026-04-18",
-    size: "890 KB",
-  },
-  {
-    id: "6",
-    name: "Vendor Contracts Q2.pdf",
-    type: "pdf",
-    category: "Procurement",
-    uploadedBy: "James Wilson",
-    uploadedAt: "2026-04-05",
-    size: "3.2 MB",
-  },
-  {
-    id: "7",
-    name: "Brand Guidelines.pdf",
-    type: "pdf",
-    category: "Marketing",
-    uploadedBy: "Priya Sharma",
-    uploadedAt: "2026-02-28",
-    size: "12 MB",
-  },
-  {
-    id: "8",
-    name: "Tax Filing 2025.xlsx",
-    type: "xlsx",
-    category: "Finance",
-    uploadedBy: "Michael Chen",
-    uploadedAt: "2026-01-30",
-    size: "4.5 MB",
-  },
-];
-
 export default function DocumentsPage() {
-  const [search, setSearch] = useState("");
-  const filtered = mockDocs.filter(
-    (d) =>
-      d.name.toLowerCase().includes(search.toLowerCase()) ||
-      d.category.toLowerCase().includes(search.toLowerCase()),
-  );
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  const [isUploadModalVisible, setIsUploadModalVisible] = useState(false);
+  const [fileToUpload, setFileToUpload] = useState<File | null>(null);
 
-  const columns: ColumnsType<Document> = [
+  const { data: folders, isLoading: isLoadingFolders } = useGetFoldersQuery();
+  const { data: documents, isLoading: isLoadingDocs } = useGetDocumentsQuery(selectedFolderId || undefined);
+  
+  const [getUploadUrl] = useGetUploadUrlMutation();
+  const [createDocument] = useCreateDocumentMutation();
+  const [softDelete] = useSoftDeleteDocumentMutation();
+  
+  const router = useRouter();
+
+  const handleUpload = async () => {
+    if (!fileToUpload) return;
+    try {
+      // 1. Get presigned URL
+      const { uploadUrl, key } = await getUploadUrl({
+        name: fileToUpload.name,
+        type: fileToUpload.type,
+        folderId: selectedFolderId || undefined,
+      }).unwrap();
+
+      // 2. Upload directly to S3
+      await fetch(uploadUrl, {
+        method: 'PUT',
+        body: fileToUpload,
+        headers: {
+          'Content-Type': fileToUpload.type,
+        },
+      });
+
+      // 3. Confirm with backend
+      await createDocument({
+        name: fileToUpload.name,
+        type: fileToUpload.name.split('.').pop() || 'unknown',
+        folderId: selectedFolderId || undefined,
+        fileKey: key,
+        fileSize: fileToUpload.size,
+        mimeType: fileToUpload.type,
+      }).unwrap();
+
+      message.success("Document uploaded successfully");
+      setIsUploadModalVisible(false);
+      setFileToUpload(null);
+    } catch (error) {
+      message.error("Failed to upload document");
+    }
+  };
+
+  const columns: ColumnsType<any> = [
     {
       title: "Document",
       key: "name",
@@ -143,15 +114,10 @@ export default function DocumentsPage() {
       ),
     },
     {
-      title: "Category",
-      dataIndex: "category",
-      key: "category",
+      title: "Access",
+      dataIndex: "accessControl",
+      key: "access",
       width: 140,
-      filters: [...new Set(mockDocs.map((d) => d.category))].map((c) => ({
-        text: c,
-        value: c,
-      })),
-      onFilter: (v, r) => r.category === v,
       render: (v: string) => (
         <Tag
           style={{
@@ -166,45 +132,24 @@ export default function DocumentsPage() {
       ),
     },
     {
-      title: "Uploaded By",
-      key: "uploadedBy",
-      width: 170,
-      render: (_, r) => (
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <Avatar name={r.uploadedBy} size={24} />
-          <span
-            style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
-          >
-            {r.uploadedBy}
-          </span>
-        </div>
-      ),
-    },
-    {
-      title: "Date",
-      dataIndex: "uploadedAt",
-      key: "date",
-      width: 120,
-      sorter: (a, b) =>
-        new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime(),
-      render: (d: string) => (
-        <span
-          style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
-        >
-          {formatDate(d)}
+      title: "Version",
+      dataIndex: "latestVersionNumber",
+      key: "version",
+      width: 90,
+      render: (v: number) => (
+        <span style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}>
+          v{v}.0
         </span>
       ),
     },
     {
-      title: "Size",
-      dataIndex: "size",
-      key: "size",
-      width: 90,
-      render: (v: string) => (
-        <span
-          style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
-        >
-          {v}
+      title: "Date",
+      dataIndex: "createdAt",
+      key: "date",
+      width: 120,
+      render: (d: string) => (
+        <span style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}>
+          {formatDate(d)}
         </span>
       ),
     },
@@ -213,24 +158,20 @@ export default function DocumentsPage() {
       key: "actions",
       width: 100,
       align: "right" as const,
-      render: () => (
+      render: (_, r) => (
         <Space size={4}>
           <Button
             type="text"
             size="small"
             icon={<EyeOutlined />}
-            style={{ color: "var(--color-on-surface-variant)" }}
-          />
-          <Button
-            type="text"
-            size="small"
-            icon={<DownloadOutlined />}
+            onClick={() => router.push(`/documents/${r.id}`)}
             style={{ color: "var(--color-on-surface-variant)" }}
           />
           <Button
             type="text"
             size="small"
             icon={<DeleteOutlined />}
+            onClick={() => softDelete(r.id)}
             style={{ color: "var(--color-error)" }}
           />
         </Space>
@@ -238,37 +179,89 @@ export default function DocumentsPage() {
     },
   ];
 
+  const treeData = [
+    {
+      title: "All Documents",
+      key: "root",
+      icon: <FolderOpenOutlined />,
+      children: folders?.map(f => ({
+        title: f.name,
+        key: f.id,
+        icon: <FolderOpenOutlined />,
+        isLeaf: true,
+      })) || [],
+    }
+  ];
+
   return (
     <div className="animate-fade-in-up">
       <PageHeader
         title="Documents"
-        subtitle={`${filtered.length} documents`}
+        subtitle="Enterprise File Management"
         breadcrumbs={[
           { label: "Home", href: "/dashboard" },
           { label: "Documents" },
         ]}
         extra={
-          <Button type="primary" icon={<PlusOutlined />}>
-            Upload Document
-          </Button>
+          <Space>
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />}
+              onClick={() => setIsUploadModalVisible(true)}
+            >
+              Upload Document
+            </Button>
+          </Space>
         }
       />
-      <TableToolbar
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Search documents..."
-        showExport
-        filterItems={[
-          { key: "hr", label: "HR Policy" },
-          { key: "finance", label: "Finance" },
-          { key: "legal", label: "Legal" },
-        ]}
-      />
-      <DataTable<Document>
-        columns={columns}
-        dataSource={filtered}
-        rowKey="id"
-      />
+      
+      <Layout style={{ background: 'transparent', gap: 24, marginTop: 24 }}>
+        <Sider width={280} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 16 }}>
+          {isLoadingFolders ? <Spin /> : (
+            <Tree
+              showIcon
+              defaultExpandAll
+              treeData={treeData}
+              onSelect={(keys) => setSelectedFolderId(keys[0] === 'root' ? null : keys[0] as string)}
+              style={{ background: 'transparent', color: 'var(--color-on-surface)' }}
+            />
+          )}
+        </Sider>
+        <Content style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16 }}>
+          <DataTable<any>
+            columns={columns}
+            dataSource={documents || []}
+            rowKey="id"
+            loading={isLoadingDocs}
+          />
+        </Content>
+      </Layout>
+
+      <Modal
+        title="Upload Document"
+        open={isUploadModalVisible}
+        onCancel={() => setIsUploadModalVisible(false)}
+        onOk={handleUpload}
+        okText="Upload"
+        okButtonProps={{ disabled: !fileToUpload }}
+      >
+        <Upload.Dragger
+          multiple={false}
+          beforeUpload={(file) => {
+            setFileToUpload(file);
+            return false; // Prevent default upload
+          }}
+          onRemove={() => setFileToUpload(null)}
+          fileList={fileToUpload ? [fileToUpload as any] : []}
+        >
+          <p className="ant-upload-drag-icon">
+            <UploadOutlined style={{ color: 'var(--color-primary)' }} />
+          </p>
+          <p className="ant-upload-text" style={{ color: 'var(--color-on-surface)' }}>
+            Click or drag file to this area to upload
+          </p>
+        </Upload.Dragger>
+      </Modal>
     </div>
   );
 }

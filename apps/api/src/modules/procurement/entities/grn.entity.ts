@@ -67,6 +67,12 @@ export class GrnLine extends TenantBaseEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   receivedQuantity: number;
 
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  acceptedQuantity: number;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  rejectedQuantity: number;
+
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
   unitCost: number | null;
 

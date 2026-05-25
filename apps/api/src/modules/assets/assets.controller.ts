@@ -114,4 +114,22 @@ export class AssetsController {
   ) {
     return this.assetsService.disposeAsset(req.tenantId, id, dto);
   }
+
+  @Post(':id/qr')
+  @ApiOperation({ summary: 'Generate QR code for asset' })
+  @RequirePermissions(Permission.ADMIN_READ)
+  async generateQR(@Req() req: any, @Param('id') id: string) {
+    const qrCodeUrl = await this.assetsService.generateAssetQR(req.tenantId, id);
+    return { qrCodeUrl };
+  }
+
+  // NOTE: For CSV import, NestJS usually uses Interceptors for file uploads, but we'll simulate passing buffer or base64 in Body for simplicity if no FileInterceptor is imported
+  @Post('import')
+  @ApiOperation({ summary: 'Import assets from CSV' })
+  @RequirePermissions(Permission.ADMIN_WRITE)
+  async importAssets(@Req() req: any, @Body() body: { fileData: string }) {
+    // Expecting base64 string
+    const buffer = Buffer.from(body.fileData, 'base64');
+    return this.assetsService.processCSVImport(req.tenantId, buffer);
+  }
 }

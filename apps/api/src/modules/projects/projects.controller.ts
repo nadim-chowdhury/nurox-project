@@ -93,4 +93,51 @@ export class ProjectsController {
   removeTask(@Param('id', ParseUUIDPipe) id: string) {
     return this.projectsService.removeTask(id);
   }
+
+  // --- NEW ENDPOINTS ---
+  @Get(':id/tasks/tree')
+  @RequirePermissions(Permission.PROJECTS_VIEW)
+  getProjectTasksTree(@Param('id', ParseUUIDPipe) id: string) {
+    return this.projectsService.getProjectTasksTree(id);
+  }
+
+  @Post('tasks/:id/time-log/start')
+  @RequirePermissions(Permission.PROJECTS_MANAGE)
+  startTimeLog(@Param('id', ParseUUIDPipe) id: string, @Body('userId') userId: string) {
+    return this.projectsService.startTimeLog(id, userId);
+  }
+
+  @Post('time-log/:id/stop')
+  @RequirePermissions(Permission.PROJECTS_MANAGE)
+  stopTimeLog(@Param('id', ParseUUIDPipe) id: string) {
+    return this.projectsService.stopTimeLog(id);
+  }
+
+  @Post('timesheets/submit')
+  @RequirePermissions(Permission.PROJECTS_MANAGE)
+  submitTimesheet(
+    @Body('userId') userId: string,
+    @Body('periodStartDate') periodStartDate: string,
+    @Body('periodEndDate') periodEndDate: string,
+  ) {
+    return this.projectsService.submitTimesheet(userId, new Date(periodStartDate), new Date(periodEndDate));
+  }
+
+  @Post('timesheets/:id/approve')
+  @RequirePermissions(Permission.PROJECTS_MANAGE)
+  approveTimesheet(@Param('id', ParseUUIDPipe) id: string, @Body('managerId') managerId: string) {
+    return this.projectsService.approveTimesheet(id, managerId);
+  }
+
+  @Get('analytics/health/:id')
+  @RequirePermissions(Permission.PROJECTS_VIEW)
+  getProjectHealth(@Param('id', ParseUUIDPipe) id: string) {
+    return this.projectsService.getProjectHealth(id);
+  }
+
+  @Get('analytics/resource-allocation')
+  @RequirePermissions(Permission.PROJECTS_VIEW)
+  getResourceAllocation() {
+    return this.projectsService.getResourceAllocation();
+  }
 }

@@ -15,6 +15,8 @@ export class InventoryProcessor extends WorkerHost {
     switch (job.name) {
       case 'check_reorder_points':
         return await this.inventoryService.checkReorderPoints();
+      case 'check_expiry_dates':
+        return await this.inventoryService.checkExpiryDates();
       default:
         this.logger.warn(`Unknown job name: ${job.name}`);
     }

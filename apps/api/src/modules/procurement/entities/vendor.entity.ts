@@ -7,6 +7,19 @@ export enum KycStatus {
   REJECTED = 'REJECTED',
 }
 
+export enum VendorCategory {
+  PREFERRED = 'PREFERRED',
+  BLACKLISTED = 'BLACKLISTED',
+  APPROVED = 'APPROVED',
+  STANDARD = 'STANDARD',
+}
+
+export enum ApprovalStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
+
 @Entity('vendors')
 export class Vendor extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 200 })
@@ -41,6 +54,15 @@ export class Vendor extends TenantBaseEntity {
 
   @Column({ type: 'varchar', length: 50, nullable: true })
   taxId: string | null;
+
+  @Column({ type: 'enum', enum: VendorCategory, default: VendorCategory.STANDARD })
+  category: VendorCategory;
+
+  @Column({ type: 'enum', enum: ApprovalStatus, default: ApprovalStatus.PENDING })
+  approvalStatus: ApprovalStatus;
+
+  @Column({ type: 'jsonb', nullable: true })
+  bankDetails: any;
 
   @Column({ type: 'boolean', default: true })
   isActive: boolean;

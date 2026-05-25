@@ -15,10 +15,14 @@ export const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
   barcode: z.string().optional().nullable(),
   uom: unitOfMeasureEnum.default("PCS"),
+  uomGroupId: z.string().uuid().optional().nullable(),
   category: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
   basePrice: z.number().min(0).default(0),
   reorderPoint: z.number().min(0).default(0),
+  minStockLevel: z.number().min(0).default(0),
+  maxStockLevel: z.number().min(0).default(0),
+  allowNegativeStock: z.boolean().default(false),
   taxClassId: z.string().uuid().optional().nullable(),
   imageUrl: z.string().url().optional().nullable(),
   isActive: z.boolean().default(true),
@@ -149,3 +153,146 @@ export const stockCountItemSchema = z.object({
 });
 
 export type StockCountItemDto = z.infer<typeof stockCountItemSchema>;
+
+export const bomSchema = z.object({
+  id: z.string().uuid().optional(),
+  productId: z.string().uuid(),
+  variantId: z.string().uuid().optional().nullable(),
+  name: z.string().min(1),
+  isActive: z.boolean().default(true),
+});
+
+export type BomDto = z.infer<typeof bomSchema>;
+
+export const bomItemSchema = z.object({
+  id: z.string().uuid().optional(),
+  bomId: z.string().uuid(),
+  componentProductId: z.string().uuid(),
+  componentVariantId: z.string().uuid().optional().nullable(),
+  quantity: z.number().min(0),
+  uom: z.string().min(1),
+});
+
+export type BomItemDto = z.infer<typeof bomItemSchema>;
+
+export const uomGroupSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().min(1),
+});
+
+export type UomGroupDto = z.infer<typeof uomGroupSchema>;
+
+export const uomConversionSchema = z.object({
+  id: z.string().uuid().optional(),
+  uomGroupId: z.string().uuid(),
+  fromUom: z.string().min(1),
+  toUom: z.string().min(1),
+  conversionFactor: z.number().min(0),
+});
+
+export type UomConversionDto = z.infer<typeof uomConversionSchema>;
+
+export const goodsReceiptSchema = z.object({
+  id: z.string().uuid().optional(),
+  warehouseId: z.string().uuid(),
+  reference: z.string().optional().nullable(), // PO ID or document ref
+  status: z.enum(["DRAFT", "COMPLETED", "CANCELLED"]).default("DRAFT"),
+  date: z.string().datetime(),
+  notes: z.string().optional().nullable(),
+});
+
+export type GoodsReceiptDto = z.infer<typeof goodsReceiptSchema>;
+
+export const goodsReceiptItemSchema = z.object({
+  id: z.string().uuid().optional(),
+  goodsReceiptId: z.string().uuid(),
+  productId: z.string().uuid(),
+  variantId: z.string().uuid().optional().nullable(),
+  binId: z.string().uuid().optional().nullable(),
+  batchNumber: z.string().min(1),
+  quantity: z.number().min(0),
+  unitCost: z.number().min(0),
+  expiryDate: z.string().datetime().optional().nullable(),
+});
+
+export type GoodsReceiptItemDto = z.infer<typeof goodsReceiptItemSchema>;
+
+export const goodsIssueSchema = z.object({
+  id: z.string().uuid().optional(),
+  warehouseId: z.string().uuid(),
+  reference: z.string().optional().nullable(), // Production order, SO, etc.
+  status: z.enum(["DRAFT", "COMPLETED", "CANCELLED"]).default("DRAFT"),
+  date: z.string().datetime(),
+  reasonCode: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+});
+
+export type GoodsIssueDto = z.infer<typeof goodsIssueSchema>;
+
+export const goodsIssueItemSchema = z.object({
+  id: z.string().uuid().optional(),
+  goodsIssueId: z.string().uuid(),
+  productId: z.string().uuid(),
+  variantId: z.string().uuid().optional().nullable(),
+  quantity: z.number().min(0),
+  reasonCode: z.string().optional().nullable(),
+});
+
+export type GoodsIssueItemDto = z.infer<typeof goodsIssueItemSchema>;
+
+export const goodsReturnSchema = z.object({
+  id: z.string().uuid().optional(),
+  warehouseId: z.string().uuid(),
+  vendorId: z.string().uuid().optional().nullable(),
+  reference: z.string().optional().nullable(),
+  status: z.enum(["DRAFT", "COMPLETED", "CANCELLED"]).default("DRAFT"),
+  date: z.string().datetime(),
+  notes: z.string().optional().nullable(),
+});
+
+export type GoodsReturnDto = z.infer<typeof goodsReturnSchema>;
+
+export const goodsReturnItemSchema = z.object({
+  id: z.string().uuid().optional(),
+  goodsReturnId: z.string().uuid(),
+  productId: z.string().uuid(),
+  variantId: z.string().uuid().optional().nullable(),
+  batchId: z.string().uuid(),
+  quantity: z.number().min(0),
+  reasonCode: z.string().optional().nullable(),
+});
+
+export type GoodsReturnItemDto = z.infer<typeof goodsReturnItemSchema>;
+
+export const stockTransferSchema = z.object({
+  id: z.string().uuid().optional(),
+  fromWarehouseId: z.string().uuid(),
+  toWarehouseId: z.string().uuid(),
+  status: z.enum(["DRAFT", "IN_TRANSIT", "COMPLETED", "CANCELLED"]).default("DRAFT"),
+  reference: z.string().optional().nullable(),
+  date: z.string().datetime(),
+});
+
+export type StockTransferDto = z.infer<typeof stockTransferSchema>;
+
+export const stockTransferItemSchema = z.object({
+  id: z.string().uuid().optional(),
+  stockTransferId: z.string().uuid(),
+  productId: z.string().uuid(),
+  variantId: z.string().uuid().optional().nullable(),
+  batchId: z.string().uuid(),
+  quantity: z.number().min(0),
+});
+
+export type StockTransferItemDto = z.infer<typeof stockTransferItemSchema>;
+
+export const serialNumberSchema = z.object({
+  id: z.string().uuid().optional(),
+  productId: z.string().uuid(),
+  variantId: z.string().uuid().optional().nullable(),
+  batchId: z.string().uuid().optional().nullable(),
+  serial: z.string().min(1),
+  status: z.enum(["IN_STOCK", "ISSUED", "RETURNED"]).default("IN_STOCK"),
+});
+
+export type SerialNumberDto = z.infer<typeof serialNumberSchema>;

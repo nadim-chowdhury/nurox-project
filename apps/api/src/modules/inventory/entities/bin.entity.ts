@@ -19,4 +19,7 @@ export class Bin extends BaseEntity {
 
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
   capacity: number | null;
+
+  @Column({ type: 'boolean', default: false })
+  isQuarantine: boolean;
 }

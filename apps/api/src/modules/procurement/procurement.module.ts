@@ -14,6 +14,9 @@ import {
 } from './entities/purchase-order.entity';
 import { Grn, GrnLine } from './entities/grn.entity';
 import { DebitNote } from './entities/debit-note.entity';
+import { ApprovalMatrix } from './entities/approval-matrix.entity';
+import { VendorEvaluation } from './entities/vendor-evaluation.entity';
+import { VendorBill } from './entities/vendor-bill.entity';
 import { InventoryModule } from '../inventory/inventory.module';
 import { MailerModule } from '../mailer/mailer.module';
 
@@ -30,6 +33,9 @@ import { MailerModule } from '../mailer/mailer.module';
       Grn,
       GrnLine,
       DebitNote,
+      ApprovalMatrix,
+      VendorEvaluation,
+      VendorBill,
     ]),
     InventoryModule,
     MailerModule,

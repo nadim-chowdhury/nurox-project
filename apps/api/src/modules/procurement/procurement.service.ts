@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, IsNull } from 'typeorm';
 import { Vendor } from './entities/vendor.entity';
 import {
   PurchaseRequest,
@@ -15,6 +15,9 @@ import { Rfq, RfqStatus, VendorQuote } from './entities/rfq.entity';
 import { PurchaseOrder, PoStatus } from './entities/purchase-order.entity';
 import { Grn, GrnStatus, GrnLine } from './entities/grn.entity';
 import { DebitNote } from './entities/debit-note.entity';
+import { ApprovalMatrix } from './entities/approval-matrix.entity';
+import { VendorEvaluation } from './entities/vendor-evaluation.entity';
+import { VendorBill } from './entities/vendor-bill.entity';
 import { InventoryService } from '../inventory/inventory.service';
 import { MailerService } from '../mailer/mailer.service';
 import * as puppeteer from 'puppeteer';
@@ -38,6 +41,12 @@ export class ProcurementService {
     private readonly grnRepo: Repository<Grn>,
     @InjectRepository(DebitNote)
     private readonly debitNoteRepo: Repository<DebitNote>,
+    @InjectRepository(ApprovalMatrix)
+    private readonly matrixRepo: Repository<ApprovalMatrix>,
+    @InjectRepository(VendorEvaluation)
+    private readonly evaluationRepo: Repository<VendorEvaluation>,
+    @InjectRepository(VendorBill)
+    private readonly billRepo: Repository<VendorBill>,
     private readonly inventoryService: InventoryService,
     private readonly mailerService: MailerService,
     private readonly dataSource: DataSource,
@@ -89,11 +98,26 @@ export class ProcurementService {
 
   async getRfqComparison(rfqId: string) {
     const quotes = await this.quoteRepo.find({ where: { rfqId } });
+    const vendorIds = quotes.map(q => q.vendorId);
+    
+    // Fetch average evaluation scores for these vendors
+    const evaluations = await this.evaluationRepo.createQueryBuilder('e')
+      .select('e.vendorId', 'vendorId')
+      .addSelect('AVG(e.qualityScore)', 'avgQuality')
+      .addSelect('AVG(e.deliveryScore)', 'avgDelivery')
+      .where('e.vendorId IN (:...vendorIds)', { vendorIds: vendorIds.length ? vendorIds : ['00000000-0000-0000-0000-000000000000'] })
+      .groupBy('e.vendorId')
+      .getRawMany();
+
+    const evalMap = new Map(evaluations.map(e => [e.vendorId, { quality: Number(e.avgQuality), delivery: Number(e.avgDelivery) }]));
+
     return quotes.map((q) => ({
       vendorId: q.vendorId,
       totalAmount: q.totalAmount,
       currency: q.currency,
       lines: q.lines,
+      qualityScore: evalMap.get(q.vendorId)?.quality || null,
+      deliveryScore: evalMap.get(q.vendorId)?.delivery || null,
     }));
   }
 
@@ -377,11 +401,15 @@ export class ProcurementService {
       where: { poId },
       relations: ['lines'],
     });
+    const bills = await this.billRepo.find({
+      where: { poId },
+    });
 
     if (!po) throw new NotFoundException('PO not found');
 
     const mismatches: any[] = [];
-
+    
+    // 1. Quantity Match: PO vs GRN
     for (const poLine of po.lines) {
       const totalReceived = grns.reduce((sum, grn) => {
         const grnLine = grn.lines.find((gl) => gl.poLineId === poLine.id);
@@ -390,6 +418,7 @@ export class ProcurementService {
 
       if (totalReceived !== Number(poLine.quantity)) {
         mismatches.push({
+          type: 'QUANTITY_MISMATCH',
           productId: poLine.productId,
           poQuantity: poLine.quantity,
           receivedQuantity: totalReceived,
@@ -398,11 +427,127 @@ export class ProcurementService {
       }
     }
 
+    // 2. Amount Match: PO vs Bill
+    const totalBilled = bills.reduce((sum, b) => sum + Number(b.totalAmount), 0);
+    if (totalBilled > 0 && totalBilled !== Number(po.grandTotal)) {
+      mismatches.push({
+        type: 'AMOUNT_MISMATCH',
+        poTotal: po.grandTotal,
+        billedTotal: totalBilled,
+        difference: Number(po.grandTotal) - totalBilled,
+      });
+    }
+
     return {
       poId,
       poNumber: po.poNumber,
       isMatch: mismatches.length === 0,
       mismatches,
+    };
+  }
+
+  async checkPRApproval(prId: string) {
+    const pr = await this.prRepo.findOne({ where: { id: prId } });
+    if (!pr) throw new NotFoundException('PR not found');
+
+    const matrixRules = await this.matrixRepo.find({
+      where: [{ departmentId: pr.departmentId }, { departmentId: IsNull() }],
+    });
+
+    const requiredApprovers = matrixRules
+      .filter((rule) => {
+        const minMatches = Number(pr.totalEstimatedCost) >= Number(rule.minAmount);
+        const maxMatches = rule.maxAmount === null || Number(pr.totalEstimatedCost) <= Number(rule.maxAmount);
+        return minMatches && maxMatches;
+      })
+      .map(rule => rule.requiredRole);
+
+    return {
+      prId: pr.id,
+      amount: pr.totalEstimatedCost,
+      requiredRoles: Array.from(new Set(requiredApprovers)),
+    };
+  }
+
+  async cancelPurchaseOrder(poId: string, reason: string, lineItemsToCancel?: { poLineId: string, quantity: number }[]) {
+    return this.dataSource.transaction(async (manager) => {
+      const po = await manager.findOne(PurchaseOrder, {
+        where: { id: poId },
+        relations: ['lines'],
+      });
+      if (!po) throw new NotFoundException('PO not found');
+
+      if (!lineItemsToCancel || lineItemsToCancel.length === 0) {
+        // Full cancellation
+        po.status = PoStatus.CANCELLED;
+        po.cancellationReason = reason;
+        for (const line of po.lines) {
+          line.cancelledQuantity = Number(line.quantity) - Number(line.receivedQuantity);
+        }
+      } else {
+        // Partial cancellation
+        for (const req of lineItemsToCancel) {
+          const line = po.lines.find((l) => l.id === req.poLineId);
+          if (line) {
+            line.cancelledQuantity = Number(line.cancelledQuantity) + req.quantity;
+          }
+        }
+        po.cancellationReason = `Partial Cancel: ${reason}`;
+      }
+
+      return manager.save(po);
+    });
+  }
+
+  async inspectGrn(grnId: string, inspections: { grnLineId: string, acceptedQuantity: number, rejectedQuantity: number }[]) {
+    return this.dataSource.transaction(async (manager) => {
+      const grn = await manager.findOne(Grn, {
+        where: { id: grnId },
+        relations: ['lines'],
+      });
+      if (!grn) throw new NotFoundException('GRN not found');
+
+      for (const ins of inspections) {
+        const line = grn.lines.find((l) => l.id === ins.grnLineId);
+        if (line) {
+          line.acceptedQuantity = ins.acceptedQuantity;
+          line.rejectedQuantity = ins.rejectedQuantity;
+          
+          // Optionally auto-create quarantine stock movement for rejected items here
+          if (ins.rejectedQuantity > 0) {
+            // Placeholder: move rejected to quarantine bin
+            this.logger.warn(`Rejected ${ins.rejectedQuantity} items for GRN line ${line.id} - sending to Quarantine`);
+          }
+        }
+      }
+
+      return manager.save(grn);
+    });
+  }
+
+  async getSpendAnalytics() {
+    const pos = await this.poRepo.find({
+      where: { status: PoStatus.CLOSED }, // or fully received
+      relations: ['vendor'],
+    });
+
+    const spendByVendor = pos.reduce((acc, po) => {
+      const vName = po.vendor.name;
+      acc[vName] = (acc[vName] || 0) + Number(po.grandTotal);
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Grouping by month for time series
+    const spendOverTime = pos.reduce((acc, po) => {
+      const month = po.orderDate.toISOString().substring(0, 7); // YYYY-MM
+      acc[month] = (acc[month] || 0) + Number(po.grandTotal);
+      return acc;
+    }, {} as Record<string, number>);
+
+    return {
+      spendByVendor: Object.entries(spendByVendor).map(([name, value]) => ({ name, value })),
+      spendOverTime: Object.entries(spendOverTime).map(([month, value]) => ({ month, value })).sort((a, b) => a.month.localeCompare(b.month)),
+      totalSpend: pos.reduce((sum, po) => sum + Number(po.grandTotal), 0),
     };
   }
 }

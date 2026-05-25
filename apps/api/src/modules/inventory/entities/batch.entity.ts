@@ -39,4 +39,10 @@ export class Batch extends BaseEntity {
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   unitCost: number;
+
+  @Column({ type: 'boolean', default: false })
+  isConsignment: boolean;
+
+  @Column({ type: 'uuid', nullable: true })
+  vendorId: string | null;
 }

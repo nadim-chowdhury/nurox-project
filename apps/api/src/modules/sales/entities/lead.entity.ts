@@ -39,4 +39,10 @@ export class Lead extends TenantBaseEntity {
 
   @Column({ type: 'text', nullable: true })
   notes: string | null;
+
+  @Column({ type: 'int', default: 0 })
+  score: number;
+
+  @Column({ type: 'jsonb', nullable: true })
+  sourceDetails: any;
 }

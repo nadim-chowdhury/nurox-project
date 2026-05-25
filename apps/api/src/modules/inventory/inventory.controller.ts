@@ -116,4 +116,22 @@ export class InventoryController {
   getAging() {
     return this.inventoryService.getInventoryAging();
   }
+
+  @Get('stock/valuation')
+  @ApiOperation({ summary: 'Get stock valuation report' })
+  getStockValuation() {
+    return this.inventoryService.getStockValuation();
+  }
+
+  @Get('stock/expiry-alerts')
+  @ApiOperation({ summary: 'Check batches nearing expiry' })
+  getExpiryAlerts() {
+    return this.inventoryService.checkExpiryDates();
+  }
+
+  @Get('products/:id/barcode')
+  @ApiOperation({ summary: 'Generate ZPL barcode for a product' })
+  generateBarcode(@Param('id') id: string) {
+    return this.inventoryService.generateBarcode(id);
+  }
 }

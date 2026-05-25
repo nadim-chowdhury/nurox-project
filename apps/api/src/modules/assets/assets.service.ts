@@ -1,5 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as QRCode from 'qrcode';
+import csv from 'csv-parser';
+import * as stream from 'stream';
 import { Repository, DataSource, IsNull } from 'typeorm';
 import { Asset } from './entities/asset.entity';
 import { AssetCategory } from './entities/asset-category.entity';
@@ -52,7 +55,7 @@ export class AssetsService {
   async findAllAssets(tenantId: string, query?: any) {
     return this.assetRepo.find({
       where: { tenantId, ...query },
-      relations: ['category', 'assignedEmployee'],
+      relations: ['category', 'assignedEmployee', 'maintenances'],
     });
   }
 
@@ -154,5 +157,71 @@ export class AssetsService {
     asset.assignedEmployeeId = null;
 
     return this.assetRepo.save(asset);
+  }
+
+  async generateAssetQR(tenantId: string, id: string): Promise<string> {
+    const asset = await this.findOneAsset(tenantId, id);
+    const qrData = JSON.stringify({ tenantId, assetId: id, assetCode: asset.assetCode });
+    const qrCodeUrl = await QRCode.toDataURL(qrData);
+    
+    asset.qrCodeUrl = qrCodeUrl;
+    await this.assetRepo.save(asset);
+    return qrCodeUrl;
+  }
+
+  async calculateDepreciation(tenantId: string, id: string, periodsPassed: number): Promise<void> {
+    const asset = await this.findOneAsset(tenantId, id);
+    if (!asset.purchaseCost || asset.depreciationMethod === 'NONE') return;
+
+    let currentNbv = asset.netBookValue ?? asset.purchaseCost;
+    const salvage = asset.salvageValue ?? 0;
+
+    if (asset.depreciationMethod === 'SL' && asset.usefulLifeMonths) {
+      const depreciationPerPeriod = (asset.purchaseCost - salvage) / asset.usefulLifeMonths;
+      currentNbv = Math.max(salvage, currentNbv - (depreciationPerPeriod * periodsPassed));
+    } else if (asset.depreciationMethod === 'DB' && asset.depreciationRate) {
+      for (let i = 0; i < periodsPassed; i++) {
+        const depreciation = currentNbv * (asset.depreciationRate / 100);
+        currentNbv = Math.max(salvage, currentNbv - depreciation);
+      }
+    }
+
+    asset.netBookValue = Number(currentNbv.toFixed(2));
+    await this.assetRepo.save(asset);
+  }
+
+  async processCSVImport(tenantId: string, fileBuffer: Buffer): Promise<any> {
+    const results: any[] = [];
+    const bufferStream = new stream.PassThrough();
+    bufferStream.end(fileBuffer);
+
+    return new Promise((resolve, reject) => {
+      bufferStream
+        .pipe(csv())
+        .on('data', (data) => results.push(data))
+        .on('end', async () => {
+          let imported = 0;
+          for (const row of results) {
+            // Very basic mapping, assumes row headers match DTO loosely
+            try {
+              const asset = this.assetRepo.create({
+                tenantId,
+                name: row.name,
+                assetCode: row.assetCode || `AST-${Date.now()}-${imported}`,
+                categoryId: row.categoryId,
+                purchaseDate: new Date(row.purchaseDate || Date.now()),
+                purchaseCost: parseFloat(row.purchaseCost || '0'),
+                status: 'PURCHASED',
+              });
+              await this.assetRepo.save(asset);
+              imported++;
+            } catch (err) {
+              console.error('Failed to import row', row, err);
+            }
+          }
+          resolve({ imported, total: results.length });
+        })
+        .on('error', (err) => reject(err));
+    });
   }
 }

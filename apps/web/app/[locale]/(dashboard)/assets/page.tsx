@@ -1,291 +1,230 @@
-"use client";
+'use client';
+import { useState } from 'react';
+import { Typography, Row, Col, Table, Button, Space, Tag, Modal, Upload, message, Skeleton } from 'antd';
+import { PlusOutlined, ImportOutlined, MoreOutlined, DesktopOutlined, InboxOutlined } from '@ant-design/icons';
+import { PageHeader } from '@/components/common/PageHeader';
+import { KpiCard } from '@/components/common/KpiCard';
+import { useRouter } from 'next/navigation';
+import { useGetAssetsQuery, useImportAssetsMutation } from '@/store/api/assetsApi';
+import type { UploadProps } from 'antd';
 
-import React, { useState } from "react";
-import { Button, Space } from "antd";
-import { PlusOutlined, EditOutlined, EyeOutlined } from "@ant-design/icons";
-import { PageHeader } from "@/components/common/PageHeader";
-import { DataTable } from "@/components/tables/DataTable";
-import { TableToolbar } from "@/components/tables/TableToolbar";
-import { StatusTag } from "@/components/common/StatusTag";
-import { formatCurrency, formatDate } from "@/lib/utils";
-import type { ColumnsType } from "antd/es/table";
-
-interface Asset {
-  id: string;
-  name: string;
-  assetTag: string;
-  category: string;
-  assignedTo: string;
-  purchaseDate: string;
-  value: number;
-  status: string;
-  location: string;
-}
-
-const mockAssets: Asset[] = [
-  {
-    id: "1",
-    name: 'MacBook Pro 16" M4',
-    assetTag: "AST-001",
-    category: "Laptop",
-    assignedTo: "Sarah Ahmed",
-    purchaseDate: "2025-06-15",
-    value: 3200,
-    status: "active",
-    location: "HQ - Floor 2",
-  },
-  {
-    id: "2",
-    name: "Dell U2723QE Monitor",
-    assetTag: "AST-002",
-    category: "Monitor",
-    assignedTo: "James Wilson",
-    purchaseDate: "2025-07-20",
-    value: 620,
-    status: "active",
-    location: "HQ - Floor 2",
-  },
-  {
-    id: "3",
-    name: "Herman Miller Aeron",
-    assetTag: "AST-003",
-    category: "Furniture",
-    assignedTo: "Fatima Khan",
-    purchaseDate: "2024-11-10",
-    value: 1400,
-    status: "active",
-    location: "HQ - Floor 1",
-  },
-  {
-    id: "4",
-    name: "Cisco Meraki Switch",
-    assetTag: "AST-004",
-    category: "Networking",
-    assignedTo: "IT Dept",
-    purchaseDate: "2024-03-01",
-    value: 4800,
-    status: "active",
-    location: "Server Room",
-  },
-  {
-    id: "5",
-    name: "ThinkPad X1 Carbon",
-    assetTag: "AST-005",
-    category: "Laptop",
-    assignedTo: "Unassigned",
-    purchaseDate: "2025-09-10",
-    value: 1800,
-    status: "available",
-    location: "IT Storage",
-  },
-  {
-    id: "6",
-    name: "Canon Printer MF746",
-    assetTag: "AST-006",
-    category: "Printer",
-    assignedTo: "Operations",
-    purchaseDate: "2023-08-20",
-    value: 950,
-    status: "maintenance",
-    location: "HQ - Floor 1",
-  },
-  {
-    id: "7",
-    name: 'iPad Pro 12.9"',
-    assetTag: "AST-007",
-    category: "Tablet",
-    assignedTo: "Robert Taylor",
-    purchaseDate: "2025-01-15",
-    value: 1300,
-    status: "active",
-    location: "Remote",
-  },
-  {
-    id: "8",
-    name: "HP EliteDesk 800",
-    assetTag: "AST-008",
-    category: "Desktop",
-    assignedTo: "Unassigned",
-    purchaseDate: "2022-05-10",
-    value: 900,
-    status: "retired",
-    location: "IT Storage",
-  },
-];
+const { Title, Text } = Typography;
+const { Dragger } = Upload;
 
 export default function AssetsPage() {
-  const [search, setSearch] = useState("");
-  const filtered = mockAssets.filter(
-    (a) =>
-      a.name.toLowerCase().includes(search.toLowerCase()) ||
-      a.assetTag.toLowerCase().includes(search.toLowerCase()),
-  );
+  const router = useRouter();
+  const { data: assets = [], isLoading, refetch } = useGetAssetsQuery({});
+  const [importAssets, { isLoading: isImporting }] = useImportAssetsMutation();
+  const [isImportModalVisible, setIsImportModalVisible] = useState(false);
 
-  const totalValue = filtered.reduce((a, b) => a + b.value, 0);
+  // Calculate KPIs
+  const totalValue = assets.reduce((sum: number, a: any) => sum + Number(a.purchaseCost || 0), 0);
+  const netBookValue = assets.reduce((sum: number, a: any) => sum + Number(a.netBookValue || a.purchaseCost || 0), 0);
+  const activeAssets = assets.filter((a: any) => a.status === 'ACTIVE').length;
+  const underMaintenance = assets.filter((a: any) => a.status === 'UNDER_MAINTENANCE').length;
 
-  const columns: ColumnsType<Asset> = [
+  const uploadProps: UploadProps = {
+    name: 'file',
+    multiple: false,
+    customRequest: async ({ file, onSuccess, onError }) => {
+      try {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const resultStr = e.target?.result as string;
+          const base64Data = resultStr.includes(',') ? resultStr.split(',')[1] : resultStr;
+          await importAssets({ fileData: base64Data || '' }).unwrap();
+          message.success('Assets imported successfully');
+          onSuccess?.("ok");
+          setIsImportModalVisible(false);
+          refetch();
+        };
+        reader.onerror = (e) => {
+          message.error('File reading failed');
+          onError?.(new Error('File reading failed'));
+        };
+        reader.readAsDataURL(file as Blob);
+      } catch (error) {
+        message.error('Import failed');
+        onError?.(error as Error);
+      }
+    },
+  };
+
+  const columns = [
     {
-      title: "Asset",
-      key: "name",
-      width: 220,
-      render: (_, r) => (
-        <div>
-          <div
-            style={{
-              color: "var(--color-on-surface)",
-              fontWeight: 500,
-              fontSize: 13,
-            }}
-          >
-            {r.name}
+      title: 'Asset',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text: string, record: any) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ 
+            width: '40px', 
+            height: '40px', 
+            borderRadius: '8px', 
+            background: 'var(--color-surface-high)', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            color: 'var(--color-primary)'
+          }}>
+            <DesktopOutlined />
           </div>
-          <div
-            style={{
-              color: "var(--color-primary)",
-              fontSize: 12,
-              fontFamily: "var(--font-display)",
-            }}
-          >
-            {r.assetTag}
+          <div>
+            <Text className="font-display" style={{ color: 'var(--color-on-surface)', fontWeight: 500, display: 'block' }}>{text}</Text>
+            <Text style={{ color: 'var(--color-on-surface-variant)', fontSize: '12px' }}>{record.assetCode}</Text>
           </div>
         </div>
-      ),
+      )
     },
     {
-      title: "Category",
-      dataIndex: "category",
-      key: "category",
-      width: 110,
-      filters: [...new Set(mockAssets.map((a) => a.category))].map((c) => ({
-        text: c,
-        value: c,
-      })),
-      onFilter: (v, r) => r.category === v,
-      render: (v: string) => (
-        <span
-          style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
-        >
-          {v}
-        </span>
-      ),
+      title: 'Category',
+      dataIndex: ['category', 'name'],
+      key: 'category',
+      render: (text: string) => <Tag color="blue" style={{ background: 'rgba(195, 245, 255, 0.1)', color: 'var(--color-primary)', borderColor: 'rgba(195, 245, 255, 0.3)' }}>{text || 'Uncategorized'}</Tag>
     },
     {
-      title: "Assigned To",
-      dataIndex: "assignedTo",
-      key: "assigned",
-      width: 140,
-      render: (v: string) => (
-        <span
-          style={{
-            color:
-              v === "Unassigned"
-                ? "var(--color-on-surface-variant)"
-                : "var(--color-on-surface)",
-            fontSize: 13,
-            fontStyle: v === "Unassigned" ? "italic" : "normal",
-          }}
-        >
-          {v}
-        </span>
-      ),
+      title: 'Assigned To',
+      dataIndex: ['assignedEmployee', 'firstName'],
+      key: 'assignedTo',
+      render: (text: string, record: any) => record.assignedEmployee ? <Text style={{ color: 'var(--color-on-surface)' }}>{`${record.assignedEmployee.firstName} ${record.assignedEmployee.lastName}`}</Text> : <Text type="secondary" italic>Unassigned</Text>
     },
     {
-      title: "Location",
-      dataIndex: "location",
-      key: "location",
-      width: 140,
-      render: (v: string) => (
-        <span
-          style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
-        >
-          {v}
-        </span>
-      ),
+      title: 'Purchase Cost',
+      dataIndex: 'purchaseCost',
+      key: 'purchaseCost',
+      render: (val: number | string) => <Text style={{ color: 'var(--color-on-surface)' }}>${Number(val || 0).toFixed(2)}</Text>
     },
     {
-      title: "Value",
-      dataIndex: "value",
-      key: "value",
-      width: 110,
-      sorter: (a, b) => a.value - b.value,
-      render: (v: number) => (
-        <span
-          style={{
-            fontFamily: "var(--font-display)",
-            color: "var(--color-primary)",
-            fontWeight: 600,
-          }}
-        >
-          {formatCurrency(v)}
-        </span>
-      ),
+      title: 'Net Book Value',
+      dataIndex: 'netBookValue',
+      key: 'netBookValue',
+      render: (val: number | string, record: any) => <Text className="font-display" style={{ color: 'var(--color-success)', fontWeight: 600 }}>${Number(val || record.purchaseCost || 0).toFixed(2)}</Text>
     },
     {
-      title: "Purchased",
-      dataIndex: "purchaseDate",
-      key: "date",
-      width: 120,
-      render: (d: string) => (
-        <span
-          style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
-        >
-          {formatDate(d)}
-        </span>
-      ),
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => {
+        let color = 'var(--color-on-surface)';
+        let bg = 'var(--color-surface-high)';
+        if (status === 'ACTIVE') { color = 'var(--color-success)'; bg = 'rgba(109, 213, 140, 0.1)'; }
+        if (status === 'UNDER_MAINTENANCE') { color = 'var(--color-warning)'; bg = 'rgba(255, 179, 71, 0.1)'; }
+        if (status === 'DISPOSED' || status === 'WRITTEN_OFF') { color = 'var(--color-error)'; bg = 'rgba(255, 180, 171, 0.1)'; }
+        
+        return (
+          <span style={{ 
+            padding: '4px 8px', 
+            borderRadius: '4px', 
+            background: bg, 
+            color: color,
+            fontSize: '12px',
+            fontWeight: 600
+          }}>
+            {status?.replace('_', ' ')}
+          </span>
+        );
+      }
     },
     {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      width: 110,
-      render: (s: string) => <StatusTag status={s} />,
-    },
-    {
-      title: "",
-      key: "actions",
-      width: 80,
-      align: "right" as const,
-      render: () => (
-        <Space size={4}>
-          <Button
-            type="text"
-            size="small"
-            icon={<EyeOutlined />}
-            style={{ color: "var(--color-on-surface-variant)" }}
-          />
-          <Button
-            type="text"
-            size="small"
-            icon={<EditOutlined />}
-            style={{ color: "var(--color-on-surface-variant)" }}
-          />
-        </Space>
-      ),
-    },
+      title: '',
+      key: 'actions',
+      render: (_: any, record: any) => (
+        <Button 
+          type="text" 
+          icon={<MoreOutlined style={{ color: 'var(--color-on-surface-variant)' }} />} 
+          onClick={(e) => { e.stopPropagation(); router.push(`/assets/${record.id}`); }}
+        />
+      )
+    }
   ];
 
   return (
     <div className="animate-fade-in-up">
       <PageHeader
-        title="Assets"
-        subtitle={`${filtered.length} assets · Total value: ${formatCurrency(totalValue)}`}
+        title="Asset Register"
+        subtitle="Manage and track company assets, depreciation, and assignments"
         breadcrumbs={[
           { label: "Home", href: "/dashboard" },
           { label: "Assets" },
         ]}
         extra={
-          <Button type="primary" icon={<PlusOutlined />}>
-            Register Asset
-          </Button>
+          <Space>
+            <Button 
+              icon={<ImportOutlined />} 
+              onClick={() => setIsImportModalVisible(true)}
+              style={{ background: 'var(--color-surface)', borderColor: 'var(--ghost-border)', color: 'var(--color-on-surface)' }}>
+              Bulk Import
+            </Button>
+            <Button type="primary" className="ant-btn-primary" icon={<PlusOutlined />}>
+              Add Asset
+            </Button>
+          </Space>
         }
       />
-      <TableToolbar
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Search assets..."
-        showExport
-      />
-      <DataTable<Asset> columns={columns} dataSource={filtered} rowKey="id" />
+
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={12} sm={6}>
+          <Skeleton loading={isLoading} active paragraph={{ rows: 1 }} title={false}>
+            <KpiCard title="Total Asset Value" value={`$${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`} />
+          </Skeleton>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Skeleton loading={isLoading} active paragraph={{ rows: 1 }} title={false}>
+            <KpiCard title="Net Book Value" value={`$${netBookValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`} />
+          </Skeleton>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Skeleton loading={isLoading} active paragraph={{ rows: 1 }} title={false}>
+            <KpiCard title="Active Assets" value={activeAssets.toString()} />
+          </Skeleton>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Skeleton loading={isLoading} active paragraph={{ rows: 1 }} title={false}>
+            <KpiCard title="Under Maintenance" value={underMaintenance.toString()} />
+          </Skeleton>
+        </Col>
+      </Row>
+
+      <div style={{
+        background: 'var(--glass-bg)', 
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        border: '1px solid var(--ghost-border)', 
+        borderRadius: '8px',
+        overflow: 'hidden'
+      }}>
+        <Table 
+          columns={columns} 
+          dataSource={assets} 
+          rowKey="id" 
+          loading={isLoading}
+          pagination={{ pageSize: 10 }}
+          className="nurox-table"
+          onRow={(record) => ({
+            onClick: () => router.push(`/assets/${record.id}`),
+            style: { cursor: 'pointer' }
+          })}
+        />
+      </div>
+
+      <Modal
+        title="Import Assets (CSV)"
+        open={isImportModalVisible}
+        onCancel={() => setIsImportModalVisible(false)}
+        footer={null}
+        className="glassmorphic-modal"
+      >
+        <Dragger {...uploadProps} accept=".csv">
+          <p className="ant-upload-drag-icon">
+            <InboxOutlined style={{ color: 'var(--color-primary)' }} />
+          </p>
+          <p className="ant-upload-text" style={{ color: 'var(--color-on-surface)' }}>Click or drag file to this area to upload</p>
+          <p className="ant-upload-hint" style={{ color: 'var(--color-on-surface-variant)' }}>
+            Support for a single or bulk upload. Strictly prohibited from uploading company data or other
+            banned files.
+          </p>
+        </Dragger>
+      </Modal>
     </div>
   );
 }

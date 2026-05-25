@@ -105,4 +105,42 @@ export class SalesController {
   removeDeal(@Param('id', ParseUUIDPipe) id: string) {
     return this.salesService.removeDeal(id);
   }
+
+  // --- NEW ENDPOINTS ---
+  @Post('leads/:id/score')
+  @RequirePermissions(Permission.SALES_MANAGE_LEADS)
+  calculateLeadScore(@Param('id', ParseUUIDPipe) id: string) {
+    return this.salesService.calculateLeadScore(id);
+  }
+
+  @Post('leads/:id/assign')
+  @RequirePermissions(Permission.SALES_MANAGE_LEADS)
+  assignLead(@Param('id', ParseUUIDPipe) id: string, @Body('userIds') userIds: string[]) {
+    return this.salesService.assignLeadRoundRobin(id, userIds);
+  }
+
+  @Post('quotations')
+  createQuotation(@Body() dto: any) {
+    return this.salesService.createQuotation(dto);
+  }
+
+  @Post('quotations/:id/resend')
+  resendQuotation(@Param('id', ParseUUIDPipe) id: string) {
+    return this.salesService.resendQuotation(id);
+  }
+
+  @Post('quotations/:id/convert')
+  convertQuotationToSO(@Param('id', ParseUUIDPipe) id: string) {
+    return this.salesService.convertQuotationToSO(id);
+  }
+
+  @Post('delivery-orders')
+  createDeliveryOrder(@Body() dto: any) {
+    return this.salesService.createDeliveryOrder(dto);
+  }
+
+  @Get('analytics/funnel')
+  getSalesFunnelAnalytics() {
+    return this.salesService.getSalesFunnelAnalytics();
+  }
 }

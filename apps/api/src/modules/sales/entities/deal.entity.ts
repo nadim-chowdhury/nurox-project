@@ -44,4 +44,10 @@ export class Deal extends TenantBaseEntity {
 
   @Column({ type: 'text', nullable: true })
   notes: string | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  accountId: string | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  contactId: string | null;
 }

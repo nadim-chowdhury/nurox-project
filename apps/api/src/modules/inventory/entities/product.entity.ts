@@ -1,6 +1,7 @@
-import { Entity, Column, OneToMany } from 'typeorm';
+import { Entity, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { ProductVariant } from './product-variant.entity';
+import { UomGroup } from './uom-group.entity';
 
 export enum ProductStatus {
   ACTIVE = 'ACTIVE',
@@ -41,6 +42,15 @@ export class Product extends BaseEntity {
   @Column({ type: 'int', default: 0 })
   reorderPoint: number;
 
+  @Column({ type: 'int', default: 0 })
+  minStockLevel: number;
+
+  @Column({ type: 'int', default: 0 })
+  maxStockLevel: number;
+
+  @Column({ type: 'boolean', default: false })
+  allowNegativeStock: boolean;
+
   @Column({ type: 'uuid', nullable: true })
   taxClassId: string | null;
 
@@ -59,4 +69,11 @@ export class Product extends BaseEntity {
 
   @OneToMany(() => ProductVariant, (variant) => variant.product)
   variants: ProductVariant[];
+
+  @Column({ type: 'uuid', nullable: true })
+  uomGroupId: string | null;
+
+  @ManyToOne(() => UomGroup, (group) => group.products)
+  @JoinColumn({ name: 'uomGroupId' })
+  uomGroup: UomGroup | null;
 }

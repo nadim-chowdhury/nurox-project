@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, OneToMany, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, Index, DeleteDateColumn } from 'typeorm';
 import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { User } from '../../users/entities/user.entity';
 import { DocumentFolder } from './document-folder.entity';
@@ -35,4 +35,10 @@ export class Document extends TenantBaseEntity {
 
   @Column({ type: 'varchar', length: 50, default: 'PUBLIC' })
   accessControl: 'PUBLIC' | 'DEPARTMENT' | 'OWNER_ONLY' | 'ROLE_RESTRICTED';
+
+  @Column({ type: 'timestamp', nullable: true })
+  expiryDate: Date | null;
+
+  @Column({ type: 'jsonb', nullable: true })
+  signatures: { signerName: string; signatureDate: Date; ipAddress: string }[] | null;
 }

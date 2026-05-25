@@ -58,6 +58,9 @@ export class PurchaseOrder extends TenantBaseEntity {
   @Column({ type: 'text', nullable: true })
   notes: string | null;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  cancellationReason: string | null;
+
   @Column({ type: 'int', default: 1 })
   version: number;
 
@@ -110,4 +113,7 @@ export class PurchaseOrderLine extends TenantBaseEntity {
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   receivedQuantity: number;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  cancelledQuantity: number;
 }

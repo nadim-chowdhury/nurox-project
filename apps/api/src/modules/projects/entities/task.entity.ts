@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Tree, TreeParent, TreeChildren } from 'typeorm';
 import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Project } from './project.entity';
 
@@ -18,6 +18,7 @@ export enum TaskStatus {
 }
 
 @Entity('tasks')
+@Tree("closure-table")
 export class Task extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 255 })
   title: string;
@@ -32,11 +33,17 @@ export class Task extends TenantBaseEntity {
   @JoinColumn({ name: 'projectId' })
   project: Project;
 
-  @Column({ type: 'uuid', nullable: true })
-  assigneeId: string | null;
+  @TreeParent()
+  parent: Task;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  assigneeName: string | null; // Denormalized for rapid dashboard display
+  @TreeChildren()
+  children: Task[];
+
+  @Column({ type: 'jsonb', nullable: true })
+  assignees: string[] | null; // Array of user UUIDs
+
+  @Column({ type: 'boolean', default: true })
+  isBillable: boolean;
 
   @Column({ type: 'enum', enum: TaskPriority, default: TaskPriority.MEDIUM })
   priority: TaskPriority;

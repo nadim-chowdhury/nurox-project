@@ -1,0 +1,21 @@
+/* Gantt overrides for Nurox ERP Liquid Precision Theme */
+
+.gantt-container {
+  font-family: var(--font-body) !important;
+}
+
+.gantt-container ._3eWLt { /* Typically the header container */
+  fill: var(--gantt-header-background) !important;
+}
+
+.gantt-container text {
+  fill: var(--gantt-text-color) !important;
+}
+
+.gantt-container ._2k9YS { /* grid lines */
+  stroke: var(--gantt-grid-color) !important;
+}
+
+.gantt-container ._3_jB1 { /* tick lines */
+  stroke: var(--gantt-grid-color) !important;
+}

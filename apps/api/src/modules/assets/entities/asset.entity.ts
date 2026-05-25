@@ -43,10 +43,10 @@ export class Asset extends TenantBaseEntity {
 
   @Column({
     type: 'enum',
-    enum: ['PURCHASED', 'ACTIVE', 'UNDER_MAINTENANCE', 'DISPOSED'],
+    enum: ['PURCHASED', 'ACTIVE', 'UNDER_MAINTENANCE', 'DISPOSED', 'WRITTEN_OFF'],
     default: 'PURCHASED',
   })
-  status: 'PURCHASED' | 'ACTIVE' | 'UNDER_MAINTENANCE' | 'DISPOSED';
+  status: 'PURCHASED' | 'ACTIVE' | 'UNDER_MAINTENANCE' | 'DISPOSED' | 'WRITTEN_OFF';
 
   @Column({ type: 'uuid', nullable: true })
   assignedEmployeeId: string | null;
@@ -68,4 +68,23 @@ export class Asset extends TenantBaseEntity {
 
   @Column({ type: 'text', nullable: true })
   disposalReason: string | null;
+
+  // Added for Depreciation and Asset Management
+  @Column({ type: 'enum', enum: ['SL', 'DB', 'UOP', 'NONE'], default: 'NONE' })
+  depreciationMethod: 'SL' | 'DB' | 'UOP' | 'NONE';
+
+  @Column({ type: 'int', nullable: true })
+  usefulLifeMonths: number | null;
+
+  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+  depreciationRate: number | null;
+
+  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true })
+  salvageValue: number | null;
+
+  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true })
+  netBookValue: number | null;
+
+  @Column({ type: 'text', nullable: true })
+  qrCodeUrl: string | null;
 }
