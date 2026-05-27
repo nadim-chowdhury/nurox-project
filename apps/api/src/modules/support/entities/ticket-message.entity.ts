@@ -28,7 +28,7 @@ export class TicketMessage {
   @JoinColumn({ name: 'senderId' })
   sender: User;
 
-  @Column({ default: false })
+  @Column({ type: 'boolean', default: false })
   isInternal: boolean;
 
   @Column({ type: 'text' })

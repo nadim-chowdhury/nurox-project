@@ -24,19 +24,19 @@ export class Ticket {
   @JoinColumn({ name: 'tenantId' })
   tenant: Tenant;
 
-  @Column()
+  @Column({ type: 'varchar' })
   title: string;
 
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ default: 'OPEN' })
+  @Column({ type: 'varchar', default: 'OPEN' })
   status: string;
 
-  @Column({ default: 'P3' })
+  @Column({ type: 'varchar', default: 'P3' })
   priority: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   category: string;
 
   @Column({ type: 'uuid' })

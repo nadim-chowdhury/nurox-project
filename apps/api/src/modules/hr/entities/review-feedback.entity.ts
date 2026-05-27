@@ -1,5 +1,5 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { PerformanceReview } from './performance.entity';
 import { User } from '../../users/entities/user.entity';
 
@@ -11,7 +11,7 @@ export enum FeedbackType {
 }
 
 @Entity('review_feedback')
-export class ReviewFeedback extends BaseEntity {
+export class ReviewFeedback extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   performanceReviewId: string;
 

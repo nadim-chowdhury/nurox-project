@@ -17,26 +17,29 @@ export class WorkflowRule {
   @Column({ type: 'uuid' })
   tenantId: string;
 
+  @Column({ type: 'varchar', default: 'ACTIVE' })
+  status: string;
+
   @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenantId' })
   tenant: Tenant;
 
-  @Column()
+  @Column({ type: 'varchar' })
   name: string;
 
-  @Column()
-  triggerEvent: string; // e.g. 'LEAVE_APPROVED'
+  @Column({ type: 'varchar' })
+  triggerEvent: string; // e.g. 'employee.created'
 
   @Column({ type: 'jsonb', nullable: true })
   conditionLogic: any; // e.g. { field: 'department', operator: 'eq', value: 'Engineering' }
 
-  @Column()
+  @Column({ type: 'varchar' })
   actionType: string; // e.g. 'SEND_SLACK_WEBHOOK'
 
   @Column({ type: 'jsonb' })
   actionPayload: any;
 
-  @Column({ default: true })
+  @Column({ type: 'boolean', default: true })
   isActive: boolean;
 
   @CreateDateColumn()

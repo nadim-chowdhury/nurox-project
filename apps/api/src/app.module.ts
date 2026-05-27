@@ -65,6 +65,7 @@ import { ManufacturingModule } from './modules/manufacturing/manufacturing.modul
 import { FleetModule } from './modules/fleet/fleet.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
 import { CommonModule } from './common/common.module';
+import { HealthModule } from './modules/health/health.module';
 
 import { SentryModule } from '@sentry/nestjs/setup';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
@@ -191,11 +192,17 @@ import { TenantInterceptor } from './common/interceptors/tenant.interceptor';
     }),
 
     // ─── GraphQL ─────────────────────────────────────────────────
-    GraphQLModule.forRoot<ApolloDriverConfig>({
+    GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
-      autoSchemaFile: path.join(process.cwd(), 'src/schema.gql'),
-      playground: true, // Optional: Enable in dev mode only
-      path: '/graphql', // The endpoint
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        autoSchemaFile: path.join(process.cwd(), 'src/schema.gql'),
+        // SECURITY: playground and introspection disabled in production
+        playground: config.get<string>('app.nodeEnv') !== 'production',
+        introspection: config.get<string>('app.nodeEnv') !== 'production',
+        path: '/graphql',
+      }),
     }),
 
     // ─── Core Infrastructure ─────────────────────────────────────
@@ -205,6 +212,7 @@ import { TenantInterceptor } from './common/interceptors/tenant.interceptor';
     MailerModule,
     SmsModule,
     CommonModule,
+    HealthModule,
 
     // ─── Feature Modules ─────────────────────────────────────────
     AuthModule,
@@ -260,6 +268,8 @@ export class AppModule implements NestModule {
         { path: 'billing/webhook/(.*)', method: RequestMethod.ALL },
       )
       .forRoutes(
+        // All tenant-scoped modules — every module that stores tenant data
+        // MUST be listed here to enforce tenant isolation via middleware.
         { path: 'hr/(.*)', method: RequestMethod.ALL },
         { path: 'attendance/(.*)', method: RequestMethod.ALL },
         { path: 'leave/(.*)', method: RequestMethod.ALL },
@@ -275,6 +285,19 @@ export class AppModule implements NestModule {
         { path: 'analytics/(.*)', method: RequestMethod.ALL },
         { path: 'chat/(.*)', method: RequestMethod.ALL },
         { path: 'billing/(.*)', method: RequestMethod.ALL },
+        // Previously missing — these modules were bypassing tenant scoping
+        { path: 'documents/(.*)', method: RequestMethod.ALL },
+        { path: 'assets/(.*)', method: RequestMethod.ALL },
+        { path: 'reports/(.*)', method: RequestMethod.ALL },
+        { path: 'support/(.*)', method: RequestMethod.ALL },
+        { path: 'ai/(.*)', method: RequestMethod.ALL },
+        { path: 'automation/(.*)', method: RequestMethod.ALL },
+        { path: 'pos/(.*)', method: RequestMethod.ALL },
+        { path: 'manufacturing/(.*)', method: RequestMethod.ALL },
+        { path: 'fleet/(.*)', method: RequestMethod.ALL },
+        { path: 'compliance/(.*)', method: RequestMethod.ALL },
+        { path: 'integrations/(.*)', method: RequestMethod.ALL },
+        { path: 'users/(.*)', method: RequestMethod.ALL },
       );
   }
 }

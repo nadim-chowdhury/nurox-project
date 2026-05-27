@@ -1,5 +1,5 @@
 import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Warehouse } from './warehouse.entity';
 import { StockTransferItem } from './stock-transfer-item.entity';
 
@@ -11,7 +11,7 @@ export enum StockTransferStatus {
 }
 
 @Entity('stock_transfers')
-export class StockTransfer extends BaseEntity {
+export class StockTransfer extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   fromWarehouseId: string;
 
@@ -26,7 +26,11 @@ export class StockTransfer extends BaseEntity {
   @JoinColumn({ name: 'toWarehouseId' })
   toWarehouse: Warehouse;
 
-  @Column({ type: 'enum', enum: StockTransferStatus, default: StockTransferStatus.DRAFT })
+  @Column({
+    type: 'enum',
+    enum: StockTransferStatus,
+    default: StockTransferStatus.DRAFT,
+  })
   status: StockTransferStatus;
 
   @Column({ type: 'varchar', length: 100, nullable: true })

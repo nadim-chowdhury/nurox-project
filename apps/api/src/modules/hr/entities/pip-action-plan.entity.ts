@@ -1,9 +1,9 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { PerformanceReview } from './performance.entity';
 
 @Entity('pip_action_plans')
-export class PIPActionPlan extends BaseEntity {
+export class PIPActionPlan extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   performanceReviewId: string;
 

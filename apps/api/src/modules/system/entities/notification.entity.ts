@@ -18,7 +18,7 @@ export enum NotificationPriority {
   CRITICAL = 'CRITICAL',
 }
 
-@Entity('notifications')
+@Entity('system_notifications')
 export class Notification extends TenantBaseEntity {
   @Index()
   @Column({ type: 'uuid' })

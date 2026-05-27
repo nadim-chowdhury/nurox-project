@@ -1,5 +1,5 @@
 import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { User } from '../../users/entities/user.entity';
 
 /**
@@ -10,7 +10,7 @@ import { User } from '../../users/entities/user.entity';
  * - Refresh token rotation family tracking
  */
 @Entity('user_sessions')
-export class UserSession extends BaseEntity {
+export class UserSession extends TenantBaseEntity {
   @Index()
   @Column({ type: 'uuid' })
   userId: string;

@@ -21,7 +21,7 @@ export class TicketSla {
   @JoinColumn({ name: 'tenantId' })
   tenant: Tenant;
 
-  @Column()
+  @Column({ type: 'varchar' })
   priority: string; // P1, P2, P3, P4
 
   @Column({ type: 'int' })

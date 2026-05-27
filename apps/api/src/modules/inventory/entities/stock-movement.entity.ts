@@ -1,5 +1,5 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Product } from './product.entity';
 import { ProductVariant } from './product-variant.entity';
 import { Warehouse } from './warehouse.entity';
@@ -15,7 +15,7 @@ export enum StockMovementType {
 }
 
 @Entity('stock_movements')
-export class StockMovement extends BaseEntity {
+export class StockMovement extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   productId: string;
 

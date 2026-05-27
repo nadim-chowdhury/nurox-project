@@ -44,11 +44,8 @@ const persistConfig = {
   whitelist: [
     "auth",
     "ui",
-    "hrApi",
-    "projectsApi",
-    "salesApi",
-    "inventoryApi",
-    "financeApi",
+    // RTK Query caches are intentionally NOT persisted — they re-fetch on mount.
+    // Persisting API caches causes stale data, memory bloat, and cache corruption.
   ],
 };
 

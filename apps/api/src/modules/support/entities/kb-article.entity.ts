@@ -22,19 +22,22 @@ export class KbArticle {
   @JoinColumn({ name: 'tenantId' })
   tenant: Tenant;
 
-  @Column()
+  @Column({ type: 'varchar' })
   title: string;
 
   @Column({ type: 'text' })
   content: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   category: string;
 
-  @Column({ default: 'DRAFT' })
+  @Column({ type: 'varchar', default: 'DRAFT' })
   status: string;
 
-  @Column({ default: false })
+  @Column({ type: 'boolean', default: false })
+  isInternal: boolean;
+
+  @Column({ type: 'boolean', default: false })
   isPublic: boolean;
 
   @Column({ type: 'uuid' })

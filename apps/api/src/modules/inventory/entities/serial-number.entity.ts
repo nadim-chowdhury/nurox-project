@@ -1,5 +1,5 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Product } from './product.entity';
 import { ProductVariant } from './product-variant.entity';
 import { Batch } from './batch.entity';
@@ -11,7 +11,7 @@ export enum SerialNumberStatus {
 }
 
 @Entity('serial_numbers')
-export class SerialNumber extends BaseEntity {
+export class SerialNumber extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   productId: string;
 
@@ -36,6 +36,10 @@ export class SerialNumber extends BaseEntity {
   @Column({ type: 'varchar', length: 100, unique: true })
   serial: string;
 
-  @Column({ type: 'enum', enum: SerialNumberStatus, default: SerialNumberStatus.IN_STOCK })
+  @Column({
+    type: 'enum',
+    enum: SerialNumberStatus,
+    default: SerialNumberStatus.IN_STOCK,
+  })
   status: SerialNumberStatus;
 }

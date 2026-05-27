@@ -1,5 +1,5 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Employee } from './employee.entity';
 
 export enum SalaryChangeReason {
@@ -11,7 +11,7 @@ export enum SalaryChangeReason {
 }
 
 @Entity('salary_history')
-export class SalaryHistory extends BaseEntity {
+export class SalaryHistory extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   employeeId: string;
 

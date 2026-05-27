@@ -1,7 +1,7 @@
 # NUROX ERP — Ultimate SaaS Master Documentation
 
 > **Version:** 2.1 · **Last Updated:** April 2026
-> **Stack:** Next.js 16 · NestJS 11 · TypeORM 1.0 · PostgreSQL 18 · Ant Design 6.x · RTK Query · Custom JWT Auth (Passport.js)
+> **Stack:** Next.js 16 · NestJS 11 · TypeORM 0.3.x · PostgreSQL 17 · Ant Design 6.x · RTK Query · Custom JWT Auth (Passport.js)
 > **Design System:** Liquid Precision — "The Architectural Infinite"
 > **Architecture:** Multi-Tenant SaaS · Module-Based · API-First · Event-Driven
 
@@ -102,8 +102,8 @@
 | ------------------- | ---------------------------------- | ------- | ----------------------------------------------------------- |
 | Framework           | NestJS                             | 11.x    | Modular Node.js backend                                     |
 | Language            | TypeScript                         | 5.x     | Strict type safety                                          |
-| ORM                 | TypeORM                            | 1.0.x   | Database access, migrations, relations (DataSource API)     |
-| Database            | PostgreSQL                         | 18      | Primary relational store                                    |
+| ORM                 | TypeORM                            | 0.3.x   | Database access, migrations, relations (DataSource API)     |
+| Database            | PostgreSQL                         | 17      | Primary relational store                                    |
 | Cache               | Redis                              | 7.x     | Session, cache, rate limit store                            |
 | Queue               | BullMQ                             | 5.x     | Background jobs, email, payroll runs                        |
 | Auth                | Passport.js + JWT                  | latest  | Core backend authentication / token verification            |
@@ -123,9 +123,9 @@
 | Throttling          | @nestjs/throttler                  | latest  | Rate limiting per IP and API key (Redis store)              |
 | Health Check        | @nestjs/terminus                   | latest  | `/health` endpoint                                          |
 | Testing             | Jest + Supertest                   | latest  | Unit + integration + API tests                              |
-| DB Migration CLI    | TypeORM CLI                        | 1.0.x   | `typeorm migration:run` — DataSource API (no Connection)    |
+| DB Migration CLI    | TypeORM CLI                        | 0.3.x   | `typeorm migration:run` — DataSource API (no Connection)    |
 | Event Bus           | EventEmitter2                      | latest  | Cross-module async events                                   |
-| Search              | MeiliSearch                        | 1.x     | Full-text product/employee/document search                  |
+| Search              | MeiliSearch                        | 1.12    | Full-text product/employee/document search                  |
 | AI                  | OpenAI SDK / Anthropic SDK         | latest  | AI assistant, smart suggestions                             |
 | OCR                 | Tesseract.js (NestJS worker)       | 5.x     | Receipt / document scanning                                 |
 | Barcode Scanner     | zxing-js                           | latest  | Barcode/QR decode on server                                 |
@@ -152,7 +152,7 @@
 | Uptime             | Better Uptime                         | Alerting and status page                 |
 | DB Connection Pool | PgBouncer                             | PostgreSQL connection pooling            |
 | Object Storage     | MinIO / AWS S3                        | File and document storage                |
-| Search Engine      | MeiliSearch                           | Self-hosted full-text search             |
+| Search Engine      | MeiliSearch                           | Self-hosted full-text search (v1.12)     |
 | CDN                | Cloudflare                            | Static asset delivery + DDoS protection  |
 | DNS                | Cloudflare DNS                        | Wildcard subdomain routing               |
 | Feature Flags      | Unleash (self-hosted) / Redis flags   | Per-tenant feature toggles               |
@@ -162,23 +162,21 @@
 ### 1.4 Monorepo Structure
 
 ```
-nurox-erp/                          # Turborepo root
+nurox-project/                      # Turborepo root
 ├── apps/
-│   ├── web/                        # Next.js 16 frontend
-│   ├── api/                        # NestJS 11 backend
-│   └── storybook/                  # Storybook component docs (Phase 2 — after core UI stabilizes)
+│   ├── web/                        # Next.js 16 frontend (App Router + next-intl)
+│   └── api/                        # NestJS 11 backend
 ├── packages/
 │   ├── ui/                         # Shared React component library
-│   ├── ui-tokens/                  # Design system tokens (colors, typography, spacing)
+│   ├── ui-tokens/                  # Design system tokens (colors, typography, spacing, antd theme)
 │   ├── shared-schemas/             # Shared Zod 4 DTOs (frontend + backend) — @repo/shared-schemas
-│   ├── config-eslint/              # Shared ESLint config
-│   ├── config-typescript/          # Shared tsconfig bases
-│   └── utils/                      # Shared utility functions (TODO: create)
+│   ├── eslint-config/              # Shared ESLint config — @repo/eslint-config
+│   └── typescript-config/          # Shared tsconfig bases — @repo/typescript-config
 ├── infra/
 │   ├── docker/                     # Docker Compose files
 │   ├── k8s/                        # Kubernetes manifests + Helm chart
-│   └── terraform/                  # Infrastructure as code
-├── scripts/                        # Dev utility scripts
+│   └── observability/              # Monitoring and tracing configuration
+├── docs/                           # Architecture documentation, assets, design system
 ├── turbo.json
 ├── package.json
 └── pnpm-workspace.yaml
@@ -696,10 +694,8 @@ apps/api/
 │   ├── main.ts
 │   ├── app.module.ts
 │   ├── config/
-│   │   ├── typeorm.config.ts
-│   │   ├── redis.config.ts
-│   │   ├── minio.config.ts
-│   │   └── swagger.config.ts
+│   │   ├── app.config.ts                 # All config namespaces (database, jwt, redis, app, mail, oauth, s3, ai)
+│   │   └── env.validation.ts             # Zod-based env validation at boot
 │   ├── common/
 │   │   ├── decorators/
 │   │   │   ├── permissions.decorator.ts
@@ -717,8 +713,11 @@ apps/api/
 │   │   │   └── global-exception.filter.ts
 │   │   ├── pipes/
 │   │   │   └── zod-validation.pipe.ts
-│   │   └── middleware/
-│   │       └── tenant.middleware.ts
+│   │   ├── middlewares/
+│   │   │   ├── tenant.middleware.ts
+│   │   │   ├── maintenance.middleware.ts
+│   │   │   ├── csrf.middleware.ts
+│   │   │   └── cls.middleware.ts
 │   ├── modules/
 │   │   ├── auth/
 │   │   ├── users/
@@ -745,23 +744,39 @@ apps/api/
 │   │   ├── support/
 │   │   └── ai/
 │   └── database/
-│       ├── entities/
-│       ├── migrations/
-│       └── seeds/
+│       ├── database.module.ts
+│       ├── typeorm.config.ts             # DataSource config for CLI migrations
+│       ├── tenant-connection.service.ts
+│       ├── rls.utility.ts
+│       ├── seeds/
+│       │   ├── run-seed.ts
+│       │   ├── seed.module.ts
+│       │   └── seed.service.ts
+│       └── migrations/                   # TypeORM auto-generated migrations
 └── test/
+
+# NOTE: Entities live INSIDE each module directory, not in a central location.
+# Example: modules/hr/entities/employee.entity.ts
+#          modules/auth/entities/role.entity.ts
+#          modules/finance/entities/invoice.entity.ts
 
 packages/shared-schemas/
 ├── src/
-│   ├── auth/
-│   ├── hr/
-│   ├── payroll/
-│   ├── finance/
-│   ├── inventory/
-│   ├── procurement/
-│   ├── sales/
-│   ├── projects/
-│   └── shared/
-└── index.ts
+│   ├── index.ts                          # Re-exports all schemas
+│   ├── auth.schema.ts                    # Login, register, token DTOs
+│   ├── hr.schema.ts                      # Employee, department DTOs
+│   ├── payroll.schema.ts
+│   ├── attendance.schema.ts
+│   ├── finance.schema.ts
+│   ├── inventory.schema.ts
+│   ├── procurement.schema.ts
+│   ├── sales.schema.ts
+│   ├── projects.schema.ts
+│   ├── recruitment.schema.ts
+│   ├── common.schema.ts                  # Pagination, shared enums
+│   └── ... (one flat file per module)
+├── package.json
+└── tsconfig.json
 ```
 
 ---
@@ -1122,7 +1137,9 @@ bootstrap();
 ### 6.2 TypeORM Entity Example
 
 ```typescript
-// database/entities/employee.entity.ts
+// modules/hr/entities/employee.entity.ts
+// NOTE: All entities live INSIDE their module directory, not in a central database/entities/ folder.
+// All tenant-scoped entities MUST extend TenantBaseEntity (see common/entities/tenant-base.entity.ts).
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -1170,7 +1187,8 @@ export class Employee {
 ### 6.3 Shared Zod Schemas
 
 ```typescript
-// packages/shared-schemas/src/hr/employee.schema.ts
+// packages/shared-schemas/src/hr.schema.ts
+// NOTE: Shared schemas use FLAT files (one per module), not subdirectories.
 import { z } from "zod";
 
 export const createEmployeeSchema = z.object({
@@ -1200,7 +1218,7 @@ export type UpdateEmployeeDto = z.infer<typeof updateEmployeeSchema>;
 ### 6.4 Tenant Middleware
 
 ```typescript
-// apps/api/src/common/middleware/tenant.middleware.ts
+// apps/api/src/common/middlewares/tenant.middleware.ts
 import { Injectable, NestMiddleware, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -1231,6 +1249,7 @@ export class TenantMiddleware implements NestMiddleware {
 
 ```typescript
 // apps/api/src/common/interceptors/audit-log.interceptor.ts
+// NOTE: This interceptor must be registered per-controller or globally via APP_INTERCEPTOR.
 import {
   Injectable,
   NestInterceptor,
@@ -1298,7 +1317,7 @@ export class AuditLogInterceptor implements NestInterceptor {
 - PgBouncer: `transaction` mode — per-query connection borrowing
 - Connection timeout: `5000ms`; idle timeout: `30000ms`; query timeout: `30000ms`
 - Read replica support: optional `replication` config for read-heavy analytics queries
-- PostgreSQL version: 18 with `postgres:18-alpine` Docker image
+- PostgreSQL version: 17 with `postgres:17-alpine` Docker image
 
 ### 6.9 Graceful Shutdown
 
@@ -2042,7 +2061,7 @@ CREATE TABLE tenant_modules (
 - [ ] TypeORM migration auto-run — K8s init container before API pod starts; migrate then boot
 - [ ] `husky` + `lint-staged` — ESLint + Prettier + Zod schema check pre-commit
 - [ ] Multi-stage Dockerfiles — builder → production; no dev deps in final image; non-root user
-- [ ] `docker-compose.yml` local dev — Next.js, NestJS, PostgreSQL 18, Redis, MinIO, MailHog, Bull Board, MeiliSearch
+- [ ] `docker-compose.yml` local dev — Next.js, NestJS, PostgreSQL 17, Redis, MinIO, MailHog, Bull Board, MeiliSearch
 - [ ] `HEALTHCHECK CMD curl -f /health` in all Dockerfiles
 - [ ] Non-root user `node:alpine` in all containers
 - [ ] Helm chart — deployment, service, ingress, HPA, PDB, ConfigMap, Secret templates
@@ -2059,7 +2078,7 @@ CREATE TABLE tenant_modules (
 - [ ] Better Uptime — monitors `/health`, `/api/v1/health`, and key frontend pages; public status page
 - [ ] Vitest unit tests — ≥70% coverage threshold; coverage report uploaded to CI artifacts
 - [ ] Playwright E2E — login, create employee, run payroll, create invoice, approve leave, manage inventory
-- [ ] Testcontainers — NestJS integration tests with real PostgreSQL 18 + Redis; no mock ORM
+- [ ] Testcontainers — NestJS integration tests with real PostgreSQL 17 + Redis; no mock ORM
 - [ ] Blue-green deployment support — Helm release name switch via CI environment variable
 - [ ] Database backup — `pg_dump` daily via K8s CronJob → MinIO → S3 replication; 30-day retention
 - [ ] Disaster recovery runbook — documented in `/docs/DISASTER_RECOVERY.md`; tested quarterly
@@ -2431,108 +2450,146 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 NEXT_PUBLIC_MAPBOX_TOKEN=
 
 # ── apps/api/.env ────────────────────────────────────────────────────
-DATABASE_URL=postgresql://user:pass@localhost:5432/nurox_erp
-DATABASE_SCHEMA=public
-REDIS_URL=redis://localhost:6379
-JWT_ACCESS_SECRET=                     # RS256 private key
-JWT_REFRESH_SECRET=
-JWT_ACCESS_EXPIRY=900                  # 15 min
-JWT_REFRESH_EXPIRY=604800              # 7 days
-MINIO_ENDPOINT=localhost
-MINIO_PORT=9000
-MINIO_ACCESS_KEY=
-MINIO_SECRET_KEY=
-MINIO_BUCKET=nurox-erp
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_USER=
-SMTP_PASS=
-TWILIO_SID=
-TWILIO_TOKEN=
-TWILIO_FROM=
+# These MUST match env.validation.ts Zod schema — app won't start if invalid.
+NODE_ENV=development
+PORT=3001
+
+# Database (individual fields, NOT a connection URL)
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=nurox
+DB_PASSWORD=nurox_password
+DB_NAME=nurox_db
+DB_SYNCHRONIZE=true                    # NEVER true in production (enforced by code)
+DB_LOGGING=false
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# JWT (RS256 asymmetric for access tokens)
+JWT_ACCESS_PRIVATE_KEY=                # RS256 PEM private key (auto-generated in dev)
+JWT_ACCESS_PUBLIC_KEY=                 # RS256 PEM public key (auto-generated in dev)
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_SECRET=                    # HMAC secret (auto-generated in dev, REQUIRED in prod)
+JWT_REFRESH_EXPIRY=7d
+JWT_MAGIC_LINK_SECRET=                 # Separate secret for magic links
+JWT_MAGIC_LINK_EXPIRY=10m
+
+# CORS — comma-separated origins
+CORS_ALLOWED_ORIGINS=http://localhost:3000
+
+# Mail (optional in dev — MailHog at localhost:1025)
+MAIL_HOST=localhost
+MAIL_PORT=1025
+MAIL_USER=
+MAIL_PASSWORD=
+MAIL_FROM="Nurox ERP" <noreply@nurox.app>
+
+# OAuth (optional — only for SSO)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_CALLBACK_URL=http://localhost:3001/api/auth/google/callback
+MICROSOFT_CLIENT_ID=
+MICROSOFT_CLIENT_SECRET=
+MICROSOFT_CALLBACK_URL=http://localhost:3001/api/auth/microsoft/callback
+
+# S3 / MinIO (optional in dev)
+S3_ENDPOINT=http://localhost:9000
+S3_ACCESS_KEY_ID=minioadmin
+S3_SECRET_ACCESS_KEY=minioadmin
+S3_BUCKET=nurox-erp
+S3_REGION=us-east-1
+S3_PUBLIC_URL=http://localhost:9000/nurox-erp
+
+# AI (optional)
+OPENAI_API_KEY=
+
+# External services (optional)
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
-SSLCOMMERZ_STORE_ID=
-SSLCOMMERZ_STORE_PASSWORD=
-OPENAI_API_KEY=
-ANTHROPIC_API_KEY=
-MEILISEARCH_HOST=http://localhost:7700
-MEILISEARCH_API_KEY=
 SENTRY_DSN=
-FRONTEND_URL=https://nurox.app
-VAULT_ADDR=                            # HashiCorp Vault (production)
-VAULT_TOKEN=
-POSTHOG_API_KEY=
-GOOGLE_CALENDAR_CLIENT_ID=
-GOOGLE_CALENDAR_CLIENT_SECRET=
+FRONTEND_URL=http://localhost:3000
 ```
 
 ### Appendix E — Docker Compose (Local Dev)
 
 ```yaml
-# infra/docker/docker-compose.yml
+# docker-compose.yml (project root — NOT infra/docker/)
+# Usage: docker compose up -d
 
 services:
-  web:
-    build: ../../apps/web
-    ports: ["3000:3000"]
-    env_file: ../../apps/web/.env.local
-    depends_on: [api]
-
-  api:
-    build: ../../apps/api
-    ports: ["3001:3001"]
-    env_file: ../../apps/api/.env
-    depends_on: [postgres, redis, minio, meilisearch]
-
   postgres:
-    image: postgres:18-alpine
+    image: postgres:17-alpine
+    container_name: nurox_postgres
     environment:
-      POSTGRES_DB: nurox_erp
+      POSTGRES_DB: nurox_db
       POSTGRES_USER: nurox
-      POSTGRES_PASSWORD: nurox_dev
+      POSTGRES_PASSWORD: nurox_password
     volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./init-db:/docker-entrypoint-initdb.d
+      - postgres_data:/var/lib/postgresql/data
     ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nurox"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
+    container_name: nurox_redis
     ports: ["6379:6379"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   minio:
-    image: minio/minio
+    image: minio/minio:latest
+    container_name: nurox_minio
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     ports: ["9000:9000", "9001:9001"]
     volumes:
-      - miniodata:/data
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   meilisearch:
-    image: getmeili/meilisearch:v1.7
+    image: getmeili/meilisearch:v1.12
+    container_name: nurox_meilisearch
     ports: ["7700:7700"]
     environment:
-      MEILI_MASTER_KEY: nurox_dev_meili_key
+      MEILI_MASTER_KEY: "nurox_meili_master_key"
+      MEILI_NO_ANALYTICS: "true"
     volumes:
-      - meilidata:/meili_data
+      - meili_data:/meili_data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   mailhog:
-    image: mailhog/mailhog
-    ports: ["1025:1025", "8025:8025"]
-
-  bullboard:
-    image: deadly0/bull-board
-    ports: ["3002:3000"]
-    environment:
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+    image: mailhog/mailhog:latest
+    container_name: nurox_mailhog
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
 
 volumes:
-  pgdata:
-  miniodata:
-  meilidata:
+  postgres_data:
+  redis_data:
+  minio_data:
+  meili_data:
 ```
 
 ### Appendix F — Permissions Reference
@@ -2753,7 +2810,7 @@ Code Range    Module              Examples
 
 ---
 
-_Nurox ERP Master Documentation — April 2026 — v2.1_
-_Stack: Next.js 16 · NestJS 11 · Ant Design 6 · TypeORM 1.0 · PostgreSQL 18 · Redux Toolkit + RTK Query · React Hook Form · Zod 4 · Custom JWT Auth · Redis · BullMQ · MeiliSearch · Docker · Kubernetes_
+_Nurox ERP Master Documentation — May 2026 — v2.2_
+_Stack: Next.js 16 · NestJS 11 · Ant Design 6 · TypeORM 0.3.x · PostgreSQL 17 · Redux Toolkit + RTK Query · React Hook Form · Zod 4 · Custom JWT Auth · Redis · BullMQ · MeiliSearch · Docker · Kubernetes_
 _Design System: Liquid Precision — "The Architectural Infinite" · Deep Space Palette · Space Grotesk + Manrope_
 _Total: 30 modules · ~692 feature items · SaaS-first · Multi-tenant · API-first · Event-driven_

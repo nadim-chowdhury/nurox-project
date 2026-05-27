@@ -1,5 +1,5 @@
 import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Warehouse } from './warehouse.entity';
 import { GoodsReceiptItem } from './goods-receipt-item.entity';
 
@@ -10,7 +10,7 @@ export enum GoodsReceiptStatus {
 }
 
 @Entity('goods_receipts')
-export class GoodsReceipt extends BaseEntity {
+export class GoodsReceipt extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   warehouseId: string;
 
@@ -21,7 +21,11 @@ export class GoodsReceipt extends BaseEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   reference: string | null;
 
-  @Column({ type: 'enum', enum: GoodsReceiptStatus, default: GoodsReceiptStatus.DRAFT })
+  @Column({
+    type: 'enum',
+    enum: GoodsReceiptStatus,
+    default: GoodsReceiptStatus.DRAFT,
+  })
   status: GoodsReceiptStatus;
 
   @Column({ type: 'timestamp' })

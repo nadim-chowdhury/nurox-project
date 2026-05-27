@@ -11,7 +11,7 @@ export enum NotificationType {
 
 @Entity('notifications')
 export class Notification extends TenantBaseEntity {
-  @Column({ name: 'user_id' })
+  @Column({ name: 'user_id', type: 'uuid' })
   @Index()
   userId: string;
 
@@ -26,16 +26,16 @@ export class Notification extends TenantBaseEntity {
   })
   type: NotificationType;
 
-  @Column()
+  @Column({ type: 'varchar' })
   title: string;
 
   @Column({ type: 'text' })
   message: string;
 
-  @Column({ name: 'action_url', nullable: true })
+  @Column({ name: 'action_url', type: 'varchar', nullable: true })
   actionUrl: string | null;
 
-  @Column({ name: 'is_read', default: false })
+  @Column({ name: 'is_read', type: 'boolean', default: false })
   @Index()
   isRead: boolean;
 }

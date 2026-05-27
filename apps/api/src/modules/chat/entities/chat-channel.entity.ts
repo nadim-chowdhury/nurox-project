@@ -8,7 +8,7 @@ export enum ChatChannelType {
 
 @Entity('chat_channels')
 export class ChatChannel extends TenantBaseEntity {
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   name: string | null;
 
   @Column({

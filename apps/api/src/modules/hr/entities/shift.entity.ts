@@ -1,5 +1,5 @@
 import { Entity, Column } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 
 export enum ShiftType {
   MORNING = 'MORNING',
@@ -9,7 +9,7 @@ export enum ShiftType {
 }
 
 @Entity('shifts')
-export class Shift extends BaseEntity {
+export class Shift extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 100 })
   name: string;
 

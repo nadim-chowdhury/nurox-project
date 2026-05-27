@@ -3,7 +3,7 @@ import { baseQueryWithReauth } from "@/lib/api-client";
 import type {
   SubscriptionPlanDto,
   TenantSubscriptionDto,
-  InvoiceListResponseDto,
+  BillingInvoiceListResponseDto,
   CheckoutRequestDto,
   CheckoutResponseDto,
 } from "@repo/shared-schemas";
@@ -20,7 +20,7 @@ export const billingApi = createApi({
       query: () => "/billing/subscription",
       providesTags: ["Subscription"],
     }),
-    getInvoices: builder.query<InvoiceListResponseDto, void>({
+    getInvoices: builder.query<BillingInvoiceListResponseDto, void>({
       query: () => "/billing/invoices",
       providesTags: ["Invoice"],
     }),

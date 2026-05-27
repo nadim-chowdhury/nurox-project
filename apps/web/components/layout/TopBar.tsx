@@ -12,7 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/hooks/useRedux";
 import { useLogoutMutation } from "@/store/api/authApi";
-import { Breadcrumbs } from "./Breadcrumbs";
+import { Breadcrumbs } from "../common/Breadcrumbs";
 import { NotificationDropdown } from "./NotificationDropdown";
 
 const { Header } = Layout;
@@ -20,7 +20,11 @@ const { Header } = Layout;
 export function TopBar() {
   const router = useRouter();
   const user = useAppSelector((s) => s.auth.user);
-  const { sidebarCollapsed: collapsed, primaryColor, socketStatus } = useAppSelector((s) => s.ui);
+  const {
+    sidebarCollapsed: collapsed,
+    primaryColor,
+    socketStatus,
+  } = useAppSelector((s) => s.ui);
   const [logout] = useLogoutMutation();
 
   const handleLogout = async () => {
@@ -81,13 +85,18 @@ export function TopBar() {
       <Space size={16}>
         {/* Socket Status */}
         <Tooltip title={`System Status: ${socketStatus}`}>
-          <Badge 
+          <Badge
             status={
-              socketStatus === 'connected' ? 'success' : 
-              socketStatus === 'connecting' ? 'processing' : 'error'
-            } 
+              socketStatus === "connected"
+                ? "success"
+                : socketStatus === "connecting"
+                  ? "processing"
+                  : "error"
+            }
           >
-            <WifiOutlined style={{ color: 'var(--color-on-surface-variant)', fontSize: 16 }} />
+            <WifiOutlined
+              style={{ color: "var(--color-on-surface-variant)", fontSize: 16 }}
+            />
           </Badge>
         </Tooltip>
 

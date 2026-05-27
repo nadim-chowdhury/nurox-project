@@ -1,11 +1,11 @@
 import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Product } from './product.entity';
 import { ProductVariant } from './product-variant.entity';
 import { BomItem } from './bom-item.entity';
 
 @Entity('boms')
-export class Bom extends BaseEntity {
+export class Bom extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   productId: string;
 

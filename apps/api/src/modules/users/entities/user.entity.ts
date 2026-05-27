@@ -1,5 +1,5 @@
 import { Entity, Column, Index } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 
 /**
  * User entity — the core identity in the system.
@@ -9,7 +9,7 @@ import { BaseEntity } from '../../../common/entities/base.entity';
  * Refresh token hash is stored for rotation + family invalidation.
  */
 @Entity('users')
-export class User extends BaseEntity {
+export class User extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 100 })
   firstName: string;
 

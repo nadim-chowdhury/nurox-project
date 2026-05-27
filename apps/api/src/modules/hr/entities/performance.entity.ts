@@ -1,5 +1,5 @@
 import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Employee } from './employee.entity';
 
 export enum PerformanceReviewStatus {
@@ -16,7 +16,7 @@ export enum PerformanceReviewType {
 }
 
 @Entity('performance_reviews')
-export class PerformanceReview extends BaseEntity {
+export class PerformanceReview extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   employeeId: string;
 
@@ -64,7 +64,7 @@ export class PerformanceReview extends BaseEntity {
 }
 
 @Entity('key_results')
-export class KeyResult extends BaseEntity {
+export class KeyResult extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   performanceReviewId: string;
 

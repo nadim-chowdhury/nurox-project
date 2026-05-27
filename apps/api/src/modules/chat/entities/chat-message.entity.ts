@@ -5,7 +5,7 @@ import { User } from '../../users/entities/user.entity';
 
 @Entity('chat_messages')
 export class ChatMessage extends TenantBaseEntity {
-  @Column({ name: 'channel_id' })
+  @Column({ name: 'channel_id', type: 'uuid' })
   @Index()
   channelId: string;
 
@@ -13,7 +13,7 @@ export class ChatMessage extends TenantBaseEntity {
   @JoinColumn({ name: 'channel_id' })
   channel: ChatChannel;
 
-  @Column({ name: 'sender_id' })
+  @Column({ name: 'sender_id', type: 'uuid' })
   @Index()
   senderId: string;
 

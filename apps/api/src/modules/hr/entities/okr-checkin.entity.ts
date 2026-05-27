@@ -1,9 +1,9 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { KeyResult } from './performance.entity';
 
 @Entity('okr_checkins')
-export class OKRCheckIn extends BaseEntity {
+export class OKRCheckIn extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   keyResultId: string;
 

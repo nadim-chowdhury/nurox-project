@@ -1,5 +1,5 @@
 import { Entity, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { ProductVariant } from './product-variant.entity';
 import { UomGroup } from './uom-group.entity';
 
@@ -17,7 +17,7 @@ export enum ValuationMethod {
 }
 
 @Entity('products')
-export class Product extends BaseEntity {
+export class Product extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 50, unique: true })
   sku: string;
 

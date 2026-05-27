@@ -1,9 +1,9 @@
 import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('login_events')
-export class LoginEvent extends BaseEntity {
+export class LoginEvent extends TenantBaseEntity {
   @Index()
   @Column({ type: 'uuid', nullable: true })
   userId: string | null;

@@ -1,9 +1,9 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { UomGroup } from './uom-group.entity';
 
 @Entity('uom_conversions')
-export class UomConversion extends BaseEntity {
+export class UomConversion extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   uomGroupId: string;
 

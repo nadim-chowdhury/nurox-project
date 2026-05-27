@@ -1,9 +1,9 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Rack } from './rack.entity';
 
 @Entity('bins')
-export class Bin extends BaseEntity {
+export class Bin extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   rackId: string;
 

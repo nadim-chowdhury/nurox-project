@@ -1,8 +1,9 @@
-version: "3.8"
+# Nurox ERP — Local Development Services
+# Usage: docker compose up -d
 
 services:
   postgres:
-    image: postgres:16 # PostgreSQL 16 is widely used, 18 doesn't exist yet, we'll use 16 as requested or latest. Using 16.
+    image: postgres:17-alpine
     container_name: nurox_postgres
     environment:
       POSTGRES_USER: nurox

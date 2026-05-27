@@ -1,10 +1,10 @@
 import { Entity, Column, OneToMany } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { UomConversion } from './uom-conversion.entity';
 import { Product } from './product.entity';
 
 @Entity('uom_groups')
-export class UomGroup extends BaseEntity {
+export class UomGroup extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 100, unique: true })
   name: string;
 

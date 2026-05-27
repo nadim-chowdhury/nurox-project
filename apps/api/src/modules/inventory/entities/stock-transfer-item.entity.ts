@@ -1,12 +1,12 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { StockTransfer } from './stock-transfer.entity';
 import { Product } from './product.entity';
 import { ProductVariant } from './product-variant.entity';
 import { Batch } from './batch.entity';
 
 @Entity('stock_transfer_items')
-export class StockTransferItem extends BaseEntity {
+export class StockTransferItem extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   stockTransferId: string;
 

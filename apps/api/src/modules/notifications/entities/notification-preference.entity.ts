@@ -12,7 +12,7 @@ export enum NotificationChannel {
 
 @Entity('notification_preferences')
 export class NotificationPreference extends TenantBaseEntity {
-  @Column({ name: 'user_id' })
+  @Column({ name: 'user_id', type: 'uuid' })
   @Index()
   userId: string;
 
@@ -26,6 +26,6 @@ export class NotificationPreference extends TenantBaseEntity {
   @Column({ type: 'enum', enum: NotificationChannel })
   channel: NotificationChannel;
 
-  @Column({ name: 'is_enabled', default: true })
+  @Column({ name: 'is_enabled', type: 'boolean', default: true })
   isEnabled: boolean;
 }

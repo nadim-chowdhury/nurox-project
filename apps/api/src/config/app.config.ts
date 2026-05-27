@@ -36,16 +36,25 @@ export const jwtConfig = registerAs('jwt', () => {
     }
   }
 
+  // Refresh token secret — HMAC-based (separate from RS256 access tokens)
+  const refreshSecret = process.env.JWT_REFRESH_SECRET;
+  if (!refreshSecret && process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_REFRESH_SECRET must be provided in production');
+  }
+
+  // Magic link secret — short-lived tokens for passwordless auth
+  const magicLinkSecret = process.env.JWT_MAGIC_LINK_SECRET;
+  if (!magicLinkSecret && process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_MAGIC_LINK_SECRET must be provided in production');
+  }
+
   return {
     accessPrivateKey: privateKey,
     accessPublicKey: publicKey,
     accessExpiry: process.env.JWT_ACCESS_EXPIRY || '15m',
-    refreshSecret: process.env.JWT_REFRESH_SECRET || 'super-secret-refresh-key',
+    refreshSecret: refreshSecret || crypto.randomBytes(64).toString('hex'),
     refreshExpiry: process.env.JWT_REFRESH_EXPIRY || '7d',
-    magicLinkSecret:
-      process.env.JWT_MAGIC_LINK_SECRET ||
-      process.env.JWT_REFRESH_SECRET ||
-      'magic-secret',
+    magicLinkSecret: magicLinkSecret || crypto.randomBytes(32).toString('hex'),
     magicLinkExpiry: process.env.JWT_MAGIC_LINK_EXPIRY || '10m',
   };
 });

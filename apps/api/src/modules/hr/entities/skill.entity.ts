@@ -1,10 +1,10 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '../../../common/entities/base.entity';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Employee } from './employee.entity';
 import { SkillCatalog } from './skill-catalog.entity';
 
 @Entity('skills')
-export class Skill extends BaseEntity {
+export class Skill extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   employeeId: string;
 
