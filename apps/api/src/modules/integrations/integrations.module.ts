@@ -5,6 +5,7 @@ import { WebhookEndpoint } from './entities/webhook-endpoint.entity';
 import { WebhookDeliveryLog } from './entities/webhook-delivery-log.entity';
 import { WebhookProcessor } from './processors/webhook.processor';
 import { InboundWebhooksController } from './controllers/inbound-webhooks.controller';
+import { WebhooksController } from './controllers/webhooks.controller';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 
@@ -26,7 +27,7 @@ import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
       adapter: BullMQAdapter,
     }),
   ],
-  controllers: [InboundWebhooksController],
+  controllers: [InboundWebhooksController, WebhooksController],
   providers: [WebhookProcessor],
   exports: [TypeOrmModule, BullModule],
 })

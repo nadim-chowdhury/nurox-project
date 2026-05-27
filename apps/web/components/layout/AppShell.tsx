@@ -7,10 +7,13 @@ import { TopBar } from "@/components/layout/TopBar";
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { FloatingActions } from "@/components/common/FloatingActions";
 import { OfflineBanner } from "@/components/common/OfflineBanner";
+import MobileTabBar from "@/components/layout/MobileTabBar";
 import { useAppSelector, useAppDispatch } from "@/hooks/useRedux";
 import { toggleSidebar, toggleCommandPalette } from "@/store/slices/uiSlice";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useGetCurrentSubscriptionQuery } from "@/store/api/billingApi";
+import { Alert } from "antd";
 
 const { Content } = Layout;
 
@@ -18,6 +21,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const collapsed = useAppSelector((s) => s.ui.sidebarCollapsed);
   const dispatch = useAppDispatch();
   const router = useRouter();
+
+  const { data: subscription } = useGetCurrentSubscriptionQuery();
 
   // Global Keyboard Shortcuts
   useEffect(() => {
@@ -69,6 +74,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         <TopBar />
         <OfflineBanner />
+
+        {subscription?.status === "past_due" && (
+          <Alert
+            message="Payment Past Due"
+            description="Your recent payment failed. Please update your payment method to avoid service interruption."
+            type="warning"
+            showIcon
+            banner
+          />
+        )}
+
+        {subscription?.status === "suspended" && (
+          <Alert
+            message="Account Suspended"
+            description="Your account has been suspended due to unpaid invoices. Please update your payment method to restore access."
+            type="error"
+            showIcon
+            banner
+          />
+        )}
+
         <Content
           style={{
             padding: 24,
@@ -79,6 +105,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {children}
           <FloatingActions />
         </Content>
+        <MobileTabBar />
       </Layout>
     </Layout>
   );

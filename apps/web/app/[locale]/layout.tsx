@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   },
   description:
     "Enterprise Resource Planning — HR, Payroll, Finance, Inventory, Sales & Projects",
-  manifest: "/site.webmanifest",
+  manifest: "/manifest.json",
   icons: {
     icon: [
       { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
@@ -66,7 +66,6 @@ export default async function RootLayout({
   // Receiving messages provided in `i18n.ts`
   const messages = await getMessages();
 
-
   const direction = locale === "ar" ? "rtl" : "ltr";
 
   return (
@@ -84,9 +83,7 @@ export default async function RootLayout({
                   <SocketProvider>
                     <ShortcutProvider>
                       <OfflineBanner />
-                      <ErrorBoundary>
-                        {children}
-                      </ErrorBoundary>
+                      <ErrorBoundary>{children}</ErrorBoundary>
                       <CommandPalette />
                     </ShortcutProvider>
                   </SocketProvider>

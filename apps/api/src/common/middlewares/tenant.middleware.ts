@@ -9,6 +9,7 @@ import { Request, Response, NextFunction } from 'express';
 import { DataSource } from 'typeorm';
 import { Tenant } from '../../modules/system/entities/tenant.entity';
 import { TenantCustomDomain } from '../../modules/system/entities/tenant-custom-domain.entity';
+import { TenantSubscription } from '../../modules/billing/entities/tenant-subscription.entity';
 
 export const TENANT_HEADER = 'x-tenant-id';
 
@@ -90,9 +91,24 @@ export class TenantMiddleware implements NestMiddleware {
       }
     }
 
+    // 3. Check Subscription Status (Suspended)
+    const subscription = await this.dataSource
+      .getRepository(TenantSubscription)
+      .findOneBy({ tenantId: tenant.id });
+
+    if (subscription && subscription.status === 'suspended') {
+      // Allow GET requests and billing portal access, but block mutations
+      if (req.method !== 'GET' && !req.path.includes('/billing/')) {
+        throw new ForbiddenException(
+          `Your account is suspended due to unpaid invoices. Please update your payment method.`,
+        );
+      }
+    }
+
     // Attach to standard express request namespace
     req['tenantId'] = tenant.id;
     req['tenant'] = tenant;
+    req['subscription'] = subscription; // Expose subscription down the line
 
     next();
   }

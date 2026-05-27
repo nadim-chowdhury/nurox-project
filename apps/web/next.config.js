@@ -1,8 +1,13 @@
-import createNextIntlPlugin from 'next-intl/plugin';
+const withNextIntl = require('next-intl/plugin')();
 
-const withNextIntl = createNextIntlPlugin();
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  disable: process.env.NODE_ENV === 'development',
+  register: true,
+  skipWaiting: true,
+});
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {};
 
-export default withNextIntl(nextConfig);
+module.exports = withPWA(withNextIntl(nextConfig));

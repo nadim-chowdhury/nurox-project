@@ -56,6 +56,14 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
+import { BillingModule } from './modules/billing/billing.module';
+import { SupportModule } from './modules/support/support.module';
+import { AiModule } from './modules/ai/ai.module';
+import { AutomationModule } from './modules/automation/automation.module';
+import { PosModule } from './modules/pos/pos.module';
+import { ManufacturingModule } from './modules/manufacturing/manufacturing.module';
+import { FleetModule } from './modules/fleet/fleet.module';
+import { ComplianceModule } from './modules/compliance/compliance.module';
 import { CommonModule } from './common/common.module';
 
 import { SentryModule } from '@sentry/nestjs/setup';
@@ -218,6 +226,14 @@ import { TenantInterceptor } from './common/interceptors/tenant.interceptor';
     NotificationsModule,
     ChatModule,
     IntegrationsModule,
+    BillingModule,
+    SupportModule,
+    AiModule,
+    AutomationModule,
+    PosModule,
+    ManufacturingModule,
+    FleetModule,
+    ComplianceModule,
   ],
   controllers: [AppController],
   providers: [
@@ -241,6 +257,7 @@ export class AppModule implements NestModule {
         { path: 'auth/(.*)', method: RequestMethod.ALL },
         { path: 'api/docs', method: RequestMethod.ALL },
         { path: 'health', method: RequestMethod.GET },
+        { path: 'billing/webhook/(.*)', method: RequestMethod.ALL },
       )
       .forRoutes(
         { path: 'hr/(.*)', method: RequestMethod.ALL },
@@ -257,6 +274,7 @@ export class AppModule implements NestModule {
         { path: 'system/(.*)', method: RequestMethod.ALL },
         { path: 'analytics/(.*)', method: RequestMethod.ALL },
         { path: 'chat/(.*)', method: RequestMethod.ALL },
+        { path: 'billing/(.*)', method: RequestMethod.ALL },
       );
   }
 }

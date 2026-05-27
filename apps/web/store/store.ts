@@ -31,6 +31,7 @@ import { assetsApi } from "./api/assetsApi";
 import { documentsApi } from "./api/documentsApi";
 import { chatApi } from "./api/chatApi";
 import { auditApi } from "./api/auditApi";
+import { billingApi } from "./api/billingApi";
 
 /**
  * Persist config — only the auth slice is persisted to localStorage.
@@ -73,6 +74,7 @@ const rootReducer = combineReducers({
   [documentsApi.reducerPath]: documentsApi.reducer,
   [chatApi.reducerPath]: chatApi.reducer,
   [auditApi.reducerPath]: auditApi.reducer,
+  [billingApi.reducerPath]: billingApi.reducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
@@ -103,7 +105,8 @@ export const store = configureStore({
       .concat(assetsApi.middleware)
       .concat(documentsApi.middleware)
       .concat(chatApi.middleware)
-      .concat(auditApi.middleware),
+      .concat(auditApi.middleware)
+      .concat(billingApi.middleware),
   devTools: process.env.NODE_ENV !== "production",
 });
 

@@ -129,4 +129,50 @@ export class MailerService {
       `,
     });
   }
+
+  async sendTrialReminderEmail(email: string, daysLeft: number) {
+    const portalUrl = `${this.configService.get('app.corsOrigin')}/dashboard/settings/billing`;
+    await this.sendMail({
+      to: email,
+      subject: `Your Nurox ERP trial expires in ${daysLeft} days`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
+          <h2 style="color: #00b96b;">Trial Expiring Soon</h2>
+          <p>Your free trial of Nurox ERP will expire in exactly <strong>${daysLeft} days</strong>.</p>
+          <p>To ensure uninterrupted access to your data and tools, please upgrade your subscription plan today.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${portalUrl}" style="background-color: #00b96b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Upgrade Plan</a>
+          </div>
+          <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+          <p style="font-size: 12px; color: #666;">This is an automated message, please do not reply.</p>
+        </div>
+      `,
+    });
+  }
+
+  async sendDunningEmail(email: string, amount: number, attempt: number) {
+    const portalUrl = `${this.configService.get('app.corsOrigin')}/dashboard/settings/billing`;
+    const attemptMsg =
+      attempt >= 3
+        ? 'Final Notice: Your account will be suspended shortly if payment is not received.'
+        : 'We were unable to process your recent payment.';
+
+    await this.sendMail({
+      to: email,
+      subject: `Action Required: Payment Failed (Attempt ${attempt}/3)`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
+          <h2 style="color: #ffb4ab;">Payment Failed</h2>
+          <p>${attemptMsg}</p>
+          <p>The outstanding amount is <strong>$${amount.toFixed(2)}</strong>.</p>
+          <p>Please update your payment method to keep your account active.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${portalUrl}" style="background-color: #1a2235; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; border: 1px solid #3d4a63;">Update Payment Method</a>
+          </div>
+          <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+          <p style="font-size: 12px; color: #666;">This is an automated message, please do not reply.</p>
+        </div>
+      `,
+    });
+  }
 }

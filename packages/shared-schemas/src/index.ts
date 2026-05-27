@@ -1,8 +1,8 @@
 export * from "./common.schema";
 export * from "./auth.schema";
 export * from "./procurement.schema";
-export * from './recruitment.schema';
-export * from './asset.schema';
+export * from "./recruitment.schema";
+export * from "./asset.schema";
 
 export * from "./finance.schema";
 export * from "./permissions.schema";
@@ -14,4 +14,12 @@ export * from "./attendance.schema";
 export * from "./inventory.schema";
 export * from "./user.schema";
 export * from "./projects.schema";
-export * from "./sales.schema";
+export * from "./finance.schema";
+export * from "./billing.schema";
+export * from "./support.schema";
+export * from "./ai.schema";
+export * from "./automation.schema";
+export * from "./pos.schema";
+export * from "./manufacturing.schema";
+export * from "./fleet.schema";
+export * from "./compliance.schema";

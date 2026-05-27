@@ -14,6 +14,10 @@ import { SamlStrategy } from './strategies/saml.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UsersModule } from '../users/users.module';
 import { MailerModule } from '../mailer/mailer.module';
+import { WebauthnController } from './controllers/webauthn.controller';
+import { PushController } from './controllers/push.controller';
+import { WebauthnService } from './services/webauthn.service';
+import { PushService } from './services/push.service';
 
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserSession } from './entities/user-session.entity';
@@ -43,7 +47,12 @@ import { forwardRef } from '@nestjs/common';
       }),
     }),
   ],
-  controllers: [AuthController, RolesController],
+  controllers: [
+    AuthController,
+    RolesController,
+    WebauthnController,
+    PushController,
+  ],
   providers: [
     AuthService,
     RolesService,
@@ -54,6 +63,8 @@ import { forwardRef } from '@nestjs/common';
     SamlStrategy,
     JwtAuthGuard,
     PermissionsGuard,
+    WebauthnService,
+    PushService,
   ],
   exports: [AuthService, RolesService, PermissionsGuard, TypeOrmModule],
 })
