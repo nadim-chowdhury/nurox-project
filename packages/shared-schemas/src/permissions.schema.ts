@@ -106,6 +106,14 @@ export enum Permission {
   AI_ACCESS = "ai:access",
   AUTOMATION_MANAGE_RULES = "automation:manage_rules",
 
+  // Reports
+  REPORTS_READ = "reports:read",
+  REPORTS_WRITE = "reports:write",
+
+  // Admin (General)
+  ADMIN_READ = "admin:read",
+  ADMIN_WRITE = "admin:write",
+
   // Billing (SaaS)
   BILLING_VIEW = "billing:view",
   BILLING_MANAGE = "billing:manage",

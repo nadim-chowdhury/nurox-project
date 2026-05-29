@@ -31,7 +31,8 @@ export class BangladeshTaxStrategy implements ITaxCalculator {
 
     const aitAmount = payload.baseAmount * aitRate;
 
-    const breakdown = [];
+    const breakdown: Array<{ taxName: string; amount: number; rate: number }> =
+      [];
 
     if (sdAmount > 0) {
       breakdown.push({

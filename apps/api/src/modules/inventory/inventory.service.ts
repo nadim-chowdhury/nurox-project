@@ -339,6 +339,12 @@ export class InventoryService implements OnModuleInit {
 
         // Update Global Batch Total
         const batch = item.batch;
+        if (!batch) {
+          this.logger.warn(
+            `Inventory item ${item.id} has no associated batch, skipping.`,
+          );
+          continue;
+        }
         batch.remainingQuantity =
           Number(batch.remainingQuantity) - issueFromBatch;
         await manager.save(batch);

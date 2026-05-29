@@ -19,6 +19,7 @@ import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { Permission } from '../auth/enums/permissions.enum';
 import { CheckModule } from '../../common/guards/module.guard';
+import { RegularizationStatus } from './entities/regularization.entity';
 import {
   CheckInDto,
   checkInSchema,

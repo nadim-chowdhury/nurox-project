@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Steps, Form, Button, Card, message } from "antd";
-import { useForm } from "react-hook-form";
+import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   createEmployeeSchema,
@@ -40,7 +40,7 @@ export const NewHireWizard: React.FC = () => {
     trigger,
     formState: { errors },
   } = useForm<CreateEmployeeDto>({
-    resolver: zodResolver(createEmployeeSchema),
+    resolver: zodResolver(createEmployeeSchema) as Resolver<CreateEmployeeDto>,
     defaultValues: {
       firstName: "",
       lastName: "",

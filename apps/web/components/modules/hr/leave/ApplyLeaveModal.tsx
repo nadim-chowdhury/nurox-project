@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Modal, Button, Space, message } from "antd";
-import { useForm } from "react-hook-form";
+import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { leaveRequestSchema, type LeaveRequestDto } from "@repo/shared-schemas";
 import { useApplyLeaveMutation } from "@/store/api/attendanceApi";
@@ -27,7 +27,7 @@ export function ApplyLeaveModal({ open, onClose, employeeId }: Props) {
     reset,
     formState: { isSubmitting },
   } = useForm<LeaveRequestDto>({
-    resolver: zodResolver(leaveRequestSchema),
+    resolver: zodResolver(leaveRequestSchema) as Resolver<LeaveRequestDto>,
     defaultValues: {
       employeeId,
       leaveType: "ANNUAL" as any,

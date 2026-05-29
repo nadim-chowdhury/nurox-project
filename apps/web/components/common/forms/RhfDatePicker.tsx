@@ -39,7 +39,9 @@ export function RhfDatePicker<T extends FieldValues>({
             {...field}
             {...props}
             value={value ? dayjs(value) : null}
-            onChange={(date) => onChange(date ? date.toISOString() : null)}
+            onChange={(date) =>
+              onChange(date && !Array.isArray(date) ? date.toISOString() : null)
+            }
             style={{ width: "100%", ...props.style }}
           />
         </Form.Item>

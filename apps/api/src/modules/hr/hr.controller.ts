@@ -562,13 +562,6 @@ export class HrController {
     return this.hrService.getSuccessionPlansByEmployee(id);
   }
 
-  @Post('departments')
-  @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
-  createDepartment(@Body() dto: CreateDepartmentSchemaDto) {
-    const parsed = createDepartmentSchema.parse(dto);
-    return this.hrService.createDepartment(parsed);
-  }
-
   @Get('departments')
   @RequirePermissions(Permission.HR_VIEW_DEPARTMENTS)
   findAllDepartments() {
@@ -581,18 +574,8 @@ export class HrController {
     return this.hrService.findDepartmentById(id);
   }
 
-  @Patch('departments/:id')
-  @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
-  updateDepartment(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateDepartmentSchemaDto,
-  ) {
-    const parsed = updateDepartmentSchema.parse(dto);
-    return this.hrService.updateDepartment(id, parsed);
-  }
-
   @Delete('departments/:id')
-  @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
+  @RequirePermissions(Permission.HR_MANAGE_DEPARTMENTS)
   @HttpCode(HttpStatus.NO_CONTENT)
   removeDepartment(@Param('id', ParseUUIDPipe) id: string) {
     return this.hrService.removeDepartment(id);

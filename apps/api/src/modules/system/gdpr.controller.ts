@@ -18,7 +18,7 @@ import { UsersService } from '../users/users.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConsentLog } from './entities/consent-log.entity';
-import * as archiver from 'archiver';
+import archiver from 'archiver';
 
 @ApiTags('GDPR & Compliance')
 @Controller('admin/gdpr')

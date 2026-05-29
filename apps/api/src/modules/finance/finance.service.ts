@@ -175,7 +175,7 @@ export class FinanceService {
         const nextParent = await this.accountRepo.findOne({
           where: { id: nextParentId, tenantId: this.tenantId },
         });
-        nextParentId = nextParent?.parentId;
+        nextParentId = nextParent?.parentId ?? null;
       }
     }
   }

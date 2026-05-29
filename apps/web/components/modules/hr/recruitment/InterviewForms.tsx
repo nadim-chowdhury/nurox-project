@@ -9,7 +9,7 @@ import {
   useSubmitInterviewFeedbackMutation,
 } from "@/store/api/recruitmentApi";
 import { useGetUsersQuery } from "@/store/api/usersApi";
-import { useForm } from "react-hook-form";
+import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   interviewFormSchema,
@@ -40,7 +40,7 @@ export function InterviewForm({
   const users = usersResponse?.data;
 
   const { control, handleSubmit, reset } = useForm<InterviewFormDto>({
-    resolver: zodResolver(interviewFormSchema),
+    resolver: zodResolver(interviewFormSchema) as Resolver<InterviewFormDto>,
     defaultValues: {
       applicationId,
       interviewerIds: [],
@@ -137,7 +137,9 @@ export function InterviewFeedbackForm({
   const [submitFeedback, { isLoading }] = useSubmitInterviewFeedbackMutation();
 
   const { control, handleSubmit, reset } = useForm<InterviewFeedbackDto>({
-    resolver: zodResolver(interviewFeedbackSchema),
+    resolver: zodResolver(
+      interviewFeedbackSchema,
+    ) as Resolver<InterviewFeedbackDto>,
     defaultValues: {
       rating: 0,
       feedback: "",

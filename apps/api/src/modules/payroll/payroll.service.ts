@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import {
   PayrollRun,
   Payslip,
@@ -763,6 +763,21 @@ export class PayrollService {
     }
 
     return content;
+  }
+
+  async generateBankTransferFile(runId: string): Promise<string> {
+    const payslips = await this.payslipRepo.find({
+      where: { payrollRunId: runId, tenantId: this.tenantId },
+      relations: ['employee'],
+    });
+
+    let csv =
+      'Employee Name,Employee ID,Bank Name,Branch,Account Number,Routing Number,Net Pay,Currency\n';
+    for (const p of payslips) {
+      csv += `${p.employee.firstName} ${p.employee.lastName},${p.employee.employeeId},${p.employee.bankName || ''},${p.employee.bankBranch || ''},${p.employee.accountNumber || ''},${p.employee.routingNumber || ''},${p.netPay},${p.payoutCurrency || 'USD'}\n`;
+    }
+
+    return csv;
   }
 
   async getArrearsForEmployee(

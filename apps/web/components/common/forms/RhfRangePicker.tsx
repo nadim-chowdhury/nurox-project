@@ -1,14 +1,12 @@
 "use client";
 
 import React from "react";
-import { Form, DatePicker } from "antd";
+import { Form, DatePicker, GetProps } from "antd";
 import { Control, Controller, FieldValues, Path } from "react-hook-form";
 import dayjs from "dayjs";
 
-const { RangePicker } = DatePicker;
-
 // Extracting types from DatePicker.RangePicker
-type RangePickerProps = React.ComponentProps<typeof RangePicker>;
+type RangePickerProps = GetProps<typeof DatePicker.RangePicker>;
 
 interface RhfRangePickerProps<T extends FieldValues> extends RangePickerProps {
   name: Path<T>;
@@ -40,7 +38,7 @@ export function RhfRangePicker<T extends FieldValues>({
           validateStatus={error ? "error" : ""}
           help={error?.message || help}
         >
-          <RangePicker
+          <DatePicker.RangePicker
             {...field}
             {...props}
             value={value ? [dayjs(value[0]), dayjs(value[1])] : null}
