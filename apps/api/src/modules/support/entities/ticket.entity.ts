@@ -44,10 +44,4 @@ export class Ticket extends TenantBaseEntity {
 
   @Column({ type: 'timestamp', nullable: true })
   resolvedAt: Date;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

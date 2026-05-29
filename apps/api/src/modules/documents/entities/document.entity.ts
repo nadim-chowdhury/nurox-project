@@ -1,4 +1,11 @@
-import { Entity, Column, ManyToOne, OneToMany, Index, DeleteDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  ManyToOne,
+  OneToMany,
+  Index,
+  DeleteDateColumn,
+} from 'typeorm';
 import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { User } from '../../users/entities/user.entity';
 import { DocumentFolder } from './document-folder.entity';
@@ -40,5 +47,7 @@ export class Document extends TenantBaseEntity {
   expiryDate: Date | null;
 
   @Column({ type: 'jsonb', nullable: true })
-  signatures: { signerName: string; signatureDate: Date; ipAddress: string }[] | null;
+  signatures:
+    | { signerName: string; signatureDate: Date; ipAddress: string }[]
+    | null;
 }

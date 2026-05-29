@@ -11,9 +11,21 @@ import { UpdateDealDto } from './dto/update-deal.dto';
 import { Account } from './entities/account.entity';
 import { Contact } from './entities/contact.entity';
 import { ActivityLog } from './entities/activity-log.entity';
-import { Quotation, QuotationStatus, QuotationLine } from './entities/quotation.entity';
-import { SalesOrder, SOStatus, SalesOrderLine } from './entities/sales-order.entity';
-import { DeliveryOrder, DOStatus, DeliveryOrderLine } from './entities/delivery-order.entity';
+import {
+  Quotation,
+  QuotationStatus,
+  QuotationLine,
+} from './entities/quotation.entity';
+import {
+  SalesOrder,
+  SOStatus,
+  SalesOrderLine,
+} from './entities/sales-order.entity';
+import {
+  DeliveryOrder,
+  DOStatus,
+  DeliveryOrderLine,
+} from './entities/delivery-order.entity';
 import { Pricelist } from './entities/pricelist.entity';
 
 @Injectable()
@@ -124,7 +136,7 @@ export class SalesService {
     if (lead.phone) score += 10;
     if (lead.estimatedValue && lead.estimatedValue > 10000) score += 20;
     if (lead.source === 'Referral') score += 15;
-    
+
     lead.score = score;
     await this.leadRepo.save(lead);
     return score;
@@ -149,37 +161,45 @@ export class SalesService {
   }
 
   async resendQuotation(quotationId: string): Promise<Quotation> {
-    const qt = await this.quotationRepo.findOne({ where: { id: quotationId }, relations: ['lines'] });
+    const qt = await this.quotationRepo.findOne({
+      where: { id: quotationId },
+      relations: ['lines'],
+    });
     if (!qt) throw new NotFoundException('Quotation not found');
-    
+
     // Create new version
     const newQt = this.quotationRepo.create({
       ...qt,
       id: undefined,
       quotationNumber: `${qt.quotationNumber.split('-v')[0]}-v${qt.version + 1}`,
       version: qt.version + 1,
-    }) as Quotation;
-    
+    });
+
     // Mark old as expired
     qt.status = QuotationStatus.EXPIRED;
     await this.quotationRepo.save(qt);
-    
+
     return this.quotationRepo.save(newQt);
   }
 
   // --- SALES ORDERS ---
   async convertQuotationToSO(quotationId: string): Promise<SalesOrder> {
-    const qt = await this.quotationRepo.findOne({ where: { id: quotationId }, relations: ['lines'] });
+    const qt = await this.quotationRepo.findOne({
+      where: { id: quotationId },
+      relations: ['lines'],
+    });
     if (!qt) throw new NotFoundException('Quotation not found');
 
-    const soLines = qt.lines.map(l => this.soRepo.manager.create(SalesOrderLine, {
-      productId: l.productId,
-      variantId: l.variantId,
-      quantity: l.quantity,
-      unitPrice: l.unitPrice,
-      discountPercent: l.discountPercent,
-      taxPercent: l.taxPercent,
-    }));
+    const soLines = qt.lines.map((l) =>
+      this.soRepo.manager.create(SalesOrderLine, {
+        productId: l.productId,
+        variantId: l.variantId,
+        quantity: l.quantity,
+        unitPrice: l.unitPrice,
+        discountPercent: l.discountPercent,
+        taxPercent: l.taxPercent,
+      }),
+    );
 
     const so = this.soRepo.create({
       quotationId: qt.id,
@@ -188,7 +208,7 @@ export class SalesService {
       orderDate: new Date(),
       currency: qt.currency,
       lines: soLines,
-    }) as SalesOrder;
+    });
 
     qt.status = QuotationStatus.ACCEPTED;
     await this.quotationRepo.save(qt);
@@ -196,11 +216,14 @@ export class SalesService {
     return this.soRepo.save(so);
   }
 
-  async checkCreditLimit(accountId: string, soAmount: number): Promise<boolean> {
+  async checkCreditLimit(
+    accountId: string,
+    soAmount: number,
+  ): Promise<boolean> {
     // Mock logic: block if account exceeds a certain hardcoded limit
     const MAX_LIMIT = 50000;
     // In reality, this would sum up AR balance from Finance module
-    const currentBalance = 0; 
+    const currentBalance = 0;
     if (currentBalance + soAmount > MAX_LIMIT) {
       throw new Error('Credit limit exceeded');
     }
@@ -216,17 +239,25 @@ export class SalesService {
     const saved = await this.doRepo.save(doRecord);
 
     // Update SO delivered quantities
-    const so = await this.soRepo.findOne({ where: { id: dto.salesOrderId }, relations: ['lines'] });
+    const so = await this.soRepo.findOne({
+      where: { id: dto.salesOrderId },
+      relations: ['lines'],
+    });
     if (so) {
       for (const line of saved.lines) {
-        const soLine = so.lines.find(l => l.id === line.soLineId);
+        const soLine = so.lines.find((l) => l.id === line.soLineId);
         if (soLine) {
-          soLine.deliveredQuantity = Number(soLine.deliveredQuantity) + Number(line.quantity);
+          soLine.deliveredQuantity =
+            Number(soLine.deliveredQuantity) + Number(line.quantity);
         }
       }
-      
-      const allDelivered = so.lines.every(l => Number(l.deliveredQuantity) >= Number(l.quantity));
-      so.status = allDelivered ? SOStatus.DELIVERED : SOStatus.PARTIALLY_DELIVERED;
+
+      const allDelivered = so.lines.every(
+        (l) => Number(l.deliveredQuantity) >= Number(l.quantity),
+      );
+      so.status = allDelivered
+        ? SOStatus.DELIVERED
+        : SOStatus.PARTIALLY_DELIVERED;
       await this.soRepo.save(so);
     }
 
@@ -235,13 +266,15 @@ export class SalesService {
 
   // --- ANALYTICS ---
   async getSalesFunnelAnalytics() {
-    const leadsByStatus = await this.leadRepo.createQueryBuilder('lead')
+    const leadsByStatus = await this.leadRepo
+      .createQueryBuilder('lead')
       .select('lead.status', 'status')
       .addSelect('COUNT(*)', 'count')
       .groupBy('lead.status')
       .getRawMany();
 
-    const dealsByStage = await this.dealRepo.createQueryBuilder('deal')
+    const dealsByStage = await this.dealRepo
+      .createQueryBuilder('deal')
       .select('deal.stage', 'stage')
       .addSelect('COUNT(*)', 'count')
       .groupBy('deal.stage')

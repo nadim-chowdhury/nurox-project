@@ -82,14 +82,18 @@ export class ProjectsService {
 
   async createTask(dto: any): Promise<Task> {
     const project = await this.findProjectById(dto.projectId);
-    
+
     let parent: Task | null = null;
     if (dto.parentId) {
       parent = await this.taskRepo.findOneBy({ id: dto.parentId });
       if (!parent) throw new NotFoundException('Parent task not found');
     }
 
-    const task = this.taskRepo.create({ ...dto, project, parent } as unknown as Task);
+    const task = this.taskRepo.create({
+      ...dto,
+      project,
+      parent,
+    } as unknown as Task);
     return this.taskRepo.save(task);
   }
 
@@ -98,10 +102,10 @@ export class ProjectsService {
     const treeRepo = this.taskRepo.manager.getTreeRepository(Task);
     const roots = await treeRepo.findRoots();
     // Filter roots by project ID
-    const projectRoots = roots.filter(t => t.projectId === projectId);
-    
+    const projectRoots = roots.filter((t) => t.projectId === projectId);
+
     const treeTasks = await Promise.all(
-      projectRoots.map(root => treeRepo.findDescendantsTree(root))
+      projectRoots.map((root) => treeRepo.findDescendantsTree(root)),
     );
     return treeTasks;
   }
@@ -163,19 +167,27 @@ export class ProjectsService {
 
   async bulkTimeLog(dto: any): Promise<TimeLog[]> {
     // Expects array of logs
-    const logs = this.timeLogRepo.create(dto as any[]) as TimeLog[];
+    const logs = this.timeLogRepo.create(dto as any[]);
     return this.timeLogRepo.save(logs);
   }
 
   // --- TIMESHEETS ---
-  async submitTimesheet(userId: string, periodStartDate: Date, periodEndDate: Date): Promise<Timesheet> {
-    const logs = await this.timeLogRepo.createQueryBuilder('log')
+  async submitTimesheet(
+    userId: string,
+    periodStartDate: Date,
+    periodEndDate: Date,
+  ): Promise<Timesheet> {
+    const logs = await this.timeLogRepo
+      .createQueryBuilder('log')
       .where('log.userId = :userId', { userId })
       .andWhere('log.startTime >= :start', { start: periodStartDate })
       .andWhere('log.startTime <= :end', { end: periodEndDate })
       .getMany();
 
-    const totalHours = logs.reduce((sum, log) => sum + (log.durationHours || 0), 0);
+    const totalHours = logs.reduce(
+      (sum, log) => sum + (log.durationHours || 0),
+      0,
+    );
 
     const timesheet = this.timesheetRepo.create({
       userId,
@@ -184,7 +196,7 @@ export class ProjectsService {
       totalHours,
       status: TimesheetStatus.SUBMITTED,
     } as unknown as Timesheet);
-    
+
     const saved = await this.timesheetRepo.save(timesheet);
 
     // Link logs to timesheet
@@ -196,10 +208,13 @@ export class ProjectsService {
     return saved;
   }
 
-  async approveTimesheet(timesheetId: string, managerId: string): Promise<Timesheet> {
+  async approveTimesheet(
+    timesheetId: string,
+    managerId: string,
+  ): Promise<Timesheet> {
     const timesheet = await this.timesheetRepo.findOneBy({ id: timesheetId });
     if (!timesheet) throw new NotFoundException('Timesheet not found');
-    
+
     timesheet.status = TimesheetStatus.APPROVED;
     timesheet.managerId = managerId;
     const saved = await this.timesheetRepo.save(timesheet);
@@ -212,16 +227,22 @@ export class ProjectsService {
   // --- ANALYTICS ---
   async getProjectHealth(projectId: string) {
     const project = await this.findProjectById(projectId);
-    const logs = await this.timeLogRepo.createQueryBuilder('log')
+    const logs = await this.timeLogRepo
+      .createQueryBuilder('log')
       .innerJoin('log.task', 'task')
       .where('task.projectId = :projectId', { projectId })
       .getMany();
-    
-    const actualHours = logs.reduce((sum, log) => sum + (log.durationHours || 0), 0);
+
+    const actualHours = logs.reduce(
+      (sum, log) => sum + (log.durationHours || 0),
+      0,
+    );
     const budgetHours = project.budgetTime || 0;
-    
-    const scopeCreep = budgetHours > 0 ? ((actualHours - budgetHours) / budgetHours) * 100 : 0;
-    const statusRAG = scopeCreep > 20 ? 'RED' : scopeCreep > 0 ? 'AMBER' : 'GREEN';
+
+    const scopeCreep =
+      budgetHours > 0 ? ((actualHours - budgetHours) / budgetHours) * 100 : 0;
+    const statusRAG =
+      scopeCreep > 20 ? 'RED' : scopeCreep > 0 ? 'AMBER' : 'GREEN';
 
     return {
       actualHours,
@@ -232,10 +253,13 @@ export class ProjectsService {
   }
 
   async getResourceAllocation() {
-    const data = await this.timeLogRepo.createQueryBuilder('log')
+    const data = await this.timeLogRepo
+      .createQueryBuilder('log')
       .select('log.userId', 'userId')
       .addSelect('SUM(log.durationHours)', 'totalHours')
-      .where('log.startTime >= :date', { date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }) // Last 30 days
+      .where('log.startTime >= :date', {
+        date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      }) // Last 30 days
       .groupBy('log.userId')
       .getRawMany();
     return data;

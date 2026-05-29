@@ -15,7 +15,4 @@ export class CurrencyRate extends BaseEntity {
 
   @Column({ type: 'date' })
   rateDate: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
 }

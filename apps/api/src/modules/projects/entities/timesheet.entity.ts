@@ -22,7 +22,11 @@ export class Timesheet extends TenantBaseEntity {
   @Column({ type: 'timestamptz' })
   periodEndDate: Date;
 
-  @Column({ type: 'enum', enum: TimesheetStatus, default: TimesheetStatus.DRAFT })
+  @Column({
+    type: 'enum',
+    enum: TimesheetStatus,
+    default: TimesheetStatus.DRAFT,
+  })
   status: TimesheetStatus;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })

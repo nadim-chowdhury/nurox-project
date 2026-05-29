@@ -25,10 +25,4 @@ export class PosSession extends TenantBaseEntity {
 
   @Column({ type: 'enum', enum: ['OPEN', 'CLOSED'], default: 'OPEN' })
   status: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

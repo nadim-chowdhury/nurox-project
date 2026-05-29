@@ -15,6 +15,8 @@ import { BullModule } from '@nestjs/bullmq';
 import { RecruitmentProcessor } from './recruitment.processor';
 import { MailerModule } from '../mailer/mailer.module';
 import { DatabaseModule } from '../../database/database.module';
+import { LeaveModule } from '../leave/leave.module';
+import { PayrollModule } from '../payroll/payroll.module';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { DatabaseModule } from '../../database/database.module';
     UsersModule,
     MailerModule,
     DatabaseModule,
+    LeaveModule,
+    PayrollModule,
   ],
   controllers: [RecruitmentController, PublicRecruitmentController],
   providers: [RecruitmentService, RecruitmentProcessor],

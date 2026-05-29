@@ -31,10 +31,4 @@ export class SubscriptionPlan extends BaseEntity {
 
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

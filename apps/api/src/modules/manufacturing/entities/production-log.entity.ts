@@ -33,7 +33,4 @@ export class ProductionLog extends TenantBaseEntity {
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   machineHours: number;
-
-  @CreateDateColumn()
-  createdAt: Date;
 }

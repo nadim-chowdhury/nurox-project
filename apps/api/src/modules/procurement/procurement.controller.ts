@@ -108,15 +108,30 @@ export class ProcurementController {
   @Post('purchase-orders/:id/cancel')
   cancelPO(
     @Param('id') id: string,
-    @Body() dto: { reason: string; lineItemsToCancel?: { poLineId: string; quantity: number }[] }
+    @Body()
+    dto: {
+      reason: string;
+      lineItemsToCancel?: { poLineId: string; quantity: number }[];
+    },
   ) {
-    return this.procurementService.cancelPurchaseOrder(id, dto.reason, dto.lineItemsToCancel);
+    return this.procurementService.cancelPurchaseOrder(
+      id,
+      dto.reason,
+      dto.lineItemsToCancel,
+    );
   }
 
   @Post('grns/:id/inspect')
   inspectGRN(
     @Param('id') id: string,
-    @Body() dto: { inspections: { grnLineId: string; acceptedQuantity: number; rejectedQuantity: number }[] }
+    @Body()
+    dto: {
+      inspections: {
+        grnLineId: string;
+        acceptedQuantity: number;
+        rejectedQuantity: number;
+      }[];
+    },
   ) {
     return this.procurementService.inspectGrn(id, dto.inspections);
   }

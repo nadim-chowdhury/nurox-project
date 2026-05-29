@@ -113,14 +113,14 @@ export class InventoryController {
   }
 
   @Get('stock/aging')
-  getAging() {
-    return this.inventoryService.getInventoryAging();
+  getAging(@Query('warehouseId') warehouseId?: string) {
+    return this.inventoryService.getInventoryAging(warehouseId);
   }
 
   @Get('stock/valuation')
   @ApiOperation({ summary: 'Get stock valuation report' })
-  getStockValuation() {
-    return this.inventoryService.getStockValuation();
+  getStockValuation(@Query('warehouseId') warehouseId?: string) {
+    return this.inventoryService.getStockValuation(warehouseId);
   }
 
   @Get('stock/expiry-alerts')

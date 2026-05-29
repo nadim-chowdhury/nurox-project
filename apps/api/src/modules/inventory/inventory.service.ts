@@ -27,10 +27,16 @@ import { StockCountItem } from './entities/stock-count-item.entity';
 import { GoodsReceipt } from './entities/goods-receipt.entity';
 import { GoodsIssue } from './entities/goods-issue.entity';
 import { GoodsReturn } from './entities/goods-return.entity';
-import { StockTransfer, StockTransferStatus } from './entities/stock-transfer.entity';
+import {
+  StockTransfer,
+  StockTransferStatus,
+} from './entities/stock-transfer.entity';
 import { SerialNumber } from './entities/serial-number.entity';
 import { Bom } from './entities/bom.entity';
 import { UomGroup } from './entities/uom-group.entity';
+import { Inventory } from './entities/inventory.entity';
+import { EntityManager } from 'typeorm';
+import { ClsService } from 'nestjs-cls';
 
 @Injectable()
 export class InventoryService implements OnModuleInit {
@@ -53,10 +59,66 @@ export class InventoryService implements OnModuleInit {
     private readonly batchRepo: Repository<Batch>,
     @InjectRepository(StockMovement)
     private readonly movementRepo: Repository<StockMovement>,
+    @InjectRepository(Inventory)
+    private readonly inventoryRepo: Repository<Inventory>,
     @InjectQueue('inventory_alerts')
     private readonly alertQueue: Queue,
     private readonly dataSource: DataSource,
+    private readonly cls: ClsService,
   ) {}
+
+  private async updateInventoryBalance(
+    manager: EntityManager,
+    tenantId: string,
+    dto: {
+      productId: string;
+      variantId?: string;
+      warehouseId: string;
+      binId?: string;
+      batchId?: string;
+      quantity: number;
+    },
+  ) {
+    let inventory = await manager.findOne(Inventory, {
+      where: {
+        tenantId,
+        productId: dto.productId,
+        variantId: dto.variantId || IsNull(),
+        warehouseId: dto.warehouseId,
+        binId: dto.binId || IsNull(),
+        batchId: dto.batchId || IsNull(),
+      },
+    });
+
+    if (inventory) {
+      inventory.quantity = Number(inventory.quantity) + dto.quantity;
+      inventory.lastUpdated = new Date();
+    } else {
+      inventory = manager.create(Inventory, {
+        tenantId,
+        productId: dto.productId,
+        variantId: dto.variantId,
+        warehouseId: dto.warehouseId,
+        binId: dto.binId,
+        batchId: dto.batchId,
+        quantity: dto.quantity,
+      });
+    }
+
+    if (Number(inventory.quantity) < 0) {
+      // Check if product allows negative stock
+      const product = await manager.findOne(Product, {
+        where: { id: dto.productId },
+      });
+      if (!product?.allowNegativeStock) {
+        throw new BadRequestException(
+          `Insufficient stock for product ${dto.productId} in warehouse ${dto.warehouseId}`,
+        );
+      }
+    }
+
+    await manager.save(inventory);
+  }
 
   async onModuleInit() {
     // Schedule reorder point check daily at midnight
@@ -132,6 +194,7 @@ export class InventoryService implements OnModuleInit {
     unitCost: number;
     reference?: string;
   }) {
+    const tenantId = this.cls.get('tenantId');
     return this.dataSource.transaction(async (manager) => {
       // 1. Create/Find Batch
       let batch = await manager.findOne(Batch, {
@@ -158,7 +221,17 @@ export class InventoryService implements OnModuleInit {
       }
       await manager.save(batch);
 
-      // 2. Update Moving Average Cost if using Weighted Average
+      // 2. Update Inventory Balance (Warehouse-aware)
+      await this.updateInventoryBalance(manager, tenantId, {
+        productId: dto.productId,
+        variantId: dto.variantId,
+        warehouseId: dto.warehouseId,
+        binId: dto.binId,
+        batchId: batch.id,
+        quantity: dto.quantity,
+      });
+
+      // 3. Update Moving Average Cost if using Weighted Average
       const product = await manager.findOne(Product, {
         where: { id: dto.productId },
       });
@@ -176,8 +249,8 @@ export class InventoryService implements OnModuleInit {
         const currentQty = Number(totalStockResult?.total || 0);
         const currentValue = Number(totalStockResult?.value || 0);
 
-        const newTotalQty = currentQty + dto.quantity;
-        const newTotalValue = currentValue + dto.quantity * dto.unitCost;
+        const newTotalQty = currentQty; // Batch.remainingQuantity is already updated
+        const newTotalValue = currentValue; // This sum includes the updated batch
 
         if (newTotalQty > 0) {
           product.basePrice = newTotalValue / newTotalQty;
@@ -188,7 +261,7 @@ export class InventoryService implements OnModuleInit {
         }
       }
 
-      // 3. Create Stock Movement
+      // 4. Create Stock Movement
       const movement = manager.create(StockMovement, {
         productId: dto.productId,
         variantId: dto.variantId,
@@ -218,13 +291,14 @@ export class InventoryService implements OnModuleInit {
     reference?: string;
     reasonCode?: string;
   }) {
+    const tenantId = this.cls.get('tenantId');
     return this.dataSource.transaction(async (manager) => {
       const product = await manager.findOne(Product, {
         where: { id: dto.productId },
       });
       if (!product) throw new NotFoundException('Product not found');
 
-      // 1. Find available batches based on valuation method
+      // 1. Find available batches based on valuation method, filtered by warehouse
       let orderByField = 'receivedDate';
       let orderByDir = 'ASC';
 
@@ -239,38 +313,54 @@ export class InventoryService implements OnModuleInit {
         orderByDir = 'ASC';
       }
 
-      const availableBatches = await manager
-        .createQueryBuilder(Batch, 'b')
-        .where('b.productId = :pid', { pid: dto.productId })
-        .andWhere('b.variantId IS NOT DISTINCT FROM :vid', {
+      const availableInventory = await manager
+        .createQueryBuilder(Inventory, 'inv')
+        .innerJoinAndSelect('inv.batch', 'batch')
+        .where('inv.productId = :pid', { pid: dto.productId })
+        .andWhere('inv.warehouseId = :whid', { whid: dto.warehouseId })
+        .andWhere('inv.variantId IS NOT DISTINCT FROM :vid', {
           vid: dto.variantId || null,
         })
-        .andWhere('b.remainingQuantity > 0')
-        .orderBy(`b.${orderByField}`, orderByDir as any)
-        .addOrderBy('b.receivedDate', 'ASC') // Tie breaker
+        .andWhere('inv.quantity > 0')
+        .orderBy(`batch.${orderByField}`, orderByDir as any)
+        .addOrderBy('batch.receivedDate', 'ASC')
         .getMany();
 
       let remainingToIssue = dto.quantity;
       const movements: StockMovement[] = [];
 
-      for (const batch of availableBatches) {
+      for (const item of availableInventory) {
         if (remainingToIssue <= 0) break;
 
         const issueFromBatch = Math.min(
-          batch.remainingQuantity,
+          Number(item.quantity),
           remainingToIssue,
         );
+
+        // Update Global Batch Total
+        const batch = item.batch;
         batch.remainingQuantity =
           Number(batch.remainingQuantity) - issueFromBatch;
         await manager.save(batch);
+
+        // Update Warehouse Balance
+        await this.updateInventoryBalance(manager, tenantId, {
+          productId: dto.productId,
+          variantId: dto.variantId,
+          warehouseId: dto.warehouseId,
+          binId: item.binId || undefined,
+          batchId: batch.id,
+          quantity: -issueFromBatch,
+        });
 
         const movement = manager.create(StockMovement, {
           productId: dto.productId,
           variantId: dto.variantId,
           warehouseId: dto.warehouseId,
+          binId: item.binId,
           batchId: batch.id,
           type: StockMovementType.ISSUE,
-          quantity: -issueFromBatch, // Negative for issue
+          quantity: -issueFromBatch,
           unitCost: batch.unitCost,
           totalCost: issueFromBatch * batch.unitCost,
           reference: dto.reference,
@@ -281,9 +371,15 @@ export class InventoryService implements OnModuleInit {
         remainingToIssue -= issueFromBatch;
       }
 
-      if (remainingToIssue > 0) {
+      if (remainingToIssue > 0 && !product.allowNegativeStock) {
         throw new BadRequestException(
-          `Insufficient stock for product ${dto.productId}. Missing ${remainingToIssue} units.`,
+          `Insufficient stock for product ${dto.productId} in warehouse ${dto.warehouseId}. Missing ${remainingToIssue} units.`,
+        );
+      } else if (remainingToIssue > 0 && product.allowNegativeStock) {
+        // Handle negative stock if allowed (issue from dummy or default batch if needed, but logic usually requires a batch)
+        // For now, we'll just throw unless there's a specific "Default" batch
+        this.logger.warn(
+          `Negative stock allowed but no batch available for remaining ${remainingToIssue} units.`,
         );
       }
 
@@ -305,19 +401,51 @@ export class InventoryService implements OnModuleInit {
     quantity: number;
     reference?: string;
   }) {
+    const tenantId = this.cls.get('tenantId');
     return this.dataSource.transaction(async (manager) => {
-      // 1. Check stock in source
-      // For simplicity, we assume transfer is from a specific batch
-      const batch = await manager.findOne(Batch, {
-        where: { id: dto.batchId },
+      // 1. Check stock in source warehouse for this specific batch
+      const inventory = await manager.findOne(Inventory, {
+        where: {
+          tenantId,
+          productId: dto.productId,
+          warehouseId: dto.fromWarehouseId,
+          binId: dto.fromBinId || IsNull(),
+          batchId: dto.batchId,
+        },
       });
-      if (!batch || batch.remainingQuantity < dto.quantity) {
+
+      if (!inventory || Number(inventory.quantity) < dto.quantity) {
         throw new BadRequestException(
-          'Insufficient stock in specified batch for transfer',
+          `Insufficient stock in batch ${dto.batchId} at warehouse ${dto.fromWarehouseId} for transfer`,
         );
       }
 
-      // 2. Issue from source
+      const batch = await manager.findOne(Batch, {
+        where: { id: dto.batchId },
+      });
+      if (!batch) throw new NotFoundException('Batch not found');
+
+      // 2. Update Source Balance
+      await this.updateInventoryBalance(manager, tenantId, {
+        productId: dto.productId,
+        variantId: dto.variantId,
+        warehouseId: dto.fromWarehouseId,
+        binId: dto.fromBinId,
+        batchId: dto.batchId,
+        quantity: -dto.quantity,
+      });
+
+      // 3. Update Destination Balance
+      await this.updateInventoryBalance(manager, tenantId, {
+        productId: dto.productId,
+        variantId: dto.variantId,
+        warehouseId: dto.toWarehouseId,
+        binId: dto.toBinId,
+        batchId: dto.batchId,
+        quantity: dto.quantity,
+      });
+
+      // 4. Create Stock Movements
       const issueMove = manager.create(StockMovement, {
         productId: dto.productId,
         variantId: dto.variantId,
@@ -332,7 +460,6 @@ export class InventoryService implements OnModuleInit {
       });
       await manager.save(issueMove);
 
-      // 3. Receipt into destination
       const receiptMove = manager.create(StockMovement, {
         productId: dto.productId,
         variantId: dto.variantId,
@@ -364,21 +491,27 @@ export class InventoryService implements OnModuleInit {
     reasonCode: string;
     notes?: string;
   }) {
+    const tenantId = this.cls.get('tenantId');
     return this.dataSource.transaction(async (manager) => {
       const batch = await manager.findOne(Batch, {
         where: { id: dto.batchId },
       });
       if (!batch) throw new NotFoundException('Batch not found');
 
-      if (Number(batch.remainingQuantity) + dto.adjustmentQuantity < 0) {
-        throw new BadRequestException(
-          'Adjustment would result in negative stock',
-        );
-      }
-
+      // Update Global Batch Total
       batch.remainingQuantity =
         Number(batch.remainingQuantity) + dto.adjustmentQuantity;
       await manager.save(batch);
+
+      // Update Warehouse Balance
+      await this.updateInventoryBalance(manager, tenantId, {
+        productId: dto.productId,
+        variantId: dto.variantId,
+        warehouseId: dto.warehouseId,
+        binId: dto.binId,
+        batchId: batch.id,
+        quantity: dto.adjustmentQuantity,
+      });
 
       const movement = manager.create(StockMovement, {
         productId: dto.productId,
@@ -397,13 +530,31 @@ export class InventoryService implements OnModuleInit {
     });
   }
 
-  async getStockLevels(_productId?: string, _warehouseId?: string) {
-    // ... (existing code)
+  async getStockLevels(productId?: string, warehouseId?: string) {
+    const tenantId = this.cls.get('tenantId');
+    const query = this.inventoryRepo
+      .createQueryBuilder('inv')
+      .where('inv.tenantId = :tenantId', { tenantId });
+
+    if (productId) {
+      query.andWhere('inv.productId = :productId', { productId });
+    }
+    if (warehouseId) {
+      query.andWhere('inv.warehouseId = :warehouseId', { warehouseId });
+    }
+
+    return query
+      .leftJoinAndSelect('inv.product', 'product')
+      .leftJoinAndSelect('inv.warehouse', 'warehouse')
+      .leftJoinAndSelect('inv.batch', 'batch')
+      .getMany();
   }
 
   async startStockCount(warehouseId: string, notes?: string) {
+    const tenantId = this.cls.get('tenantId');
     return this.dataSource.transaction(async (manager) => {
       const stockCount = manager.create(StockCount, {
+        tenantId,
         warehouseId,
         notes,
         status: 'IN_PROGRESS' as any,
@@ -411,22 +562,25 @@ export class InventoryService implements OnModuleInit {
       });
       const savedCount = await manager.save(stockCount);
 
-      // Populate items with expected quantities
-      const batches = await manager
-        .createQueryBuilder(Batch, 'b')
-        .where('b.remainingQuantity > 0')
+      // Populate items with expected quantities from warehouse-specific inventory
+      const inventoryItems = await manager
+        .createQueryBuilder(Inventory, 'inv')
+        .where('inv.warehouseId = :whid', { whid: warehouseId })
+        .andWhere('inv.tenantId = :tenantId', { tenantId })
+        .andWhere('inv.quantity > 0')
         .getMany();
 
-      for (const batch of batches) {
-        const item = manager.create(StockCountItem, {
+      for (const item of inventoryItems) {
+        const countItem = manager.create(StockCountItem, {
+          tenantId,
           stockCountId: savedCount.id,
-          productId: batch.productId,
-          variantId: batch.variantId,
-          batchId: batch.id,
-          expectedQuantity: batch.remainingQuantity,
-          actualQuantity: batch.remainingQuantity, // Default to expected
+          productId: item.productId,
+          variantId: item.variantId,
+          batchId: item.batchId,
+          expectedQuantity: item.quantity,
+          actualQuantity: item.quantity, // Default to expected
         });
-        await manager.save(item);
+        await manager.save(countItem);
       }
 
       return savedCount;
@@ -468,26 +622,35 @@ export class InventoryService implements OnModuleInit {
     });
   }
 
-  async getInventoryAging() {
-    // We'll use QueryBuilder for a more efficient aging bucket report
+  async getInventoryAging(warehouseId?: string) {
+    const tenantId = this.cls.get('tenantId');
     const now = new Date();
-    const result = await this.batchRepo
-      .createQueryBuilder('b')
-      .select('b.productId', 'productId')
+    const query = this.inventoryRepo
+      .createQueryBuilder('inv')
+      .innerJoin('inv.batch', 'b')
+      .where('inv.tenantId = :tenantId', { tenantId })
+      .andWhere('inv.quantity > 0');
+
+    if (warehouseId) {
+      query.andWhere('inv.warehouseId = :warehouseId', { warehouseId });
+    }
+
+    const result = await query
+      .select('inv.productId', 'productId')
       .addSelect(
-        'SUM(CASE WHEN b.receivedDate > :thirtyDays THEN b.remainingQuantity ELSE 0 END)',
+        'SUM(CASE WHEN b.receivedDate > :thirtyDays THEN inv.quantity ELSE 0 END)',
         '0_30_days',
       )
       .addSelect(
-        'SUM(CASE WHEN b.receivedDate <= :thirtyDays AND b.receivedDate > :sixtyDays THEN b.remainingQuantity ELSE 0 END)',
+        'SUM(CASE WHEN b.receivedDate <= :thirtyDays AND b.receivedDate > :sixtyDays THEN inv.quantity ELSE 0 END)',
         '31_60_days',
       )
       .addSelect(
-        'SUM(CASE WHEN b.receivedDate <= :sixtyDays AND b.receivedDate > :ninetyDays THEN b.remainingQuantity ELSE 0 END)',
+        'SUM(CASE WHEN b.receivedDate <= :sixtyDays AND b.receivedDate > :ninetyDays THEN inv.quantity ELSE 0 END)',
         '61_90_days',
       )
       .addSelect(
-        'SUM(CASE WHEN b.receivedDate <= :ninetyDays THEN b.remainingQuantity ELSE 0 END)',
+        'SUM(CASE WHEN b.receivedDate <= :ninetyDays THEN inv.quantity ELSE 0 END)',
         'over_90_days',
       )
       .setParameters({
@@ -495,7 +658,7 @@ export class InventoryService implements OnModuleInit {
         sixtyDays: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000),
         ninetyDays: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000),
       })
-      .groupBy('b.productId')
+      .groupBy('inv.productId')
       .getRawMany();
 
     return result;
@@ -531,16 +694,20 @@ export class InventoryService implements OnModuleInit {
 
   async checkExpiryDates() {
     const now = new Date();
-    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-    
+    const thirtyDaysFromNow = new Date(
+      now.getTime() + 30 * 24 * 60 * 60 * 1000,
+    );
+
     const nearExpiryBatches = await this.batchRepo
       .createQueryBuilder('b')
       .where('b.remainingQuantity > 0')
       .andWhere('b.expiryDate IS NOT NULL')
-      .andWhere('b.expiryDate <= :thirtyDays', { thirtyDays: thirtyDaysFromNow })
+      .andWhere('b.expiryDate <= :thirtyDays', {
+        thirtyDays: thirtyDaysFromNow,
+      })
       .getMany();
 
-    const alerts = nearExpiryBatches.map(batch => ({
+    const alerts = nearExpiryBatches.map((batch) => ({
       batchId: batch.id,
       productId: batch.productId,
       batchNumber: batch.batchNumber,
@@ -555,21 +722,32 @@ export class InventoryService implements OnModuleInit {
     return alerts;
   }
 
-  async getStockValuation() {
-    // Current stock x average cost per product; balance sheet-ready
-    const valuation = await this.batchRepo
-      .createQueryBuilder('b')
-      .leftJoinAndSelect('b.product', 'product')
-      .where('b.remainingQuantity > 0')
+  async getStockValuation(warehouseId?: string) {
+    const tenantId = this.cls.get('tenantId');
+    const query = this.inventoryRepo
+      .createQueryBuilder('inv')
+      .innerJoin('inv.batch', 'b')
+      .innerJoin('inv.product', 'product')
+      .where('inv.tenantId = :tenantId', { tenantId })
+      .andWhere('inv.quantity > 0');
+
+    if (warehouseId) {
+      query.andWhere('inv.warehouseId = :warehouseId', { warehouseId });
+    }
+
+    const valuation = await query
       .select('product.id', 'productId')
       .addSelect('product.name', 'productName')
       .addSelect('product.sku', 'sku')
-      .addSelect('SUM(b.remainingQuantity)', 'totalQuantity')
-      .addSelect('SUM(b.remainingQuantity * b.unitCost)', 'totalValue')
-      .groupBy('product.id')
+      .addSelect('SUM(inv.quantity)', 'totalQuantity')
+      .addSelect('SUM(inv.quantity * b.unitCost)', 'totalValue')
+      .groupBy('product.id, product.name, product.sku')
       .getRawMany();
 
-    const grandTotal = valuation.reduce((sum, item) => sum + Number(item.totalValue), 0);
+    const grandTotal = valuation.reduce(
+      (sum, item) => sum + Number(item.totalValue),
+      0,
+    );
 
     return {
       items: valuation,
@@ -578,13 +756,15 @@ export class InventoryService implements OnModuleInit {
   }
 
   async generateBarcode(productId: string) {
-    const product = await this.productRepo.findOne({ where: { id: productId } });
+    const product = await this.productRepo.findOne({
+      where: { id: productId },
+    });
     if (!product) throw new NotFoundException('Product not found');
 
     // Mock ZPL generation for thermal printers
     const barcodeData = product.barcode || product.sku;
     const zpl = `^XA\n^FO50,50^ADN,36,20^FD${product.name}^FS\n^FO50,100^BCN,100,Y,N,N^FD${barcodeData}^FS\n^XZ`;
-    
+
     return {
       productId: product.id,
       zpl,

@@ -26,6 +26,10 @@ export class ChangeRequest extends TenantBaseEntity {
   @Column({ type: 'text', nullable: true })
   impactAnalysis: string | null;
 
-  @Column({ type: 'enum', enum: ChangeRequestStatus, default: ChangeRequestStatus.PENDING })
+  @Column({
+    type: 'enum',
+    enum: ChangeRequestStatus,
+    default: ChangeRequestStatus.PENDING,
+  })
   status: ChangeRequestStatus;
 }

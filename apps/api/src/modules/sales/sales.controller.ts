@@ -115,7 +115,10 @@ export class SalesController {
 
   @Post('leads/:id/assign')
   @RequirePermissions(Permission.SALES_MANAGE_LEADS)
-  assignLead(@Param('id', ParseUUIDPipe) id: string, @Body('userIds') userIds: string[]) {
+  assignLead(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('userIds') userIds: string[],
+  ) {
     return this.salesService.assignLeadRoundRobin(id, userIds);
   }
 

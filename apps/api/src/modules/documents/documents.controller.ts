@@ -103,9 +103,15 @@ export class DocumentsController {
   async signDocument(
     @Req() req: any,
     @Param('id') id: string,
-    @Body() dto: { signatureBase64: string; signerName: string; ipAddress: string },
+    @Body()
+    dto: { signatureBase64: string; signerName: string; ipAddress: string },
   ) {
-    return this.documentsService.signDocument(req.user.id, req.tenantId, id, dto);
+    return this.documentsService.signDocument(
+      req.user.id,
+      req.tenantId,
+      id,
+      dto,
+    );
   }
 
   @Post(':id/soft-delete')

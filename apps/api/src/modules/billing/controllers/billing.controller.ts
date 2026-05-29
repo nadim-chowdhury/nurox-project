@@ -163,7 +163,7 @@ export class BillingController {
       switch (event.type) {
         case 'checkout.session.completed':
           // Update tenant subscription status to active
-          const session = event.data.object as any;
+          const session = event.data.object;
           if (session.metadata?.tenantId) {
             await this.subscriptionRepo.update(
               { tenantId: session.metadata.tenantId },
@@ -173,7 +173,7 @@ export class BillingController {
           break;
         case 'invoice.paid':
           // Create / update invoice entity
-          const invoice = event.data.object as any;
+          const invoice = event.data.object;
           if (invoice.subscription) {
             await this.subscriptionRepo.update(
               { stripeSubscriptionId: invoice.subscription },
@@ -183,7 +183,7 @@ export class BillingController {
           break;
         case 'invoice.payment_failed':
           // Handle failed payment (dunning)
-          const failedInvoice = event.data.object as any;
+          const failedInvoice = event.data.object;
           if (failedInvoice.subscription) {
             const sub = await this.subscriptionRepo.findOne({
               where: { stripeSubscriptionId: failedInvoice.subscription },

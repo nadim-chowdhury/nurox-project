@@ -41,7 +41,11 @@ export class Quotation extends TenantBaseEntity {
   @Column({ type: 'int', default: 1 })
   version: number;
 
-  @Column({ type: 'enum', enum: QuotationStatus, default: QuotationStatus.DRAFT })
+  @Column({
+    type: 'enum',
+    enum: QuotationStatus,
+    default: QuotationStatus.DRAFT,
+  })
   status: QuotationStatus;
 
   @Column({ type: 'timestamptz' })

@@ -14,7 +14,4 @@ export class TaxFilingExport extends TenantBaseEntity {
 
   @Column({ type: 'varchar', length: 100 })
   format: string; // 'XML', 'CSV', 'JSON'
-
-  @CreateDateColumn()
-  createdAt: Date;
 }

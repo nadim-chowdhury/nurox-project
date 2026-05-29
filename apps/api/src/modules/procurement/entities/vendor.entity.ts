@@ -55,10 +55,18 @@ export class Vendor extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 50, nullable: true })
   taxId: string | null;
 
-  @Column({ type: 'enum', enum: VendorCategory, default: VendorCategory.STANDARD })
+  @Column({
+    type: 'enum',
+    enum: VendorCategory,
+    default: VendorCategory.STANDARD,
+  })
   category: VendorCategory;
 
-  @Column({ type: 'enum', enum: ApprovalStatus, default: ApprovalStatus.PENDING })
+  @Column({
+    type: 'enum',
+    enum: ApprovalStatus,
+    default: ApprovalStatus.PENDING,
+  })
   approvalStatus: ApprovalStatus;
 
   @Column({ type: 'jsonb', nullable: true })

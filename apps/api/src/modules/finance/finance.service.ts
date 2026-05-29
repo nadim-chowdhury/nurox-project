@@ -13,6 +13,8 @@ import {
   MoreThanOrEqual,
   In,
   Like,
+  DataSource,
+  EntityManager,
 } from 'typeorm';
 import { Account, AccountType } from './entities/account.entity';
 import { Invoice, InvoiceLine, InvoiceStatus } from './entities/invoice.entity';
@@ -107,6 +109,7 @@ export class FinanceService {
     private readonly pdfService: PdfService,
     private readonly currencyService: CurrencyConversionService,
     private readonly cls: ClsService,
+    private readonly dataSource: DataSource,
     @InjectQueue('ar_reminders') private arReminderQueue: Queue,
   ) {}
 
@@ -144,12 +147,50 @@ export class FinanceService {
     return buildTree(null);
   }
 
+  private async validateParentAccount(
+    parentId: string,
+    currentAccountId?: string,
+  ) {
+    if (parentId === currentAccountId) {
+      throw new BadRequestException('An account cannot be its own parent');
+    }
+
+    const parent = await this.accountRepo.findOne({
+      where: { id: parentId, tenantId: this.tenantId },
+    });
+
+    if (!parent) {
+      throw new NotFoundException(`Parent account "${parentId}" not found`);
+    }
+
+    // Circularity check
+    if (currentAccountId) {
+      let nextParentId = parent.parentId;
+      while (nextParentId) {
+        if (nextParentId === currentAccountId) {
+          throw new BadRequestException(
+            'Circular dependency detected in Chart of Accounts',
+          );
+        }
+        const nextParent = await this.accountRepo.findOne({
+          where: { id: nextParentId, tenantId: this.tenantId },
+        });
+        nextParentId = nextParent?.parentId;
+      }
+    }
+  }
+
   async createAccount(dto: CreateAccountDto): Promise<Account> {
     const exists = await this.accountRepo.findOne({
       where: { code: dto.code, tenantId: this.tenantId },
     });
     if (exists)
       throw new ConflictException(`Account code "${dto.code}" already exists`);
+
+    if (dto.parentId) {
+      await this.validateParentAccount(dto.parentId);
+    }
+
     const account = this.accountRepo.create({
       ...dto,
       tenantId: this.tenantId,
@@ -177,6 +218,11 @@ export class FinanceService {
     dto: Partial<CreateAccountDto>,
   ): Promise<Account> {
     await this.findAccountById(id);
+
+    if (dto.parentId) {
+      await this.validateParentAccount(dto.parentId, id);
+    }
+
     await this.accountRepo.update({ id, tenantId: this.tenantId }, dto);
     return this.findAccountById(id);
   }
@@ -684,80 +730,87 @@ export class FinanceService {
   }
 
   async createJournalEntry(dto: CreateJournalEntryDto): Promise<JournalEntry> {
-    const tenantBaseCurrency = await this.getTenantBaseCurrency();
-    const entryCurrency = dto.currency || tenantBaseCurrency;
-    const exchangeRate =
-      dto.exchangeRate ||
-      (await this.currencyService.getLatestRate(
-        entryCurrency,
-        tenantBaseCurrency,
-      ));
+    return this.dataSource.transaction(async (manager) => {
+      const tenantBaseCurrency = await this.getTenantBaseCurrency();
+      const entryCurrency = dto.currency || tenantBaseCurrency;
+      const exchangeRate =
+        dto.exchangeRate ||
+        (await this.currencyService.getLatestRate(
+          entryCurrency,
+          tenantBaseCurrency,
+        ));
 
-    const totalDebitOrig = dto.lines.reduce((s, l) => s + Number(l.debit), 0);
-    const totalCreditOrig = dto.lines.reduce((s, l) => s + Number(l.credit), 0);
-
-    if (Math.abs(totalDebitOrig - totalCreditOrig) > 0.01) {
-      throw new BadRequestException(
-        `Journal entry must balance in ${entryCurrency}: debit=${totalDebitOrig} credit=${totalCreditOrig}`,
+      const totalDebitOrig = dto.lines.reduce((s, l) => s + Number(l.debit), 0);
+      const totalCreditOrig = dto.lines.reduce(
+        (s, l) => s + Number(l.credit),
+        0,
       );
-    }
 
-    // Check if period is open
-    const period = await this.periodRepo.findOne({
-      where: {
-        tenantId: this.tenantId,
-        status: PeriodStatus.OPEN,
-        startDate: LessThanOrEqual(dto.entryDate),
-        endDate: MoreThanOrEqual(dto.entryDate),
-      } as any,
-    });
+      if (Math.abs(totalDebitOrig - totalCreditOrig) > 0.01) {
+        throw new BadRequestException(
+          `Journal entry must balance in ${entryCurrency}: debit=${totalDebitOrig} credit=${totalCreditOrig}`,
+        );
+      }
 
-    if (!period) {
-      throw new BadRequestException(
-        `No open accounting period found for date ${dto.entryDate}`,
-      );
-    }
-
-    const lines = dto.lines.map((l) => {
-      const debitBase = Number(l.debit) * exchangeRate;
-      const creditBase = Number(l.credit) * exchangeRate;
-      return this.journalLineRepo.create({
-        ...l,
-        tenantId: this.tenantId,
-        originalDebit: l.debit,
-        originalCredit: l.credit,
-        debit: debitBase,
-        credit: creditBase,
+      // Check if period is open
+      const period = await manager.findOne(AccountingPeriod, {
+        where: {
+          tenantId: this.tenantId,
+          status: PeriodStatus.OPEN,
+          startDate: LessThanOrEqual(dto.entryDate),
+          endDate: MoreThanOrEqual(dto.entryDate),
+        } as any,
       });
+
+      if (!period) {
+        throw new BadRequestException(
+          `No open accounting period found for date ${dto.entryDate}`,
+        );
+      }
+
+      const lines = dto.lines.map((l) => {
+        const debitBase = Number(l.debit) * exchangeRate;
+        const creditBase = Number(l.credit) * exchangeRate;
+        return manager.create(JournalLine, {
+          ...l,
+          tenantId: this.tenantId,
+          originalDebit: l.debit,
+          originalCredit: l.credit,
+          debit: debitBase,
+          credit: creditBase,
+        });
+      });
+
+      const totalDebitBase = lines.reduce((s, l) => s + Number(l.debit), 0);
+      const totalCreditBase = lines.reduce((s, l) => s + Number(l.credit), 0);
+
+      const entry = manager.create(JournalEntry, {
+        ...dto,
+        tenantId: this.tenantId,
+        currency: entryCurrency,
+        exchangeRate,
+        status: (dto.status as any) || JournalStatus.PENDING_REVIEW,
+        totalDebit: totalDebitBase,
+        totalCredit: totalCreditBase,
+        lines,
+        preparerId: this.cls.get('userId'),
+      });
+
+      const saved = await manager.save(entry);
+
+      if (saved.status === JournalStatus.POSTED) {
+        await this.updateAccountBalances(saved, manager);
+      }
+
+      this.logger.log(
+        `Journal entry created: ${saved.entryNumber} (Status: ${saved.status})`,
+      );
+      // We need to return with lines loaded for the frontend
+      return manager.findOne(JournalEntry, {
+        where: { id: saved.id, tenantId: this.tenantId },
+        relations: ['lines'],
+      }) as Promise<JournalEntry>;
     });
-
-    const totalDebitBase = lines.reduce((s, l) => s + Number(l.debit), 0);
-    const totalCreditBase = lines.reduce((s, l) => s + Number(l.credit), 0);
-
-    const entry = this.journalRepo.create({
-      ...dto,
-      tenantId: this.tenantId,
-      currency: entryCurrency,
-      exchangeRate,
-      status: (dto.status as any) || JournalStatus.PENDING_REVIEW,
-      totalDebit: totalDebitBase,
-      totalCredit: totalCreditBase,
-      lines,
-      preparerId: this.cls.get('userId'),
-    });
-
-    const saved = (await this.journalRepo.save(
-      entry,
-    )) as unknown as JournalEntry;
-
-    if (saved.status === JournalStatus.POSTED) {
-      await this.updateAccountBalances(saved);
-    }
-
-    this.logger.log(
-      `Journal entry created: ${saved.entryNumber} (Status: ${saved.status})`,
-    );
-    return this.findJournalById(saved.id);
   }
 
   async reviewJournal(id: string): Promise<JournalEntry> {
@@ -783,19 +836,29 @@ export class FinanceService {
   }
 
   async postJournal(id: string): Promise<JournalEntry> {
-    const entry = await this.findJournalById(id);
-    if (![JournalStatus.APPROVED, JournalStatus.DRAFT].includes(entry.status)) {
-      throw new BadRequestException(
-        'Only approved or draft journals can be posted',
-      );
-    }
+    return this.dataSource.transaction(async (manager) => {
+      const entry = await manager.findOne(JournalEntry, {
+        where: { id, tenantId: this.tenantId },
+        relations: ['lines'],
+      });
 
-    entry.status = JournalStatus.POSTED;
-    const saved = await this.journalRepo.save(entry);
-    await this.updateAccountBalances(saved);
+      if (!entry) throw new NotFoundException(`Journal "${id}" not found`);
 
-    this.logger.log(`Journal entry posted: ${saved.entryNumber}`);
-    return saved;
+      if (
+        ![JournalStatus.APPROVED, JournalStatus.DRAFT].includes(entry.status)
+      ) {
+        throw new BadRequestException(
+          'Only approved or draft journals can be posted',
+        );
+      }
+
+      entry.status = JournalStatus.POSTED;
+      const saved = await manager.save(entry);
+      await this.updateAccountBalances(saved, manager);
+
+      this.logger.log(`Journal entry posted: ${saved.entryNumber}`);
+      return saved;
+    });
   }
 
   async rejectJournal(id: string, reason: string): Promise<JournalEntry> {
@@ -805,33 +868,50 @@ export class FinanceService {
     return this.journalRepo.save(entry);
   }
 
-  private async updateAccountBalances(entry: JournalEntry) {
+  private async updateAccountBalances(
+    entry: JournalEntry,
+    manager: EntityManager,
+  ) {
     for (const line of entry.lines) {
-      const account = await this.accountRepo.findOne({
+      const account = await manager.findOne(Account, {
         where: { id: line.accountId, tenantId: this.tenantId },
       });
-      if (account) {
-        let amountToUpdate = 0;
-        if (account.currency === entry.currency) {
-          amountToUpdate =
-            Number(line.originalDebit) - Number(line.originalCredit);
-        } else {
-          const rateToAccount = await this.currencyService.getLatestRate(
-            entry.currency,
-            account.currency,
-          );
-          amountToUpdate =
-            (Number(line.originalDebit) - Number(line.originalCredit)) *
-            rateToAccount;
-        }
 
-        if ([AccountType.ASSET, AccountType.EXPENSE].includes(account.type)) {
-          account.balance = Number(account.balance) + amountToUpdate;
-        } else {
-          account.balance = Number(account.balance) - amountToUpdate;
-        }
-        await this.accountRepo.save(account);
+      if (!account) continue;
+
+      let amountToUpdate = 0;
+      if (account.currency === entry.currency) {
+        amountToUpdate =
+          Number(line.originalDebit) - Number(line.originalCredit);
+      } else {
+        const rateToAccount = await this.currencyService.getLatestRate(
+          entry.currency,
+          account.currency,
+        );
+        amountToUpdate =
+          (Number(line.originalDebit) - Number(line.originalCredit)) *
+          rateToAccount;
       }
+
+      // Determine direction based on account type
+      // ASSET/EXPENSE: + balance for Debit (positive amountToUpdate)
+      // LIABILITY/EQUITY/REVENUE: + balance for Credit (negative amountToUpdate)
+      const isDebitNormal = [AccountType.ASSET, AccountType.EXPENSE].includes(
+        account.type,
+      );
+      const finalAdjustment = isDebitNormal ? amountToUpdate : -amountToUpdate;
+
+      await manager
+        .createQueryBuilder()
+        .update(Account)
+        .set({
+          balance: () => `balance + ${finalAdjustment}`,
+        })
+        .where('id = :id AND tenantId = :tenantId', {
+          id: account.id,
+          tenantId: this.tenantId,
+        })
+        .execute();
     }
   }
 

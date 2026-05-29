@@ -49,10 +49,4 @@ export class WorkOrder extends TenantBaseEntity {
 
   @Column({ type: 'timestamp', nullable: true })
   dueDate: Date;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

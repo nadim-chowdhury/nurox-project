@@ -27,7 +27,7 @@ export class TicketsService {
   ) {
     // 1. Auto-assignment logic (simple mock)
     // If category is 'IT Support', assign to a predefined user or leave null for manual assign
-    let assigneeId: string | undefined = undefined;
+    const assigneeId: string | undefined = undefined;
     if (dto.category === 'IT Support') {
       // assigneeId = 'some-it-admin-uuid';
     }

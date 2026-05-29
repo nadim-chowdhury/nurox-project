@@ -24,7 +24,7 @@ export class BillingAnalyticsController {
 
     let mrr = 0;
     let activeSubscribers = 0;
-    let churnedSubscribers = await this.subscriptionRepo.count({
+    const churnedSubscribers = await this.subscriptionRepo.count({
       where: { status: In(['canceled', 'suspended']) },
     });
 

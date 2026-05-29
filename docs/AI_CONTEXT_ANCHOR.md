@@ -34,10 +34,18 @@
 - [x] **Task 1.1: Multi-Tenant RLS Audit.** Verified 170+ entities; refactored Billing and System entities to correctly extend `TenantBaseEntity`. Removed redundant `createdAt`/`updatedAt` fields across key modules.
 - [x] **Task 1.2: RBAC/Permission Node Audit.** Expanded `Permission` enum in `@repo/shared-schemas` to cover all 30+ ERP modules (Payroll, Manufacturing, POS, etc.). Verified `PermissionsGuard` logic.
 
-### Phase 2: Financial Core (NEXT)
+### Phase 2: Financial Core (IN PROGRESS)
 
-- [ ] **Task 2.1: Finance Module Hardening.** Implement Chart of Accounts (Tree structure), General Ledger, and Journal Entries with strict tenant scoping.
-- [ ] **Task 2.2: Automated Tax/VAT Logic.** Implement BD-specific tax rules (VAT 2012 Act) with 100% unit test coverage using strategies.
+- [x] **Task 2.1: Finance Module Hardening.** Implemented transactional journal posting, atomic balance updates, and account tree validation (circularity check). Verified with unit tests.
+- [x] **Task 2.2: Automated Tax/VAT Logic (Research).** Researched Bangladesh VAT Act 2012 requirements (Mushak forms, VDS, rebate logic).
+- [x] **Task 2.3: Implement BD VAT Mushak Forms.** Created entities and services for Mushak 6.3 and 6.6 (VDS) in the `compliance` module. Updated `BangladeshTaxStrategy` for accurate SD/VAT calculation.
+- [x] **Task 2.4: Implement PDF Generation for Mushak Forms.** Designed NBR-compliant Handlebars templates for Mushak 6.3 and 6.6. Implemented `ComplianceReportService` for PDF generation via `PdfService`.
+- [x] **Task 2.5: Implement Mushak 9.1 Aggregation Logic.** Developed logic to aggregate monthly VAT returns from Mushak 6.3 and VDS records. Stored results in `TaxFilingExport`.
+
+### Phase 3: Advanced Business Modules (IN PROGRESS)
+
+- [x] **Task 3.1: Inventory Multi-Warehouse Support.** Implemented warehouse-specific stock levels and inter-warehouse transfers. Defined `Inventory` entity for tracking balances.
+- [ ] **Task 3.2: Manufacturing Module Hardening.** Implement multi-stage Work Orders and resource scheduling.
 
 ---
 
@@ -45,31 +53,30 @@
 
 Before ending a session, the AI must:
 
-1.  **Validate:** Run `pnpm lint` and critical tests.
+1.  **Validate:** Run `pnpm lint` and critical tests. (Verified via unit tests in `finance.service.spec.ts`, `mushak.service.spec.ts`, `bangladesh-tax.strategy.spec.ts`, and `compliance-report.service.spec.ts`)
 2.  **Anchor Update:** Edit this file (`docs/AI_CONTEXT_ANCHOR.md`) with:
     - [x] Completed tasks.
-    - [ ] New tasks or discovered blockers.
-3.  **Propose Next Step:** State clearly what the next session should focus on.
+    - [x] New tasks or discovered blockers.
+3.  **Propose Next Step:** Transition to Phase 3: Advanced Business Modules. Start with Task 3.1 (Inventory Multi-Warehouse).
 
 ---
 
 ## 4. Work Summary (May 29, 2026)
 
-### Latest Completion (Phase 1)
+### Latest Completion (Phase 3)
 
-- **RBAC Expansion:** Added 50+ new permission nodes covering the full scope of the ERP (from POS to Manufacturing).
-- **Entity Consolidation:** Refactored `Tenant`, `Invoice`, `TenantSubscription`, `TenantCustomDomain`, and `TenantModule` to follow strict inheritance patterns. This eliminates redundancy and ensures uniform column naming (`tenant_id`, `created_at`, `updated_at`).
-- **Security Audit:** Verified that `TenantSubscriber` and `TenantConnectionService` provide a strong second layer of defense for multi-tenancy beyond simple middleware.
+- **Inventory Multi-Warehouse:** Implemented the `Inventory` entity to provide a real-time, warehouse-scoped view of stock balances. Refactored `InventoryService` to maintain these balances during Receipts, Issues, Transfers, and Adjustments. Added warehouse-aware reporting and stock count logic. Verified with unit tests.
+- **BD VAT Mushak Forms:** Implemented Mushak 6.3 (Tax Invoice), 6.6 (VDS), and 9.1 (Return) in the `compliance` module with PDF generation and aggregation logic.
 
 ### Discovered Issues
 
-- Some entities were found to be placeholders (`Sale`, `Inventory`). These will be implemented as we reach their respective phases.
-- `Tenant` entity had redundant timestamp decorators that conflicted with `BaseEntity`. (Fixed)
+- Input Tax (Purchases) aggregation is currently mocked. Full implementation requires linking with the Procurement module's Vendor Bill lines once they are implemented.
 
 ---
 
 ## 5. Instructions for Next Session
 
 1.  Read `GEMINI.md` and this file.
-2.  **Phase 2 — Task 2.1:** Begin implementing the **Chart of Accounts** in `apps/api/src/modules/finance/`. This requires a tree structure (Parent/Child accounts) and must enforce tenant isolation at every level.
-3.  **Phase 2 — Task 2.2:** Research the **Bangladesh VAT Act 2012** to prepare the strategy for automated tax calculation in the `compliance` module.
+2.  **Phase 3 — Task 3.2:** Begin **Manufacturing Module Hardening**. Implement multi-stage Work Orders by adding a `WorkOrderStage` entity.
+3.  Implement resource scheduling (Work Centers and Machines) for each stage of the work order.
+4.  Ensure stock is automatically issued (consumed) from the Inventory module when a manufacturing stage starts, based on the Bill of Materials (BOM).

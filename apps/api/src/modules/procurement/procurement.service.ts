@@ -98,18 +98,28 @@ export class ProcurementService {
 
   async getRfqComparison(rfqId: string) {
     const quotes = await this.quoteRepo.find({ where: { rfqId } });
-    const vendorIds = quotes.map(q => q.vendorId);
-    
+    const vendorIds = quotes.map((q) => q.vendorId);
+
     // Fetch average evaluation scores for these vendors
-    const evaluations = await this.evaluationRepo.createQueryBuilder('e')
+    const evaluations = await this.evaluationRepo
+      .createQueryBuilder('e')
       .select('e.vendorId', 'vendorId')
       .addSelect('AVG(e.qualityScore)', 'avgQuality')
       .addSelect('AVG(e.deliveryScore)', 'avgDelivery')
-      .where('e.vendorId IN (:...vendorIds)', { vendorIds: vendorIds.length ? vendorIds : ['00000000-0000-0000-0000-000000000000'] })
+      .where('e.vendorId IN (:...vendorIds)', {
+        vendorIds: vendorIds.length
+          ? vendorIds
+          : ['00000000-0000-0000-0000-000000000000'],
+      })
       .groupBy('e.vendorId')
       .getRawMany();
 
-    const evalMap = new Map(evaluations.map(e => [e.vendorId, { quality: Number(e.avgQuality), delivery: Number(e.avgDelivery) }]));
+    const evalMap = new Map(
+      evaluations.map((e) => [
+        e.vendorId,
+        { quality: Number(e.avgQuality), delivery: Number(e.avgDelivery) },
+      ]),
+    );
 
     return quotes.map((q) => ({
       vendorId: q.vendorId,
@@ -408,7 +418,7 @@ export class ProcurementService {
     if (!po) throw new NotFoundException('PO not found');
 
     const mismatches: any[] = [];
-    
+
     // 1. Quantity Match: PO vs GRN
     for (const poLine of po.lines) {
       const totalReceived = grns.reduce((sum, grn) => {
@@ -428,7 +438,10 @@ export class ProcurementService {
     }
 
     // 2. Amount Match: PO vs Bill
-    const totalBilled = bills.reduce((sum, b) => sum + Number(b.totalAmount), 0);
+    const totalBilled = bills.reduce(
+      (sum, b) => sum + Number(b.totalAmount),
+      0,
+    );
     if (totalBilled > 0 && totalBilled !== Number(po.grandTotal)) {
       mismatches.push({
         type: 'AMOUNT_MISMATCH',
@@ -456,11 +469,14 @@ export class ProcurementService {
 
     const requiredApprovers = matrixRules
       .filter((rule) => {
-        const minMatches = Number(pr.totalEstimatedCost) >= Number(rule.minAmount);
-        const maxMatches = rule.maxAmount === null || Number(pr.totalEstimatedCost) <= Number(rule.maxAmount);
+        const minMatches =
+          Number(pr.totalEstimatedCost) >= Number(rule.minAmount);
+        const maxMatches =
+          rule.maxAmount === null ||
+          Number(pr.totalEstimatedCost) <= Number(rule.maxAmount);
         return minMatches && maxMatches;
       })
-      .map(rule => rule.requiredRole);
+      .map((rule) => rule.requiredRole);
 
     return {
       prId: pr.id,
@@ -469,7 +485,11 @@ export class ProcurementService {
     };
   }
 
-  async cancelPurchaseOrder(poId: string, reason: string, lineItemsToCancel?: { poLineId: string, quantity: number }[]) {
+  async cancelPurchaseOrder(
+    poId: string,
+    reason: string,
+    lineItemsToCancel?: { poLineId: string; quantity: number }[],
+  ) {
     return this.dataSource.transaction(async (manager) => {
       const po = await manager.findOne(PurchaseOrder, {
         where: { id: poId },
@@ -482,14 +502,16 @@ export class ProcurementService {
         po.status = PoStatus.CANCELLED;
         po.cancellationReason = reason;
         for (const line of po.lines) {
-          line.cancelledQuantity = Number(line.quantity) - Number(line.receivedQuantity);
+          line.cancelledQuantity =
+            Number(line.quantity) - Number(line.receivedQuantity);
         }
       } else {
         // Partial cancellation
         for (const req of lineItemsToCancel) {
           const line = po.lines.find((l) => l.id === req.poLineId);
           if (line) {
-            line.cancelledQuantity = Number(line.cancelledQuantity) + req.quantity;
+            line.cancelledQuantity =
+              Number(line.cancelledQuantity) + req.quantity;
           }
         }
         po.cancellationReason = `Partial Cancel: ${reason}`;
@@ -499,7 +521,14 @@ export class ProcurementService {
     });
   }
 
-  async inspectGrn(grnId: string, inspections: { grnLineId: string, acceptedQuantity: number, rejectedQuantity: number }[]) {
+  async inspectGrn(
+    grnId: string,
+    inspections: {
+      grnLineId: string;
+      acceptedQuantity: number;
+      rejectedQuantity: number;
+    }[],
+  ) {
     return this.dataSource.transaction(async (manager) => {
       const grn = await manager.findOne(Grn, {
         where: { id: grnId },
@@ -512,11 +541,13 @@ export class ProcurementService {
         if (line) {
           line.acceptedQuantity = ins.acceptedQuantity;
           line.rejectedQuantity = ins.rejectedQuantity;
-          
+
           // Optionally auto-create quarantine stock movement for rejected items here
           if (ins.rejectedQuantity > 0) {
             // Placeholder: move rejected to quarantine bin
-            this.logger.warn(`Rejected ${ins.rejectedQuantity} items for GRN line ${line.id} - sending to Quarantine`);
+            this.logger.warn(
+              `Rejected ${ins.rejectedQuantity} items for GRN line ${line.id} - sending to Quarantine`,
+            );
           }
         }
       }
@@ -531,22 +562,33 @@ export class ProcurementService {
       relations: ['vendor'],
     });
 
-    const spendByVendor = pos.reduce((acc, po) => {
-      const vName = po.vendor.name;
-      acc[vName] = (acc[vName] || 0) + Number(po.grandTotal);
-      return acc;
-    }, {} as Record<string, number>);
+    const spendByVendor = pos.reduce(
+      (acc, po) => {
+        const vName = po.vendor.name;
+        acc[vName] = (acc[vName] || 0) + Number(po.grandTotal);
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     // Grouping by month for time series
-    const spendOverTime = pos.reduce((acc, po) => {
-      const month = po.orderDate.toISOString().substring(0, 7); // YYYY-MM
-      acc[month] = (acc[month] || 0) + Number(po.grandTotal);
-      return acc;
-    }, {} as Record<string, number>);
+    const spendOverTime = pos.reduce(
+      (acc, po) => {
+        const month = po.orderDate.toISOString().substring(0, 7); // YYYY-MM
+        acc[month] = (acc[month] || 0) + Number(po.grandTotal);
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     return {
-      spendByVendor: Object.entries(spendByVendor).map(([name, value]) => ({ name, value })),
-      spendOverTime: Object.entries(spendOverTime).map(([month, value]) => ({ month, value })).sort((a, b) => a.month.localeCompare(b.month)),
+      spendByVendor: Object.entries(spendByVendor).map(([name, value]) => ({
+        name,
+        value,
+      })),
+      spendOverTime: Object.entries(spendOverTime)
+        .map(([month, value]) => ({ month, value }))
+        .sort((a, b) => a.month.localeCompare(b.month)),
       totalSpend: pos.reduce((sum, po) => sum + Number(po.grandTotal), 0),
     };
   }

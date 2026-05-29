@@ -30,7 +30,4 @@ export class PosOrder extends TenantBaseEntity {
 
   @Column({ type: 'jsonb' })
   items: any; // { productId, quantity, unitPrice, discount }[]
-
-  @CreateDateColumn()
-  createdAt: Date;
 }

@@ -103,7 +103,10 @@ export class ProjectsController {
 
   @Post('tasks/:id/time-log/start')
   @RequirePermissions(Permission.PROJECTS_MANAGE)
-  startTimeLog(@Param('id', ParseUUIDPipe) id: string, @Body('userId') userId: string) {
+  startTimeLog(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('userId') userId: string,
+  ) {
     return this.projectsService.startTimeLog(id, userId);
   }
 
@@ -120,12 +123,19 @@ export class ProjectsController {
     @Body('periodStartDate') periodStartDate: string,
     @Body('periodEndDate') periodEndDate: string,
   ) {
-    return this.projectsService.submitTimesheet(userId, new Date(periodStartDate), new Date(periodEndDate));
+    return this.projectsService.submitTimesheet(
+      userId,
+      new Date(periodStartDate),
+      new Date(periodEndDate),
+    );
   }
 
   @Post('timesheets/:id/approve')
   @RequirePermissions(Permission.PROJECTS_MANAGE)
-  approveTimesheet(@Param('id', ParseUUIDPipe) id: string, @Body('managerId') managerId: string) {
+  approveTimesheet(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('managerId') managerId: string,
+  ) {
     return this.projectsService.approveTimesheet(id, managerId);
   }
 

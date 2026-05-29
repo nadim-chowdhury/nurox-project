@@ -49,6 +49,10 @@ export class VendorBill extends TenantBaseEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   totalAmount: number;
 
-  @Column({ type: 'enum', enum: VendorBillStatus, default: VendorBillStatus.DRAFT })
+  @Column({
+    type: 'enum',
+    enum: VendorBillStatus,
+    default: VendorBillStatus.DRAFT,
+  })
   status: VendorBillStatus;
 }

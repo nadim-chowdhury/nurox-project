@@ -27,6 +27,8 @@ import { GoodsReturnItem } from './entities/goods-return-item.entity';
 import { StockTransfer } from './entities/stock-transfer.entity';
 import { StockTransferItem } from './entities/stock-transfer-item.entity';
 import { SerialNumber } from './entities/serial-number.entity';
+import { Inventory } from './entities/inventory.entity';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -53,6 +55,7 @@ import { SerialNumber } from './entities/serial-number.entity';
       StockTransfer,
       StockTransferItem,
       SerialNumber,
+      Inventory,
     ]),
     BullModule.registerQueue({
       name: 'inventory_alerts',

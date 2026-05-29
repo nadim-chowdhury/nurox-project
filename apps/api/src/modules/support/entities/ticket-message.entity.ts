@@ -24,7 +24,4 @@ export class TicketMessage extends TenantBaseEntity {
 
   @Column({ type: 'text' })
   content: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
 }

@@ -27,7 +27,9 @@ export class DeliveryOrder extends TenantBaseEntity {
   @Column({ type: 'timestamptz', nullable: true })
   deliveryDate: Date | null;
 
-  @OneToMany(() => DeliveryOrderLine, (line) => line.deliveryOrder, { cascade: true })
+  @OneToMany(() => DeliveryOrderLine, (line) => line.deliveryOrder, {
+    cascade: true,
+  })
   lines: DeliveryOrderLine[];
 }
 

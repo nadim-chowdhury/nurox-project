@@ -20,7 +20,4 @@ export class Bom extends TenantBaseEntity {
 
   @OneToMany(() => BomItem, (item) => item.bom, { cascade: true })
   items: BomItem[];
-
-  @CreateDateColumn()
-  createdAt: Date;
 }

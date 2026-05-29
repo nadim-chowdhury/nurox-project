@@ -33,10 +33,4 @@ export class KbArticle extends TenantBaseEntity {
   @ManyToOne(() => User)
   @JoinColumn({ name: 'authorId' })
   author: User;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

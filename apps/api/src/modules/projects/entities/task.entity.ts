@@ -1,4 +1,12 @@
-import { Entity, Column, ManyToOne, JoinColumn, Tree, TreeParent, TreeChildren } from 'typeorm';
+import {
+  Entity,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  Tree,
+  TreeParent,
+  TreeChildren,
+} from 'typeorm';
 import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Project } from './project.entity';
 
@@ -18,7 +26,7 @@ export enum TaskStatus {
 }
 
 @Entity('tasks')
-@Tree("closure-table")
+@Tree('closure-table')
 export class Task extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 255 })
   title: string;

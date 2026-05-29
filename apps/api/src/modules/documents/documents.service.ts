@@ -200,7 +200,8 @@ export class DocumentsService {
       where: { id, tenantId },
       withDeleted: true,
     });
-    if (!doc || !doc.deletedAt) throw new NotFoundException('Deleted document not found');
+    if (!doc || !doc.deletedAt)
+      throw new NotFoundException('Deleted document not found');
     await this.documentRepo.recover(doc);
     return doc;
   }
@@ -217,7 +218,7 @@ export class DocumentsService {
     userId: string,
     tenantId: string,
     documentId: string,
-    dto: { signatureBase64: string; signerName: string; ipAddress: string }
+    dto: { signatureBase64: string; signerName: string; ipAddress: string },
   ) {
     const doc = await this.findOne(tenantId, documentId);
     if (!doc) throw new NotFoundException('Document not found');
@@ -242,8 +243,12 @@ export class DocumentsService {
     const browser = await puppeteer.launch({ headless: true });
     try {
       const page = await browser.newPage();
-      
-      const { downloadUrl } = await this.getDownloadUrl(userId, tenantId, documentId);
+
+      const { downloadUrl } = await this.getDownloadUrl(
+        userId,
+        tenantId,
+        documentId,
+      );
 
       const htmlContent = `
         <!DOCTYPE html>
@@ -261,14 +266,18 @@ export class DocumentsService {
           <p>Document ID: ${documentId}</p>
           <div class="audit-trail">
             <h3>Signatures Audit Trail</h3>
-            ${signatures.map(s => `
+            ${signatures
+              .map(
+                (s) => `
               <div class="signature">
                 <p><strong>Signed by:</strong> ${s.signerName}</p>
                 <p><strong>Date:</strong> ${new Date(s.signatureDate).toLocaleString()}</p>
                 <p><strong>IP Address:</strong> ${s.ipAddress}</p>
                 ${s.signerName === dto.signerName ? `<img src="${dto.signatureBase64}" alt="Signature" />` : '[Signature on File]'}
               </div>
-            `).join('')}
+            `,
+              )
+              .join('')}
           </div>
         </body>
         </html>
@@ -278,7 +287,11 @@ export class DocumentsService {
       const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
 
       const key = `tenants/${tenantId}/documents/${Date.now()}-signed-${doc.name}`;
-      await this.storageService.uploadBuffer(key, Buffer.from(pdfBuffer), 'application/pdf');
+      await this.storageService.uploadBuffer(
+        key,
+        Buffer.from(pdfBuffer),
+        'application/pdf',
+      );
 
       const nextVersion = doc.latestVersionNumber + 1;
       const newVersion = this.versionRepo.create({

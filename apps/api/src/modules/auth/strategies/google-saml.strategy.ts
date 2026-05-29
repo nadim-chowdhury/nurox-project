@@ -41,11 +41,11 @@ export class GoogleSamlStrategy extends PassportStrategy(Strategy, 'saml') {
       throw new UnauthorizedException('Invalid SAML profile returned');
     }
 
-    const email = profile.email as string;
+    const email = profile.email;
 
     // Find or provision user based on SAML assertion
     // Note: In multi-tenant, we must determine tenant from email domain or request context
-    let user = await this.usersService.findByEmail(email);
+    const user = await this.usersService.findByEmail(email);
 
     if (!user) {
       // Auto-provision or reject

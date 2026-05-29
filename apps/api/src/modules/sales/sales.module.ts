@@ -9,7 +9,10 @@ import { Contact } from './entities/contact.entity';
 import { ActivityLog } from './entities/activity-log.entity';
 import { Quotation, QuotationLine } from './entities/quotation.entity';
 import { SalesOrder, SalesOrderLine } from './entities/sales-order.entity';
-import { DeliveryOrder, DeliveryOrderLine } from './entities/delivery-order.entity';
+import {
+  DeliveryOrder,
+  DeliveryOrderLine,
+} from './entities/delivery-order.entity';
 import { Pricelist, PricelistItem } from './entities/pricelist.entity';
 
 @Module({

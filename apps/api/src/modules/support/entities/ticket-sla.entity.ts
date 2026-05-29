@@ -16,10 +16,4 @@ export class TicketSla extends TenantBaseEntity {
 
   @Column({ type: 'int' })
   resolutionTimeMinutes: number;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

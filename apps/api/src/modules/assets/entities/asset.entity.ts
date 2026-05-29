@@ -43,10 +43,21 @@ export class Asset extends TenantBaseEntity {
 
   @Column({
     type: 'enum',
-    enum: ['PURCHASED', 'ACTIVE', 'UNDER_MAINTENANCE', 'DISPOSED', 'WRITTEN_OFF'],
+    enum: [
+      'PURCHASED',
+      'ACTIVE',
+      'UNDER_MAINTENANCE',
+      'DISPOSED',
+      'WRITTEN_OFF',
+    ],
     default: 'PURCHASED',
   })
-  status: 'PURCHASED' | 'ACTIVE' | 'UNDER_MAINTENANCE' | 'DISPOSED' | 'WRITTEN_OFF';
+  status:
+    | 'PURCHASED'
+    | 'ACTIVE'
+    | 'UNDER_MAINTENANCE'
+    | 'DISPOSED'
+    | 'WRITTEN_OFF';
 
   @Column({ type: 'uuid', nullable: true })
   assignedEmployeeId: string | null;

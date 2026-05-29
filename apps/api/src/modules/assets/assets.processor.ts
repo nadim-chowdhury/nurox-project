@@ -15,7 +15,8 @@ export class AssetsProcessor extends WorkerHost {
   constructor(
     private readonly assetsService: AssetsService,
     @InjectRepository(Asset) private readonly assetRepo: Repository<Asset>,
-    @InjectRepository(AssetMaintenance) private readonly maintenanceRepo: Repository<AssetMaintenance>,
+    @InjectRepository(AssetMaintenance)
+    private readonly maintenanceRepo: Repository<AssetMaintenance>,
   ) {
     super();
   }
@@ -48,10 +49,19 @@ export class AssetsProcessor extends WorkerHost {
 
     for (const asset of assets) {
       try {
-        await this.assetsService.calculateDepreciation(asset.tenantId, asset.id, 1);
-        this.logger.debug(`Calculated depreciation for asset ${asset.assetCode}`);
+        await this.assetsService.calculateDepreciation(
+          asset.tenantId,
+          asset.id,
+          1,
+        );
+        this.logger.debug(
+          `Calculated depreciation for asset ${asset.assetCode}`,
+        );
       } catch (err) {
-        this.logger.error(`Failed to calculate depreciation for asset ${asset.id}`, err);
+        this.logger.error(
+          `Failed to calculate depreciation for asset ${asset.id}`,
+          err,
+        );
       }
     }
     return { processed: assets.length };
@@ -71,7 +81,9 @@ export class AssetsProcessor extends WorkerHost {
 
     for (const asset of expiringAssets) {
       // In a real scenario, this would dispatch an email/notification
-      this.logger.debug(`Warranty for asset ${asset.assetCode} is expiring soon!`);
+      this.logger.debug(
+        `Warranty for asset ${asset.assetCode} is expiring soon!`,
+      );
     }
     return { flagged: expiringAssets.length };
   }
@@ -79,7 +91,7 @@ export class AssetsProcessor extends WorkerHost {
   private async handleMaintenanceTrigger() {
     this.logger.log('Triggering scheduled maintenance tasks...');
     const today = new Date();
-    
+
     const dueMaintenances = await this.maintenanceRepo.find({
       where: {
         nextMaintenanceDate: LessThanOrEqual(today),
@@ -88,7 +100,9 @@ export class AssetsProcessor extends WorkerHost {
     });
 
     for (const maintenance of dueMaintenances) {
-      this.logger.debug(`Asset ${maintenance.asset?.assetCode} is due for maintenance based on schedule.`);
+      this.logger.debug(
+        `Asset ${maintenance.asset?.assetCode} is due for maintenance based on schedule.`,
+      );
     }
     return { triggered: dueMaintenances.length };
   }

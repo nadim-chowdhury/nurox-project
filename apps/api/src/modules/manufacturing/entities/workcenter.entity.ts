@@ -18,7 +18,4 @@ export class Workcenter extends TenantBaseEntity {
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   overheadCostPerHour: number;
-
-  @CreateDateColumn()
-  createdAt: Date;
 }

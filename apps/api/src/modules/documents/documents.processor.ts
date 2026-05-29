@@ -41,9 +41,13 @@ export class DocumentsProcessor extends WorkerHost {
     }
   }
 
-  private async processOcr(data: { documentId: string; versionId: string; tenantId: string }) {
+  private async processOcr(data: {
+    documentId: string;
+    versionId: string;
+    tenantId: string;
+  }) {
     this.logger.log(`Starting OCR processing for document ${data.documentId}`);
-    
+
     const version = await this.versionRepo.findOne({
       where: { id: data.versionId },
       relations: ['document'],
@@ -53,40 +57,53 @@ export class DocumentsProcessor extends WorkerHost {
       throw new Error(`Version ${data.versionId} not found`);
     }
 
-    if (!version.mimeType.startsWith('image/') && version.mimeType !== 'application/pdf') {
-      this.logger.log(`Skipping OCR for unsupported mime type: ${version.mimeType}`);
+    if (
+      !version.mimeType.startsWith('image/') &&
+      version.mimeType !== 'application/pdf'
+    ) {
+      this.logger.log(
+        `Skipping OCR for unsupported mime type: ${version.mimeType}`,
+      );
       return;
     }
 
     try {
-      const url = await this.storageService.getDownloadPresignedUrl(version.fileKey);
-      
+      const url = await this.storageService.getDownloadPresignedUrl(
+        version.fileKey,
+      );
+
       // For images, we can pass the URL directly to Tesseract
       // For PDFs, we would ideally extract images first, but for simplicity we'll let Tesseract attempt it or skip complex PDFs.
       // Note: Tesseract.js in Node can read images.
-      
+
       let text = '';
       if (version.mimeType.startsWith('image/')) {
         const result = await Tesseract.recognize(url, 'eng');
         text = result.data.text;
       } else {
-        // PDF OCR requires pdf.js to render to image first in node, which is complex. 
+        // PDF OCR requires pdf.js to render to image first in node, which is complex.
         // For this demo, we'll extract text if it's a searchable PDF or just store the filename.
-        text = version.document.name; 
+        text = version.document.name;
       }
 
       // Index in MeiliSearch
-      await this.meilisearch.index('documents').addDocuments([{
-        id: data.documentId,
-        tenantId: data.tenantId,
-        title: version.document.name,
-        content: text,
-      }]);
+      await this.meilisearch.index('documents').addDocuments([
+        {
+          id: data.documentId,
+          tenantId: data.tenantId,
+          title: version.document.name,
+          content: text,
+        },
+      ]);
 
-      this.logger.log(`Successfully indexed document ${data.documentId} with OCR`);
-
+      this.logger.log(
+        `Successfully indexed document ${data.documentId} with OCR`,
+      );
     } catch (error) {
-      this.logger.error(`OCR processing failed for document ${data.documentId}`, error);
+      this.logger.error(
+        `OCR processing failed for document ${data.documentId}`,
+        error,
+      );
       throw error;
     }
   }

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as QRCode from 'qrcode';
 import csv from 'csv-parser';
@@ -161,15 +165,23 @@ export class AssetsService {
 
   async generateAssetQR(tenantId: string, id: string): Promise<string> {
     const asset = await this.findOneAsset(tenantId, id);
-    const qrData = JSON.stringify({ tenantId, assetId: id, assetCode: asset.assetCode });
+    const qrData = JSON.stringify({
+      tenantId,
+      assetId: id,
+      assetCode: asset.assetCode,
+    });
     const qrCodeUrl = await QRCode.toDataURL(qrData);
-    
+
     asset.qrCodeUrl = qrCodeUrl;
     await this.assetRepo.save(asset);
     return qrCodeUrl;
   }
 
-  async calculateDepreciation(tenantId: string, id: string, periodsPassed: number): Promise<void> {
+  async calculateDepreciation(
+    tenantId: string,
+    id: string,
+    periodsPassed: number,
+  ): Promise<void> {
     const asset = await this.findOneAsset(tenantId, id);
     if (!asset.purchaseCost || asset.depreciationMethod === 'NONE') return;
 
@@ -177,8 +189,12 @@ export class AssetsService {
     const salvage = asset.salvageValue ?? 0;
 
     if (asset.depreciationMethod === 'SL' && asset.usefulLifeMonths) {
-      const depreciationPerPeriod = (asset.purchaseCost - salvage) / asset.usefulLifeMonths;
-      currentNbv = Math.max(salvage, currentNbv - (depreciationPerPeriod * periodsPassed));
+      const depreciationPerPeriod =
+        (asset.purchaseCost - salvage) / asset.usefulLifeMonths;
+      currentNbv = Math.max(
+        salvage,
+        currentNbv - depreciationPerPeriod * periodsPassed,
+      );
     } else if (asset.depreciationMethod === 'DB' && asset.depreciationRate) {
       for (let i = 0; i < periodsPassed; i++) {
         const depreciation = currentNbv * (asset.depreciationRate / 100);

@@ -119,7 +119,10 @@ export class AssetsController {
   @ApiOperation({ summary: 'Generate QR code for asset' })
   @RequirePermissions(Permission.ADMIN_READ)
   async generateQR(@Req() req: any, @Param('id') id: string) {
-    const qrCodeUrl = await this.assetsService.generateAssetQR(req.tenantId, id);
+    const qrCodeUrl = await this.assetsService.generateAssetQR(
+      req.tenantId,
+      id,
+    );
     return { qrCodeUrl };
   }
 

@@ -9,11 +9,14 @@ import { Rack } from './entities/rack.entity';
 import { Bin } from './entities/bin.entity';
 import { Batch } from './entities/batch.entity';
 import { StockMovement } from './entities/stock-movement.entity';
+import { Inventory } from './entities/inventory.entity';
 import { getQueueToken } from '@nestjs/bullmq';
 import { DataSource } from 'typeorm';
+import { ClsService } from 'nestjs-cls';
 
 describe('InventoryService', () => {
   let service: InventoryService;
+  let dataSource: DataSource;
 
   const mockRepository = () => ({
     findOne: jest.fn(),
@@ -56,6 +59,7 @@ describe('InventoryService', () => {
           provide: getRepositoryToken(StockMovement),
           useFactory: mockRepository,
         },
+        { provide: getRepositoryToken(Inventory), useFactory: mockRepository },
         {
           provide: getQueueToken('inventory_alerts'),
           useValue: {
@@ -68,13 +72,120 @@ describe('InventoryService', () => {
             transaction: jest.fn(),
           },
         },
+        {
+          provide: ClsService,
+          useValue: {
+            get: jest.fn().mockReturnValue('test-tenant'),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<InventoryService>(InventoryService);
+    dataSource = module.get<DataSource>(DataSource);
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('receiveStock', () => {
+    it('should create a batch and update inventory balance', async () => {
+      const dto = {
+        productId: 'prod-1',
+        warehouseId: 'wh-1',
+        batchNumber: 'B001',
+        quantity: 100,
+        unitCost: 10,
+      };
+
+      const mockManager = {
+        findOne: jest.fn().mockResolvedValue(null), // No existing batch, no existing inventory
+        create: jest.fn((entity, data) => ({ id: 'new-id', ...data })),
+        save: jest.fn((data) => Promise.resolve(data)),
+        createQueryBuilder: jest.fn(() => ({
+          where: jest.fn().mockReturnThis(),
+          select: jest.fn().mockReturnThis(),
+          addSelect: jest.fn().mockReturnThis(),
+          getRawOne: jest.fn().mockResolvedValue({ total: 0, value: 0 }),
+        })),
+      };
+
+      (dataSource.transaction as jest.Mock).mockImplementation(async (cb) =>
+        cb(mockManager),
+      );
+
+      await service.receiveStock(dto);
+
+      expect(mockManager.create).toHaveBeenCalledWith(
+        Batch,
+        expect.any(Object),
+      );
+      expect(mockManager.create).toHaveBeenCalledWith(
+        Inventory,
+        expect.objectContaining({
+          warehouseId: 'wh-1',
+          quantity: 100,
+        }),
+      );
+      expect(mockManager.create).toHaveBeenCalledWith(
+        StockMovement,
+        expect.any(Object),
+      );
+    });
+  });
+
+  describe('transferStock', () => {
+    it('should update source and destination inventory balances', async () => {
+      const dto = {
+        productId: 'prod-1',
+        fromWarehouseId: 'wh-1',
+        toWarehouseId: 'wh-2',
+        batchId: 'batch-1',
+        quantity: 50,
+      };
+
+      const mockManager = {
+        findOne: jest
+          .fn()
+          .mockResolvedValueOnce({
+            id: 'inv-1',
+            quantity: 100,
+            warehouseId: 'wh-1',
+          }) // find source inventory
+          .mockResolvedValueOnce({ id: 'batch-1', unitCost: 10 }) // find batch
+          .mockResolvedValueOnce({
+            id: 'inv-1',
+            quantity: 100,
+            warehouseId: 'wh-1',
+          }) // find source inventory again in updateBalance
+          .mockResolvedValueOnce({
+            id: 'inv-2',
+            quantity: 0,
+            warehouseId: 'wh-2',
+          }), // find dest inventory in updateBalance
+        create: jest.fn((entity, data) => ({ id: 'new-id', ...data })),
+        save: jest.fn((data) => Promise.resolve(data)),
+      };
+
+      (dataSource.transaction as jest.Mock).mockImplementation(async (cb) =>
+        cb(mockManager),
+      );
+
+      await service.transferStock(dto);
+
+      expect(mockManager.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          warehouseId: 'wh-1',
+          quantity: 50, // 100 - 50
+        }),
+      );
+      expect(mockManager.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          warehouseId: 'wh-2',
+          quantity: 50, // 0 + 50
+        }),
+      );
+    });
   });
 });
