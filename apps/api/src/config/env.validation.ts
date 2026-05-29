@@ -26,11 +26,14 @@ const envSchema = z.object({
   REDIS_HOST: z.string().default('localhost'),
   REDIS_PORT: z.coerce.number().default(6379),
 
-  // JWT (RS256 asymmetric recommended for production)
-  JWT_ACCESS_SECRET: z.string().min(1, 'JWT_ACCESS_SECRET is required'),
+  // JWT (RS256 asymmetric — keys auto-generated in dev, required in production)
+  JWT_ACCESS_PRIVATE_KEY: z.string().optional(),
+  JWT_ACCESS_PUBLIC_KEY: z.string().optional(),
   JWT_ACCESS_EXPIRY: z.string().default('15m'),
-  JWT_REFRESH_SECRET: z.string().min(1, 'JWT_REFRESH_SECRET is required'),
+  JWT_REFRESH_SECRET: z.string().optional(),
   JWT_REFRESH_EXPIRY: z.string().default('7d'),
+  JWT_MAGIC_LINK_SECRET: z.string().optional(),
+  JWT_MAGIC_LINK_EXPIRY: z.string().default('10m'),
 
   // CORS — comma-separated origins for multi-tenant subdomains
   CORS_ALLOWED_ORIGINS: z.string().default('http://localhost:3000'),

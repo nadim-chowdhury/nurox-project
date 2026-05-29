@@ -10,6 +10,7 @@
     "./*": "./src/*"
   },
   "scripts": {
+    "build": "tsc --project tsconfig.json",
     "lint": "eslint .",
     "check-types": "tsc --noEmit"
   },

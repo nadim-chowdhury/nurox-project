@@ -7,15 +7,15 @@ import { Document } from './entities/document.entity';
 import { DocumentVersion } from './entities/document-version.entity';
 import { StorageService } from '../system/storage.service';
 import * as Tesseract from 'tesseract.js';
-// @ts-ignore
-import { MeiliSearch } from 'meilisearch';
+// @ts-ignore - moduleResolution: node can't resolve meilisearch exports
+import { Meilisearch } from 'meilisearch';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 @Processor('documents')
 export class DocumentsProcessor extends WorkerHost {
   private readonly logger = new Logger(DocumentsProcessor.name);
-  private readonly meilisearch: MeiliSearch;
+  private readonly meilisearch: Meilisearch;
 
   constructor(
     @InjectRepository(Document)
@@ -26,7 +26,7 @@ export class DocumentsProcessor extends WorkerHost {
     private readonly configService: ConfigService,
   ) {
     super();
-    this.meilisearch = new MeiliSearch({
+    this.meilisearch = new Meilisearch({
       host: this.configService.get('MEILI_HOST') || 'http://localhost:7700',
       apiKey: this.configService.get('MEILI_API_KEY') || 'masterKey',
     });

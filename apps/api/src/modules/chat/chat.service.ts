@@ -3,13 +3,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChatChannel } from './entities/chat-channel.entity';
 import { ChatMessage } from './entities/chat-message.entity';
-// @ts-ignore
-import { MeiliSearch } from 'meilisearch';
+// @ts-ignore - moduleResolution: node can't resolve meilisearch exports
+import { Meilisearch } from 'meilisearch';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ChatService {
-  private meiliSearchClient: MeiliSearch;
+  private meiliSearchClient: Meilisearch;
   private readonly logger = new Logger(ChatService.name);
 
   constructor(
@@ -20,7 +20,7 @@ export class ChatService {
     private readonly configService: ConfigService,
   ) {
     try {
-      this.meiliSearchClient = new MeiliSearch({
+      this.meiliSearchClient = new Meilisearch({
         host:
           this.configService.get<string>('MEILISEARCH_HOST') ||
           'http://localhost:7700',

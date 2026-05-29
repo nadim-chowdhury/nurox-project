@@ -7,13 +7,17 @@ jest.mock('archiver', () => {
   });
 });
 
-jest.mock('meilisearch', () => ({
-  MeiliSearch: jest.fn().mockImplementation(() => ({
+jest.mock('meilisearch', () => {
+  const mockClient = jest.fn().mockImplementation(() => ({
     index: jest.fn().mockReturnThis(),
     addDocuments: jest.fn(),
     search: jest.fn(),
-  })),
-}));
+  }));
+  return {
+    MeiliSearch: mockClient,
+    Meilisearch: mockClient,
+  };
+});
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';

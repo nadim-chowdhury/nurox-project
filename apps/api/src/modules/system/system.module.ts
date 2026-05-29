@@ -73,11 +73,21 @@ import { BulkImportService } from './bulk-import.service';
     JwtModule,
     RedisModule,
     BullModule.registerQueue(
+      { name: 'system' },
+      { name: 'hr' },
       { name: 'database-backup' },
       { name: 'recycle-bin' },
       { name: 'report-scheduler' },
       { name: 'virus-scan' },
     ),
+    BullBoardModule.forFeature({
+      name: 'system',
+      adapter: BullMQAdapter,
+    }),
+    BullBoardModule.forFeature({
+      name: 'hr',
+      adapter: BullMQAdapter,
+    }),
     BullBoardModule.forFeature({
       name: 'database-backup',
       adapter: BullMQAdapter,

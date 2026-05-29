@@ -1,26 +1,56 @@
-import * as Sentry from '@sentry/nestjs';
-import { nodeProfilingIntegration } from '@sentry/profiling-node';
+/**
+ * Instrumentation module for Sentry and OpenTelemetry.
+ *
+ * These are optional monitoring integrations. If the required packages
+ * are not installed (e.g., in Docker production builds using pnpm deploy),
+ * instrumentation is silently skipped.
+ */
 
-Sentry.init({
-  dsn: process.env.SENTRY_DSN || 'https://public@sentry.example.com/1',
-  integrations: [nodeProfilingIntegration()],
-  tracesSampleRate: 1.0,
-  profilesSampleRate: 1.0,
-});
+// Sentry integration (optional)
+try {
+  if (process.env.SENTRY_DSN) {
+    const Sentry = require('@sentry/nestjs');
+    const { nodeProfilingIntegration } = require('@sentry/profiling-node');
 
-import { NodeSDK } from '@opentelemetry/sdk-node';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
+    Sentry.init({
+      dsn: process.env.SENTRY_DSN,
+      integrations: [nodeProfilingIntegration()],
+      tracesSampleRate: parseFloat(
+        process.env.SENTRY_TRACES_SAMPLE_RATE || '0.1',
+      ),
+      profilesSampleRate: parseFloat(
+        process.env.SENTRY_PROFILES_SAMPLE_RATE || '0.1',
+      ),
+    });
+    console.log('[Instrumentation] Sentry initialized');
+  }
+} catch {
+  // Sentry packages not installed — skip silently
+}
 
-const otlpExporter = new OTLPTraceExporter({
-  url:
-    process.env.OTEL_EXPORTER_OTLP_ENDPOINT ||
-    'http://localhost:4318/v1/traces',
-});
+// OpenTelemetry integration (optional)
+try {
+  if (process.env.OTEL_EXPORTER_OTLP_ENDPOINT) {
+    const { NodeSDK } = require('@opentelemetry/sdk-node');
+    const {
+      OTLPTraceExporter,
+    } = require('@opentelemetry/exporter-trace-otlp-http');
+    const {
+      getNodeAutoInstrumentations,
+    } = require('@opentelemetry/auto-instrumentations-node');
 
-const sdk = new NodeSDK({
-  traceExporter: otlpExporter,
-  instrumentations: [getNodeAutoInstrumentations()],
-});
+    const otlpExporter = new OTLPTraceExporter({
+      url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+    });
 
-sdk.start();
+    const sdk = new NodeSDK({
+      traceExporter: otlpExporter,
+      instrumentations: [getNodeAutoInstrumentations()],
+    });
+
+    sdk.start();
+    console.log('[Instrumentation] OpenTelemetry initialized');
+  }
+} catch {
+  // OpenTelemetry packages not installed — skip silently
+}

@@ -1,57 +1,19 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { PassportStrategy } from '@nestjs/passport';
-import { Strategy, Profile } from '@node-saml/passport-saml';
-import { ConfigService } from '@nestjs/config';
-import { UsersService } from '../../users/users.service';
+/**
+ * Google Workspace SAML Strategy Stub
+ *
+ * This file is a placeholder for the Google Workspace SAML SSO strategy.
+ * The actual implementation requires the `@node-saml/passport-saml` package.
+ *
+ * To enable Google SAML SSO:
+ * 1. Run: pnpm add @node-saml/passport-saml --filter api
+ * 2. Uncomment the GoogleSamlStrategy provider in auth.module.ts
+ * 3. Restore the implementation from git history or implement fresh
+ *
+ * Original implementation used:
+ * - @node-saml/passport-saml Strategy and Profile types
+ * - ConfigService for SAML entry point, issuer, and cert
+ * - UsersService.findByEmail for user lookup from SAML assertion
+ */
 
-@Injectable()
-export class GoogleSamlStrategy extends PassportStrategy(Strategy, 'saml') {
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly usersService: UsersService,
-  ) {
-    super(
-      {
-        callbackUrl: configService.get<string>(
-          'auth.saml.callbackUrl',
-          'http://localhost:3001/api/v1/auth/saml/callback',
-        ),
-        entryPoint: configService.get<string>(
-          'auth.saml.entryPoint',
-          'https://accounts.google.com/o/saml2/idp?idpid=YOUR_IDP_ID',
-        ),
-        issuer: configService.get<string>('auth.saml.issuer', 'nurox-erp'),
-        cert: configService.get<string>(
-          'auth.saml.cert',
-          'YOUR_GOOGLE_WORKSPACE_X509_CERT',
-        ),
-      } as any,
-      (profile: any, done: any) => {
-        // NestJS PassportStrategy wraps this and normally handles the callback itself,
-        // but @node-saml/passport-saml enforces a second argument in TS.
-        this.validate(profile)
-          .then((user) => done(null, user))
-          .catch((err) => done(err, false));
-      },
-    );
-  }
-
-  async validate(profile: Profile): Promise<any> {
-    if (!profile || !profile.email) {
-      throw new UnauthorizedException('Invalid SAML profile returned');
-    }
-
-    const email = profile.email;
-
-    // Find or provision user based on SAML assertion
-    // Note: In multi-tenant, we must determine tenant from email domain or request context
-    const user = await this.usersService.findByEmail(email);
-
-    if (!user) {
-      // Auto-provision or reject
-      throw new UnauthorizedException('User not provisioned in ERP');
-    }
-
-    return user;
-  }
-}
+// Stub export to prevent TypeScript errors
+export class GoogleSamlStrategy {}

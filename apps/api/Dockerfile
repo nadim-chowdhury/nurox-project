@@ -22,8 +22,9 @@ RUN pnpm install --frozen-lockfile
 # Copy the rest of the monorepo
 COPY . .
 
-# Build the API and its dependencies (shared-schemas)
-RUN pnpm turbo run build --filter=api
+# Build shared-schemas first (produces dist/), then the API
+RUN pnpm turbo run build --filter=@repo/shared-schemas && \
+    pnpm turbo run build --filter=api
 
 FROM node:20-alpine AS runner
 
@@ -35,20 +36,27 @@ RUN npm install -g pnpm && apk add --no-cache curl
 # Set NODE_ENV
 ENV NODE_ENV production
 
-# Copy necessary files from builder
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
-COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
-COPY --from=builder /app/apps/api/dist ./apps/api/dist
-COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
-COPY --from=builder /app/packages/shared-schemas/package.json ./packages/shared-schemas/package.json
-COPY --from=builder /app/packages/shared-schemas/dist ./packages/shared-schemas/dist
-COPY --from=builder /app/packages/shared-schemas/node_modules ./packages/shared-schemas/node_modules
-
-# Ensure non-root user
+# Create non-root user
 RUN addgroup -S nodejs && adduser -S nestjs -G nodejs
-RUN chown -R nestjs:nodejs /app
+
+# Copy workspace config files needed for pnpm install
+COPY --from=builder --chown=nestjs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nestjs:nodejs /app/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder --chown=nestjs:nodejs /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./apps/api/package.json
+COPY --from=builder --chown=nestjs:nodejs /app/packages/shared-schemas/package.json ./packages/shared-schemas/package.json
+
+# Install production dependencies with hoisted node_modules (flat structure, no symlinks)
+RUN pnpm install --prod --frozen-lockfile --ignore-scripts --config.node-linker=hoisted
+
+# Copy compiled API dist
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./apps/api/dist
+
+# Copy compiled shared-schemas dist and patch exports for production
+COPY --from=builder --chown=nestjs:nodejs /app/packages/shared-schemas/dist ./packages/shared-schemas/dist
+RUN echo '{"name":"@repo/shared-schemas","version":"0.0.1","private":true,"main":"./dist/index.js","types":"./dist/index.d.ts","exports":{".":"./dist/index.js","./*":"./dist/*"}}' > ./packages/shared-schemas/package.json
+
+# Switch to non-root user
 USER nestjs
 
 # Expose port
