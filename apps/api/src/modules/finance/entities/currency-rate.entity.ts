@@ -1,17 +1,9 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  Index,
-} from 'typeorm';
+import { Entity, Column, Index } from 'typeorm';
+import { BaseEntity } from '../../../common/entities/base.entity';
 
 @Entity('currency_rates')
 @Index(['baseCurrency', 'targetCurrency', 'rateDate'], { unique: true })
-export class CurrencyRate {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class CurrencyRate extends BaseEntity {
   @Column({ type: 'varchar', length: 3 })
   baseCurrency: string;
 

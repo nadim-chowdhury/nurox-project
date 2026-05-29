@@ -1,33 +1,19 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  OneToOne,
-  JoinColumn,
-  ManyToOne,
-} from 'typeorm';
+import { Entity, Column, OneToOne, JoinColumn, ManyToOne } from 'typeorm';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Tenant } from '../../system/entities/tenant.entity';
 import { SubscriptionPlan } from './subscription-plan.entity';
 
 @Entity({ name: 'tenant_subscriptions', schema: 'public' })
-export class TenantSubscription {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Column({ type: 'uuid' })
-  tenantId: string;
-
+export class TenantSubscription extends TenantBaseEntity {
   @OneToOne(() => Tenant, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenantId' })
+  @JoinColumn({ name: 'tenant_id' })
   tenant: Tenant;
 
   @Column({ type: 'uuid' })
   planId: string;
 
   @ManyToOne(() => SubscriptionPlan)
-  @JoinColumn({ name: 'planId' })
+  @JoinColumn({ name: 'plan_id' })
   plan: SubscriptionPlan;
 
   @Column({ type: 'varchar', length: 50, default: 'trialing' })
@@ -50,10 +36,4 @@ export class TenantSubscription {
 
   @Column({ type: 'boolean', default: false })
   cancelAtPeriodEnd: boolean;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

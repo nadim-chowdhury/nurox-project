@@ -1,17 +1,9 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Bom } from './bom.entity';
 
 @Entity('bom_items')
-export class BomItem {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class BomItem extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   bomId: string;
 

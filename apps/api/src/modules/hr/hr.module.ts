@@ -31,6 +31,7 @@ import { Termination } from './entities/termination.entity';
 import { ExitInterview } from './entities/exit-interview.entity';
 import { ClearanceChecklist } from './entities/clearance-checklist.entity';
 import { Shift } from './entities/shift.entity';
+import { Grade } from './entities/grade.entity';
 import { BullModule } from '@nestjs/bullmq';
 import { SystemModule } from '../system/system.module';
 import { EmployeeResolver } from './resolvers/employee.resolver';
@@ -66,6 +67,7 @@ import { EmployeeResolver } from './resolvers/employee.resolver';
       ExitInterview,
       ClearanceChecklist,
       Shift,
+      Grade,
     ]),
     BullModule.registerQueue({
       name: 'hr',

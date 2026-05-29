@@ -8,6 +8,7 @@ import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import * as express from 'express';
+import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -33,6 +34,10 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+
+  // ─── Global Zod Validation (MANDATORY) ──────────────────────────
+  // Replaces class-validator. Ensures all DTOs are validated via Zod.
+  app.useGlobalPipes(new ZodValidationPipe());
 
   // HTTP security headers
   app.use(

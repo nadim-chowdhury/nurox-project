@@ -1,27 +1,13 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
-  OneToMany,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Tenant } from '../../system/entities/tenant.entity';
 import { User } from '../../users/entities/user.entity';
 import { TicketMessage } from './ticket-message.entity';
 
 @Entity('tickets')
-export class Ticket {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Column({ type: 'uuid' })
-  tenantId: string;
-
+export class Ticket extends TenantBaseEntity {
   @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenantId' })
+  @JoinColumn({ name: 'tenant_id' })
   tenant: Tenant;
 
   @Column({ type: 'varchar' })

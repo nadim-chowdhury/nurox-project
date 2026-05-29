@@ -1,19 +1,10 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  ManyToOne,
-  JoinColumn,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Ticket } from './ticket.entity';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('ticket_messages')
-export class TicketMessage {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class TicketMessage extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   ticketId: string;
 

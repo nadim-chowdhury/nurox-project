@@ -1,25 +1,11 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
-  Index,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Tenant } from './tenant.entity';
 
 @Entity({ name: 'tenant_custom_domains', schema: 'public' })
-export class TenantCustomDomain {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Column({ type: 'uuid' })
-  tenantId: string;
-
-  @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenantId' })
+export class TenantCustomDomain extends TenantBaseEntity {
+  @ManyToOne(() => Tenant, (tenant) => tenant.id, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'tenant_id' })
   tenant: Tenant;
 
   @Index({ unique: true })
@@ -37,10 +23,4 @@ export class TenantCustomDomain {
 
   @Column({ type: 'boolean', default: false })
   isSslEnabled: boolean;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

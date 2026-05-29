@@ -1,24 +1,18 @@
-import {
-  Entity,
-  Column,
-  Index,
-  ManyToOne,
-  JoinColumn,
-  PrimaryColumn,
-} from 'typeorm';
+import { Entity, Column, Index, ManyToOne, JoinColumn } from 'typeorm';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { User } from './user.entity';
 
 @Entity('user_preferences')
-@Index(['userId', 'key'], { unique: true })
-export class UserPreference {
-  @PrimaryColumn({ type: 'uuid' })
+@Index(['tenantId', 'userId', 'key'], { unique: true })
+export class UserPreference extends TenantBaseEntity {
+  @Column({ type: 'uuid' })
   userId: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @PrimaryColumn({ type: 'varchar', length: 100 })
+  @Column({ type: 'varchar', length: 100 })
   key: string;
 
   @Column({ type: 'jsonb' })

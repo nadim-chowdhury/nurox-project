@@ -25,16 +25,28 @@ import {
   AccountType,
 } from '../src/modules/finance/entities/account.entity';
 import { ClsService } from 'nestjs-cls';
+import { getQueueToken } from '@nestjs/bullmq';
 
 describe('Finance Hardening (e2e)', () => {
   let app: INestApplication;
   let dataSource: DataSource;
   let cls: ClsService;
 
+  const mockQueue = {
+    add: jest.fn(),
+    process: jest.fn(),
+  };
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(getQueueToken('ar_reminders'))
+      .useValue(mockQueue)
+      .overrideProvider(getQueueToken('hr'))
+      .useValue(mockQueue)
+      // Add other queues as needed if they cause issues
+      .compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();

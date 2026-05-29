@@ -29,6 +29,29 @@
 
 A feature is only "Done" when it passes the **Production Hardening Checklist** in `GEMINI.md`.
 
+### 0.4 Hardening Specification (Non-Negotiable)
+
+Every module implemented or refactored MUST adhere to these four pillars:
+
+1.  **Multi-Tenancy (RLS & Scoping):**
+    - Entities MUST extend `TenantBaseEntity`.
+    - Database migrations MUST enable Row-Level Security (RLS).
+    - Every query in the Service layer MUST include `{ tenantId: this.tenantId }`.
+
+2.  **Boundary Validation (Zod):**
+    - Controllers MUST use `ZodValidationPipe` at the method or class level.
+    - Schemas MUST be imported from `@repo/shared-schemas`.
+    - No raw JSON objects or local DTO classes allowed in controllers.
+
+3.  **Audit Trail (Interceptors):**
+    - All mutation methods (`POST`, `PUT`, `PATCH`, `DELETE`) MUST be decorated with `AuditLogInterceptor`.
+    - Changes MUST be captured in the `audit_logs` table with `old_value` and `new_value`.
+
+4.  **UI Consistency (Standardized Wrappers):**
+    - Forms MUST use `react-hook-form` + `zodResolver`.
+    - Inputs MUST use standardized wrappers (e.g., `RhfInput`, `RhfSelect`) from `@/components/common/forms/`.
+    - Tables MUST support server-side pagination and consistent "Liquid Precision" styling.
+
 ---
 
 ## Table of Contents

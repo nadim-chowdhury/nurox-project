@@ -1,18 +1,8 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-} from 'typeorm';
+import { Entity, Column } from 'typeorm';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 
 @Entity('tax_filing_exports')
-export class TaxFilingExport {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Column({ type: 'uuid' })
-  tenantId: string;
-
+export class TaxFilingExport extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 10 })
   jurisdiction: string;
 

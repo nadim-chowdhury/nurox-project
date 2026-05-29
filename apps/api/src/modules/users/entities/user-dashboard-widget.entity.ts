@@ -1,19 +1,10 @@
-import {
-  Entity,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  PrimaryGeneratedColumn,
-  Index,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { User } from './user.entity';
 
 @Entity('user_dashboard_widgets')
-@Index(['userId', 'widgetId'], { unique: true })
-export class UserDashboardWidget {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+@Index(['tenantId', 'userId', 'widgetId'], { unique: true })
+export class UserDashboardWidget extends TenantBaseEntity {
   @Column({ type: 'uuid' })
   userId: string;
 

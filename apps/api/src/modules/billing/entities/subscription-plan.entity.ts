@@ -1,16 +1,8 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, Column } from 'typeorm';
+import { BaseEntity } from '../../../common/entities/base.entity';
 
 @Entity({ name: 'subscription_plans', schema: 'public' })
-export class SubscriptionPlan {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class SubscriptionPlan extends BaseEntity {
   @Column({ type: 'varchar', length: 150 })
   name: string;
 

@@ -19,6 +19,11 @@ import { UserDashboardService } from './user-dashboard.service';
   ],
   controllers: [UsersController],
   providers: [UsersService, UserPreferencesService, UserDashboardService],
-  exports: [UsersService, UserPreferencesService, UserDashboardService],
+  exports: [
+    UsersService,
+    UserPreferencesService,
+    UserDashboardService,
+    TypeOrmModule,
+  ],
 })
 export class UsersModule {}
