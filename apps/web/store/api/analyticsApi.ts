@@ -1,5 +1,4 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "@/lib/api-client";
+import { baseApi } from "./baseApi";
 
 export interface DashboardData {
   kpis: {
@@ -18,10 +17,7 @@ export interface AnalyticsParams {
   endDate?: string;
 }
 
-export const analyticsApi = createApi({
-  reducerPath: "analyticsApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ["Dashboard"],
+export const analyticsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getDashboard: builder.query<DashboardData, AnalyticsParams>({
       query: (params) => ({
@@ -42,6 +38,7 @@ export const analyticsApi = createApi({
         url: "/system/audit-logs",
         params,
       }),
+      providesTags: ["AuditLog"],
     }),
     getAlerts: builder.query<any[], AnalyticsParams | void>({
       query: (params) => ({
@@ -52,7 +49,15 @@ export const analyticsApi = createApi({
     getDepartmentKPIs: builder.query<any[], void>({
       query: () => "/analytics/departments",
     }),
-    getComparison: builder.query<any, { currentStart: string; currentEnd: string; prevStart: string; prevEnd: string }>({
+    getComparison: builder.query<
+      any,
+      {
+        currentStart: string;
+        currentEnd: string;
+        prevStart: string;
+        prevEnd: string;
+      }
+    >({
       query: (params) => ({
         url: "/analytics/comparison",
         params,
@@ -65,10 +70,11 @@ export const analyticsApi = createApi({
       query: () => "/analytics/performance-calibration",
     }),
   }),
+  overrideExisting: false,
 });
 
-export const { 
-  useGetDashboardQuery, 
+export const {
+  useGetDashboardQuery,
   useGetKPIsQuery,
   useGetAuditLogsQuery,
   useGetAlertsQuery,

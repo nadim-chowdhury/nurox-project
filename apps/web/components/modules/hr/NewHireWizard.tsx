@@ -1,27 +1,45 @@
 "use client";
 
 import React, { useState } from "react";
-import { Steps, Form, Input, DatePicker, Select, Button, InputNumber, Card, message } from "antd";
-import { useForm, Controller } from "react-hook-form";
+import { Steps, Form, Button, Card, message } from "antd";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { 
-  createEmployeeSchema, 
-  employeePersonalSchema, 
-  employmentDetailsSchema, 
+import {
+  createEmployeeSchema,
+  employeePersonalSchema,
+  employmentDetailsSchema,
+  compensationDetailsSchema,
+  emergencyContactSchema,
+  documentsSchema,
+  type CreateEmployeeDto,
 } from "@repo/shared-schemas";
-import { useCreateEmployeeMutation, useGetDepartmentsQuery } from "@/store/api/hrApi";
+import {
+  useCreateEmployeeMutation,
+  useGetDepartmentsQuery,
+  useGetDesignationsQuery,
+  useGetEmployeesQuery,
+} from "@/store/api/hrApi";
 import { useGetBranchesQuery } from "@/store/api/systemApi";
+import { RhfInput } from "@/components/common/forms/RhfInput";
+import { RhfSelect } from "@/components/common/forms/RhfSelect";
+import { RhfDatePicker } from "@/components/common/forms/RhfDatePicker";
+import { RhfInputNumber } from "@/components/common/forms/RhfInputNumber";
 import dayjs from "dayjs";
 
 export const NewHireWizard: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [createEmployee, { isLoading }] = useCreateEmployeeMutation();
   const { data: departments } = useGetDepartmentsQuery();
+  const { data: designations } = useGetDesignationsQuery();
   const { data: branches } = useGetBranchesQuery();
+  const { data: employees } = useGetEmployeesQuery({}); // For Manager selection
 
-  // We use separate forms or a combined one. 
-  // For a wizard, it's often better to have one combined form state.
-  const { control, handleSubmit, trigger, formState: { errors }, watch } = useForm({
+  const {
+    control,
+    handleSubmit,
+    trigger,
+    formState: { errors },
+  } = useForm<CreateEmployeeDto>({
     resolver: zodResolver(createEmployeeSchema),
     defaultValues: {
       firstName: "",
@@ -30,25 +48,38 @@ export const NewHireWizard: React.FC = () => {
       phone: "",
       employeeCode: "",
       departmentId: "",
-      designation: "",
+      designationId: "",
       employmentType: "FULL_TIME",
       joinDate: dayjs().toISOString(),
       baseSalary: 0,
       currency: "USD",
       paymentFrequency: "MONTHLY",
       branchId: "",
+      emergencyContactName: "",
+      emergencyContactPhone: "",
     } as any,
   });
 
   const next = async () => {
-    // Validate current step fields
     let fieldsToValidate: any[] = [];
-    if (currentStep === 0) {
-      fieldsToValidate = Object.keys(employeePersonalSchema.shape);
-    } else if (currentStep === 1) {
-      fieldsToValidate = Object.keys(employmentDetailsSchema.shape);
+    switch (currentStep) {
+      case 0:
+        fieldsToValidate = Object.keys(employeePersonalSchema.shape);
+        break;
+      case 1:
+        fieldsToValidate = Object.keys(employmentDetailsSchema.shape);
+        break;
+      case 2:
+        fieldsToValidate = Object.keys(compensationDetailsSchema.shape);
+        break;
+      case 3:
+        fieldsToValidate = Object.keys(emergencyContactSchema.shape);
+        break;
+      case 4:
+        fieldsToValidate = Object.keys(documentsSchema.shape);
+        break;
     }
-    
+
     const isValid = await trigger(fieldsToValidate as any);
     if (isValid) {
       setCurrentStep(currentStep + 1);
@@ -59,11 +90,11 @@ export const NewHireWizard: React.FC = () => {
     setCurrentStep(currentStep - 1);
   };
 
-  const onFinish = async (data: any) => {
+  const onFinish = async (data: CreateEmployeeDto) => {
     try {
       await createEmployee(data).unwrap();
       message.success("Employee hired successfully!");
-      // Redirect or reset
+      // Additional logic like redirect or reset can be added here
     } catch (err: any) {
       message.error(err.data?.message || "Failed to hire employee");
     }
@@ -71,39 +102,57 @@ export const NewHireWizard: React.FC = () => {
 
   const steps = [
     {
-      title: "Personal Info",
+      title: "Personal",
       content: (
         <div className="space-y-4 py-4">
           <div className="grid grid-cols-2 gap-4">
-            <Form.Item label="First Name" validateStatus={errors.firstName ? "error" : ""} help={errors.firstName?.message as string}>
-              <Controller
-                name="firstName"
-                control={control}
-                render={({ field }) => <Input {...field} placeholder="John" />}
-              />
-            </Form.Item>
-            <Form.Item label="Last Name" validateStatus={errors.lastName ? "error" : ""} help={errors.lastName?.message as string}>
-              <Controller
-                name="lastName"
-                control={control}
-                render={({ field }) => <Input {...field} placeholder="Doe" />}
-              />
-            </Form.Item>
+            <RhfInput
+              name="firstName"
+              control={control}
+              label="First Name"
+              placeholder="John"
+              required
+            />
+            <RhfInput
+              name="lastName"
+              control={control}
+              label="Last Name"
+              placeholder="Doe"
+              required
+            />
           </div>
-          <Form.Item label="Email" validateStatus={errors.email ? "error" : ""} help={errors.email?.message as string}>
-            <Controller
-              name="email"
+          <RhfInput
+            name="email"
+            control={control}
+            label="Email"
+            type="email"
+            placeholder="john.doe@company.com"
+            required
+          />
+          <RhfInput
+            name="phone"
+            control={control}
+            label="Phone"
+            placeholder="+1 234 567 890"
+            required
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <RhfSelect
+              name="gender"
               control={control}
-              render={({ field }) => <Input {...field} type="email" placeholder="john.doe@company.com" />}
+              label="Gender"
+              options={[
+                { value: "MALE", label: "Male" },
+                { value: "FEMALE", label: "Female" },
+                { value: "OTHER", label: "Other" },
+              ]}
             />
-          </Form.Item>
-          <Form.Item label="Phone" validateStatus={errors.phone ? "error" : ""} help={errors.phone?.message as string}>
-            <Controller
-              name="phone"
+            <RhfDatePicker
+              name="dateOfBirth"
               control={control}
-              render={({ field }) => <Input {...field} placeholder="+1 234 567 890" />}
+              label="Date of Birth"
             />
-          </Form.Item>
+          </div>
         </div>
       ),
     },
@@ -111,61 +160,79 @@ export const NewHireWizard: React.FC = () => {
       title: "Employment",
       content: (
         <div className="space-y-4 py-4">
-          <Form.Item label="Employee Code" validateStatus={errors.employeeCode ? "error" : ""} help={errors.employeeCode?.message as string}>
-            <Controller
-              name="employeeCode"
-              control={control}
-              render={({ field }) => <Input {...field} placeholder="EMP-001" />}
-            />
-          </Form.Item>
+          <RhfInput
+            name="employeeCode"
+            control={control}
+            label="Employee Code"
+            placeholder="EMP-001"
+            required
+          />
           <div className="grid grid-cols-2 gap-4">
-            <Form.Item label="Branch" validateStatus={errors.branchId ? "error" : ""} help={errors.branchId?.message as string}>
-              <Controller
-                name="branchId"
-                control={control}
-                render={({ field }) => (
-                  <Select {...field} placeholder="Select Branch">
-                    {branches?.map((b: any) => (
-                      <Select.Option key={b.id} value={b.id}>{b.name}</Select.Option>
-                    ))}
-                  </Select>
-                )}
-              />
-            </Form.Item>
-            <Form.Item label="Department" validateStatus={errors.departmentId ? "error" : ""} help={errors.departmentId?.message as string}>
-              <Controller
-                name="departmentId"
-                control={control}
-                render={({ field }) => (
-                  <Select {...field} placeholder="Select Department">
-                    {departments?.map((d: any) => (
-                      <Select.Option key={d.id} value={d.id}>{d.name}</Select.Option>
-                    ))}
-                  </Select>
-                )}
-              />
-            </Form.Item>
-          </div>
-          <Form.Item label="Designation" validateStatus={errors.designation ? "error" : ""} help={errors.designation?.message as string}>
-            <Controller
-              name="designation"
+            <RhfSelect
+              name="branchId"
               control={control}
-              render={({ field }) => <Input {...field} placeholder="Software Engineer" />}
+              label="Branch"
+              required
+              options={branches?.map((b: any) => ({
+                value: b.id,
+                label: b.name,
+              }))}
             />
-          </Form.Item>
-          <Form.Item label="Join Date" validateStatus={errors.joinDate ? "error" : ""} help={errors.joinDate?.message as string}>
-            <Controller
+            <RhfSelect
+              name="departmentId"
+              control={control}
+              label="Department"
+              required
+              options={departments?.map((d: any) => ({
+                value: d.id,
+                label: d.name,
+              }))}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <RhfSelect
+              name="designationId"
+              control={control}
+              label="Designation"
+              required
+              options={designations?.map((d: any) => ({
+                value: d.id,
+                label: d.name,
+              }))}
+            />
+            <RhfSelect
+              name="employmentType"
+              control={control}
+              label="Employment Type"
+              required
+              options={[
+                { value: "FULL_TIME", label: "Full Time" },
+                { value: "PART_TIME", label: "Part Time" },
+                { value: "CONTRACT", label: "Contract" },
+                { value: "INTERN", label: "Intern" },
+                { value: "PROBATION", label: "Probation" },
+              ]}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <RhfDatePicker
               name="joinDate"
               control={control}
-              render={({ field }) => (
-                <DatePicker 
-                  className="w-full" 
-                  value={field.value ? dayjs(field.value) : null}
-                  onChange={(date) => field.onChange(date?.toISOString())} 
-                />
-              )}
+              label="Join Date"
+              required
             />
-          </Form.Item>
+            <RhfSelect
+              name="managerId"
+              control={control}
+              label="Reporting Manager"
+              showSearch
+              optionFilterProp="children"
+              options={employees?.data.map((e: any) => ({
+                value: e.id,
+                label: `${e.firstName} ${e.lastName}`,
+              }))}
+            />
+          </div>
         </div>
       ),
     },
@@ -173,26 +240,90 @@ export const NewHireWizard: React.FC = () => {
       title: "Compensation",
       content: (
         <div className="space-y-4 py-4">
-          <Form.Item label="Base Salary" validateStatus={errors.baseSalary ? "error" : ""} help={errors.baseSalary?.message as string}>
-            <Controller
+          <div className="grid grid-cols-2 gap-4">
+            <RhfInputNumber
               name="baseSalary"
               control={control}
-              render={({ field }) => <InputNumber {...field} className="w-full" prefix="$" placeholder="5000" />}
+              label="Base Salary"
+              prefix="$"
+              placeholder="5000"
+              required
             />
-          </Form.Item>
-          <Form.Item label="Payment Frequency" validateStatus={errors.paymentFrequency ? "error" : ""} help={errors.paymentFrequency?.message as string}>
-            <Controller
-              name="paymentFrequency"
+            <RhfSelect
+              name="currency"
               control={control}
-              render={({ field }) => (
-                <Select {...field}>
-                  <Select.Option value="MONTHLY">Monthly</Select.Option>
-                  <Select.Option value="WEEKLY">Weekly</Select.Option>
-                  <Select.Option value="BI_WEEKLY">Bi-Weekly</Select.Option>
-                </Select>
-              )}
+              label="Currency"
+              required
+              options={[
+                { value: "USD", label: "USD - US Dollar" },
+                { value: "BDT", label: "BDT - Bangladeshi Taka" },
+                { value: "EUR", label: "EUR - Euro" },
+                { value: "GBP", label: "GBP - British Pound" },
+              ]}
             />
-          </Form.Item>
+          </div>
+          <RhfSelect
+            name="paymentFrequency"
+            control={control}
+            label="Payment Frequency"
+            required
+            options={[
+              { value: "MONTHLY", label: "Monthly" },
+              { value: "WEEKLY", label: "Weekly" },
+              { value: "BI_WEEKLY", label: "Bi-Weekly" },
+            ]}
+          />
+        </div>
+      ),
+    },
+    {
+      title: "Emergency",
+      content: (
+        <div className="space-y-4 py-4">
+          <RhfInput
+            name="emergencyContactName"
+            control={control}
+            label="Contact Name"
+            placeholder="Jane Doe"
+            required
+          />
+          <RhfInput
+            name="emergencyContactPhone"
+            control={control}
+            label="Contact Phone"
+            placeholder="+1 987 654 321"
+            required
+          />
+          <RhfSelect
+            name="emergencyContactRelation"
+            control={control}
+            label="Relationship"
+            options={[
+              { value: "SPOUSE", label: "Spouse" },
+              { value: "PARENT", label: "Parent" },
+              { value: "SIBLING", label: "Sibling" },
+              { value: "FRIEND", label: "Friend" },
+              { value: "OTHER", label: "Other" },
+            ]}
+          />
+        </div>
+      ),
+    },
+    {
+      title: "Documents",
+      content: (
+        <div className="space-y-4 py-4">
+          <RhfInput
+            name="contractUrl"
+            control={control}
+            label="Contract URL"
+            placeholder="https://s3.nurox.app/contracts/..."
+          />
+          <RhfDatePicker
+            name="contractExpiryDate"
+            control={control}
+            label="Contract Expiry Date"
+          />
         </div>
       ),
     },
@@ -200,22 +331,26 @@ export const NewHireWizard: React.FC = () => {
 
   return (
     <Card title="New Hire Wizard" className="max-w-2xl mx-auto shadow-lg">
-      <Steps current={currentStep} items={steps.map(item => ({ title: item.title }))} />
+      <Steps
+        current={currentStep}
+        items={steps.map((item) => ({ title: item.title }))}
+        size="small"
+      />
       <Form layout="vertical" className="mt-8">
         <div className="steps-content">{steps[currentStep]?.content}</div>
         <div className="steps-action flex justify-end gap-2 mt-8">
-          {currentStep > 0 && (
-            <Button onClick={() => prev()}>
-              Previous
-            </Button>
-          )}
+          {currentStep > 0 && <Button onClick={() => prev()}>Previous</Button>}
           {currentStep < steps.length - 1 && (
             <Button type="primary" onClick={() => next()}>
               Next
             </Button>
           )}
           {currentStep === steps.length - 1 && (
-            <Button type="primary" onClick={handleSubmit(onFinish)} loading={isLoading}>
+            <Button
+              type="primary"
+              onClick={handleSubmit(onFinish)}
+              loading={isLoading}
+            >
               Hire Employee
             </Button>
           )}

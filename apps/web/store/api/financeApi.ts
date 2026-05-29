@@ -1,5 +1,4 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "@/lib/api-client";
+import { baseApi } from "./baseApi";
 import type {
   AccountDto,
   JournalEntryDto,
@@ -12,19 +11,16 @@ export interface Account extends AccountDto {
   balance: number;
 }
 
-export const financeApi = createApi({
-  reducerPath: "financeApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ["Account", "Journal", "Invoice", "Bill", "Tax", "Report"],
+export const financeApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAccounts: builder.query<Account[], void>({
       query: () => "/finance/accounts",
-      providesTags: ["Account"],
+      providesTags: ["ChartOfAccount"],
     }),
 
     getAccountsTree: builder.query<any[], void>({
       query: () => "/finance/accounts/tree",
-      providesTags: ["Account"],
+      providesTags: ["ChartOfAccount"],
     }),
 
     createAccount: builder.mutation<Account, AccountDto>({
@@ -33,7 +29,7 @@ export const financeApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Account"],
+      invalidatesTags: ["ChartOfAccount"],
     }),
 
     getJournals: builder.query<any, { page?: number; limit?: number }>({
@@ -50,7 +46,7 @@ export const financeApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Journal", "Account"],
+      invalidatesTags: ["Journal", "ChartOfAccount"],
     }),
 
     reviewJournal: builder.mutation<any, string>({
@@ -74,7 +70,7 @@ export const financeApi = createApi({
         url: `/finance/journals/${id}/post`,
         method: "POST",
       }),
-      invalidatesTags: ["Journal", "Account"],
+      invalidatesTags: ["Journal", "ChartOfAccount"],
     }),
 
     getInvoices: builder.query<any, { page?: number; limit?: number }>({
@@ -100,7 +96,7 @@ export const financeApi = createApi({
         method: "PATCH",
         body: { status },
       }),
-      invalidatesTags: ["Invoice", "Journal", "Account"],
+      invalidatesTags: ["Invoice", "Journal", "ChartOfAccount"],
     }),
 
     getBills: builder.query<any, { page?: number; limit?: number }>({
@@ -126,12 +122,12 @@ export const financeApi = createApi({
         method: "PATCH",
         body: { status },
       }),
-      invalidatesTags: ["Bill", "Journal", "Account"],
+      invalidatesTags: ["Bill", "Journal", "ChartOfAccount"],
     }),
 
     getBankAccounts: builder.query<any[], void>({
       query: () => "/finance/bank-accounts",
-      providesTags: ["Account"],
+      providesTags: ["ChartOfAccount"],
     }),
 
     getBankTransactions: builder.query<any[], string>({
@@ -153,7 +149,7 @@ export const financeApi = createApi({
         method: "POST",
         body: { transactions },
       }),
-      invalidatesTags: ["Journal", "Account"],
+      invalidatesTags: ["Journal", "ChartOfAccount"],
     }),
 
     reconcileTransaction: builder.mutation<
@@ -165,12 +161,12 @@ export const financeApi = createApi({
         method: "POST",
         body: { journalEntryId },
       }),
-      invalidatesTags: ["Journal", "Account"],
+      invalidatesTags: ["Journal", "ChartOfAccount"],
     }),
 
     getTaxRates: builder.query<TaxRateDto[], void>({
       query: () => "/finance/tax-rates",
-      providesTags: ["Tax"],
+      providesTags: ["TaxRate"],
     }),
 
     createTaxRate: builder.mutation<TaxRateDto, TaxRateDto>({
@@ -179,7 +175,7 @@ export const financeApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Tax"],
+      invalidatesTags: ["TaxRate"],
     }),
 
     closePeriod: builder.mutation<any, string>({
@@ -263,12 +259,12 @@ export const financeApi = createApi({
         method: "POST",
         body: { approverId },
       }),
-      invalidatesTags: ["Report", "Journal", "Account"],
+      invalidatesTags: ["Report", "Journal", "ChartOfAccount"],
     }),
 
     getPettyCashFunds: builder.query<any[], void>({
       query: () => "/finance/petty-cash/funds",
-      providesTags: ["Account"],
+      providesTags: ["ChartOfAccount"],
     }),
 
     createPettyCashFund: builder.mutation<any, any>({
@@ -277,7 +273,7 @@ export const financeApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Account"],
+      invalidatesTags: ["ChartOfAccount"],
     }),
 
     getPettyCashTransactions: builder.query<any[], string>({
@@ -291,7 +287,7 @@ export const financeApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Journal", "Account"],
+      invalidatesTags: ["Journal", "ChartOfAccount"],
     }),
 
     getRecurringInvoices: builder.query<any[], void>({
@@ -333,7 +329,7 @@ export const financeApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Bill", "Journal", "Account"],
+      invalidatesTags: ["Bill", "Journal", "ChartOfAccount"],
     }),
 
     getCostCenters: builder.query<any[], void>({
@@ -341,7 +337,10 @@ export const financeApi = createApi({
       providesTags: ["Report"],
     }),
 
-    getCostCenterPL: builder.query<any, { id: string; startDate: string; endDate: string }>({
+    getCostCenterPL: builder.query<
+      any,
+      { id: string; startDate: string; endDate: string }
+    >({
       query: ({ id, ...params }) => ({
         url: `/finance/cost-centers/${id}/pl`,
         params,
@@ -389,6 +388,7 @@ export const financeApi = createApi({
       providesTags: ["Journal"],
     }),
   }),
+  overrideExisting: false,
 });
 
 export const {

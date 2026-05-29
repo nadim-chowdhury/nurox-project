@@ -7,15 +7,22 @@ import {
   Param,
   ParseUUIDPipe,
   UseGuards,
+  UsePipes,
 } from '@nestjs/common';
 import { LeaveService } from './leave.service';
-import { leaveRequestSchema, type LeaveRequestDto } from '@repo/shared-schemas';
+import {
+  leaveRequestSchema,
+  type LeaveRequestDto,
+  grantCompensatoryLeaveSchema,
+  type GrantCompensatoryLeaveDto,
+} from '@repo/shared-schemas';
 import { LeaveRequestStatus } from './entities/leave.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { Permission } from '../auth/enums/permissions.enum';
 import { CheckModule } from '../../common/guards/module.guard';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 
 @Controller('leave')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -30,9 +37,9 @@ export class LeaveController {
   }
 
   @Post('apply')
+  @UsePipes(new ZodValidationPipe(leaveRequestSchema))
   async applyLeave(@Body() dto: LeaveRequestDto) {
-    const parsed = leaveRequestSchema.parse(dto);
-    return this.leaveService.applyLeave(parsed);
+    return this.leaveService.applyLeave(dto);
   }
 
   @Get('balances/:employeeId')
@@ -54,15 +61,8 @@ export class LeaveController {
 
   @Post('grant-compensatory')
   @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
-  async grantCompensatory(
-    @Body()
-    dto: {
-      employeeId: string;
-      days: number;
-      expiryDate: string;
-      reason: string;
-    },
-  ) {
+  @UsePipes(new ZodValidationPipe(grantCompensatoryLeaveSchema))
+  async grantCompensatory(@Body() dto: GrantCompensatoryLeaveDto) {
     return this.leaveService.grantCompensatoryLeave(
       dto.employeeId,
       dto.days,

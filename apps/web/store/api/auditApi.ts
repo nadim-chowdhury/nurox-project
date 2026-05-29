@@ -1,5 +1,4 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "@/lib/api-client";
+import { baseApi } from "./baseApi";
 
 export interface AuditLog {
   id: string;
@@ -28,10 +27,7 @@ export interface PaginatedAuditLogs {
   };
 }
 
-export const auditApi = createApi({
-  reducerPath: "auditApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ["AuditLog"],
+export const auditApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAuditLogs: builder.query<
       PaginatedAuditLogs,
@@ -67,6 +63,7 @@ export const auditApi = createApi({
       }),
     }),
   }),
+  overrideExisting: false,
 });
 
 export const {

@@ -1,10 +1,9 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "@/lib/api-client";
-import type { 
-  UserResponseDto, 
-  InviteUserDto, 
-  UpdateUserDto, 
-  UserListQueryDto 
+import { baseApi } from "./baseApi";
+import type {
+  UserResponseDto,
+  InviteUserDto,
+  UpdateUserDto,
+  UserListQueryDto,
 } from "@repo/shared-schemas";
 
 export interface PaginatedUsersResponse {
@@ -19,10 +18,7 @@ export interface PaginatedUsersResponse {
   };
 }
 
-export const usersApi = createApi({
-  reducerPath: "usersApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ["Users", "Preferences", "DashboardWidgets"],
+export const usersApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getUsers: builder.query<PaginatedUsersResponse, UserListQueryDto>({
       query: (params) => ({
@@ -33,32 +29,32 @@ export const usersApi = createApi({
         result
           ? [
               ...result.data.map(({ id }) => ({
-                type: "Users" as const,
+                type: "User" as const,
                 id,
               })),
-              { type: "Users", id: "LIST" },
+              { type: "User", id: "LIST" },
             ]
-          : [{ type: "Users", id: "LIST" }],
+          : [{ type: "User", id: "LIST" }],
     }),
 
     getUser: builder.query<UserResponseDto, string>({
       query: (id) => `/users/${id}`,
-      providesTags: (_result, _error, id) => [{ type: "Users", id }],
+      providesTags: (_result, _error, id) => [{ type: "User", id }],
     }),
 
     getProfile: builder.query<UserResponseDto, void>({
       query: () => "/users/profile",
-      providesTags: ["Users"],
+      providesTags: ["User"],
     }),
 
     getPreferences: builder.query<Record<string, any>, void>({
       query: () => "/users/preferences",
-      providesTags: ["Preferences"],
+      providesTags: ["Preference"],
     }),
 
     getDashboardWidgets: builder.query<any[], void>({
       query: () => "/users/dashboard-widgets",
-      providesTags: ["DashboardWidgets"],
+      providesTags: ["DashboardWidget"],
     }),
 
     saveDashboardWidgets: builder.mutation<void, any[]>({
@@ -67,7 +63,7 @@ export const usersApi = createApi({
         method: "POST",
         body: { widgets },
       }),
-      invalidatesTags: ["DashboardWidgets"],
+      invalidatesTags: ["DashboardWidget"],
     }),
 
     setPreference: builder.mutation<void, { key: string; value: any }>({
@@ -76,7 +72,7 @@ export const usersApi = createApi({
         method: "PATCH",
         body: { value },
       }),
-      invalidatesTags: ["Preferences"],
+      invalidatesTags: ["Preference"],
     }),
 
     inviteUser: builder.mutation<UserResponseDto, InviteUserDto>({
@@ -85,7 +81,7 @@ export const usersApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: [{ type: "Users", id: "LIST" }],
+      invalidatesTags: [{ type: "User", id: "LIST" }],
     }),
 
     updateUser: builder.mutation<
@@ -98,8 +94,8 @@ export const usersApi = createApi({
         body: data,
       }),
       invalidatesTags: (_result, _error, { id }) => [
-        { type: "Users", id },
-        { type: "Users", id: "LIST" },
+        { type: "User", id },
+        { type: "User", id: "LIST" },
       ],
     }),
 
@@ -108,7 +104,7 @@ export const usersApi = createApi({
         url: `/users/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: [{ type: "Users", id: "LIST" }],
+      invalidatesTags: [{ type: "User", id: "LIST" }],
     }),
 
     bulkCreateUsers: builder.mutation<UserResponseDto[], any[]>({
@@ -117,16 +113,20 @@ export const usersApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: [{ type: "Users", id: "LIST" }],
+      invalidatesTags: [{ type: "User", id: "LIST" }],
     }),
 
-    getAvatarUploadUrl: builder.query<{ uploadUrl: string; key: string }, string>({
+    getAvatarUploadUrl: builder.query<
+      { uploadUrl: string; key: string },
+      string
+    >({
       query: (contentType) => ({
         url: "/users/avatar-upload-url",
         params: { contentType },
       }),
     }),
   }),
+  overrideExisting: false,
 });
 
 export const {

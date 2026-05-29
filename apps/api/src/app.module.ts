@@ -78,6 +78,7 @@ import { TenantGuard } from './common/guards/tenant.guard';
 import { ModuleGuard } from './common/guards/module.guard';
 import { ApiKeyThrottlerGuard } from './common/guards/api-key-throttler.guard';
 import { TenantInterceptor } from './common/interceptors/tenant.interceptor';
+import { AuditLogInterceptor } from './common/interceptors/audit-log.interceptor';
 
 @Module({
   imports: [
@@ -250,6 +251,7 @@ import { TenantInterceptor } from './common/interceptors/tenant.interceptor';
     { provide: APP_GUARD, useClass: ApiKeyThrottlerGuard },
     { provide: APP_GUARD, useClass: ModuleGuard },
     { provide: APP_INTERCEPTOR, useClass: TenantInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: AuditLogInterceptor },
     TenantSubscriber,
     TenantGuard,
   ],

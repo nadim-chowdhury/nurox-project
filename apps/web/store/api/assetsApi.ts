@@ -1,79 +1,76 @@
-import { baseQueryWithReauth } from '@/lib/api-client';
-import { createApi } from '@reduxjs/toolkit/query/react';
+import { baseApi } from "./baseApi";
 
-export const assetsApi = createApi({
-  reducerPath: 'assetsApi',
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ['Asset', 'AssetCategory', 'AssetMaintenance'],
+export const assetsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAssets: builder.query<any[], any>({
       query: (params) => ({
-        url: '/assets',
+        url: "/assets",
         params,
       }),
-      providesTags: ['Asset'],
+      providesTags: ["Asset"],
     }),
     getAssetDetails: builder.query<any, string>({
       query: (id) => `/assets/${id}`,
-      providesTags: (result, error, id) => [{ type: 'Asset', id }],
+      providesTags: (result, error, id) => [{ type: "Asset", id }],
     }),
     createAsset: builder.mutation<any, any>({
       query: (data) => ({
-        url: '/assets',
-        method: 'POST',
+        url: "/assets",
+        method: "POST",
         body: data,
       }),
-      invalidatesTags: ['Asset'],
+      invalidatesTags: ["Asset"],
     }),
     updateAsset: builder.mutation<any, { id: string; data: any }>({
       query: ({ id, data }) => ({
         url: `/assets/${id}`,
-        method: 'PUT',
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: (result, error, { id }) => [
-        { type: 'Asset', id },
-        'Asset',
+        { type: "Asset", id },
+        "Asset",
       ],
     }),
     assignAsset: builder.mutation<any, { id: string; data: any }>({
       query: ({ id, data }) => ({
         url: `/assets/${id}/assign`,
-        method: 'POST',
+        method: "POST",
         body: data,
       }),
       invalidatesTags: (result, error, { id }) => [
-        { type: 'Asset', id },
-        'Asset',
+        { type: "Asset", id },
+        "Asset",
       ],
     }),
     logMaintenance: builder.mutation<any, { id: string; data: any }>({
       query: ({ id, data }) => ({
         url: `/assets/${id}/maintenance`,
-        method: 'POST',
+        method: "POST",
         body: data,
       }),
       invalidatesTags: (result, error, { id }) => [
-        { type: 'Asset', id },
-        'AssetMaintenance',
+        { type: "Asset", id },
+        "Maintenance",
       ],
     }),
     generateQR: builder.mutation<{ qrCodeUrl: string }, string>({
       query: (id) => ({
         url: `/assets/${id}/qr`,
-        method: 'POST',
+        method: "POST",
       }),
-      invalidatesTags: (result, error, id) => [{ type: 'Asset', id }],
+      invalidatesTags: (result, error, id) => [{ type: "Asset", id }],
     }),
     importAssets: builder.mutation<any, { fileData: string }>({
       query: (data) => ({
         url: `/assets/import`,
-        method: 'POST',
+        method: "POST",
         body: data,
       }),
-      invalidatesTags: ['Asset'],
+      invalidatesTags: ["Asset"],
     }),
   }),
+  overrideExisting: false,
 });
 
 export const {

@@ -1,19 +1,15 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "@/lib/api-client";
+import { baseApi } from "./baseApi";
 import type {
   SalaryStructureDto,
   PayrollRunDto,
   PayslipDto,
 } from "@repo/shared-schemas";
 
-export const payrollApi = createApi({
-  reducerPath: "payrollApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ["PayrollRun", "Payslip", "SalaryStructure", "TaxConfig"],
+export const payrollApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getStructures: builder.query<SalaryStructureDto[], void>({
       query: () => "/payroll/structures",
-      providesTags: ["SalaryStructure"],
+      providesTags: ["PayrollStructure"],
     }),
 
     createStructure: builder.mutation<SalaryStructureDto, SalaryStructureDto>({
@@ -22,7 +18,7 @@ export const payrollApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["SalaryStructure"],
+      invalidatesTags: ["PayrollStructure"],
     }),
 
     assignStructure: builder.mutation<
@@ -38,12 +34,12 @@ export const payrollApi = createApi({
 
     getPayrollRuns: builder.query<PayrollRunDto[], void>({
       query: () => "/payroll/runs",
-      providesTags: ["PayrollRun"],
+      providesTags: ["Payroll"],
     }),
 
     getPayrollRun: builder.query<PayrollRunDto, string>({
       query: (id) => `/payroll/runs/${id}`,
-      providesTags: (_, __, id) => [{ type: "PayrollRun", id }],
+      providesTags: (_, __, id) => [{ type: "Payroll", id }],
     }),
 
     createPayrollRun: builder.mutation<PayrollRunDto, { period: string }>({
@@ -52,7 +48,7 @@ export const payrollApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["PayrollRun"],
+      invalidatesTags: ["Payroll"],
     }),
 
     processPayrollRun: builder.mutation<
@@ -72,7 +68,7 @@ export const payrollApi = createApi({
         method: "POST",
         body: filters,
       }),
-      invalidatesTags: ["PayrollRun"],
+      invalidatesTags: ["Payroll"],
     }),
 
     payPayrollRun: builder.mutation<PayrollRunDto, string>({
@@ -80,7 +76,7 @@ export const payrollApi = createApi({
         url: `/payroll/runs/${id}/pay`,
         method: "POST",
       }),
-      invalidatesTags: ["PayrollRun"],
+      invalidatesTags: ["Payroll"],
     }),
 
     approvePayrollRun: builder.mutation<PayrollRunDto, string>({
@@ -88,7 +84,7 @@ export const payrollApi = createApi({
         url: `/payroll/runs/${id}/approve`,
         method: "POST",
       }),
-      invalidatesTags: ["PayrollRun"],
+      invalidatesTags: ["Payroll"],
     }),
 
     finalizePayrollRun: builder.mutation<PayrollRunDto, string>({
@@ -96,7 +92,7 @@ export const payrollApi = createApi({
         url: `/payroll/runs/${id}/finalize`,
         method: "POST",
       }),
-      invalidatesTags: ["PayrollRun"],
+      invalidatesTags: ["Payroll"],
     }),
 
     publishPayslips: builder.mutation<void, string>({
@@ -104,7 +100,7 @@ export const payrollApi = createApi({
         url: `/payroll/runs/${id}/publish`,
         method: "POST",
       }),
-      invalidatesTags: ["PayrollRun", "Payslip"],
+      invalidatesTags: ["Payroll", "Payslip"],
     }),
 
     getPayslipsByRun: builder.query<PayslipDto[], string>({
@@ -138,20 +134,26 @@ export const payrollApi = createApi({
       invalidatesTags: ["TaxConfig"],
     }),
 
-    createOffCycleRun: builder.mutation<PayrollRunDto, { employeeId: string; period: string; type: string }>({
+    createOffCycleRun: builder.mutation<
+      PayrollRunDto,
+      { employeeId: string; period: string; type: string }
+    >({
       query: (body) => ({
         url: "/payroll/runs/off-cycle",
         method: "POST",
         body,
       }),
-      invalidatesTags: ["PayrollRun"],
+      invalidatesTags: ["Payroll"],
     }),
 
     getPayrollSummary: builder.query<any, string>({
       query: (id) => `/payroll/runs/${id}/summary`,
     }),
 
-    getPayrollComparison: builder.query<any[], { id: string; previousRunId: string }>({
+    getPayrollComparison: builder.query<
+      any[],
+      { id: string; previousRunId: string }
+    >({
       query: ({ id, previousRunId }) => ({
         url: `/payroll/runs/${id}/comparison`,
         params: { previousRunId },
@@ -174,6 +176,7 @@ export const payrollApi = createApi({
       }),
     }),
   }),
+  overrideExisting: false,
 });
 
 export const {

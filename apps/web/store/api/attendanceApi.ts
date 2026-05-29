@@ -1,14 +1,7 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "@/lib/api-client";
-import type {
-  LeaveRequestDto,
-  LeaveBalanceDto,
-} from "@repo/shared-schemas";
+import { baseApi } from "./baseApi";
+import type { LeaveRequestDto, LeaveBalanceDto } from "@repo/shared-schemas";
 
-export const attendanceApi = createApi({
-  reducerPath: "attendanceApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ["Attendance", "LeaveRequest", "LeaveBalance", "Holiday", "Shift"],
+export const attendanceApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getTeamAttendance: builder.query<any[], { date?: string }>({
       query: (params) => ({
@@ -79,7 +72,7 @@ export const attendanceApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["LeaveRequest"],
+      invalidatesTags: ["Leave"],
     }),
 
     getLeaveBalances: builder.query<LeaveBalanceDto[], string>({
@@ -89,7 +82,7 @@ export const attendanceApi = createApi({
 
     getLeaveRequests: builder.query<any[], void>({
       query: () => "/leave",
-      providesTags: ["LeaveRequest"],
+      providesTags: ["Leave"],
     }),
 
     approveLeave: builder.mutation<
@@ -101,15 +94,18 @@ export const attendanceApi = createApi({
         method: "PATCH",
         body,
       }),
-      invalidatesTags: ["LeaveRequest", "LeaveBalance"],
+      invalidatesTags: ["Leave", "LeaveBalance"],
     }),
-    getAttendanceAnalytics: builder.query<any, { month: number; year: number }>({
-      query: (params) => ({
-        url: "/attendance/analytics",
-        params,
-      }),
-    }),
+    getAttendanceAnalytics: builder.query<any, { month: number; year: number }>(
+      {
+        query: (params) => ({
+          url: "/attendance/analytics",
+          params,
+        }),
+      },
+    ),
   }),
+  overrideExisting: false,
 });
 
 export const {

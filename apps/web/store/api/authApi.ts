@@ -1,5 +1,4 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "@/lib/api-client";
+import { baseApi } from "./baseApi";
 import { setCredentials, clearAuth, setUser } from "@/store/slices/authSlice";
 import type { AuthUser } from "@/store/slices/authSlice";
 import type {
@@ -12,7 +11,10 @@ import type {
 } from "@repo/shared-schemas";
 
 export interface AuthResponse {
-  user: AuthUser & { isTwoFactorEnabled: boolean; forcePasswordChange?: boolean };
+  user: AuthUser & {
+    isTwoFactorEnabled: boolean;
+    forcePasswordChange?: boolean;
+  };
   tokens: {
     accessToken: string;
     expiresIn: number;
@@ -32,9 +34,7 @@ export interface RegisterRequest {
   token?: string;
 }
 
-export const authApi = createApi({
-  reducerPath: "authApi",
-  baseQuery: baseQueryWithReauth,
+export const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     login: builder.mutation<AuthResponse, LoginRequest>({
       query: (body) => ({
@@ -102,6 +102,7 @@ export const authApi = createApi({
 
     getMe: builder.query<AuthUser, void>({
       query: () => "/auth/me",
+      providesTags: ["User"],
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
@@ -114,10 +115,12 @@ export const authApi = createApi({
 
     getSessions: builder.query<UserSessionDto[], void>({
       query: () => "/auth/sessions",
+      providesTags: ["User"],
     }),
 
     getLoginHistory: builder.query<any[], void>({
       query: () => "/auth/login-history",
+      providesTags: ["User"],
     }),
 
     revokeSession: builder.mutation<{ message: string }, string>({
@@ -125,10 +128,12 @@ export const authApi = createApi({
         url: `/auth/sessions/${sessionId}`,
         method: "DELETE",
       }),
+      invalidatesTags: ["User"],
     }),
 
     getRoles: builder.query<RoleDto[], void>({
       query: () => "/roles",
+      providesTags: ["Role"],
     }),
 
     createRole: builder.mutation<RoleDto, CreateRoleDto>({
@@ -137,6 +142,7 @@ export const authApi = createApi({
         method: "POST",
         body,
       }),
+      invalidatesTags: ["Role"],
     }),
 
     magicLinkLogin: builder.mutation<AuthResponse, MagicLinkLoginDto>({
@@ -176,9 +182,11 @@ export const authApi = createApi({
       }),
     }),
 
-    setup2FA: builder.mutation<{ qrCodeDataURL: string; secret: string }, void>({
-      query: () => "/auth/2fa/setup",
-    }),
+    setup2FA: builder.mutation<{ qrCodeDataURL: string; secret: string }, void>(
+      {
+        query: () => "/auth/2fa/setup",
+      },
+    ),
 
     enable2FA: builder.mutation<{ backupCodes: string[] }, { token: string }>({
       query: (body) => ({
@@ -186,8 +194,10 @@ export const authApi = createApi({
         method: "POST",
         body,
       }),
+      invalidatesTags: ["User"],
     }),
   }),
+  overrideExisting: false,
 });
 
 export const {

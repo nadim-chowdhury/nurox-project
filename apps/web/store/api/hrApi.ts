@@ -1,5 +1,4 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "@/lib/api-client";
+import { baseApi } from "./baseApi";
 import type {
   DepartmentDto,
   CreateDepartmentDto,
@@ -48,24 +47,7 @@ export interface EmployeeListResponse {
   };
 }
 
-export const hrApi = createApi({
-  reducerPath: "hrApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: [
-    "Employee",
-    "Department",
-    "Designation",
-    "History",
-    "Performance",
-    "Training",
-    "Skill",
-    "TrainingCourse",
-    "SkillCatalog",
-    "ENPS",
-    "Handbook",
-    "Succession",
-    "Grade",
-  ],
+export const hrApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getEmployees: builder.query<EmployeeListResponse, EmployeeListParams>({
       query: (params) => ({
@@ -330,7 +312,10 @@ export const hrApi = createApi({
       invalidatesTags: ["History"],
     }),
 
-    updateSalaryRevisionStatus: builder.mutation<any, { id: string; status: string; comments?: string }>({
+    updateSalaryRevisionStatus: builder.mutation<
+      any,
+      { id: string; status: string; comments?: string }
+    >({
       query: ({ id, ...body }) => ({
         url: `/hr/salary-revisions/${id}/status`,
         method: "PATCH",
@@ -339,7 +324,10 @@ export const hrApi = createApi({
       invalidatesTags: ["History", "Employee"],
     }),
 
-    extendProbation: builder.mutation<any, { id: string; newEndDate: string; comments: string }>({
+    extendProbation: builder.mutation<
+      any,
+      { id: string; newEndDate: string; comments: string }
+    >({
       query: ({ id, ...body }) => ({
         url: `/hr/employees/${id}/probation/extend`,
         method: "POST",
@@ -357,7 +345,10 @@ export const hrApi = createApi({
       invalidatesTags: ["Employee", "History"],
     }),
 
-    createProfileChangeRequest: builder.mutation<any, { id: string; changes: any }>({
+    createProfileChangeRequest: builder.mutation<
+      any,
+      { id: string; changes: any }
+    >({
       query: ({ id, changes }) => ({
         url: `/hr/employees/${id}/profile-change`,
         method: "POST",
@@ -371,7 +362,10 @@ export const hrApi = createApi({
       providesTags: ["History"],
     }),
 
-    updateProfileChangeRequestStatus: builder.mutation<any, { id: string; status: string; rejectionReason?: string }>({
+    updateProfileChangeRequestStatus: builder.mutation<
+      any,
+      { id: string; status: string; rejectionReason?: string }
+    >({
       query: ({ id, ...body }) => ({
         url: `/hr/profile-changes/${id}/status`,
         method: "PATCH",
@@ -380,7 +374,10 @@ export const hrApi = createApi({
       invalidatesTags: ["History", "Employee"],
     }),
 
-    submitResignation: builder.mutation<any, { id: string; requestedLastWorkingDay: string; reason: string }>({
+    submitResignation: builder.mutation<
+      any,
+      { id: string; requestedLastWorkingDay: string; reason: string }
+    >({
       query: ({ id, ...body }) => ({
         url: `/hr/employees/${id}/resignation`,
         method: "POST",
@@ -389,7 +386,15 @@ export const hrApi = createApi({
       invalidatesTags: ["History", "Employee"],
     }),
 
-    updateResignationStatus: builder.mutation<any, { id: string; status: string; approvedLastWorkingDay?: string; adminComments?: string }>({
+    updateResignationStatus: builder.mutation<
+      any,
+      {
+        id: string;
+        status: string;
+        approvedLastWorkingDay?: string;
+        adminComments?: string;
+      }
+    >({
       query: ({ id, ...body }) => ({
         url: `/hr/resignations/${id}/status`,
         method: "PATCH",
@@ -403,7 +408,10 @@ export const hrApi = createApi({
       providesTags: ["History"],
     }),
 
-    updateClearanceItem: builder.mutation<any, { id: string; isCleared: boolean; remarks?: string }>({
+    updateClearanceItem: builder.mutation<
+      any,
+      { id: string; isCleared: boolean; remarks?: string }
+    >({
       query: ({ id, ...body }) => ({
         url: `/hr/clearance/${id}`,
         method: "PATCH",
@@ -421,7 +429,10 @@ export const hrApi = createApi({
       invalidatesTags: ["History"],
     }),
 
-    getPerformanceReviews: builder.query<any[], { employeeId: string; type?: string }>({
+    getPerformanceReviews: builder.query<
+      any[],
+      { employeeId: string; type?: string }
+    >({
       query: (params) => ({
         url: "/hr/performance-reviews",
         params,
@@ -429,7 +440,15 @@ export const hrApi = createApi({
       providesTags: ["Performance"],
     }),
 
-    addOKRCheckIn: builder.mutation<any, { keyResultId: string; value: number; comment?: string; checkedById: string }>({
+    addOKRCheckIn: builder.mutation<
+      any,
+      {
+        keyResultId: string;
+        value: number;
+        comment?: string;
+        checkedById: string;
+      }
+    >({
       query: (body) => ({
         url: "/hr/okr-checkins",
         method: "POST",
@@ -461,7 +480,10 @@ export const hrApi = createApi({
       invalidatesTags: ["Training", "Employee"],
     }),
 
-    updateEmployeeTrainingStatus: builder.mutation<any, { id: string; status: string; certificateUrl?: string }>({
+    updateEmployeeTrainingStatus: builder.mutation<
+      any,
+      { id: string; status: string; certificateUrl?: string }
+    >({
       query: ({ id, ...body }) => ({
         url: `/hr/trainings/${id}/status`,
         method: "PATCH",
@@ -475,7 +497,10 @@ export const hrApi = createApi({
       providesTags: ["SkillCatalog"],
     }),
 
-    addEmployeeSkill: builder.mutation<any, { id: string; catalogId: string; proficiency: number }>({
+    addEmployeeSkill: builder.mutation<
+      any,
+      { id: string; catalogId: string; proficiency: number }
+    >({
       query: ({ id, ...body }) => ({
         url: `/hr/employees/${id}/skills`,
         method: "POST",
@@ -512,7 +537,10 @@ export const hrApi = createApi({
       invalidatesTags: ["Performance"],
     }),
 
-    updatePIPAction: builder.mutation<any, { id: string; isAchieved: boolean; notes?: string }>({
+    updatePIPAction: builder.mutation<
+      any,
+      { id: string; isAchieved: boolean; notes?: string }
+    >({
       query: ({ id, ...body }) => ({
         url: `/hr/pip-actions/${id}`,
         method: "PATCH",
@@ -554,7 +582,10 @@ export const hrApi = createApi({
       invalidatesTags: ["Handbook"],
     }),
 
-    acknowledgeHandbook: builder.mutation<any, { id: string; handbookId: string }>({
+    acknowledgeHandbook: builder.mutation<
+      any,
+      { id: string; handbookId: string }
+    >({
       query: ({ id, ...body }) => ({
         url: `/hr/employees/${id}/handbook-ack`,
         method: "POST",
@@ -572,15 +603,21 @@ export const hrApi = createApi({
       invalidatesTags: ["Succession"],
     }),
 
-    getSuccessionPlans: builder.query<any[], { designationId?: string; employeeId?: string }>({
+    getSuccessionPlans: builder.query<
+      any[],
+      { designationId?: string; employeeId?: string }
+    >({
       query: (params) => {
-        if (params.designationId) return `/hr/designations/${params.designationId}/succession`;
-        if (params.employeeId) return `/hr/employees/${params.employeeId}/successor-roles`;
+        if (params.designationId)
+          return `/hr/designations/${params.designationId}/succession`;
+        if (params.employeeId)
+          return `/hr/employees/${params.employeeId}/successor-roles`;
         return "/hr/succession-plans"; // Not implemented but for completeness
       },
       providesTags: ["Succession"],
     }),
   }),
+  overrideExisting: false,
 });
 
 export const {

@@ -13,6 +13,7 @@ import {
   UseGuards,
   Res,
   Req,
+  UsePipes,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { HrService } from './hr.service';
@@ -32,6 +33,16 @@ import {
   TerminationDto,
   PipDto,
   ThreeSixtyReviewDto,
+  createEmployeeSchema,
+  transferEmployeeSchema,
+  terminationSchema,
+  threeSixtyReviewSchema,
+  pipSchema,
+  okrSchema,
+  trainingSchema,
+  skillSchema,
+  updateSalarySchema,
+  UpdateSalaryDto,
 } from '@repo/shared-schemas';
 import { SalaryChangeReason } from './entities/salary-history.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -52,6 +63,7 @@ import {
   UpdateTransferStatusDto,
 } from './dto/transfer-request.dto';
 import { CheckModule } from '../../common/guards/module.guard';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 
 @Controller('hr')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -61,6 +73,7 @@ export class HrController {
 
   @Post('employees')
   @RequirePermissions(Permission.HR_CREATE_EMPLOYEE)
+  @UsePipes(new ZodValidationPipe(createEmployeeSchema))
   createEmployee(@Body() dto: CreateEmployeeDto) {
     return this.hrService.createEmployee(dto);
   }
@@ -82,11 +95,13 @@ export class HrController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: Partial<CreateEmployeeDto>,
   ) {
+    // Partial update might need a different schema or handling
     return this.hrService.updateEmployee(id, dto);
   }
 
   @Post('employees/:id/transfer')
   @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  @UsePipes(new ZodValidationPipe(transferEmployeeSchema))
   transferEmployee(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: TransferEmployeeDto,
@@ -96,6 +111,7 @@ export class HrController {
 
   @Post('employees/:id/terminate')
   @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  @UsePipes(new ZodValidationPipe(terminationSchema))
   terminateEmployee(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: TerminationDto,
@@ -105,6 +121,7 @@ export class HrController {
 
   @Post('employees/:id/360-review')
   @RequirePermissions(Permission.HR_MANAGE_PERFORMANCE)
+  @UsePipes(new ZodValidationPipe(threeSixtyReviewSchema))
   submit360Review(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ThreeSixtyReviewDto,
@@ -114,6 +131,7 @@ export class HrController {
 
   @Post('employees/:id/pip')
   @RequirePermissions(Permission.HR_MANAGE_PERFORMANCE)
+  @UsePipes(new ZodValidationPipe(pipSchema))
   initiatePIP(@Param('id', ParseUUIDPipe) id: string, @Body() dto: PipDto) {
     return this.hrService.initiatePIP(id, dto);
   }
@@ -132,23 +150,29 @@ export class HrController {
 
   @Patch('employees/:id/salary')
   @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
+  @UsePipes(new ZodValidationPipe(updateSalarySchema))
   updateSalary(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body('newSalary') newSalary: number,
-    @Body('reason') reason: SalaryChangeReason,
-    @Body('comments') comments?: string,
+    @Body() dto: UpdateSalaryDto,
   ) {
-    return this.hrService.updateSalary(id, newSalary, reason, comments);
+    return this.hrService.updateSalary(
+      id,
+      dto.newSalary,
+      dto.reason as SalaryChangeReason,
+      dto.comments,
+    );
   }
 
   @Post('employees/:id/okr')
   @RequirePermissions(Permission.HR_MANAGE_PERFORMANCE)
+  @UsePipes(new ZodValidationPipe(okrSchema))
   addOKR(@Param('id', ParseUUIDPipe) id: string, @Body() dto: OkrDto) {
     return this.hrService.addOKR(id, dto);
   }
 
   @Post('employees/:id/training')
-  @RequirePermissions(Permission.HR_MANAGE_TRAINING)
+  @RequirePermissions(Permission.HR_MANAGE_PERFORMANCE)
+  @UsePipes(new ZodValidationPipe(trainingSchema))
   addTraining(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: TrainingDto,
@@ -157,9 +181,27 @@ export class HrController {
   }
 
   @Post('employees/:id/skill')
-  @RequirePermissions(Permission.HR_MANAGE_SKILLS)
+  @RequirePermissions(Permission.HR_MANAGE_PERFORMANCE)
+  @UsePipes(new ZodValidationPipe(skillSchema))
   addSkill(@Param('id', ParseUUIDPipe) id: string, @Body() dto: SkillDto) {
     return this.hrService.addSkill(id, dto);
+  }
+
+  @Post('departments')
+  @RequirePermissions(Permission.HR_MANAGE_DEPARTMENTS)
+  @UsePipes(new ZodValidationPipe(createDepartmentSchema))
+  createDepartment(@Body() dto: CreateDepartmentSchemaDto) {
+    return this.hrService.createDepartment(dto);
+  }
+
+  @Patch('departments/:id')
+  @RequirePermissions(Permission.HR_MANAGE_DEPARTMENTS)
+  @UsePipes(new ZodValidationPipe(updateDepartmentSchema))
+  updateDepartment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateDepartmentSchemaDto,
+  ) {
+    return this.hrService.updateDepartment(id, dto);
   }
 
   @Get('employees/:id/history')

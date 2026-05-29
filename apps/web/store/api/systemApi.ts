@@ -1,10 +1,9 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "@/lib/api-client";
-import type { 
-  CompanyProfileDto, 
-  BranchDto, 
-  CreateBranchDto, 
-  UpdateBranchDto 
+import { baseApi } from "./baseApi";
+import type {
+  CompanyProfileDto,
+  BranchDto,
+  CreateBranchDto,
+  UpdateBranchDto,
 } from "@repo/shared-schemas";
 
 export interface TenantSettings {
@@ -25,10 +24,7 @@ export interface HealthCheckResponse {
   details: Record<string, any>;
 }
 
-export const systemApi = createApi({
-  reducerPath: "systemApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ["System", "Branches", "Modules", "Calendar", "Holiday"],
+export const systemApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getHealth: builder.query<HealthCheckResponse, void>({
       query: () => "/health",
@@ -36,31 +32,34 @@ export const systemApi = createApi({
 
     getSettings: builder.query<TenantSettings, void>({
       query: () => "/system/settings",
-      providesTags: ["System"],
+      providesTags: ["Setting"],
     }),
 
     getModules: builder.query<TenantModule[], void>({
       query: () => "/system/modules",
-      providesTags: ["Modules"],
+      providesTags: ["Module"],
     }),
 
     getCompanyProfile: builder.query<CompanyProfileDto, void>({
       query: () => "/system/company",
-      providesTags: ["System"],
+      providesTags: ["Setting"],
     }),
 
-    updateCompanyProfile: builder.mutation<CompanyProfileDto, CompanyProfileDto>({
+    updateCompanyProfile: builder.mutation<
+      CompanyProfileDto,
+      CompanyProfileDto
+    >({
       query: (body) => ({
         url: "/system/company",
         method: "PATCH",
         body,
       }),
-      invalidatesTags: ["System"],
+      invalidatesTags: ["Setting"],
     }),
 
     getBranches: builder.query<BranchDto[], void>({
       query: () => "/system/branches",
-      providesTags: ["Branches"],
+      providesTags: ["Branch"],
     }),
 
     createBranch: builder.mutation<BranchDto, CreateBranchDto>({
@@ -69,16 +68,19 @@ export const systemApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Branches"],
+      invalidatesTags: ["Branch"],
     }),
 
-    updateBranch: builder.mutation<BranchDto, { id: string; data: UpdateBranchDto }>({
+    updateBranch: builder.mutation<
+      BranchDto,
+      { id: string; data: UpdateBranchDto }
+    >({
       query: ({ id, data }) => ({
         url: `/system/branches/${id}`,
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: ["Branches"],
+      invalidatesTags: ["Branch"],
     }),
 
     deleteBranch: builder.mutation<void, string>({
@@ -86,7 +88,7 @@ export const systemApi = createApi({
         url: `/system/branches/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Branches"],
+      invalidatesTags: ["Branch"],
     }),
 
     getCalendars: builder.query<any[], void>({
@@ -154,9 +156,10 @@ export const systemApi = createApi({
       invalidatesTags: ["Holiday"],
     }),
   }),
+  overrideExisting: false,
 });
 
-export const { 
+export const {
   useGetHealthQuery,
   useGetSettingsQuery,
   useGetModulesQuery,

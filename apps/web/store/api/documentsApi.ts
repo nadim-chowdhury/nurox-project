@@ -1,5 +1,4 @@
-import { createApi } from '@reduxjs/toolkit/query/react';
-import { baseQueryWithReauth } from '@/lib/api-client';
+import { baseApi } from "./baseApi";
 
 export interface DocumentFolder {
   id: string;
@@ -18,81 +17,106 @@ export interface Document {
   createdAt: string;
 }
 
-export const documentsApi = createApi({
-  reducerPath: 'documentsApi',
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ['Documents', 'Folders'],
+export const documentsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getFolders: builder.query<DocumentFolder[], string | void>({
       query: (parentId) => ({
-        url: '/documents/folders',
+        url: "/documents/folders",
         params: parentId ? { parentId } : undefined,
       }),
-      providesTags: ['Folders'],
+      providesTags: ["Folder"],
     }),
-    createFolder: builder.mutation<DocumentFolder, { name: string; parentId?: string }>({
+    createFolder: builder.mutation<
+      DocumentFolder,
+      { name: string; parentId?: string }
+    >({
       query: (body) => ({
-        url: '/documents/folders',
-        method: 'POST',
+        url: "/documents/folders",
+        method: "POST",
         body,
       }),
-      invalidatesTags: ['Folders'],
+      invalidatesTags: ["Folder"],
     }),
     getDocuments: builder.query<Document[], string | void>({
       query: (folderId) => ({
-        url: '/documents',
+        url: "/documents",
         params: folderId ? { folderId } : undefined,
       }),
-      providesTags: ['Documents'],
+      providesTags: ["Document"],
     }),
-    getUploadUrl: builder.mutation<{ uploadUrl: string; key: string }, { name: string; type?: string; folderId?: string }>({
+    getUploadUrl: builder.mutation<
+      { uploadUrl: string; key: string },
+      { name: string; type?: string; folderId?: string }
+    >({
       query: (body) => ({
-        url: '/documents/upload-url',
-        method: 'POST',
+        url: "/documents/upload-url",
+        method: "POST",
         body,
       }),
     }),
-    createDocument: builder.mutation<Document, { name: string; type: string; folderId?: string; fileKey: string; fileSize: number; mimeType: string }>({
+    createDocument: builder.mutation<
+      Document,
+      {
+        name: string;
+        type: string;
+        folderId?: string;
+        fileKey: string;
+        fileSize: number;
+        mimeType: string;
+      }
+    >({
       query: (body) => ({
-        url: '/documents',
-        method: 'POST',
+        url: "/documents",
+        method: "POST",
         body,
       }),
-      invalidatesTags: ['Documents'],
+      invalidatesTags: ["Document"],
     }),
-    getDownloadUrl: builder.query<{ downloadUrl: string }, { id: string; version?: number }>({
+    getDownloadUrl: builder.query<
+      { downloadUrl: string },
+      { id: string; version?: number }
+    >({
       query: ({ id, version }) => ({
         url: `/documents/${id}/download`,
         params: version ? { version } : undefined,
       }),
     }),
-    signDocument: builder.mutation<{ success: boolean; version: any }, { id: string; signatureBase64: string; signerName: string; ipAddress: string }>({
+    signDocument: builder.mutation<
+      { success: boolean; version: any },
+      {
+        id: string;
+        signatureBase64: string;
+        signerName: string;
+        ipAddress: string;
+      }
+    >({
       query: ({ id, ...body }) => ({
         url: `/documents/${id}/sign`,
-        method: 'POST',
+        method: "POST",
         body,
       }),
-      invalidatesTags: ['Documents'],
+      invalidatesTags: ["Document"],
     }),
     softDeleteDocument: builder.mutation<{ success: boolean }, string>({
       query: (id) => ({
         url: `/documents/${id}/soft-delete`,
-        method: 'POST',
+        method: "POST",
       }),
-      invalidatesTags: ['Documents'],
+      invalidatesTags: ["Document"],
     }),
     getRecycleBin: builder.query<Document[], void>({
-      query: () => '/documents/recycle-bin',
-      providesTags: ['Documents'],
+      query: () => "/documents/recycle-bin",
+      providesTags: ["Document"],
     }),
     restoreDocument: builder.mutation<{ success: boolean }, string>({
       query: (id) => ({
         url: `/documents/${id}/restore`,
-        method: 'POST',
+        method: "POST",
       }),
-      invalidatesTags: ['Documents'],
+      invalidatesTags: ["Document"],
     }),
   }),
+  overrideExisting: false,
 });
 
 export const {

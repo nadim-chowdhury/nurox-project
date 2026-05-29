@@ -1,4 +1,4 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { baseApi } from "./baseApi";
 
 // Assuming standard unified Response Wrapper pattern from the backend: { data: T, statusCode, timestamp }
 export interface UnifiedResponse<T> {
@@ -27,16 +27,7 @@ export interface Task {
   dueDate?: string;
 }
 
-export const projectsApi = createApi({
-  reducerPath: "projectsApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api",
-    prepareHeaders: (headers) => {
-      // In a real app, attach JWT here if not relying entirely on httpOnly cookies
-      return headers;
-    },
-  }),
-  tagTypes: ["Project", "Task"],
+export const projectsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getProjects: builder.query<UnifiedResponse<Project[]>, void>({
       query: () => "/projects",
@@ -62,6 +53,7 @@ export const projectsApi = createApi({
       invalidatesTags: ["Project", "Task"],
     }),
   }),
+  overrideExisting: false,
 });
 
 export const {

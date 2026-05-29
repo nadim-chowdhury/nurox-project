@@ -84,12 +84,65 @@ export class PayrollService {
     private readonly cls: ClsService,
   ) {}
 
+  private get tenantId(): string {
+    return this.cls.get('tenantId');
+  }
+
+  private get fiscalYear(): string {
+    const today = new Date();
+    const year = today.getFullYear();
+    // Assuming April 1st start of fiscal year
+    return today.getMonth() >= 3
+      ? `${year}-${(year + 1).toString().slice(-2)}`
+      : `${year - 1}-${year.toString().slice(-2)}`;
+  }
+
+  /**
+   * Enforces valid state transitions for Payroll Runs
+   */
+  private validateTransition(
+    current: PayrollRunStatus,
+    next: PayrollRunStatus,
+  ) {
+    const validTransitions: Record<PayrollRunStatus, PayrollRunStatus[]> = {
+      [PayrollRunStatus.DRAFT]: [
+        PayrollRunStatus.PROCESSING,
+        PayrollRunStatus.CANCELLED,
+      ],
+      [PayrollRunStatus.PROCESSING]: [
+        PayrollRunStatus.REVIEW,
+        PayrollRunStatus.CANCELLED,
+      ],
+      [PayrollRunStatus.REVIEW]: [
+        PayrollRunStatus.APPROVED,
+        PayrollRunStatus.PROCESSING,
+        PayrollRunStatus.CANCELLED,
+      ],
+      [PayrollRunStatus.APPROVED]: [
+        PayrollRunStatus.PROCESSED,
+        PayrollRunStatus.CANCELLED,
+      ],
+      [PayrollRunStatus.PROCESSED]: [PayrollRunStatus.PAID],
+      [PayrollRunStatus.PAID]: [],
+      [PayrollRunStatus.CANCELLED]: [],
+    };
+
+    if (!validTransitions[current].includes(next)) {
+      throw new ConflictException(
+        `Invalid payroll state transition: Cannot move from ${current} to ${next}`,
+      );
+    }
+  }
+
   async createStructure(dto: any): Promise<SalaryStructure> {
-    const structure = this.structureRepo.create(dto);
+    const structure = this.structureRepo.create({
+      ...dto,
+      tenantId: this.tenantId,
+    });
     const saved: any = await this.structureRepo.save(structure);
 
     await this.auditService.log({
-      tenantId: this.cls.get('tenantId'),
+      tenantId: this.tenantId,
       userId: this.cls.get('userId'),
       action: 'CREATE_SALARY_STRUCTURE',
       module: 'PAYROLL',
@@ -101,17 +154,21 @@ export class PayrollService {
   }
 
   async findAllStructures(): Promise<SalaryStructure[]> {
-    return this.structureRepo.find({ relations: ['components'] });
+    return this.structureRepo.find({
+      where: { tenantId: this.tenantId },
+      relations: ['components'],
+    });
   }
 
   async assignStructure(employeeId: string, structureId: string) {
     let assignment = await this.assignmentRepo.findOne({
-      where: { employeeId },
+      where: { employeeId, tenantId: this.tenantId },
     });
     if (assignment) {
       assignment.salaryStructureId = structureId;
     } else {
       assignment = this.assignmentRepo.create({
+        tenantId: this.tenantId,
         employeeId,
         salaryStructureId: structureId,
       });
@@ -121,20 +178,27 @@ export class PayrollService {
 
   async findAllTaxConfigs(): Promise<TaxConfiguration[]> {
     return this.taxRepo.find({
+      where: { tenantId: this.tenantId },
       relations: ['brackets'],
       order: { fiscalYear: 'DESC' },
     });
   }
 
   async createTaxConfig(dto: any): Promise<TaxConfiguration> {
-    const config: any = this.taxRepo.create(dto);
+    const config: any = this.taxRepo.create({
+      ...dto,
+      tenantId: this.tenantId,
+    });
     if (config.isActive) {
-      await this.taxRepo.update({ isActive: true }, { isActive: false });
+      await this.taxRepo.update(
+        { isActive: true, tenantId: this.tenantId },
+        { isActive: false },
+      );
     }
     const saved: any = await this.taxRepo.save(config);
 
     await this.auditService.log({
-      tenantId: this.cls.get('tenantId'),
+      tenantId: this.tenantId,
       userId: this.cls.get('userId'),
       action: 'CREATE_TAX_CONFIG',
       module: 'PAYROLL',
@@ -146,12 +210,15 @@ export class PayrollService {
   }
 
   async createRun(period: string): Promise<PayrollRun> {
-    const existing = await this.runRepo.findOne({ where: { period } });
+    const existing = await this.runRepo.findOne({
+      where: { period, tenantId: this.tenantId },
+    });
     if (existing)
       throw new ConflictException(`Payroll run for ${period} already exists`);
 
     const runId = `PR-${period}`;
     const run = this.runRepo.create({
+      tenantId: this.tenantId,
       runId,
       period,
       status: PayrollRunStatus.DRAFT,
@@ -170,6 +237,7 @@ export class PayrollService {
     const runId = `OC-${employeeId.slice(0, 4)}-${period}-${Date.now().toString().slice(-4)}`;
 
     const run = this.runRepo.create({
+      tenantId: this.tenantId,
       runId,
       period,
       status: PayrollRunStatus.DRAFT,
@@ -177,9 +245,6 @@ export class PayrollService {
     });
 
     const savedRun = await this.runRepo.save(run);
-
-    // We can immediately process it for this employee
-    // In a real app, maybe you want to review first.
     return savedRun;
   }
 
@@ -192,16 +257,18 @@ export class PayrollService {
       gradeId?: string;
     },
   ) {
-    const run = await this.runRepo.findOne({ where: { id: runId } });
+    const run = await this.runRepo.findOne({
+      where: { id: runId, tenantId: this.tenantId },
+    });
     if (!run) throw new NotFoundException('Payroll run not found');
-    if (run.status !== PayrollRunStatus.DRAFT)
-      throw new ConflictException('Run is already processed or cancelled');
+
+    this.validateTransition(run.status, PayrollRunStatus.PROCESSING);
 
     run.status = PayrollRunStatus.PROCESSING;
     await this.runRepo.save(run);
 
     const taxConfig = await this.taxRepo.findOne({
-      where: { isActive: true },
+      where: { isActive: true, tenantId: this.tenantId },
       relations: ['brackets'],
     });
 
@@ -210,7 +277,8 @@ export class PayrollService {
       .innerJoinAndSelect('assignment.employee', 'employee')
       .innerJoinAndSelect('assignment.salaryStructure', 'structure')
       .innerJoinAndSelect('structure.components', 'components')
-      .where('assignment.isActive = :isActive', { isActive: true });
+      .where('assignment.isActive = :isActive', { isActive: true })
+      .andWhere('assignment.tenantId = :tenantId', { tenantId: this.tenantId });
 
     if (filters?.employeeId) {
       qb.andWhere('employee.id = :employeeId', {
@@ -248,25 +316,26 @@ export class PayrollService {
       }
 
       // Calculate Overtime for the month
-      const attendance = await this.attendanceService.getTeamAttendance(
-        run.period,
-      ); // Period as prefix check
-      const employeeAttendance = attendance.filter(
-        (a) => a.employeeId === assign.employeeId,
-      );
-      const totalOtMins = employeeAttendance.reduce(
+      const attendance = await this.attendanceRepo.find({
+        where: {
+          employeeId: assign.employeeId,
+          tenantId: this.tenantId,
+          date: Between(`${run.period}-01`, `${run.period}-31`),
+        },
+      });
+
+      const totalOtMins = attendance.reduce(
         (sum, a) => sum + (a.isOvertimeApproved ? a.overtimeMinutes || 0 : 0),
         0,
       );
       const otHours = totalOtMins / 60;
 
-      // Calculate Leave Encashment (e.g. at the end of fiscal year)
+      // Calculate Leave Encashment
       let encashmentDays = 0;
       if (run.period.endsWith('-03')) {
-        // Example: March is fiscal year end
         encashmentDays = await this.leaveService.getEncashableLeaveDays(
           assign.employeeId,
-          '2025-26',
+          this.fiscalYear,
         );
       }
 
@@ -278,7 +347,11 @@ export class PayrollService {
 
       // Fetch active loans and calculate deduction
       const loans = await this.loanRepo.find({
-        where: { employeeId: assign.employeeId, status: LoanStatus.ACTIVE },
+        where: {
+          employeeId: assign.employeeId,
+          status: LoanStatus.ACTIVE,
+          tenantId: this.tenantId,
+        },
       });
       const loanDeduction = loans.reduce(
         (sum, l) => sum + Number(l.monthlyDeduction),
@@ -291,6 +364,7 @@ export class PayrollService {
           employeeId: assign.employeeId,
           status: AdvanceSalaryStatus.APPROVED,
           deductionPeriod: run.period,
+          tenantId: this.tenantId,
         },
       });
       const advanceDeduction = advances.reduce(
@@ -304,6 +378,7 @@ export class PayrollService {
           employeeId: assign.employeeId,
           payrollPeriod: run.period,
           isProcessed: false,
+          tenantId: this.tenantId,
         },
       });
       const totalBonus = bonuses.reduce((sum, b) => sum + Number(b.amount), 0);
@@ -328,6 +403,7 @@ export class PayrollService {
       );
 
       const payslip = this.payslipRepo.create({
+        tenantId: this.tenantId,
         payrollRunId: run.id,
         employeeId: assign.employeeId,
         grossPay,
@@ -336,11 +412,7 @@ export class PayrollService {
         employerPfContribution,
         items,
         payoutCurrency: assign.employee.preferredCurrency || 'USD',
-        exchangeRate:
-          assign.employee.preferredCurrency &&
-          assign.employee.preferredCurrency !== 'USD'
-            ? 110.0
-            : 1, // Mock rate for BDT
+        exchangeRate: 1,
       });
 
       payslips.push(payslip);
@@ -370,12 +442,12 @@ export class PayrollService {
   }
 
   async markAsPaid(runId: string) {
-    const run = await this.runRepo.findOne({ where: { id: runId } });
+    const run = await this.runRepo.findOne({
+      where: { id: runId, tenantId: this.tenantId },
+    });
     if (!run) throw new NotFoundException('Payroll run not found');
-    if (run.status !== PayrollRunStatus.PROCESSED)
-      throw new ConflictException(
-        'Run must be PROCESSED before it can be marked as PAID',
-      );
+
+    this.validateTransition(run.status, PayrollRunStatus.PAID);
 
     run.status = PayrollRunStatus.PAID;
     run.payDate = new Date().toISOString().split('T')[0];
@@ -399,18 +471,24 @@ export class PayrollService {
   ) {
     await this.auditRepo.save(
       this.auditRepo.create({
+        tenantId: this.tenantId,
         payrollRunId: runId,
         action,
         beforeValue: before,
         afterValue: after,
-        // actorId would come from context
+        actorId: this.cls.get('userId'),
       }),
     );
   }
 
   async approveRun(runId: string) {
-    const run = await this.runRepo.findOne({ where: { id: runId } });
+    const run = await this.runRepo.findOne({
+      where: { id: runId, tenantId: this.tenantId },
+    });
     if (!run) throw new NotFoundException('Payroll run not found');
+
+    this.validateTransition(run.status, PayrollRunStatus.APPROVED);
+
     const oldStatus = run.status;
     run.status = PayrollRunStatus.APPROVED;
     const saved = await this.runRepo.save(run);
@@ -424,19 +502,46 @@ export class PayrollService {
     return saved;
   }
 
+  async cancelRun(runId: string) {
+    const run = await this.runRepo.findOne({
+      where: { id: runId, tenantId: this.tenantId },
+    });
+    if (!run) throw new NotFoundException('Payroll run not found');
+
+    this.validateTransition(run.status, PayrollRunStatus.CANCELLED);
+
+    const oldStatus = run.status;
+    run.status = PayrollRunStatus.CANCELLED;
+    const saved = await this.runRepo.save(run);
+
+    await this.logPayrollAudit(
+      run.id,
+      'CANCEL',
+      { status: oldStatus },
+      { status: run.status },
+    );
+    return saved;
+  }
+
   async finalizeRun(runId: string) {
     const run = await this.runRepo.findOne({
-      where: { id: runId },
+      where: { id: runId, tenantId: this.tenantId },
       relations: ['payslips'],
     });
     if (!run) throw new NotFoundException('Payroll run not found');
+
+    this.validateTransition(run.status, PayrollRunStatus.PROCESSED);
 
     await this.runRepo.manager.transaction(async (manager) => {
       // 1. Process Loans and Advances per employee in this run
       for (const payslip of run.payslips) {
         // Handle Loans
         const activeLoans = await manager.find(EmployeeLoan, {
-          where: { employeeId: payslip.employeeId, status: LoanStatus.ACTIVE },
+          where: {
+            employeeId: payslip.employeeId,
+            status: LoanStatus.ACTIVE,
+            tenantId: this.tenantId,
+          },
         });
 
         for (const loan of activeLoans) {
@@ -444,6 +549,7 @@ export class PayrollService {
 
           // Create repayment record
           const repayment = manager.create(LoanRepayment, {
+            tenantId: this.tenantId,
             loanId: loan.id,
             payrollRunId: run.id,
             amount: repaymentAmount,
@@ -467,6 +573,7 @@ export class PayrollService {
             employeeId: payslip.employeeId,
             status: AdvanceSalaryStatus.APPROVED,
             deductionPeriod: run.period,
+            tenantId: this.tenantId,
           },
           { status: AdvanceSalaryStatus.DEDUCTED },
         );
@@ -478,6 +585,7 @@ export class PayrollService {
             employeeId: payslip.employeeId,
             payrollPeriod: run.period,
             isProcessed: false,
+            tenantId: this.tenantId,
           },
           { isProcessed: true },
         );
@@ -485,7 +593,11 @@ export class PayrollService {
         // Handle Arrears
         await manager.update(
           SalaryHistory,
-          { employeeId: payslip.employeeId, isProcessedInPayroll: false },
+          {
+            employeeId: payslip.employeeId,
+            isProcessedInPayroll: false,
+            tenantId: this.tenantId,
+          },
           { isProcessedInPayroll: true },
         );
       }
@@ -505,6 +617,7 @@ export class PayrollService {
 
     // Emit event for Finance module to post journals
     this.eventEmitter.emit('payroll.processed', {
+      tenantId: this.tenantId,
       runId: run.id,
       totalNet: run.totalNet,
       totalGross: run.totalGross,
@@ -517,36 +630,38 @@ export class PayrollService {
 
   async publishPayslips(runId: string) {
     await this.payslipRepo.update(
-      { payrollRunId: runId },
+      { payrollRunId: runId, tenantId: this.tenantId },
       { isPublished: true },
     );
 
     // Queue distribution job
-    await this.payrollQueue.add('distribute-payslips', { runId });
+    await this.payrollQueue.add('distribute-payslips', {
+      runId,
+      tenantId: this.tenantId,
+    });
 
     return { success: true };
   }
 
   async getPayslipDownloadUrl(payslipId: string) {
     const payslip = await this.payslipRepo.findOne({
-      where: { id: payslipId },
+      where: { id: payslipId, tenantId: this.tenantId },
     });
     if (!payslip) throw new NotFoundException('Payslip not found');
-    // Generate a pre-signed URL for the PDF
-    const key = `payroll/payslips/${payslipId}.pdf`;
+    const key = `payroll/${this.tenantId}/payslips/${payslipId}.pdf`;
     return this.storageService.getDownloadPresignedUrl(key);
   }
 
   async getPayslipsByRun(runId: string): Promise<Payslip[]> {
     return this.payslipRepo.find({
-      where: { payrollRunId: runId },
+      where: { payrollRunId: runId, tenantId: this.tenantId },
       relations: ['employee'],
     });
   }
 
   async getPayslipsByEmployee(employeeId: string): Promise<Payslip[]> {
     return this.payslipRepo.find({
-      where: { employeeId, isPublished: true },
+      where: { employeeId, isPublished: true, tenantId: this.tenantId },
       relations: ['payrollRun'],
       order: { createdAt: 'DESC' },
     });
@@ -554,7 +669,7 @@ export class PayrollService {
 
   async getPayslipPdf(payslipId: string): Promise<Buffer> {
     const payslip = await this.payslipRepo.findOne({
-      where: { id: payslipId },
+      where: { id: payslipId, tenantId: this.tenantId },
       relations: ['employee', 'payrollRun'],
     });
     if (!payslip) throw new NotFoundException('Payslip not found');
@@ -623,12 +738,9 @@ export class PayrollService {
     return this.pdfService.generatePdf(template, data);
   }
 
-  /**
-   * Generates a BEFTN (Bangladesh Electronic Fund Transfer Network) tab-delimited file.
-   */
   async generateBeftnExport(runId: string): Promise<string> {
     const payslips = await this.payslipRepo.find({
-      where: { payrollRunId: runId },
+      where: { payrollRunId: runId, tenantId: this.tenantId },
       relations: ['employee'],
     });
 
@@ -653,15 +765,16 @@ export class PayrollService {
     return content;
   }
 
-  /**
-   * Calculates arrears for an employee based on backdated salary revisions.
-   */
   async getArrearsForEmployee(
     employeeId: string,
     currentPeriod: string,
   ): Promise<number> {
     const history = await this.salaryHistoryRepo.find({
-      where: { employeeId, isProcessedInPayroll: false },
+      where: {
+        employeeId,
+        isProcessedInPayroll: false,
+        tenantId: this.tenantId,
+      },
       order: { effectiveDate: 'ASC' },
     });
 
@@ -671,11 +784,8 @@ export class PayrollService {
     for (const record of history) {
       const effectiveDate = new Date(record.effectiveDate);
       if (effectiveDate < currentPeriodDate) {
-        // This is a backdated revision. Calculate the diff for months missed.
-        // For simplicity: (newSalary - previousSalary) * number of missed months
         const diff = Number(record.newSalary) - Number(record.previousSalary);
 
-        // Count full months between effectiveDate and currentPeriodDate
         const months =
           (currentPeriodDate.getFullYear() - effectiveDate.getFullYear()) * 12 +
           (currentPeriodDate.getMonth() - effectiveDate.getMonth());
@@ -688,12 +798,9 @@ export class PayrollService {
     return totalArrear;
   }
 
-  /**
-   * Generates a bank advice letter for a payroll run.
-   */
   async generateBankLetterPdf(runId: string): Promise<Buffer> {
     const run = await this.runRepo.findOne({
-      where: { id: runId },
+      where: { id: runId, tenantId: this.tenantId },
       relations: ['payslips', 'payslips.employee'],
     });
     if (!run) throw new NotFoundException('Payroll run not found');
@@ -701,11 +808,11 @@ export class PayrollService {
     const template = `
   <div style="font-family: 'Manrope', sans-serif; padding: 40px; color: #0c1324;">
     <h2 style="text-align: center;">BANK PAYMENT ADVICE</h2>
-    <p>To,<br/>The Manager,<br/>Sample Bank Limited,<br/>Main Branch, Dhaka.</p>
+    <p>To,<br/>The Manager,<br/>Nurox Partner Bank,<br/>Corporate Branch.</p>
     <p><b>Date:</b> {{date}}</p>
     <p><b>Subject:</b> Salary Payment for the period {{period}}</p>
     <p>Dear Sir,</p>
-    <p>Please find below the salary details for our employees. We request you to debit our account <b>1234567890123</b> and credit the respective employee accounts as per the table below:</p>
+    <p>Please find below the salary details for our employees. We request you to debit our account and credit the respective employee accounts as per the table below:</p>
 
     <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
       <thead>
@@ -731,13 +838,6 @@ export class PayrollService {
         </tr>
       </tfoot>
     </table>
-
-    <div style="margin-top: 50px;">
-      <p>Sincerely yours,</p>
-      <div style="margin-top: 30px; border-top: 1px solid #000; width: 200px;">
-        <p>Authorized Signatory<br/>Nurox ERP Pvt Ltd.</p>
-      </div>
-    </div>
   </div>
 `;
 
@@ -755,14 +855,10 @@ export class PayrollService {
     return this.pdfService.generatePdf(template, data);
   }
 
-  /**
-* ADVANCE SALARY WORKFLOW
-...
-   */
-
   async createAdvanceRequest(dto: any): Promise<AdvanceSalaryRequest> {
     const request = this.advanceRepo.create({
       ...dto,
+      tenantId: this.tenantId,
       status: AdvanceSalaryStatus.PENDING,
       requestedDate: new Date().toISOString(),
     }) as any;
@@ -774,7 +870,9 @@ export class PayrollService {
     status: AdvanceSalaryStatus,
     approvedById?: string,
   ): Promise<AdvanceSalaryRequest> {
-    const request = await this.advanceRepo.findOne({ where: { id } });
+    const request = await this.advanceRepo.findOne({
+      where: { id, tenantId: this.tenantId },
+    });
     if (!request) throw new NotFoundException('Advance request not found');
 
     request.status = status;
@@ -786,12 +884,9 @@ export class PayrollService {
     return this.advanceRepo.save(request);
   }
 
-  /**
-   * Generates a summary report for a payroll run, grouped by department.
-   */
   async getPayrollSummary(runId: string) {
     const payslips = await this.payslipRepo.find({
-      where: { payrollRunId: runId },
+      where: { payrollRunId: runId, tenantId: this.tenantId },
       relations: ['employee', 'employee.department'],
     });
 
@@ -821,7 +916,7 @@ export class PayrollService {
 
   async approveOvertime(attendanceId: string, approvedById: string) {
     const record = await this.attendanceRepo.findOne({
-      where: { id: attendanceId },
+      where: { id: attendanceId, tenantId: this.tenantId },
     });
     if (!record) throw new NotFoundException('Attendance record not found');
 
@@ -830,37 +925,14 @@ export class PayrollService {
     return this.attendanceRepo.save(record);
   }
 
-  /**
-   * Generates a generic bank transfer CSV file.
-   */
-  async generateBankTransferFile(runId: string): Promise<string> {
-    const payslips = await this.payslipRepo.find({
-      where: { payrollRunId: runId },
-      relations: ['employee', 'payrollRun'],
-    });
-
-    let csv = 'Account Number,Account Name,Amount,Reference\n';
-
-    for (const p of payslips) {
-      const name = `${p.employee.firstName} ${p.employee.lastName}`;
-      const acc = p.employee.accountNumber || 'N/A';
-      csv += `${acc},"${name}",${p.netPay},Salary ${p.payrollRun?.period || ''}\n`;
-    }
-
-    return csv;
-  }
-
-  /**
-   * Compares two payroll runs and returns variances per component.
-   */
   async getPayrollComparison(currentRunId: string, previousRunId: string) {
     const [currentRun, previousRun] = await Promise.all([
       this.payslipRepo.find({
-        where: { payrollRunId: currentRunId },
+        where: { payrollRunId: currentRunId, tenantId: this.tenantId },
         relations: ['employee'],
       }),
       this.payslipRepo.find({
-        where: { payrollRunId: previousRunId },
+        where: { payrollRunId: previousRunId, tenantId: this.tenantId },
         relations: ['employee'],
       }),
     ]);

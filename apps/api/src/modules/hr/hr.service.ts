@@ -80,6 +80,7 @@ import { CreateDesignationDto } from './dto/create-designation.dto';
 import { UpdateDesignationDto } from './dto/update-designation.dto';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { ClsService } from 'nestjs-cls';
 
 @Injectable()
 export class HrService implements OnModuleInit {
@@ -149,7 +150,12 @@ export class HrService implements OnModuleInit {
     @InjectQueue('hr')
     private readonly hrQueue: Queue,
     private readonly configService: ConfigService,
+    private readonly cls: ClsService,
   ) {}
+
+  private get tenantId(): string {
+    return this.cls.get('tenantId');
+  }
 
   async onModuleInit() {
     await this.hrQueue.add(
@@ -259,7 +265,8 @@ export class HrService implements OnModuleInit {
       .createQueryBuilder('employee')
       .leftJoinAndSelect('employee.department', 'department')
       .leftJoinAndSelect('employee.designation', 'designation')
-      .where('employee.deletedAt IS NULL');
+      .where('employee.tenantId = :tenantId', { tenantId: this.tenantId })
+      .andWhere('employee.deletedAt IS NULL');
 
     if (search) {
       qb.andWhere(
@@ -285,7 +292,7 @@ export class HrService implements OnModuleInit {
 
   async findEmployeeById(id: string): Promise<Employee> {
     const employee = await this.employeeRepo.findOne({
-      where: { id },
+      where: { id, tenantId: this.tenantId },
       relations: ['department', 'designation', 'manager', 'shift'],
     });
     if (!employee) throw new NotFoundException('Employee not found');

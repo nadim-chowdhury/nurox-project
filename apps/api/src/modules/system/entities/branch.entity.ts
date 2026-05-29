@@ -17,4 +17,13 @@ export class Branch extends TenantBaseEntity {
 
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
+
+  @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+  latitude: number | null;
+
+  @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+  longitude: number | null;
+
+  @Column({ type: 'integer', default: 200 })
+  geoFenceRadius: number; // in meters
 }

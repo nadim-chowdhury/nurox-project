@@ -1,4 +1,11 @@
-import { Entity, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
 import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 
 export enum InvoiceStatus {
@@ -13,8 +20,9 @@ export enum InvoiceStatus {
 }
 
 @Entity('invoices')
+@Index(['tenantId', 'invoiceNumber'], { unique: true })
 export class Invoice extends TenantBaseEntity {
-  @Column({ type: 'varchar', length: 30, unique: true })
+  @Column({ type: 'varchar', length: 30 })
   invoiceNumber: string;
 
   @Column({ type: 'uuid', nullable: true })

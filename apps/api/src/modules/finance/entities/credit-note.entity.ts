@@ -1,10 +1,11 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Invoice } from './invoice.entity';
 
 @Entity('credit_notes')
+@Index(['tenantId', 'noteNumber'], { unique: true })
 export class CreditNote extends TenantBaseEntity {
-  @Column({ type: 'varchar', length: 30, unique: true })
+  @Column({ type: 'varchar', length: 30 })
   noteNumber: string;
 
   @Column({ type: 'date' })

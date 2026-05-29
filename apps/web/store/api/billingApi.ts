@@ -1,5 +1,4 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "@/lib/api-client";
+import { baseApi } from "./baseApi";
 import type {
   SubscriptionPlanDto,
   TenantSubscriptionDto,
@@ -8,10 +7,7 @@ import type {
   CheckoutResponseDto,
 } from "@repo/shared-schemas";
 
-export const billingApi = createApi({
-  reducerPath: "billingApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ["Subscription", "Invoice"],
+export const billingApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getPlans: builder.query<SubscriptionPlanDto[], void>({
       query: () => "/billing/plans",
@@ -22,7 +18,7 @@ export const billingApi = createApi({
     }),
     getInvoices: builder.query<BillingInvoiceListResponseDto, void>({
       query: () => "/billing/invoices",
-      providesTags: ["Invoice"],
+      providesTags: ["Invoice_Billing"],
     }),
     createCheckoutSession: builder.mutation<
       CheckoutResponseDto,
@@ -33,6 +29,7 @@ export const billingApi = createApi({
         method: "POST",
         body,
       }),
+      invalidatesTags: ["Subscription"],
     }),
     createPortalSession: builder.mutation<
       CheckoutResponseDto,
@@ -45,6 +42,7 @@ export const billingApi = createApi({
       }),
     }),
   }),
+  overrideExisting: false,
 });
 
 export const {

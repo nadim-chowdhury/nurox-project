@@ -1,4 +1,11 @@
-import { Entity, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
 import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 
 export enum BillStatus {
@@ -12,8 +19,9 @@ export enum BillStatus {
 }
 
 @Entity('bills')
+@Index(['tenantId', 'billNumber'], { unique: true })
 export class Bill extends TenantBaseEntity {
-  @Column({ type: 'varchar', length: 30, unique: true })
+  @Column({ type: 'varchar', length: 30 })
   billNumber: string;
 
   @Column({ type: 'varchar', length: 150 })

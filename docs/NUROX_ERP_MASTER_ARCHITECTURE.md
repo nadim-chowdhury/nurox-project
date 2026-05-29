@@ -1,14 +1,39 @@
 # NUROX ERP — Ultimate SaaS Master Documentation
 
-> **Version:** 2.1 · **Last Updated:** April 2026
+> **Version:** 2.2 · **Last Updated:** May 2026
 > **Stack:** Next.js 16 · NestJS 11 · TypeORM 0.3.x · PostgreSQL 17 · Ant Design 6.x · RTK Query · Custom JWT Auth (Passport.js)
 > **Design System:** Liquid Precision — "The Architectural Infinite"
 > **Architecture:** Multi-Tenant SaaS · Module-Based · API-First · Event-Driven
 
 ---
 
+## 0. AI Consistency & Guardrails (CRITICAL)
+
+> **Mandate:** This project is developed primarily via AI. To ensure production-ready quality across multiple accounts and sessions, the following guardrails are non-negotiable.
+
+### 0.1 Session Persistence (Memory Protocol)
+
+- **Codebase as Memory:** Do not rely on your internal training data or session history. Treat this documentation as the absolute source of truth.
+- **Initialization:** Every session MUST read `GEMINI.md` and `docs/AI_CONTEXT_ANCHOR.md` first.
+- **Anchor Updates:** Upon finishing a task, update `docs/AI_CONTEXT_ANCHOR.md` with the new status.
+
+### 0.2 Architectural Non-Negotiables (Guardrails)
+
+- **Zero-Tolerance for `any`:** Never use `any` in TypeScript. If a type is unknown, use `unknown` and a type guard, or define a proper interface.
+- **Multi-Tenancy First:** Every database record MUST be scoped to a `tenant_id`. Every service call MUST verify tenant isolation.
+- **Centralized Validation:** No local DTOs. 100% of API boundaries must be validated via shared Zod schemas in `packages/shared-schemas`.
+- **UI Standard:** Forms MUST use the standardized RHF wrappers in `@/components/common/forms/`. Never use raw Antd input controls directly in forms.
+- **Audit Mandate:** All mutation endpoints (`POST`, `PUT`, `PATCH`, `DELETE`) MUST apply the `AuditLogInterceptor`.
+
+### 0.3 The "Definition of Done"
+
+A feature is only "Done" when it passes the **Production Hardening Checklist** in `GEMINI.md`.
+
+---
+
 ## Table of Contents
 
+0. [AI Consistency & Guardrails](#0-ai-consistency--guardrails)
 1. [Complete Tech Stack](#1-complete-tech-stack)
 2. [Design System — Liquid Precision](#2-design-system--liquid-precision)
 3. [Ant Design Integration & Theming](#3-ant-design-integration--theming)
@@ -49,6 +74,8 @@
    - [Module 30: Compliance, Tax & Regulatory](#module-30-compliance-tax--regulatory)
 9. [SaaS Go-To-Market Strategy](#9-saas-go-to-market-strategy)
 10. [Appendices](#10-appendices)
+11. [Testing & Quality Assurance](#11-testing--quality-assurance)
+12. [Production Hardening Checklist](#12-production-hardening-checklist)
 
 ---
 
@@ -2807,6 +2834,56 @@ Code Range    Module              Examples
 | 29. Logistics & Fleet       | 12                |
 | 30. Compliance & Tax        | 15                |
 | **TOTAL**                   | **~692 features** |
+
+---
+
+---
+
+## 11. Testing & Quality Assurance
+
+### 11.1 Unit & Integration Testing (Vitest)
+
+- **Standard:** Every utility, hook, and reducer must have ≥ 80% coverage.
+- **Location:** `*.spec.ts` files alongside the source.
+- **Command:** `pnpm test` (root) or `pnpm test:ui` for visual dashboard.
+
+### 11.2 API Testing (Jest + Supertest)
+
+- **Standard:** Every NestJS controller must have integration tests covering Happy Path and Error scenarios.
+- **Location:** `apps/api/test/` or `*.spec.ts` in modules.
+- **Command:** `pnpm test` in `apps/api`.
+
+### 11.3 E2E Testing (Playwright)
+
+- **Standard:** Critical SaaS flows (Signup, Login, Create Employee, Run Payroll) must be automated.
+- **Location:** `apps/web/playwright/`.
+- **Browsers:** Chromium, Firefox, WebKit.
+
+---
+
+## 12. Production Hardening Checklist
+
+### 12.1 Security
+
+- [ ] Helmet.js configured with strict CSP.
+- [ ] Rate limiting (Redis-backed) applied to all public and sensitive endpoints.
+- [ ] Database RLS (Row Level Security) verified via automated test suite.
+- [ ] PII encryption at rest for sensitive columns (NID, Salary, Bank).
+- [ ] Secrets managed via HashiCorp Vault or AWS Secrets Manager (no .env in prod).
+
+### 12.2 Observability
+
+- [ ] Sentry integrated for both Frontend and Backend error tracking.
+- [ ] OpenTelemetry (OTLP) instrumentation for distributed tracing.
+- [ ] Prometheus metrics exported for DB pool, Redis, and Queue health.
+- [ ] Centralized logging with Loki + Grafana.
+
+### 12.3 Performance & Scaling
+
+- [ ] PgBouncer in `transaction` mode for DB connection pooling.
+- [ ] CDN (Cloudflare) for static assets and edge caching.
+- [ ] Horizontal Pod Autoscaling (HPA) based on CPU/Memory.
+- [ ] Redis clusters for session and job queue management.
 
 ---
 

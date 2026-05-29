@@ -1,5 +1,4 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "@/lib/api-client";
+import { baseApi } from "./baseApi";
 import type {
   VendorDto,
   PurchaseRequestDto,
@@ -9,10 +8,7 @@ import type {
   GrnDto,
 } from "@repo/shared-schemas";
 
-export const procurementApi = createApi({
-  reducerPath: "procurementApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ["Vendor", "PR", "RFQ", "PO", "GRN", "Stock"],
+export const procurementApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getVendors: builder.query<any[], void>({
       query: () => "/procurement/vendors",
@@ -39,7 +35,7 @@ export const procurementApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["PR"],
+      invalidatesTags: ["PurchaseRequest"],
     }),
 
     createRFQ: builder.mutation<any, RfqDto>({
@@ -71,7 +67,7 @@ export const procurementApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["PO"],
+      invalidatesTags: ["PurchaseOrder"],
     }),
 
     sendPO: builder.mutation<any, string>({
@@ -79,12 +75,12 @@ export const procurementApi = createApi({
         url: `/procurement/purchase-orders/${id}/send`,
         method: "POST",
       }),
-      invalidatesTags: ["PO"],
+      invalidatesTags: ["PurchaseOrder"],
     }),
 
     verifyMatch: builder.query<any, string>({
       query: (id) => `/procurement/purchase-orders/${id}/verify-match`,
-      providesTags: ["PO"],
+      providesTags: ["PurchaseOrder"],
     }),
 
     createGRN: builder.mutation<any, GrnDto>({
@@ -93,7 +89,7 @@ export const procurementApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["GRN", "PO"],
+      invalidatesTags: ["GRN", "PurchaseOrder"],
     }),
 
     allocateLandedCost: builder.mutation<any, { id: string; costs: any[] }>({
@@ -114,6 +110,7 @@ export const procurementApi = createApi({
       invalidatesTags: ["GRN", "Stock"],
     }),
   }),
+  overrideExisting: false,
 });
 
 export const {

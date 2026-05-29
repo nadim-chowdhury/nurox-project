@@ -1,5 +1,4 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "@/lib/api-client";
+import { baseApi } from "./baseApi";
 
 export interface ChatChannel {
   id: string;
@@ -23,10 +22,7 @@ export interface ChatMessage {
   };
 }
 
-export const chatApi = createApi({
-  reducerPath: "chatApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ["Channel", "Message"],
+export const chatApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getChannels: builder.query<ChatChannel[], void>({
       query: () => "/chat/channels",
@@ -45,6 +41,7 @@ export const chatApi = createApi({
       invalidatesTags: ["Channel"],
     }),
   }),
+  overrideExisting: false,
 });
 
 export const {

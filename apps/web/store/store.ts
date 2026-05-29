@@ -13,25 +13,7 @@ import storage from "redux-persist/lib/storage";
 import authReducer from "./slices/authSlice";
 import uiReducer from "./slices/uiSlice";
 import notificationReducer from "./slices/notificationSlice";
-import { authApi } from "./api/authApi";
-import { usersApi } from "./api/usersApi";
-import { hrApi } from "./api/hrApi";
-import { projectsApi } from "./api/projectsApi";
-import { salesApi } from "./api/salesApi";
-import { systemApi } from "./api/systemApi";
-import { analyticsApi } from "./api/analyticsApi";
-import { payrollApi } from "./api/payrollApi";
-import { attendanceApi } from "./api/attendanceApi";
-import { inventoryApi } from "./api/inventoryApi";
-import { procurementApi } from "./api/procurementApi";
-import { recruitmentApi } from "./api/recruitmentApi";
-import { notificationApi } from "./api/notificationApi";
-import { financeApi } from "./api/financeApi";
-import { assetsApi } from "./api/assetsApi";
-import { documentsApi } from "./api/documentsApi";
-import { chatApi } from "./api/chatApi";
-import { auditApi } from "./api/auditApi";
-import { billingApi } from "./api/billingApi";
+import { baseApi } from "./api/baseApi";
 
 /**
  * Persist config — only the auth slice is persisted to localStorage.
@@ -53,25 +35,7 @@ const rootReducer = combineReducers({
   auth: authReducer,
   ui: uiReducer,
   notifications: notificationReducer,
-  [authApi.reducerPath]: authApi.reducer,
-  [usersApi.reducerPath]: usersApi.reducer,
-  [hrApi.reducerPath]: hrApi.reducer,
-  [projectsApi.reducerPath]: projectsApi.reducer,
-  [salesApi.reducerPath]: salesApi.reducer,
-  [systemApi.reducerPath]: systemApi.reducer,
-  [analyticsApi.reducerPath]: analyticsApi.reducer,
-  [payrollApi.reducerPath]: payrollApi.reducer,
-  [attendanceApi.reducerPath]: attendanceApi.reducer,
-  [inventoryApi.reducerPath]: inventoryApi.reducer,
-  [procurementApi.reducerPath]: procurementApi.reducer,
-  [recruitmentApi.reducerPath]: recruitmentApi.reducer,
-  [notificationApi.reducerPath]: notificationApi.reducer,
-  [financeApi.reducerPath]: financeApi.reducer,
-  [assetsApi.reducerPath]: assetsApi.reducer,
-  [documentsApi.reducerPath]: documentsApi.reducer,
-  [chatApi.reducerPath]: chatApi.reducer,
-  [auditApi.reducerPath]: auditApi.reducer,
-  [billingApi.reducerPath]: billingApi.reducer,
+  [baseApi.reducerPath]: baseApi.reducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
@@ -84,26 +48,7 @@ export const store = configureStore({
         // redux-persist dispatches non-serializable actions — ignore them
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    })
-      .concat(authApi.middleware)
-      .concat(usersApi.middleware)
-      .concat(hrApi.middleware)
-      .concat(projectsApi.middleware)
-      .concat(salesApi.middleware)
-      .concat(systemApi.middleware)
-      .concat(analyticsApi.middleware)
-      .concat(payrollApi.middleware)
-      .concat(attendanceApi.middleware)
-      .concat(inventoryApi.middleware)
-      .concat(procurementApi.middleware)
-      .concat(recruitmentApi.middleware)
-      .concat(notificationApi.middleware)
-      .concat(financeApi.middleware)
-      .concat(assetsApi.middleware)
-      .concat(documentsApi.middleware)
-      .concat(chatApi.middleware)
-      .concat(auditApi.middleware)
-      .concat(billingApi.middleware),
+    }).concat(baseApi.middleware),
   devTools: process.env.NODE_ENV !== "production",
 });
 

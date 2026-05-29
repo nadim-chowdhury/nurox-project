@@ -1,8 +1,14 @@
 "use client";
 
 import React from "react";
-import { Modal, Form, InputNumber, Select, Input, message } from "antd";
+import { Modal, Button, Space, message, Form } from "antd";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { updateSalarySchema, type UpdateSalaryDto } from "@repo/shared-schemas";
 import { useUpdateSalaryMutation } from "@/store/api/hrApi";
+import { RhfInputNumber } from "@/components/common/forms/RhfInputNumber";
+import { RhfSelect } from "@/components/common/forms/RhfSelect";
+import { RhfTextArea } from "@/components/common/forms/RhfTextArea";
 
 interface Props {
   employee: any;
@@ -18,20 +24,31 @@ const salaryReasons = [
   { value: "OTHER", label: "Other" },
 ];
 
-export const UpdateSalaryModal: React.FC<Props> = ({ employee, open, onClose }) => {
-  const [form] = Form.useForm();
+export const UpdateSalaryModal: React.FC<Props> = ({
+  employee,
+  open,
+  onClose,
+}) => {
   const [updateSalary, { isLoading }] = useUpdateSalaryMutation();
 
-  const handleOk = async () => {
+  const { control, handleSubmit, reset } = useForm<UpdateSalaryDto>({
+    resolver: zodResolver(updateSalarySchema),
+    defaultValues: {
+      newSalary: employee?.salary || 0,
+      reason: "ANNUAL_INCREMENT",
+      comments: "",
+    },
+  });
+
+  const onFinish = async (values: UpdateSalaryDto) => {
     try {
-      const values = await form.validateFields();
       await updateSalary({
         id: employee.id,
         ...values,
       }).unwrap();
       message.success("Salary updated successfully");
+      reset();
       onClose();
-      form.resetFields();
     } catch (err: any) {
       message.error(err.data?.message || "Failed to update salary");
     }
@@ -41,21 +58,42 @@ export const UpdateSalaryModal: React.FC<Props> = ({ employee, open, onClose }) 
     <Modal
       title="Salary Revision"
       open={open}
-      onOk={handleOk}
       onCancel={onClose}
-      confirmLoading={isLoading}
+      footer={null}
       destroyOnClose
     >
-      <Form form={form} layout="vertical">
-        <Form.Item name="newSalary" label="New Monthly Salary" rules={[{ required: true }]}>
-          <InputNumber style={{ width: "100%" }} min={0} prefix="$" />
-        </Form.Item>
-        <Form.Item name="reason" label="Reason for Change" rules={[{ required: true }]}>
-          <Select options={salaryReasons} />
-        </Form.Item>
-        <Form.Item name="comments" label="Comments">
-          <Input.TextArea rows={3} placeholder="Rationale for revision..." />
-        </Form.Item>
+      <Form layout="vertical" onFinish={handleSubmit(onFinish)}>
+        <RhfInputNumber
+          name="newSalary"
+          control={control}
+          label="New Monthly Salary"
+          required
+          min={0}
+          prefix="$"
+        />
+        <RhfSelect
+          name="reason"
+          control={control}
+          label="Reason for Change"
+          required
+          options={salaryReasons}
+        />
+        <RhfTextArea
+          name="comments"
+          control={control}
+          label="Comments"
+          rows={3}
+          placeholder="Rationale for revision..."
+        />
+
+        <div style={{ marginTop: 24, textAlign: "right" }}>
+          <Space>
+            <Button onClick={onClose}>Cancel</Button>
+            <Button type="primary" htmlType="submit" loading={isLoading}>
+              Update Salary
+            </Button>
+          </Space>
+        </div>
       </Form>
     </Modal>
   );

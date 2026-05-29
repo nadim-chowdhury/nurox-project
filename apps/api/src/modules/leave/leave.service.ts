@@ -15,6 +15,7 @@ import { CompensatoryLeave } from './entities/comp-leave.entity';
 import { Employee } from '../hr/entities/employee.entity';
 import { NotificationService } from '../system/notification.service';
 import { NotificationType } from '../system/entities/notification.entity';
+import { ClsService } from 'nestjs-cls';
 
 @Injectable()
 export class LeaveService {
@@ -26,11 +27,25 @@ export class LeaveService {
     @InjectRepository(CompensatoryLeave)
     private readonly compLeaveRepo: Repository<CompensatoryLeave>,
     private readonly notificationService: NotificationService,
+    private readonly cls: ClsService,
   ) {}
+
+  private get tenantId(): string {
+    return this.cls.get('tenantId');
+  }
+
+  private get fiscalYear(): string {
+    const today = new Date();
+    const year = today.getFullYear();
+    // Assuming April 1st start of fiscal year
+    return today.getMonth() >= 3
+      ? `${year}-${(year + 1).toString().slice(-2)}`
+      : `${year - 1}-${year.toString().slice(-2)}`;
+  }
 
   async applyLeave(dto: any) {
     const employee = await this.leaveRepo.manager.findOne(Employee, {
-      where: { id: dto.employeeId },
+      where: { id: dto.employeeId, tenantId: this.tenantId },
     });
     if (!employee) throw new NotFoundException('Employee not found');
 
@@ -39,7 +54,8 @@ export class LeaveService {
       where: {
         employeeId: dto.employeeId,
         leaveType: dto.leaveType,
-        fiscalYear: '2025-26',
+        fiscalYear: this.fiscalYear,
+        tenantId: this.tenantId,
       },
     });
 
@@ -58,7 +74,8 @@ export class LeaveService {
       dto.startDate,
       dto.endDate,
     );
-    if (clashes.length >= 3) {
+    if (clashes.length >= 5) {
+      // Increased threshold for larger teams
       throw new ConflictException(
         `Too many team members on leave during this period (${clashes.length} already approved)`,
       );
@@ -66,6 +83,7 @@ export class LeaveService {
 
     const request = this.leaveRepo.create({
       ...dto,
+      tenantId: this.tenantId,
       status: LeaveRequestStatus.PENDING,
     });
     return this.leaveRepo.save(request);
@@ -76,7 +94,6 @@ export class LeaveService {
     leaveType: LeaveType,
   ): Promise<LeaveBalance> {
     const joinDate = new Date(employee.joinDate);
-    const yearEnd = new Date(joinDate.getFullYear(), 11, 31);
     const monthsWorked = 12 - joinDate.getMonth();
 
     let totalDays = 0;
@@ -89,24 +106,25 @@ export class LeaveService {
         break;
       case LeaveType.SICK:
         totalDays = 10;
-        break; // Sick leave usually not pro-rated
+        break;
       default:
         totalDays = 0;
     }
 
     const balance = this.balanceRepo.create({
+      tenantId: this.tenantId,
       employeeId: employee.id,
       leaveType,
       totalDays,
       usedDays: 0,
-      fiscalYear: '2025-26',
+      fiscalYear: this.fiscalYear,
     });
     return this.balanceRepo.save(balance);
   }
 
   async initializeBalances(employeeId: string) {
     const employee = await this.leaveRepo.manager.findOne(Employee, {
-      where: { id: employeeId },
+      where: { id: employeeId, tenantId: this.tenantId },
     });
     if (!employee) throw new NotFoundException('Employee not found');
 
@@ -118,7 +136,8 @@ export class LeaveService {
         where: {
           employeeId,
           leaveType: type,
-          fiscalYear: '2025-26',
+          fiscalYear: this.fiscalYear,
+          tenantId: this.tenantId,
         },
       });
 
@@ -137,14 +156,10 @@ export class LeaveService {
     comment?: string,
   ) {
     const request = await this.leaveRepo.findOne({
-      where: { id },
+      where: { id, tenantId: this.tenantId },
       relations: ['employee'],
     });
     if (!request) throw new NotFoundException('Leave request not found');
-
-    // Multi-level logic: Manager -> HR
-    // If status is APPROVED and current user is manager, maybe move to APPROVED_BY_MANAGER
-    // For this prototype, let's assume if status is APPROVED, it's final.
 
     request.status = status;
     request.approvedById = approvedById;
@@ -156,7 +171,8 @@ export class LeaveService {
         where: {
           employeeId: request.employeeId,
           leaveType: request.leaveType,
-          fiscalYear: '2025-26',
+          fiscalYear: this.fiscalYear,
+          tenantId: this.tenantId,
         },
       });
       if (balance) {
@@ -170,8 +186,7 @@ export class LeaveService {
     // Notify employee
     if (request.employee?.userId) {
       await this.notificationService.create({
-        tenantId:
-          (request.employee as any).tenantId || (request as any).tenantId,
+        tenantId: this.tenantId,
         userId: request.employee.userId,
         title: `Leave Request ${status.toLowerCase()}`,
         message: `Your leave request for ${request.startDate} to ${request.endDate} has been ${status.toLowerCase()}.`,
@@ -183,11 +198,18 @@ export class LeaveService {
   }
 
   async getLeaveBalances(employeeId: string) {
-    return this.balanceRepo.find({ where: { employeeId } });
+    return this.balanceRepo.find({
+      where: {
+        employeeId,
+        tenantId: this.tenantId,
+        fiscalYear: this.fiscalYear,
+      },
+    });
   }
 
   async findAllLeaveRequests() {
     return this.leaveRepo.find({
+      where: { tenantId: this.tenantId },
       relations: ['employee'],
       order: { createdAt: 'DESC' },
     });
@@ -198,9 +220,13 @@ export class LeaveService {
     fiscalYear: string,
   ): Promise<number> {
     const balance = await this.balanceRepo.findOne({
-      where: { employeeId, leaveType: LeaveType.ANNUAL, fiscalYear },
+      where: {
+        employeeId,
+        leaveType: LeaveType.ANNUAL,
+        fiscalYear,
+        tenantId: this.tenantId,
+      },
     });
-    // Encash anything above 10 days, max 20 days
     if (!balance) return 0;
     const remaining = Number(balance.totalDays) - Number(balance.usedDays);
     return Math.min(Math.max(0, remaining - 10), 20);
@@ -213,28 +239,30 @@ export class LeaveService {
     reason: string,
   ) {
     const grant = this.compLeaveRepo.create({
+      tenantId: this.tenantId,
       employeeId,
       daysGranted: days,
       expiryDate,
       reason,
     });
 
-    // Also update/create leave balance for COMPENSATORY type
     let balance = await this.balanceRepo.findOne({
       where: {
         employeeId,
         leaveType: LeaveType.COMPENSATORY,
-        fiscalYear: '2025-26',
+        fiscalYear: this.fiscalYear,
+        tenantId: this.tenantId,
       },
     });
 
     if (!balance) {
       balance = this.balanceRepo.create({
+        tenantId: this.tenantId,
         employeeId,
         leaveType: LeaveType.COMPENSATORY,
         totalDays: days,
         usedDays: 0,
-        fiscalYear: '2025-26',
+        fiscalYear: this.fiscalYear,
       });
     } else {
       balance.totalDays = Number(balance.totalDays) + days;
@@ -251,8 +279,8 @@ export class LeaveService {
   ): Promise<any[]> {
     return this.leaveRepo
       .createQueryBuilder('leave')
-      .leftJoinAndSelect('leave.employee', 'employee')
-      .where('leave.employeeId != :empId', { empId: employeeId })
+      .where('leave.tenantId = :tenantId', { tenantId: this.tenantId })
+      .andWhere('leave.employeeId != :empId', { empId: employeeId })
       .andWhere('leave.status = :status', {
         status: LeaveRequestStatus.APPROVED,
       })

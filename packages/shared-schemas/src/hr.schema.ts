@@ -65,7 +65,9 @@ export const employmentDetailsSchema = z.object({
 export const compensationDetailsSchema = z.object({
   baseSalary: z.number().min(0, "Base salary must be positive"),
   currency: z.string().min(1).max(3).default("USD"),
-  paymentFrequency: z.enum(["MONTHLY", "WEEKLY", "BI_WEEKLY"]).default("MONTHLY"),
+  paymentFrequency: z
+    .enum(["MONTHLY", "WEEKLY", "BI_WEEKLY"])
+    .default("MONTHLY"),
   bankName: z.string().max(255).trim().optional().nullable(),
   accountNumber: z.string().max(50).trim().optional().nullable(),
   routingNumber: z.string().max(20).trim().optional().nullable(),
@@ -128,9 +130,19 @@ export type PipDto = z.infer<typeof pipSchema>;
  * Emergency Contact Details (Step 4 of Wizard)
  */
 export const emergencyContactSchema = z.object({
-  emergencyContactName: z.string().min(1, "Contact name is required").max(100).trim(),
-  emergencyContactPhone: z.string().min(1, "Contact phone is required").max(20).trim(),
-  emergencyContactRelation: z.enum(["SPOUSE", "PARENT", "SIBLING", "FRIEND", "OTHER"]).optional(),
+  emergencyContactName: z
+    .string()
+    .min(1, "Contact name is required")
+    .max(100)
+    .trim(),
+  emergencyContactPhone: z
+    .string()
+    .min(1, "Contact phone is required")
+    .max(20)
+    .trim(),
+  emergencyContactRelation: z
+    .enum(["SPOUSE", "PARENT", "SIBLING", "FRIEND", "OTHER"])
+    .optional(),
 });
 
 /**
@@ -151,6 +163,20 @@ export const createEmployeeSchema = employeePersonalSchema
   .merge(documentsSchema);
 
 export type CreateEmployeeDto = z.infer<typeof createEmployeeSchema>;
+
+export const updateSalarySchema = z.object({
+  newSalary: z.number().min(0, "Salary must be positive"),
+  reason: z.enum([
+    "ANNUAL_INCREMENT",
+    "PROMOTION",
+    "MARKET_ADJUSTMENT",
+    "CORRECTION",
+    "OTHER",
+  ]),
+  comments: z.string().max(500).optional(),
+});
+
+export type UpdateSalaryDto = z.infer<typeof updateSalarySchema>;
 
 /**
  * Employee Response Schema
@@ -191,10 +217,12 @@ export const okrSchema = z.object({
       targetValue: z.number(),
       currentValue: z.number().default(0),
       weight: z.number().min(0).max(100).default(0),
-    })
+    }),
   ),
   period: z.string().max(20), // e.g., "Q1 2026"
-  status: z.enum(["DRAFT", "ACTIVE", "COMPLETED", "ABANDONED"]).default("ACTIVE"),
+  status: z
+    .enum(["DRAFT", "ACTIVE", "COMPLETED", "ABANDONED"])
+    .default("ACTIVE"),
   progress: z.number().min(0).max(100).default(0),
 });
 
@@ -208,7 +236,9 @@ export const trainingSchema = z.object({
   title: z.string().min(1).max(255),
   provider: z.string().max(255).optional(),
   expiryDate: z.string().datetime().optional().nullable(),
-  status: z.enum(["ENROLLED", "IN_PROGRESS", "COMPLETED", "EXPIRED"]).default("ENROLLED"),
+  status: z
+    .enum(["ENROLLED", "IN_PROGRESS", "COMPLETED", "EXPIRED"])
+    .default("ENROLLED"),
   certificateUrl: z.string().url().optional().nullable(),
 });
 

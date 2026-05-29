@@ -26,12 +26,21 @@ export const salaryStructureSchema = z.object({
       value: z.number().min(0),
       isTaxable: z.boolean().default(true),
       dependsOn: z.string().optional(), // e.g., "PERCENTAGE" of "BASE"
-    })
+    }),
   ),
   isDefault: z.boolean().default(false),
 });
 
 export type SalaryStructureDto = z.infer<typeof salaryStructureSchema>;
+
+export const assignSalaryStructureSchema = z.object({
+  employeeId: z.string().uuid("Invalid employee ID"),
+  structureId: z.string().uuid("Invalid structure ID"),
+});
+
+export type AssignSalaryStructureDto = z.infer<
+  typeof assignSalaryStructureSchema
+>;
 
 /**
  * Payroll Run Status
@@ -74,7 +83,7 @@ export const taxBracketSchema = z.object({
     z.object({
       upperLimit: z.number().nullable(), // null means infinite
       rate: z.number().min(0).max(100), // percentage
-    })
+    }),
   ),
 });
 
@@ -98,3 +107,31 @@ export const payslipSchema = z.object({
 });
 
 export type PayslipDto = z.infer<typeof payslipSchema>;
+
+/**
+ * Advance Salary Request
+ */
+export const advanceSalaryRequestSchema = z.object({
+  employeeId: z.string().uuid("Invalid employee ID"),
+  amount: z.number().min(1, "Amount must be greater than 0"),
+  reason: z.string().min(1, "Reason is required").max(500),
+  deductionPeriod: z.string().regex(/^\d{4}-\d{2}$/, "Format must be YYYY-MM"),
+});
+
+export type AdvanceSalaryRequestDto = z.infer<
+  typeof advanceSalaryRequestSchema
+>;
+
+/**
+ * Payroll Processing Filters
+ */
+export const payrollProcessFilterSchema = z.object({
+  employeeId: z.string().uuid().optional(),
+  branchId: z.string().uuid().optional(),
+  departmentId: z.string().uuid().optional(),
+  gradeId: z.string().uuid().optional(),
+});
+
+export type PayrollProcessFilterDto = z.infer<
+  typeof payrollProcessFilterSchema
+>;

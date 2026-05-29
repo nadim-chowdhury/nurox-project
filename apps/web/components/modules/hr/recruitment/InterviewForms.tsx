@@ -1,31 +1,63 @@
 "use client";
 
 import React from "react";
-import { Form, DatePicker, Select, Input, Button, Space, message, Rate, Typography } from "antd";
+import { Form, Button, Space, message, Typography } from "antd";
 
 const { Title } = Typography;
-import { useScheduleInterviewMutation, useSubmitInterviewFeedbackMutation } from "@/store/api/recruitmentApi";
+import {
+  useScheduleInterviewMutation,
+  useSubmitInterviewFeedbackMutation,
+} from "@/store/api/recruitmentApi";
 import { useGetUsersQuery } from "@/store/api/usersApi";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import {
+  interviewFormSchema,
+  interviewFeedbackSchema,
+  type InterviewFormDto,
+  type InterviewFeedbackDto,
+} from "@repo/shared-schemas";
+import { RhfSelect } from "@/components/common/forms/RhfSelect";
+import { RhfInput } from "@/components/common/forms/RhfInput";
+import { RhfRangePicker } from "@/components/common/forms/RhfRangePicker";
+import { RhfRate } from "@/components/common/forms/RhfRate";
+import { RhfTextArea } from "@/components/common/forms/RhfTextArea";
 
-export function InterviewForm({ applicationId, onSuccess }: { applicationId: string; onSuccess?: () => void }) {
-  const [form] = Form.useForm();
+export function InterviewForm({
+  applicationId,
+  onSuccess,
+}: {
+  applicationId: string;
+  onSuccess?: () => void;
+}) {
   const [scheduleInterview, { isLoading }] = useScheduleInterviewMutation();
-  const { data: usersResponse } = useGetUsersQuery({ page: 1, limit: 100, sortBy: "firstName", sortOrder: "ASC" });
+  const { data: usersResponse } = useGetUsersQuery({
+    page: 1,
+    limit: 100,
+    sortBy: "firstName",
+    sortOrder: "ASC",
+  });
   const users = usersResponse?.data;
 
-  const onFinish = async (values: any) => {
+  const { control, handleSubmit, reset } = useForm<InterviewFormDto>({
+    resolver: zodResolver(interviewFormSchema),
+    defaultValues: {
+      applicationId,
+      interviewerIds: [],
+      location: "",
+    } as any,
+  });
+
+  const onFinish = async (values: InterviewFormDto) => {
     try {
       const { timeRange, ...rest } = values;
       await scheduleInterview({
-        applicationId,
-        startTime: timeRange[0].toISOString(),
-        endTime: timeRange[1].toISOString(),
         ...rest,
+        startTime: timeRange[0],
+        endTime: timeRange[1],
       }).unwrap();
       message.success("Interview scheduled successfully");
+      reset();
       if (onSuccess) onSuccess();
     } catch (err) {
       message.error("Failed to schedule interview");
@@ -33,73 +65,79 @@ export function InterviewForm({ applicationId, onSuccess }: { applicationId: str
   };
 
   return (
-    <Form form={form} layout="vertical" onFinish={onFinish}>
-      <Form.Item
+    <Form layout="vertical" onFinish={handleSubmit(onFinish)}>
+      <RhfSelect
         name="interviewerIds"
+        control={control}
         label="Interviewers"
-        rules={[{ required: true, message: "Please select interviewers" }]}
-      >
-        <Select mode="multiple" placeholder="Select interviewers">
-          {users?.map((user: any) => (
-            <Select.Option key={user.id} value={user.id}>
-              {user.firstName} {user.lastName}
-            </Select.Option>
-          ))}
-        </Select>
-      </Form.Item>
+        required
+        mode="multiple"
+        placeholder="Select interviewers"
+        options={users?.map((user: any) => ({
+          value: user.id,
+          label: `${user.firstName} ${user.lastName}`,
+        }))}
+      />
 
-      <Form.Item
-        name="stage"
-        label="Interview Stage"
-        rules={[{ required: true, message: "Please select stage" }]}
-      >
-        <Select placeholder="Select stage">
-          <Select.Option value="PHONE_SCREEN">Phone Screen</Select.Option>
-          <Select.Option value="INTERVIEW_1">Interview 1</Select.Option>
-          <Select.Option value="INTERVIEW_2">Interview 2</Select.Option>
-          <Select.Option value="TECHNICAL_TEST">Technical Test</Select.Option>
-        </Select>
-      </Form.Item>
+      <RhfSelect
+        name="status"
+        control={control}
+        label="Status"
+        required
+        defaultValue="SCHEDULED"
+        options={[
+          { value: "SCHEDULED", label: "Scheduled" },
+          { value: "COMPLETED", label: "Completed" },
+          { value: "CANCELLED", label: "Cancelled" },
+          { value: "NO_SHOW", label: "No Show" },
+        ]}
+      />
 
-      <Form.Item
+      <RhfRangePicker
         name="timeRange"
+        control={control}
         label="Time Range"
-        rules={[{ required: true, message: "Please select interview time" }]}
-      >
-        <DatePicker.RangePicker showTime style={{ width: "100%" }} />
-      </Form.Item>
+        required
+        showTime
+      />
 
-      <Form.Item name="location" label="Location / Meeting Link">
-        <Input placeholder="e.g. Google Meet, Zoom link, or Room 302" />
-      </Form.Item>
+      <RhfInput
+        name="location"
+        control={control}
+        label="Location / Meeting Link"
+        placeholder="e.g. Google Meet, Zoom link, or Room 302"
+      />
 
-      <Form.Item>
+      <div style={{ marginTop: 24 }}>
         <Space>
           <Button type="primary" htmlType="submit" loading={isLoading}>
             Schedule Interview
           </Button>
-          <Button onClick={() => form.resetFields()}>Reset</Button>
+          <Button onClick={() => reset()}>Reset</Button>
         </Space>
-      </Form.Item>
+      </div>
     </Form>
   );
 }
 
-const feedbackSchema = z.object({
-  rating: z.number().min(1, "Overall rating is required").max(5),
-  feedback: z.string().min(10, "Feedback must be at least 10 characters"),
-  scorecard: z.record(z.string(), z.number()).optional(),
-});
+const DIMENSIONS = [
+  "Technical Skills",
+  "Soft Skills",
+  "Culture Fit",
+  "Experience Match",
+];
 
-const DIMENSIONS = ["Technical Skills", "Soft Skills", "Culture Fit", "Experience Match"];
-
-type FeedbackValues = z.infer<typeof feedbackSchema>;
-
-export function InterviewFeedbackForm({ interviewId, onSuccess }: { interviewId: string; onSuccess?: () => void }) {
+export function InterviewFeedbackForm({
+  interviewId,
+  onSuccess,
+}: {
+  interviewId: string;
+  onSuccess?: () => void;
+}) {
   const [submitFeedback, { isLoading }] = useSubmitInterviewFeedbackMutation();
-  
-  const { control, handleSubmit, formState: { errors }, reset } = useForm<FeedbackValues>({
-    resolver: zodResolver(feedbackSchema),
+
+  const { control, handleSubmit, reset } = useForm<InterviewFeedbackDto>({
+    resolver: zodResolver(interviewFeedbackSchema),
     defaultValues: {
       rating: 0,
       feedback: "",
@@ -109,10 +147,10 @@ export function InterviewFeedbackForm({ interviewId, onSuccess }: { interviewId:
         "Culture Fit": 0,
         "Experience Match": 0,
       },
-    }
+    },
   });
 
-  const onFinish = async (values: FeedbackValues) => {
+  const onFinish = async (values: InterviewFeedbackDto) => {
     try {
       await submitFeedback({ id: interviewId, ...values }).unwrap();
       message.success("Feedback submitted");
@@ -124,55 +162,60 @@ export function InterviewFeedbackForm({ interviewId, onSuccess }: { interviewId:
   };
 
   return (
-    <form onSubmit={handleSubmit(onFinish)} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <div style={{ backgroundColor: "#fafafa", padding: 16, borderRadius: 8 }}>
-        <Title level={5} style={{ marginTop: 0 }}>Scorecard</Title>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+    <Form layout="vertical" onFinish={handleSubmit(onFinish)}>
+      <div
+        style={{
+          backgroundColor: "#fafafa",
+          padding: 16,
+          borderRadius: 8,
+          marginBottom: 24,
+        }}
+      >
+        <Title level={5} style={{ marginTop: 0 }}>
+          Scorecard
+        </Title>
+        <div
+          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}
+        >
           {DIMENSIONS.map((dim) => (
-            <div key={dim}>
-              <label style={{ display: "block", marginBottom: 4, fontSize: 13, color: "#666" }}>{dim}</label>
-              <Controller
-                name={`scorecard.${dim}` as any}
-                control={control}
-                render={({ field }) => <Rate {...field} style={{ fontSize: 16 }} />}
-              />
-            </div>
+            <RhfRate
+              key={dim}
+              name={`scorecard.${dim}` as any}
+              control={control}
+              label={dim}
+              style={{ fontSize: 16 }}
+            />
           ))}
         </div>
       </div>
 
-      <div>
-        <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>Overall Rating</label>
-        <Controller
-          name="rating"
-          control={control}
-          render={({ field }) => <Rate {...field} />}
-        />
-        {errors.rating && <div style={{ color: "var(--color-error)", fontSize: 12, marginTop: 4 }}>{errors.rating.message}</div>}
-      </div>
+      <RhfRate
+        name="rating"
+        control={control}
+        label="Overall Rating"
+        required
+      />
 
-      <div>
-        <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>Detailed Feedback</label>
-        <Controller
-          name="feedback"
-          control={control}
-          render={({ field }) => (
-            <Input.TextArea 
-              {...field} 
-              rows={4} 
-              placeholder="Summarize candidate's performance, strengths, and weaknesses..." 
-              status={errors.feedback ? "error" : ""}
-            />
-          )}
-        />
-        {errors.feedback && <div style={{ color: "var(--color-error)", fontSize: 12, marginTop: 4 }}>{errors.feedback.message}</div>}
-      </div>
+      <RhfTextArea
+        name="feedback"
+        control={control}
+        label="Detailed Feedback"
+        required
+        rows={4}
+        placeholder="Summarize candidate's performance, strengths, and weaknesses..."
+      />
 
-      <div>
-        <Button type="primary" htmlType="submit" loading={isLoading} block size="large">
+      <div style={{ marginTop: 24 }}>
+        <Button
+          type="primary"
+          htmlType="submit"
+          loading={isLoading}
+          block
+          size="large"
+        >
           Submit Feedback
         </Button>
       </div>
-    </form>
+    </Form>
   );
 }

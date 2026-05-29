@@ -1,4 +1,11 @@
-import { Entity, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
 import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 
 export enum JournalStatus {
@@ -12,8 +19,9 @@ export enum JournalStatus {
 }
 
 @Entity('journal_entries')
+@Index(['tenantId', 'entryNumber'], { unique: true })
 export class JournalEntry extends TenantBaseEntity {
-  @Column({ type: 'varchar', length: 30, unique: true })
+  @Column({ type: 'varchar', length: 30 })
   entryNumber: string;
 
   @Column({ type: 'date' })

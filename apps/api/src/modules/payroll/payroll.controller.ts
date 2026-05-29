@@ -9,6 +9,7 @@ import {
   ParseUUIDPipe,
   UseGuards,
   Res,
+  UsePipes,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { PayrollService } from './payroll.service';
@@ -23,7 +24,16 @@ import {
   taxBracketSchema,
   type SalaryStructureDto,
   type TaxBracketDto,
+  assignSalaryStructureSchema,
+  type AssignSalaryStructureDto,
+  payrollRunSchema,
+  type PayrollRunDto,
+  advanceSalaryRequestSchema,
+  type AdvanceSalaryRequestDto,
+  payrollProcessFilterSchema,
+  type PayrollProcessFilterDto,
 } from '@repo/shared-schemas';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 
 @Controller('payroll')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -33,9 +43,9 @@ export class PayrollController {
 
   @Post('structures')
   @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
+  @UsePipes(new ZodValidationPipe(salaryStructureSchema))
   createStructure(@Body() dto: SalaryStructureDto) {
-    const parsed = salaryStructureSchema.parse(dto);
-    return this.payrollService.createStructure(parsed);
+    return this.payrollService.createStructure(dto);
   }
 
   @Get('structures')
@@ -46,11 +56,9 @@ export class PayrollController {
 
   @Post('assignments')
   @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
-  assignStructure(
-    @Body('employeeId') employeeId: string,
-    @Body('structureId') structureId: string,
-  ) {
-    return this.payrollService.assignStructure(employeeId, structureId);
+  @UsePipes(new ZodValidationPipe(assignSalaryStructureSchema))
+  assignStructure(@Body() dto: AssignSalaryStructureDto) {
+    return this.payrollService.assignStructure(dto.employeeId, dto.structureId);
   }
 
   @Get('tax-configs')
@@ -61,21 +69,22 @@ export class PayrollController {
 
   @Post('tax-configs')
   @RequirePermissions(Permission.SYSTEM_ADMIN_ACCESS)
+  @UsePipes(new ZodValidationPipe(taxBracketSchema))
   createTaxConfig(@Body() dto: TaxBracketDto) {
-    const parsed = taxBracketSchema.parse(dto);
-    return this.payrollService.createTaxConfig(parsed);
+    return this.payrollService.createTaxConfig(dto);
   }
 
   @Post('runs')
   @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
-  createRun(@Body('period') period: string) {
-    return this.payrollService.createRun(period);
+  @UsePipes(new ZodValidationPipe(payrollRunSchema))
+  createRun(@Body() dto: PayrollRunDto) {
+    return this.payrollService.createRun(dto.period);
   }
 
   @Post('runs/off-cycle')
   @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
   createOffCycleRun(
-    @Body('employeeId') employeeId: string,
+    @Body('employeeId', ParseUUIDPipe) employeeId: string,
     @Body('period') period: string,
     @Body('type') type: string,
   ) {
@@ -86,23 +95,17 @@ export class PayrollController {
   @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
   approveOvertime(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body('approvedById') approvedById: string,
+    @Body('approvedById', ParseUUIDPipe) approvedById: string,
   ) {
-    // This should probably be in AttendanceService, but adding here for simplicity of Module 6 flow
     return this.payrollService.approveOvertime(id, approvedById);
   }
 
   @Post('runs/:id/process')
   @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
+  @UsePipes(new ZodValidationPipe(payrollProcessFilterSchema))
   processRun(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body()
-    filters?: {
-      employeeId?: string;
-      branchId?: string;
-      departmentId?: string;
-      gradeId?: string;
-    },
+    @Body() filters?: PayrollProcessFilterDto,
   ) {
     return this.payrollService.processRun(id, filters);
   }
@@ -117,6 +120,12 @@ export class PayrollController {
   @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
   approveRun(@Param('id', ParseUUIDPipe) id: string) {
     return this.payrollService.approveRun(id);
+  }
+
+  @Post('runs/:id/cancel')
+  @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
+  cancelRun(@Param('id', ParseUUIDPipe) id: string) {
+    return this.payrollService.cancelRun(id);
   }
 
   @Post('runs/:id/finalize')
@@ -222,7 +231,8 @@ export class PayrollController {
   }
 
   @Post('advance-requests')
-  createAdvanceRequest(@Body() dto: any) {
+  @UsePipes(new ZodValidationPipe(advanceSalaryRequestSchema))
+  createAdvanceRequest(@Body() dto: AdvanceSalaryRequestDto) {
     return this.payrollService.createAdvanceRequest(dto);
   }
 

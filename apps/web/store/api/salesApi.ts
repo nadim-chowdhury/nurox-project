@@ -1,4 +1,4 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { baseApi } from "./baseApi";
 import type { UnifiedResponse } from "./projectsApi";
 
 export interface Deal {
@@ -23,16 +23,11 @@ export interface Lead {
   createdAt: string;
 }
 
-export const salesApi = createApi({
-  reducerPath: "salesApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api",
-  }),
-  tagTypes: ["Deal", "Lead"],
+export const salesApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getDeals: builder.query<UnifiedResponse<Deal[]>, void>({
       query: () => "/sales/deals",
-      providesTags: ["Deal"],
+      providesTags: ["Opportunity"],
     }),
     getLeads: builder.query<UnifiedResponse<Lead[]>, void>({
       query: () => "/sales/leads",
@@ -44,9 +39,10 @@ export const salesApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Deal"],
+      invalidatesTags: ["Opportunity"],
     }),
   }),
+  overrideExisting: false,
 });
 
 export const { useGetDealsQuery, useGetLeadsQuery, useCreateDealMutation } =

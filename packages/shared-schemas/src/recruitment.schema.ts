@@ -1,7 +1,15 @@
 import { z } from "zod";
 import { employmentTypeEnum } from "./hr.schema";
 
-export const jobStatusEnum = z.enum(["DRAFT", "PENDING_APPROVAL", "APPROVED", "OPEN", "PAUSED", "CLOSED", "CANCELLED"]);
+export const jobStatusEnum = z.enum([
+  "DRAFT",
+  "PENDING_APPROVAL",
+  "APPROVED",
+  "OPEN",
+  "PAUSED",
+  "CLOSED",
+  "CANCELLED",
+]);
 export type JobStatus = z.infer<typeof jobStatusEnum>;
 
 export const applicantStatusEnum = z.enum([
@@ -18,7 +26,12 @@ export const applicantStatusEnum = z.enum([
 ]);
 export type ApplicantStatus = z.infer<typeof applicantStatusEnum>;
 
-export const interviewStatusEnum = z.enum(["SCHEDULED", "COMPLETED", "CANCELLED", "NO_SHOW"]);
+export const interviewStatusEnum = z.enum([
+  "SCHEDULED",
+  "COMPLETED",
+  "CANCELLED",
+  "NO_SHOW",
+]);
 export type InterviewStatus = z.infer<typeof interviewStatusEnum>;
 
 export const jobRequisitionSchema = z.object({
@@ -35,12 +48,16 @@ export const jobRequisitionSchema = z.object({
   currency: z.string().default("USD"),
   status: jobStatusEnum.default("DRAFT"),
   approverIds: z.array(z.string().uuid()).optional(),
-  approvalChain: z.array(z.object({
-    userId: z.string().uuid(),
-    status: z.enum(["PENDING", "APPROVED", "REJECTED"]).default("PENDING"),
-    comment: z.string().optional(),
-    updatedAt: z.string().datetime().optional(),
-  })).optional(),
+  approvalChain: z
+    .array(
+      z.object({
+        userId: z.string().uuid(),
+        status: z.enum(["PENDING", "APPROVED", "REJECTED"]).default("PENDING"),
+        comment: z.string().optional(),
+        updatedAt: z.string().datetime().optional(),
+      }),
+    )
+    .optional(),
 });
 
 export type JobRequisitionDto = z.infer<typeof jobRequisitionSchema>;
@@ -83,6 +100,22 @@ export const interviewSchema = z.object({
 
 export type InterviewDto = z.infer<typeof interviewSchema>;
 
+export const interviewFormSchema = interviewSchema
+  .omit({ startTime: true, endTime: true })
+  .extend({
+    timeRange: z.tuple([z.string(), z.string()]),
+  });
+
+export type InterviewFormDto = z.infer<typeof interviewFormSchema>;
+
+export const interviewFeedbackSchema = z.object({
+  rating: z.number().min(1, "Overall rating is required").max(5),
+  feedback: z.string().min(10, "Feedback must be at least 10 characters"),
+  scorecard: z.record(z.string(), z.number()).optional(),
+});
+
+export type InterviewFeedbackDto = z.infer<typeof interviewFeedbackSchema>;
+
 export const offerLetterSchema = z.object({
   id: z.string().uuid().optional(),
   applicationId: z.string().uuid(),
@@ -90,7 +123,9 @@ export const offerLetterSchema = z.object({
   currency: z.string().default("USD"),
   joiningDate: z.string().datetime(),
   expiryDate: z.string().datetime(),
-  status: z.enum(["DRAFT", "SENT", "ACCEPTED", "REJECTED", "EXPIRED"]).default("DRAFT"),
+  status: z
+    .enum(["DRAFT", "SENT", "ACCEPTED", "REJECTED", "EXPIRED"])
+    .default("DRAFT"),
   signedUrl: z.string().url().optional().nullable(),
   signature: z.string().optional(), // Base64 signature for signing
 });
@@ -133,7 +168,9 @@ export const onboardingChecklistSchema = z.object({
   templateId: z.string().uuid().optional(),
   tasks: z.array(onboardingTaskSchema),
   progress: z.number().min(0).max(100).default(0),
-  status: z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETED"]).default("NOT_STARTED"),
+  status: z
+    .enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETED"])
+    .default("NOT_STARTED"),
   documentMetadata: z.record(z.string(), z.string()).optional(), // Map of task title to document key
 });
 

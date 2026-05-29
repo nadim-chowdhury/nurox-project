@@ -1,5 +1,4 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "@/lib/api-client";
+import { baseApi } from "./baseApi";
 
 export interface Notification {
   id: string;
@@ -23,10 +22,7 @@ export interface NotificationListResponse {
   };
 }
 
-export const notificationApi = createApi({
-  reducerPath: "notificationApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ["Notification"],
+export const notificationApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getNotifications: builder.query<
       NotificationListResponse,
@@ -63,6 +59,7 @@ export const notificationApi = createApi({
       invalidatesTags: ["Notification"],
     }),
   }),
+  overrideExisting: false,
 });
 
 export const {

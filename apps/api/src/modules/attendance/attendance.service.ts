@@ -22,9 +22,11 @@ import {
 import { Shift } from '../hr/entities/shift.entity';
 import { Employee } from '../hr/entities/employee.entity';
 import { Holiday } from './entities/holiday.entity';
+import { Branch } from '../system/entities/branch.entity';
 import { Response } from 'express';
 import * as ExcelJS from 'exceljs';
 import { JwtService } from '@nestjs/jwt';
+import { ClsService } from 'nestjs-cls';
 
 @Injectable()
 export class AttendanceService {
@@ -37,6 +39,8 @@ export class AttendanceService {
     private readonly employeeRepo: Repository<Employee>,
     @InjectRepository(Holiday)
     private readonly holidayRepo: Repository<Holiday>,
+    @InjectRepository(Branch)
+    private readonly branchRepo: Repository<Branch>,
     @InjectRepository(RegularizationRequest)
     private readonly regularizationRepo: Repository<RegularizationRequest>,
     @InjectRepository(ShiftAssignment)
@@ -44,18 +48,30 @@ export class AttendanceService {
     @InjectRepository(ShiftRotation)
     private readonly shiftRotationRepo: Repository<ShiftRotation>,
     private readonly jwtService: JwtService,
+    private readonly cls: ClsService,
   ) {}
 
+  private get tenantId(): string {
+    return this.cls.get('tenantId');
+  }
+
   async generateCheckInQr(employeeId: string): Promise<string> {
-    const payload = { sub: employeeId, purpose: 'attendance_qr' };
+    const payload = {
+      sub: employeeId,
+      tenantId: this.tenantId,
+      purpose: 'attendance_qr',
+    };
     return this.jwtService.sign(payload, { expiresIn: '30m' });
   }
 
   async checkInViaQr(token: string) {
     try {
       const payload = this.jwtService.verify(token);
-      if (payload.purpose !== 'attendance_qr') {
-        throw new ConflictException('Invalid QR token');
+      if (
+        payload.purpose !== 'attendance_qr' ||
+        payload.tenantId !== this.tenantId
+      ) {
+        throw new ConflictException('Invalid or unauthorized QR token');
       }
       return this.recordAttendance(payload.sub, AttendanceMethod.QR, 'IN');
     } catch (err) {
@@ -72,51 +88,59 @@ export class AttendanceService {
   ) {
     const today = (timestamp || new Date()).toISOString().split('T')[0];
     let record = await this.attendanceRepo.findOne({
-      where: { employeeId, date: today },
+      where: { employeeId, date: today, tenantId: this.tenantId },
     });
 
     const employee = await this.employeeRepo.findOne({
-      where: { id: employeeId },
+      where: { id: employeeId, tenantId: this.tenantId },
       relations: ['shift', 'department'],
     });
 
     if (!employee) throw new NotFoundException('Employee not found');
 
     // Check if today is a public holiday
+    const branchId = (employee.department as any)?.branchId;
     const holiday = await this.holidayRepo.findOne({
       where: [
-        { date: today, branchId: (employee.department as any)?.branchId },
-        { date: today, branchId: null },
+        { date: today, branchId: branchId, tenantId: this.tenantId },
+        { date: today, branchId: null, tenantId: this.tenantId },
       ],
     });
 
     if (holiday && type === 'IN') {
       this.logger.log(
-        `Employee ${employeeId} checking in on holiday: ${holiday.name}`,
+        `Employee ${employeeId} checking in on holiday: ${holiday.name} (Tenant: ${this.tenantId})`,
       );
     }
 
-    if (method === AttendanceMethod.GEO_FENCED && location) {
-      const officeCoords = { lat: 23.8103, lng: 90.4125 };
-      const distance = this.getDistance(
-        location.lat,
-        location.lng,
-        officeCoords.lat,
-        officeCoords.lng,
-      );
-      if (distance > 200) {
-        throw new ConflictException(
-          `You are ${Math.round(distance)}m away from the office. Check-in not allowed.`,
+    if (method === AttendanceMethod.GEO_FENCED && location && branchId) {
+      const branch = await this.branchRepo.findOne({
+        where: { id: branchId, tenantId: this.tenantId },
+      });
+      if (branch && branch.latitude && branch.longitude) {
+        const distance = this.getDistance(
+          location.lat,
+          location.lng,
+          Number(branch.latitude),
+          Number(branch.longitude),
         );
+        const radius = branch.geoFenceRadius || 200;
+        if (distance > radius) {
+          throw new ConflictException(
+            `You are ${Math.round(distance)}m away from the office (${branch.name}). Check-in not allowed beyond ${radius}m.`,
+          );
+        }
       }
     }
 
-    // IP-based validation placeholder
-    const allowedIps = ['127.0.0.1', '::1']; // Example
-    // In real app, get client IP from request context
-    const clientIp = '127.0.0.1';
+    // IP-based validation using ClsService
+    const clientIp = this.cls.get('ipAddress');
+    // Placeholder for tenant-specific allowed IPs
+    const allowedIps = ['127.0.0.1', '::1'];
     if (method === AttendanceMethod.QR && !allowedIps.includes(clientIp)) {
-      this.logger.warn(`Check-in attempted from unauthorized IP: ${clientIp}`);
+      this.logger.warn(
+        `Check-in attempted from unauthorized IP: ${clientIp} for Tenant: ${this.tenantId}`,
+      );
     }
 
     if (type === 'IN') {
@@ -126,6 +150,7 @@ export class AttendanceService {
       const now = timestamp || new Date();
       if (!record) {
         record = this.attendanceRepo.create({
+          tenantId: this.tenantId,
           employeeId,
           date: today,
           method,
@@ -170,8 +195,6 @@ export class AttendanceService {
           (employee.shift.earlyDepartureAllowance || 0) * 60000;
 
         if (now.getTime() < earlyAllowance) {
-          // If already late/half-day, keep that status or combine?
-          // Usually, early exit is a penalty too.
           if (record.status === AttendanceStatus.PRESENT) {
             record.status = AttendanceStatus.EARLY_EXIT;
           }
@@ -192,6 +215,7 @@ export class AttendanceService {
   async createRegularization(dto: any): Promise<RegularizationRequest> {
     const request = this.regularizationRepo.create({
       ...dto,
+      tenantId: this.tenantId,
       status: RegularizationStatus.PENDING,
     }) as any as RegularizationRequest;
     return this.regularizationRepo.save(request);
@@ -203,7 +227,7 @@ export class AttendanceService {
     status: RegularizationStatus,
   ) {
     const request = await this.regularizationRepo.findOne({
-      where: { id },
+      where: { id, tenantId: this.tenantId },
       relations: ['employee'],
     });
     if (!request)
@@ -244,11 +268,12 @@ export class AttendanceService {
     reason?: string,
   ) {
     let record = await this.attendanceRepo.findOne({
-      where: { employeeId, date },
+      where: { employeeId, date, tenantId: this.tenantId },
     });
 
     if (!record) {
       record = this.attendanceRepo.create({
+        tenantId: this.tenantId,
         employeeId,
         date,
         checkIn,
@@ -269,11 +294,12 @@ export class AttendanceService {
   async assignShift(employeeId: string, shiftId: string, startDate: string) {
     // Deactivate current active shift
     await this.shiftAssignmentRepo.update(
-      { employeeId, isActive: true },
+      { employeeId, isActive: true, tenantId: this.tenantId },
       { isActive: false, endDate: startDate },
     );
 
     const assignment = this.shiftAssignmentRepo.create({
+      tenantId: this.tenantId,
       employeeId,
       shiftId,
       startDate,
@@ -288,9 +314,9 @@ export class AttendanceService {
   ): Promise<Shift | null> {
     const assignment = await this.shiftAssignmentRepo.findOne({
       where: {
+        tenantId: this.tenantId,
         employeeId,
         isActive: true,
-        // In a real app, logic would check if date is within startDate and endDate
       },
       relations: ['shift'],
     });
@@ -300,14 +326,15 @@ export class AttendanceService {
 
   async getTeamAttendance(date: string) {
     return this.attendanceRepo.find({
-      where: { date },
+      where: { date, tenantId: this.tenantId },
       relations: ['employee'],
     });
   }
 
   async bulkImport(records: any[]) {
-    const entities = this.attendanceRepo.create(records);
-    return this.attendanceRepo.save(entities);
+    const entities = records.map((r) => ({ ...r, tenantId: this.tenantId }));
+    const instances = this.attendanceRepo.create(entities);
+    return this.attendanceRepo.save(instances);
   }
 
   async generateMonthlyReport(month: number, year: number, res: Response) {
@@ -315,7 +342,7 @@ export class AttendanceService {
     const endDate = new Date(year, month, 0).toISOString().split('T')[0];
 
     const records = await this.attendanceRepo.find({
-      where: { date: Between(startDate, endDate) },
+      where: { date: Between(startDate, endDate), tenantId: this.tenantId },
       relations: ['employee'],
       order: { date: 'ASC' },
     });
@@ -363,7 +390,7 @@ export class AttendanceService {
     const endDate = new Date(year, month, 0).toISOString().split('T')[0];
 
     const records = await this.attendanceRepo.find({
-      where: { date: Between(startDate, endDate) },
+      where: { date: Between(startDate, endDate), tenantId: this.tenantId },
     });
 
     const totalPossibleDays = records.length; // Simplified

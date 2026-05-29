@@ -110,8 +110,14 @@ export class FinanceService {
     @InjectQueue('ar_reminders') private arReminderQueue: Queue,
   ) {}
 
+  private get tenantId(): string {
+    return this.cls.get('tenantId');
+  }
+
   private async findAccountByCode(code: string): Promise<Account> {
-    const acc = await this.accountRepo.findOne({ where: { code } });
+    const acc = await this.accountRepo.findOne({
+      where: { code, tenantId: this.tenantId },
+    });
     if (!acc) {
       throw new NotFoundException(
         `System Account with code "${code}" not found. Please ensure Chart of Accounts is seeded.`,
@@ -121,7 +127,10 @@ export class FinanceService {
   }
 
   async findAllAccountsTree() {
-    const accounts = await this.accountRepo.find({ order: { code: 'ASC' } });
+    const accounts = await this.accountRepo.find({
+      where: { tenantId: this.tenantId },
+      order: { code: 'ASC' },
+    });
 
     const buildTree = (parentId: string | null = null): any[] => {
       return accounts
@@ -137,20 +146,28 @@ export class FinanceService {
 
   async createAccount(dto: CreateAccountDto): Promise<Account> {
     const exists = await this.accountRepo.findOne({
-      where: { code: dto.code },
+      where: { code: dto.code, tenantId: this.tenantId },
     });
     if (exists)
       throw new ConflictException(`Account code "${dto.code}" already exists`);
-    const account = this.accountRepo.create(dto);
+    const account = this.accountRepo.create({
+      ...dto,
+      tenantId: this.tenantId,
+    });
     return this.accountRepo.save(account);
   }
 
   async findAllAccounts() {
-    return this.accountRepo.find({ order: { code: 'ASC' } });
+    return this.accountRepo.find({
+      where: { tenantId: this.tenantId },
+      order: { code: 'ASC' },
+    });
   }
 
   async findAccountById(id: string): Promise<Account> {
-    const acc = await this.accountRepo.findOne({ where: { id } });
+    const acc = await this.accountRepo.findOne({
+      where: { id, tenantId: this.tenantId },
+    });
     if (!acc) throw new NotFoundException(`Account "${id}" not found`);
     return acc;
   }
@@ -160,18 +177,18 @@ export class FinanceService {
     dto: Partial<CreateAccountDto>,
   ): Promise<Account> {
     await this.findAccountById(id);
-    await this.accountRepo.update(id, dto);
+    await this.accountRepo.update({ id, tenantId: this.tenantId }, dto);
     return this.findAccountById(id);
   }
 
   async removeAccount(id: string): Promise<void> {
     await this.findAccountById(id);
-    await this.accountRepo.softDelete(id);
+    await this.accountRepo.softDelete({ id, tenantId: this.tenantId });
   }
 
   async createInvoice(dto: CreateInvoiceDto): Promise<Invoice> {
     const exists = await this.invoiceRepo.findOne({
-      where: { invoiceNumber: dto.invoiceNumber },
+      where: { invoiceNumber: dto.invoiceNumber, tenantId: this.tenantId },
     });
     if (exists)
       throw new ConflictException(
@@ -183,7 +200,10 @@ export class FinanceService {
       dto.lines.map(async (l) => {
         let lineTax = 0;
         if (l.taxRateId) {
-          const taxRate = await this.taxRateRepo.findOneBy({ id: l.taxRateId });
+          const taxRate = await this.taxRateRepo.findOneBy({
+            id: l.taxRateId,
+            tenantId: this.tenantId,
+          });
           if (taxRate) {
             lineTax = l.quantity * l.unitPrice * (Number(taxRate.rate) / 100);
           }
@@ -191,6 +211,7 @@ export class FinanceService {
         totalTax += lineTax;
         return this.invoiceLineRepo.create({
           ...l,
+          tenantId: this.tenantId,
           lineTotal: l.quantity * l.unitPrice,
         });
       }),
@@ -201,6 +222,7 @@ export class FinanceService {
 
     const invoice = this.invoiceRepo.create({
       ...dto,
+      tenantId: this.tenantId,
       subtotal,
       taxAmount: totalTax,
       totalAmount,
@@ -235,6 +257,7 @@ export class FinanceService {
 
   async findAllInvoices(page = 1, limit = 20) {
     const [data, total] = await this.invoiceRepo.findAndCount({
+      where: { tenantId: this.tenantId },
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
@@ -248,7 +271,7 @@ export class FinanceService {
 
   async findInvoiceById(id: string): Promise<Invoice> {
     const inv = await this.invoiceRepo.findOne({
-      where: { id },
+      where: { id, tenantId: this.tenantId },
       relations: ['lines'],
     });
     if (!inv) throw new NotFoundException(`Invoice "${id}" not found`);
@@ -261,7 +284,7 @@ export class FinanceService {
   ): Promise<Invoice> {
     const invoice = await this.findInvoiceById(id);
     const oldStatus = invoice.status;
-    await this.invoiceRepo.update(id, { status });
+    await this.invoiceRepo.update({ id, tenantId: this.tenantId }, { status });
 
     if (status === InvoiceStatus.SENT && oldStatus === InvoiceStatus.DRAFT) {
       // Trigger auto-journal: Debit AR (1100), Credit Revenue (4000)
@@ -297,23 +320,29 @@ export class FinanceService {
 
   async removeInvoice(id: string): Promise<void> {
     await this.findInvoiceById(id);
-    await this.invoiceRepo.softDelete(id);
+    await this.invoiceRepo.softDelete({ id, tenantId: this.tenantId });
   }
 
   async createRecurringInvoice(dto: any): Promise<RecurringInvoice> {
     const ri = this.recurringRepo.create({
       ...dto,
+      tenantId: this.tenantId,
       nextRunDate: dto.startDate,
     });
     return (await this.recurringRepo.save(ri)) as unknown as RecurringInvoice;
   }
 
   async findAllRecurringInvoices() {
-    return this.recurringRepo.find({ order: { createdAt: 'DESC' } });
+    return this.recurringRepo.find({
+      where: { tenantId: this.tenantId },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async findRecurringInvoiceById(id: string): Promise<RecurringInvoice> {
-    const ri = await this.recurringRepo.findOne({ where: { id } });
+    const ri = await this.recurringRepo.findOne({
+      where: { id, tenantId: this.tenantId },
+    });
     if (!ri) throw new NotFoundException(`Recurring Invoice "${id}" not found`);
     return ri;
   }
@@ -323,26 +352,34 @@ export class FinanceService {
     dto: any,
   ): Promise<RecurringInvoice> {
     await this.findRecurringInvoiceById(id);
-    await this.recurringRepo.update(id, dto);
+    await this.recurringRepo.update({ id, tenantId: this.tenantId }, dto);
     return this.findRecurringInvoiceById(id);
   }
 
   async removeRecurringInvoice(id: string): Promise<void> {
     await this.findRecurringInvoiceById(id);
-    await this.recurringRepo.softDelete(id);
+    await this.recurringRepo.softDelete({ id, tenantId: this.tenantId });
   }
 
   async createExpenseClaim(dto: any): Promise<ExpenseClaim> {
-    const claim = this.expenseClaimRepo.create(dto);
+    const claim = this.expenseClaimRepo.create({
+      ...dto,
+      tenantId: this.tenantId,
+    });
     return (await this.expenseClaimRepo.save(claim)) as unknown as ExpenseClaim;
   }
 
   async findAllExpenseClaims() {
-    return this.expenseClaimRepo.find({ order: { createdAt: 'DESC' } });
+    return this.expenseClaimRepo.find({
+      where: { tenantId: this.tenantId },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async findExpenseClaimById(id: string): Promise<ExpenseClaim> {
-    const claim = await this.expenseClaimRepo.findOne({ where: { id } });
+    const claim = await this.expenseClaimRepo.findOne({
+      where: { id, tenantId: this.tenantId },
+    });
     if (!claim) throw new NotFoundException(`Expense Claim "${id}" not found`);
     return claim;
   }
@@ -394,7 +431,10 @@ export class FinanceService {
   }
 
   async createPettyCashFund(dto: any): Promise<PettyCashFund> {
-    const fund = this.pettyCashFundRepo.create(dto);
+    const fund = this.pettyCashFundRepo.create({
+      ...dto,
+      tenantId: this.tenantId,
+    });
     const saved = (await this.pettyCashFundRepo.save(
       fund,
     )) as unknown as PettyCashFund;
@@ -413,7 +453,7 @@ export class FinanceService {
   }
 
   async findAllPettyCashFunds() {
-    return this.pettyCashFundRepo.find();
+    return this.pettyCashFundRepo.find({ where: { tenantId: this.tenantId } });
   }
 
   async recordPettyCashTransaction(dto: {
@@ -425,7 +465,7 @@ export class FinanceService {
     reference?: string;
   }): Promise<PettyCashTransaction> {
     const fund = await this.pettyCashFundRepo.findOne({
-      where: { id: dto.fundId },
+      where: { id: dto.fundId, tenantId: this.tenantId },
     });
     if (!fund) throw new NotFoundException('Petty cash fund not found');
 
@@ -442,6 +482,7 @@ export class FinanceService {
 
     const transaction = this.pettyCashTransactionRepo.create({
       ...dto,
+      tenantId: this.tenantId,
       runningBalance: newBalance,
     } as any);
 
@@ -456,30 +497,35 @@ export class FinanceService {
 
   async findPettyCashTransactions(fundId: string) {
     return this.pettyCashTransactionRepo.find({
-      where: { fundId },
+      where: { fundId, tenantId: this.tenantId },
       order: { transactionDate: 'DESC', createdAt: 'DESC' },
     });
   }
 
   async createBankAccount(dto: any): Promise<BankAccount> {
-    const account = this.bankAccountRepo.create(dto);
+    const account = this.bankAccountRepo.create({
+      ...dto,
+      tenantId: this.tenantId,
+    });
     return (await this.bankAccountRepo.save(account)) as unknown as BankAccount;
   }
 
   async findAllBankAccounts() {
-    return this.bankAccountRepo.find({ where: { isActive: true } });
+    return this.bankAccountRepo.find({
+      where: { isActive: true, tenantId: this.tenantId },
+    });
   }
 
   async findBankTransactions(bankAccountId: string) {
     return this.bankTransactionRepo.find({
-      where: { bankAccountId },
+      where: { bankAccountId, tenantId: this.tenantId },
       order: { date: 'DESC', createdAt: 'DESC' },
     });
   }
 
   async findUnreconciledJournalLines(bankAccountId: string) {
     const account = await this.bankAccountRepo.findOne({
-      where: { id: bankAccountId },
+      where: { id: bankAccountId, tenantId: this.tenantId },
     });
     if (!account) throw new NotFoundException('Bank account not found');
 
@@ -493,6 +539,7 @@ export class FinanceService {
       .where('line.accountId = :glAccountId', {
         glAccountId: account.glAccountId,
       })
+      .andWhere('line.tenantId = :tenantId', { tenantId: this.tenantId })
       .andWhere('line.isReconciled = :isReconciled', { isReconciled: false })
       .orderBy('entry.entryDate', 'DESC')
       .getMany();
@@ -500,7 +547,11 @@ export class FinanceService {
 
   async autoMatchTransactions(bankAccountId: string) {
     const unreconciled = await this.bankTransactionRepo.find({
-      where: { bankAccountId, status: TransactionStatus.UNRECONCILED },
+      where: {
+        bankAccountId,
+        tenantId: this.tenantId,
+        status: TransactionStatus.UNRECONCILED,
+      },
     });
 
     let matchCount = 0;
@@ -514,6 +565,7 @@ export class FinanceService {
         .createQueryBuilder('line')
         .innerJoinAndSelect('line.journalEntry', 'entry')
         .where('ABS(line.debit - line.credit) = :amount', { amount })
+        .andWhere('line.tenantId = :tenantId', { tenantId: this.tenantId })
         .andWhere('entry.entryDate >= :startDate', { startDate })
         .andWhere('entry.entryDate <= :endDate', { endDate })
         .getOne();
@@ -531,16 +583,24 @@ export class FinanceService {
 
   async getReconciliationReport(bankAccountId: string) {
     const account = await this.bankAccountRepo.findOne({
-      where: { id: bankAccountId },
+      where: { id: bankAccountId, tenantId: this.tenantId },
     });
     if (!account) throw new NotFoundException('Bank account not found');
 
     const reconciledTransactions = await this.bankTransactionRepo.find({
-      where: { bankAccountId, status: TransactionStatus.RECONCILED },
+      where: {
+        bankAccountId,
+        tenantId: this.tenantId,
+        status: TransactionStatus.RECONCILED,
+      },
     });
 
     const unreconciledTransactions = await this.bankTransactionRepo.find({
-      where: { bankAccountId, status: TransactionStatus.UNRECONCILED },
+      where: {
+        bankAccountId,
+        tenantId: this.tenantId,
+        status: TransactionStatus.UNRECONCILED,
+      },
     });
 
     const reconciledBalance = reconciledTransactions.reduce(
@@ -562,7 +622,8 @@ export class FinanceService {
     const outputTaxResult = await this.invoiceRepo
       .createQueryBuilder('inv')
       .select('SUM(inv.taxAmount)', 'total')
-      .where('inv.issueDate >= :startDate', { startDate })
+      .where('inv.tenantId = :tenantId', { tenantId: this.tenantId })
+      .andWhere('inv.issueDate >= :startDate', { startDate })
       .andWhere('inv.issueDate <= :endDate', { endDate })
       .andWhere('inv.status != :status', { status: InvoiceStatus.CANCELLED })
       .getRawOne();
@@ -571,7 +632,8 @@ export class FinanceService {
     const inputTaxResult = await this.billRepo
       .createQueryBuilder('bill')
       .select('SUM(bill.taxAmount)', 'total')
-      .where('bill.issueDate >= :startDate', { startDate })
+      .where('bill.tenantId = :tenantId', { tenantId: this.tenantId })
+      .andWhere('bill.issueDate >= :startDate', { startDate })
       .andWhere('bill.issueDate <= :endDate', { endDate })
       .andWhere('bill.status != :status', { status: BillStatus.VOID })
       .getRawOne();
@@ -643,6 +705,7 @@ export class FinanceService {
     // Check if period is open
     const period = await this.periodRepo.findOne({
       where: {
+        tenantId: this.tenantId,
         status: PeriodStatus.OPEN,
         startDate: LessThanOrEqual(dto.entryDate),
         endDate: MoreThanOrEqual(dto.entryDate),
@@ -660,6 +723,7 @@ export class FinanceService {
       const creditBase = Number(l.credit) * exchangeRate;
       return this.journalLineRepo.create({
         ...l,
+        tenantId: this.tenantId,
         originalDebit: l.debit,
         originalCredit: l.credit,
         debit: debitBase,
@@ -672,6 +736,7 @@ export class FinanceService {
 
     const entry = this.journalRepo.create({
       ...dto,
+      tenantId: this.tenantId,
       currency: entryCurrency,
       exchangeRate,
       status: (dto.status as any) || JournalStatus.PENDING_REVIEW,
@@ -743,7 +808,7 @@ export class FinanceService {
   private async updateAccountBalances(entry: JournalEntry) {
     for (const line of entry.lines) {
       const account = await this.accountRepo.findOne({
-        where: { id: line.accountId },
+        where: { id: line.accountId, tenantId: this.tenantId },
       });
       if (account) {
         let amountToUpdate = 0;
@@ -773,7 +838,7 @@ export class FinanceService {
   async revalueForeignCurrencyBalances(asOfDate: string) {
     const baseCurrency = await this.getTenantBaseCurrency();
     const accounts = await this.accountRepo.find({
-      where: { isActive: true },
+      where: { isActive: true, tenantId: this.tenantId },
     });
 
     const foreignAccounts = accounts.filter(
@@ -798,6 +863,7 @@ export class FinanceService {
         .innerJoin('line.journalEntry', 'entry')
         .select('SUM(line.debit - line.credit)', 'balance')
         .where('line.accountId = :accId', { accId: acc.id })
+        .andWhere('line.tenantId = :tenantId', { tenantId: this.tenantId })
         .andWhere('entry.entryDate <= :asOfDate', { asOfDate })
         .getRawOne();
 
@@ -846,6 +912,7 @@ export class FinanceService {
 
   async findAllJournals(page = 1, limit = 20) {
     const [data, total] = await this.journalRepo.findAndCount({
+      where: { tenantId: this.tenantId },
       order: { entryDate: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
@@ -858,7 +925,7 @@ export class FinanceService {
 
   async findJournalById(id: string): Promise<JournalEntry> {
     const entry = await this.journalRepo.findOne({
-      where: { id },
+      where: { id, tenantId: this.tenantId },
       relations: ['lines'],
     });
     if (!entry) throw new NotFoundException(`Journal entry "${id}" not found`);
@@ -867,7 +934,7 @@ export class FinanceService {
 
   async removeJournal(id: string): Promise<void> {
     await this.findJournalById(id);
-    await this.journalRepo.softDelete(id);
+    await this.journalRepo.softDelete({ id, tenantId: this.tenantId });
   }
 
   async createCreditNote(dto: any): Promise<CreditNote> {
@@ -929,11 +996,11 @@ export class FinanceService {
     // 3-Way Matching Logic
     if (dto.purchaseOrderId && dto.grnId) {
       const po = await this.poRepo.findOne({
-        where: { id: dto.purchaseOrderId },
+        where: { id: dto.purchaseOrderId, tenantId: this.tenantId },
         relations: ['lines'],
       });
       const grn = await this.grnRepo.findOne({
-        where: { id: dto.grnId },
+        where: { id: dto.grnId, tenantId: this.tenantId },
         relations: ['lines'],
       });
 
@@ -971,6 +1038,7 @@ export class FinanceService {
     const lines = dto.lines.map((l: any) => {
       const line = this.billLineRepo.create({
         ...l,
+        tenantId: this.tenantId,
         lineTotal: l.quantity * l.unitPrice,
       });
       return line;
@@ -985,6 +1053,7 @@ export class FinanceService {
 
     const bill = this.billRepo.create({
       ...dto,
+      tenantId: this.tenantId,
       subtotal,
       taxAmount,
       totalAmount,
@@ -1002,7 +1071,8 @@ export class FinanceService {
     const result = await this.invoiceRepo
       .createQueryBuilder('inv')
       .select('SUM(inv.totalAmount)', 'total')
-      .where('inv.issueDate >= :startOfMonth', { startOfMonth })
+      .where('inv.tenantId = :tenantId', { tenantId: this.tenantId })
+      .andWhere('inv.issueDate >= :startOfMonth', { startOfMonth })
       .andWhere('inv.status IN (:...statuses)', {
         statuses: [
           InvoiceStatus.SENT,
@@ -1017,6 +1087,7 @@ export class FinanceService {
   async getPendingInvoicesCount(): Promise<number> {
     return this.invoiceRepo.count({
       where: {
+        tenantId: this.tenantId,
         status: In([
           InvoiceStatus.SENT,
           InvoiceStatus.PARTIALLY_PAID,
@@ -1028,6 +1099,7 @@ export class FinanceService {
 
   async findAllBills(page = 1, limit = 20) {
     const [data, total] = await this.billRepo.findAndCount({
+      where: { tenantId: this.tenantId },
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
@@ -1038,7 +1110,7 @@ export class FinanceService {
 
   async findBillById(id: string): Promise<Bill> {
     const bill = await this.billRepo.findOne({
-      where: { id },
+      where: { id, tenantId: this.tenantId },
       relations: ['lines'],
     });
     if (!bill) throw new NotFoundException(`Bill "${id}" not found`);
@@ -1083,7 +1155,9 @@ export class FinanceService {
 
   async getTrialBalance(asOfDate?: string, comparativeDate?: string) {
     const today = asOfDate || new Date().toISOString().split('T')[0];
-    const accounts = await this.accountRepo.find({ where: { isActive: true } });
+    const accounts = await this.accountRepo.find({
+      where: { isActive: true, tenantId: this.tenantId },
+    });
 
     const getBalancesAtDate = async (date: string) => {
       const results = await this.journalLineRepo
@@ -1091,7 +1165,8 @@ export class FinanceService {
         .innerJoin('line.journalEntry', 'entry')
         .select('line.accountId', 'accountId')
         .addSelect('SUM(line.debit - line.credit)', 'balance')
-        .where('entry.entryDate <= :date', { date })
+        .where('line.tenantId = :tenantId', { tenantId: this.tenantId })
+        .andWhere('entry.entryDate <= :date', { date })
         .groupBy('line.accountId')
         .getRawMany();
 
@@ -1133,6 +1208,7 @@ export class FinanceService {
       .addSelect('acc.code', 'code')
       .addSelect('SUM(line.credit - line.debit)', 'amount')
       .where('acc.type = :type', { type: AccountType.REVENUE })
+      .andWhere('line.tenantId = :tenantId', { tenantId: this.tenantId })
       .andWhere('entry.entryDate >= :startDate', { startDate })
       .andWhere('entry.entryDate <= :endDate', { endDate })
       .groupBy('acc.id')
@@ -1146,6 +1222,7 @@ export class FinanceService {
       .addSelect('acc.code', 'code')
       .addSelect('SUM(line.debit - line.credit)', 'amount')
       .where('acc.type = :type', { type: AccountType.EXPENSE })
+      .andWhere('line.tenantId = :tenantId', { tenantId: this.tenantId })
       .andWhere('entry.entryDate >= :startDate', { startDate })
       .andWhere('entry.entryDate <= :endDate', { endDate })
       .groupBy('acc.id')
@@ -1173,6 +1250,7 @@ export class FinanceService {
         .addSelect('acc.code', 'code')
         .addSelect('SUM(line.debit - line.credit)', 'balance')
         .where('acc.type = :type', { type })
+        .andWhere('line.tenantId = :tenantId', { tenantId: this.tenantId })
         .andWhere('entry.entryDate <= :asOfDate', { asOfDate })
         .groupBy('acc.id')
         .getRawMany();
@@ -1214,7 +1292,7 @@ export class FinanceService {
 
     // Simplified Cash Flow: Sum of all movements in 'Cash and Bank' accounts
     const cashAccounts = await this.accountRepo.find({
-      where: { code: Like('111%') },
+      where: { code: Like('111%'), tenantId: this.tenantId },
     });
     const cashAccountIds = cashAccounts.map((a) => a.id);
 
@@ -1224,6 +1302,7 @@ export class FinanceService {
       .select('SUM(line.debit)', 'inflow')
       .addSelect('SUM(line.credit)', 'outflow')
       .where('line.accountId IN (:...ids)', { ids: cashAccountIds })
+      .andWhere('line.tenantId = :tenantId', { tenantId: this.tenantId })
       .andWhere('entry.entryDate >= :startDate', { startDate })
       .andWhere('entry.entryDate <= :endDate', { endDate })
       .getRawOne();
@@ -1246,7 +1325,9 @@ export class FinanceService {
   }
 
   async reopenPeriod(id: string): Promise<AccountingPeriod> {
-    const period = await this.periodRepo.findOne({ where: { id } });
+    const period = await this.periodRepo.findOne({
+      where: { id, tenantId: this.tenantId },
+    });
     if (!period) throw new NotFoundException('Period not found');
 
     period.status = PeriodStatus.OPEN;
@@ -1254,7 +1335,9 @@ export class FinanceService {
   }
 
   async closePeriod(id: string): Promise<AccountingPeriod> {
-    const period = await this.periodRepo.findOne({ where: { id } });
+    const period = await this.periodRepo.findOne({
+      where: { id, tenantId: this.tenantId },
+    });
     if (!period) throw new NotFoundException('Period not found');
 
     period.status = PeriodStatus.CLOSED;
@@ -1264,6 +1347,7 @@ export class FinanceService {
   async scheduleARReminders() {
     const overdueInvoices = await this.invoiceRepo.find({
       where: {
+        tenantId: this.tenantId,
         status: In([
           InvoiceStatus.SENT,
           InvoiceStatus.PARTIALLY_PAID,
@@ -1294,7 +1378,8 @@ export class FinanceService {
     const qb = this.journalLineRepo
       .createQueryBuilder('line')
       .innerJoinAndSelect('line.journalEntry', 'entry')
-      .where('line.accountId = :accountId', { accountId });
+      .where('line.accountId = :accountId', { accountId })
+      .andWhere('line.tenantId = :tenantId', { tenantId: this.tenantId });
 
     if (startDate) qb.andWhere('entry.entryDate >= :startDate', { startDate });
     if (endDate) qb.andWhere('entry.entryDate <= :endDate', { endDate });
@@ -1347,6 +1432,7 @@ export class FinanceService {
     const today = new Date();
     const invoices = await this.invoiceRepo.find({
       where: {
+        tenantId: this.tenantId,
         status: In([
           InvoiceStatus.SENT,
           InvoiceStatus.PARTIALLY_PAID,
@@ -1384,6 +1470,7 @@ export class FinanceService {
     const today = new Date();
     const bills = await this.billRepo.find({
       where: {
+        tenantId: this.tenantId,
         status: In([
           BillStatus.PENDING_APPROVAL,
           BillStatus.APPROVED,
@@ -1516,6 +1603,7 @@ export class FinanceService {
       const entry = this.bankTransactionRepo.create({
         ...trx,
         bankAccountId,
+        tenantId: this.tenantId,
         status: TransactionStatus.UNRECONCILED,
       });
       saved.push((await this.bankTransactionRepo.save(entry)) as any);
@@ -1525,7 +1613,7 @@ export class FinanceService {
 
   async reconcileTransaction(transactionId: string, journalEntryId: string) {
     const trx = await this.bankTransactionRepo.findOne({
-      where: { id: transactionId },
+      where: { id: transactionId, tenantId: this.tenantId },
     });
     if (!trx) throw new NotFoundException('Transaction not found');
 
@@ -1535,22 +1623,30 @@ export class FinanceService {
   }
 
   async createTaxRate(dto: any) {
-    const taxRate = this.taxRateRepo.create(dto);
+    const taxRate = this.taxRateRepo.create({
+      ...dto,
+      tenantId: this.tenantId,
+    });
     return this.taxRateRepo.save(taxRate);
   }
 
   async findAllTaxRates() {
-    return this.taxRateRepo.find({ order: { name: 'ASC' } });
+    return this.taxRateRepo.find({
+      where: { tenantId: this.tenantId },
+      order: { name: 'ASC' },
+    });
   }
 
   async updateTaxRate(id: string, dto: any) {
-    await this.taxRateRepo.update(id, dto);
-    return this.taxRateRepo.findOne({ where: { id } });
+    await this.taxRateRepo.update({ id, tenantId: this.tenantId }, dto);
+    return this.taxRateRepo.findOne({
+      where: { id, tenantId: this.tenantId },
+    });
   }
 
   async getBudgetVsActualReport(period: string) {
     const budgets = await this.budgetRepo.find({
-      where: { period },
+      where: { period, tenantId: this.tenantId },
       relations: ['account'],
     });
 
@@ -1564,6 +1660,7 @@ export class FinanceService {
           .innerJoin('line.journalEntry', 'entry')
           .select('SUM(line.debit - line.credit)', 'balance')
           .where('line.accountId = :accId', { accId: budget.accountId })
+          .andWhere('line.tenantId = :tenantId', { tenantId: this.tenantId })
           .andWhere('entry.entryDate >= :startDate', { startDate })
           .andWhere('entry.entryDate <= :endDate', { endDate })
           .getRawOne();

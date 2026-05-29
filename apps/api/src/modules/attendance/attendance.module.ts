@@ -8,6 +8,8 @@ import {
   ShiftRotation,
 } from './entities/shift-assignment.entity';
 import { Employee } from '../hr/entities/employee.entity';
+import { Shift } from '../hr/entities/shift.entity';
+import { Branch } from '../system/entities/branch.entity';
 import { AttendanceService } from './attendance.service';
 import { AttendanceController } from './attendance.controller';
 import { JwtModule } from '@nestjs/jwt';
@@ -22,6 +24,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       RegularizationRequest,
       ShiftAssignment,
       ShiftRotation,
+      Shift,
+      Branch,
     ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],

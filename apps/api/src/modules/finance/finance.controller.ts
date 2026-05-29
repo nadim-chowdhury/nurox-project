@@ -11,11 +11,10 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  UseInterceptors,
+  UsePipes,
 } from '@nestjs/common';
 import { FinanceService } from './finance.service';
-import { CreateAccountDto } from './dto/create-account.dto';
-import { CreateInvoiceDto } from './dto/create-invoice.dto';
-import { CreateJournalEntryDto } from './dto/create-journal.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CheckModule } from '../../common/guards/module.guard';
 import { InvoiceStatus } from './entities/invoice.entity';
@@ -25,19 +24,29 @@ import { Res } from '@nestjs/common';
 import {
   billSchema,
   taxRateSchema,
+  accountSchema,
+  invoiceSchema,
+  journalEntrySchema,
   type BillDto,
   type TaxRateDto,
+  type AccountDto,
+  type InvoiceDto,
+  type JournalEntryDto,
 } from '@repo/shared-schemas';
+import { AuditLogInterceptor } from '../../common/interceptors/audit-log.interceptor';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 
 @Controller('finance')
 @UseGuards(JwtAuthGuard)
 @CheckModule('finance')
+@UseInterceptors(AuditLogInterceptor)
 export class FinanceController {
   constructor(private readonly financeService: FinanceService) {}
 
   @Post('accounts')
-  createAccount(@Body() dto: CreateAccountDto) {
-    return this.financeService.createAccount(dto);
+  @UsePipes(new ZodValidationPipe(accountSchema))
+  createAccount(@Body() dto: AccountDto) {
+    return this.financeService.createAccount(dto as any);
   }
 
   @Get('accounts')
@@ -56,11 +65,12 @@ export class FinanceController {
   }
 
   @Patch('accounts/:id')
+  @UsePipes(new ZodValidationPipe(accountSchema.partial()))
   updateAccount(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: Partial<CreateAccountDto>,
+    @Body() dto: Partial<AccountDto>,
   ) {
-    return this.financeService.updateAccount(id, dto);
+    return this.financeService.updateAccount(id, dto as any);
   }
 
   @Delete('accounts/:id')
@@ -70,8 +80,9 @@ export class FinanceController {
   }
 
   @Post('invoices')
-  createInvoice(@Body() dto: CreateInvoiceDto) {
-    return this.financeService.createInvoice(dto);
+  @UsePipes(new ZodValidationPipe(invoiceSchema))
+  createInvoice(@Body() dto: InvoiceDto) {
+    return this.financeService.createInvoice(dto as any);
   }
 
   @Get('invoices')
@@ -244,8 +255,9 @@ export class FinanceController {
   }
 
   @Post('journals')
-  createJournal(@Body() dto: CreateJournalEntryDto) {
-    return this.financeService.createJournalEntry(dto);
+  @UsePipes(new ZodValidationPipe(journalEntrySchema))
+  createJournal(@Body() dto: JournalEntryDto) {
+    return this.financeService.createJournalEntry(dto as any);
   }
 
   @Get('journals')
@@ -302,9 +314,9 @@ export class FinanceController {
   }
 
   @Post('bills')
+  @UsePipes(new ZodValidationPipe(billSchema))
   createBill(@Body() dto: BillDto) {
-    const parsed = billSchema.parse(dto);
-    return this.financeService.createBill(parsed as any);
+    return this.financeService.createBill(dto as any);
   }
 
   @Get('bills/:id')
@@ -471,9 +483,9 @@ export class FinanceController {
   }
 
   @Post('tax-rates')
+  @UsePipes(new ZodValidationPipe(taxRateSchema))
   createTaxRate(@Body() dto: TaxRateDto) {
-    const parsed = taxRateSchema.parse(dto);
-    return this.financeService.createTaxRate(parsed as any);
+    return this.financeService.createTaxRate(dto as any);
   }
 
   @Get('tax-rates')
@@ -482,6 +494,7 @@ export class FinanceController {
   }
 
   @Patch('tax-rates/:id')
+  @UsePipes(new ZodValidationPipe(taxRateSchema.partial()))
   updateTaxRate(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: Partial<TaxRateDto>,

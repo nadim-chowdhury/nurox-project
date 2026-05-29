@@ -8,6 +8,8 @@ import {
   Res,
   UseGuards,
   ConflictException,
+  UsePipes,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { AttendanceService } from './attendance.service';
@@ -17,6 +19,17 @@ import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { Permission } from '../auth/enums/permissions.enum';
 import { CheckModule } from '../../common/guards/module.guard';
+import {
+  CheckInDto,
+  checkInSchema,
+  CheckOutDto,
+  checkOutSchema,
+  regularizationRequestSchema,
+  type RegularizationRequestDto,
+  manualAttendanceEntrySchema,
+  type ManualAttendanceEntryDto,
+} from '@repo/shared-schemas';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 
 @Controller('attendance')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -25,29 +38,21 @@ export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
   @Post('qr')
-  async getCheckInQr(@Body('employeeId') employeeId: string) {
+  async getCheckInQr(@Body('employeeId', ParseUUIDPipe) employeeId: string) {
     const token = await this.attendanceService.generateCheckInQr(employeeId);
     return { token };
   }
 
   @Post('check-in')
-  async checkIn(
-    @Body()
-    dto: {
-      employeeId?: string;
-      method: AttendanceMethod;
-      token?: string;
-      location?: any;
-      timestamp?: string;
-    },
-  ) {
-    if (dto.method === AttendanceMethod.QR && dto.token) {
+  @UsePipes(new ZodValidationPipe(checkInSchema))
+  async checkIn(@Body() dto: CheckInDto) {
+    if (dto.method === 'QR' && dto.token) {
       return this.attendanceService.checkInViaQr(dto.token);
     }
     if (!dto.employeeId) throw new ConflictException('Employee ID is required');
     return this.attendanceService.recordAttendance(
       dto.employeeId,
-      dto.method,
+      dto.method as AttendanceMethod,
       'IN',
       dto.location,
       dto.timestamp ? new Date(dto.timestamp) : undefined,
@@ -55,18 +60,11 @@ export class AttendanceController {
   }
 
   @Post('check-out')
-  async checkOut(
-    @Body()
-    dto: {
-      employeeId: string;
-      method: AttendanceMethod;
-      location?: any;
-      timestamp?: string;
-    },
-  ) {
+  @UsePipes(new ZodValidationPipe(checkOutSchema))
+  async checkOut(@Body() dto: CheckOutDto) {
     return this.attendanceService.recordAttendance(
       dto.employeeId,
-      dto.method,
+      dto.method as AttendanceMethod,
       'OUT',
       dto.location,
       dto.timestamp ? new Date(dto.timestamp) : undefined,
@@ -98,16 +96,17 @@ export class AttendanceController {
   }
 
   @Post('regularization')
-  async createRegularization(@Body() dto: any) {
+  @UsePipes(new ZodValidationPipe(regularizationRequestSchema))
+  async createRegularization(@Body() dto: RegularizationRequestDto) {
     return this.attendanceService.createRegularization(dto);
   }
 
   @Post('regularization/:id/approve')
   @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
   async approveRegularization(
-    @Param('id') id: string,
-    @Body('approvedById') approvedById: string,
-    @Body('status') status: any,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('approvedById', ParseUUIDPipe) approvedById: string,
+    @Body('status') status: RegularizationStatus,
   ) {
     return this.attendanceService.approveRegularization(
       id,
@@ -118,16 +117,8 @@ export class AttendanceController {
 
   @Post('manual')
   @RequirePermissions(Permission.HR_UPDATE_EMPLOYEE)
-  async manualEntry(
-    @Body()
-    dto: {
-      employeeId: string;
-      date: string;
-      checkIn?: string;
-      checkOut?: string;
-      reason?: string;
-    },
-  ) {
+  @UsePipes(new ZodValidationPipe(manualAttendanceEntrySchema))
+  async manualEntry(@Body() dto: ManualAttendanceEntryDto) {
     return this.attendanceService.manualHrEntry(
       dto.employeeId,
       dto.date,

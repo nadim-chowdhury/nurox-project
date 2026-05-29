@@ -1,15 +1,11 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth } from "@/lib/api-client";
+import { baseApi } from "./baseApi";
 import type {
   ProductDto,
   WarehouseDto,
   StockAdjustmentDto,
 } from "@repo/shared-schemas";
 
-export const inventoryApi = createApi({
-  reducerPath: "inventoryApi",
-  baseQuery: baseQueryWithReauth,
-  tagTypes: ["Product", "Warehouse", "Stock", "StockCount"],
+export const inventoryApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getProducts: builder.query<any, any>({
       query: (params) => ({
@@ -99,6 +95,7 @@ export const inventoryApi = createApi({
       providesTags: ["Stock"],
     }),
   }),
+  overrideExisting: false,
 });
 
 export const {
