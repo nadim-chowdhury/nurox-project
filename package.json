@@ -10,6 +10,7 @@
     "docker:up": "docker compose --env-file .env.docker up --build -d",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f",
+    "ai:context": "node scripts/copy-ai-context.js",
     "prepare": "husky"
   },
   "lint-staged": {

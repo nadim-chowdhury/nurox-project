@@ -27,6 +27,8 @@
 - [x] **Task 0.1: Unified Docker Orchestration.** Created root `docker-compose.yml` and `pnpm docker:up` script.
 - [x] **Task 0.2: Resolve Core Blockers.** Fixed `archiver` and `GradeRepository` dependencies.
 - [x] **Task 0.3: Global Hardening.** Enabled `ZodValidationPipe` globally in `main.ts` for all API boundaries.
+- [x] **Task 0.4: Production-Ready Docker & Seeding.** Configured Next.js standalone build, corrected health checks, implemented automatic database startup seeder (`AutoSeedService`), and added a localhost middleware resolution fallback.
+- [x] **Task 0.5: AI Session Memory Continuity.** Created `scripts/copy-ai-context.js` (`pnpm ai:context`) to aggregate and copy the session state directly to the clipboard for seamless multi-account development.
 
 ### Phase 1: Authentication & Tenant Security Hardening (COMPLETED)
 
@@ -64,6 +66,8 @@ Before ending a session, the AI must:
 
 ### Latest Completion
 
+- **Production-Ready Docker & Startup Seeding:** Enhanced root `docker-compose.yml`, enabled Next.js `standalone` mode, and corrected container health checks. Created `AutoSeedService` to automatically seed default tenant, admin credentials, roles, and departments on database boot. Created local development middleware fallback to `'tenant_default'`.
+- **AI Context Session Continuity:** Created `scripts/copy-ai-context.js` script (runnable via `pnpm ai:context`) that packages project guidelines, modified git status, and memory state, copying them straight to the clipboard to prevent context drift when switching accounts/tokens.
 - **Monorepo Build Error Resolution:** Resolved all 37+ backend/frontend TypeScript, ESM interop, Next.js type checking, and Zod resolver/input-output defaults mismatch errors across `api` and `web`. The entire monorepo (`pnpm run build`) now compiles successfully with zero errors.
 - **Inventory Multi-Warehouse:** Implemented the `Inventory` entity to provide a real-time, warehouse-scoped view of stock balances. Refactored `InventoryService` to maintain these balances during Receipts, Issues, Transfers, and Adjustments. Added warehouse-aware reporting and stock count logic. Verified with unit tests.
 - **BD VAT Mushak Forms:** Implemented Mushak 6.3 (Tax Invoice), 6.6 (VDS), and 9.1 (Return) in the `compliance` module with PDF generation and aggregation logic.

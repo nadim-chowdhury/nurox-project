@@ -2562,85 +2562,167 @@ SENTRY_DSN=
 FRONTEND_URL=http://localhost:3000
 ```
 
-### Appendix E — Docker Compose (Local Dev)
+### Appendix E — Production-Ready Docker Compose & Seeding
+
+The root `docker-compose.yml` provides a unified, production-ready stack designed to run the entire monorepo seamlessly.
 
 ```yaml
-# docker-compose.yml (project root — NOT infra/docker/)
-# Usage: docker compose up -d
+# docker-compose.yml (project root)
+# Usage: docker compose --env-file .env.docker up --build -d
 
 services:
+  # ─── API (NestJS 11) ───────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: nurox_api
+    restart: unless-stopped
+    env_file: .env.docker
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - nurox_network
+
+  # ─── Web (Next.js 16) ──────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
+    container_name: nurox_web
+    restart: unless-stopped
+    env_file: .env.docker
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    networks:
+      - nurox_network
+
+  # ─── Database (PostgreSQL 17) ──────────────────────────────────
   postgres:
     image: postgres:17-alpine
     container_name: nurox_postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: nurox_db
       POSTGRES_USER: nurox
-      POSTGRES_PASSWORD: nurox_password
+      POSTGRES_PASSWORD: nurox_prod_password
+      POSTGRES_DB: nurox_db
+    ports:
+      - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports: ["5432:5432"]
+      - nurox_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U nurox"]
+      test: ["CMD-SHELL", "pg_isready -U nurox -d nurox_db"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - nurox_network
 
+  # ─── Cache & Queue (Redis 7) ───────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: nurox_redis
-    ports: ["6379:6379"]
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
     volumes:
-      - redis_data:/data
+      - nurox_redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - nurox_network
 
+  # ─── Object Storage (MinIO) ────────────────────────────────────
   minio:
     image: minio/minio:latest
     container_name: nurox_minio
-    command: server /data --console-address ":9001"
+    restart: unless-stopped
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
-    ports: ["9000:9000", "9001:9001"]
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
     volumes:
-      - minio_data:/data
+      - nurox_minio_data:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
       timeout: 10s
       retries: 3
+    networks:
+      - nurox_network
 
+  # ─── Search Engine (MeiliSearch) ───────────────────────────────
   meilisearch:
     image: getmeili/meilisearch:v1.12
     container_name: nurox_meilisearch
-    ports: ["7700:7700"]
+    restart: unless-stopped
     environment:
       MEILI_MASTER_KEY: "nurox_meili_master_key"
       MEILI_NO_ANALYTICS: "true"
+    ports:
+      - "7700:7700"
     volumes:
-      - meili_data:/meili_data
+      - nurox_meili_data:/meili_data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - nurox_network
 
+  # ─── Mail Testing (MailHog) ────────────────────────────────────
   mailhog:
     image: mailhog/mailhog:latest
     container_name: nurox_mailhog
+    restart: unless-stopped
     ports:
-      - "1025:1025" # SMTP
-      - "8025:8025" # Web UI
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - nurox_network
+
+networks:
+  nurox_network:
+    driver: bridge
 
 volumes:
-  postgres_data:
-  redis_data:
-  minio_data:
-  meili_data:
+  nurox_postgres_data:
+  nurox_redis_data:
+  nurox_minio_data:
+  nurox_meili_data:
 ```
+
+#### Automatic Database Seeding
+
+To achieve a "one run command to start working", Nurox implements a startup seeder class (`AutoSeedService`) in the API backend.
+
+- During boot, if the `tenants` database table has 0 records, the service automatically initiates seeding within a safe database transaction.
+- Seeds `d3b07384-d113-4c4e-9c8e-cf00257e8412` as the default tenant (with `schemaNamespace: 'tenant_default'`).
+- Seeds all standard ERP system roles and permission sets.
+- Provisions a default system administrator with credentials:
+  - **Email:** `admin@nurox.app`
+  - **Password:** `password123`
+- Seeds default departments (`HR`, `Engineering`, `Finance`, `Sales`, `Operations`).
+
+#### Frontend Localhost Tenant Resolution Fallback
+
+To run the project on standard `localhost` without complex wildcard DNS hacks locally, the web application's `middleware.ts` automatically maps raw localhost/127.0.0.1 requests to the default tenant (`tenant_default`). This ensures cookies, storage, and API routing operate seamlessly instantly.
 
 ### Appendix F — Permissions Reference
 

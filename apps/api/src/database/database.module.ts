@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TenantConnectionService } from './tenant-connection.service';
+import { AutoSeedService } from './seeds/auto-seed.service';
 
 @Module({
   imports: [
@@ -39,7 +40,7 @@ import { TenantConnectionService } from './tenant-connection.service';
       },
     }),
   ],
-  providers: [TenantConnectionService],
+  providers: [TenantConnectionService, AutoSeedService],
   exports: [TenantConnectionService],
 })
 export class DatabaseModule {}

@@ -50,8 +50,8 @@ export default function middleware(request: NextRequest) {
   }
 
   // Handle 'www' and other system subdomains
-  if (["www", "app", "public"].includes(tenantId)) {
-    tenantId = "public";
+  if (["www", "app", "public", "localhost", "127.0.0.1"].includes(tenantId)) {
+    tenantId = "tenant_default";
   }
 
   // 2. Localization Middleware
