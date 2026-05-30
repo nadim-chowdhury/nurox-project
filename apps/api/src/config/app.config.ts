@@ -18,13 +18,30 @@ export const databaseConfig = registerAs('database', () => ({
   ssl: process.env.DB_SSL || 'false',
 }));
 
-export const jwtConfig = registerAs('jwt', () => {
+export type JwtConfiguration = {
+  accessPrivateKey: string;
+  accessPublicKey: string;
+  accessExpiry: string;
+  refreshSecret: string;
+  refreshExpiry: string;
+  magicLinkSecret: string;
+  magicLinkExpiry: string;
+};
+
+let cachedJwtConfiguration: JwtConfiguration | null = null;
+
+/** Single JWT keypair per process (ConfigModule + JwtModule must share the same keys). */
+export function buildJwtConfiguration() {
+  if (cachedJwtConfiguration) {
+    return cachedJwtConfiguration;
+  }
+
+  const dockerBootstrap = process.env.DOCKER_DB_BOOTSTRAP === 'true';
   let privateKey = normalizePem(process.env.JWT_ACCESS_PRIVATE_KEY);
   let publicKey = normalizePem(process.env.JWT_ACCESS_PUBLIC_KEY);
 
-  if (!privateKey || !publicKey) {
-    if (process.env.NODE_ENV !== 'production') {
-      // Auto-generate keys for local dev
+  if (dockerBootstrap || !privateKey || !publicKey) {
+    if (dockerBootstrap || process.env.NODE_ENV !== 'production') {
       const { publicKey: pub, privateKey: priv } = crypto.generateKeyPairSync(
         'rsa',
         {
@@ -42,19 +59,17 @@ export const jwtConfig = registerAs('jwt', () => {
     }
   }
 
-  // Refresh token secret — HMAC-based (separate from RS256 access tokens)
   const refreshSecret = process.env.JWT_REFRESH_SECRET;
   if (!refreshSecret && process.env.NODE_ENV === 'production') {
     throw new Error('JWT_REFRESH_SECRET must be provided in production');
   }
 
-  // Magic link secret — short-lived tokens for passwordless auth
   const magicLinkSecret = process.env.JWT_MAGIC_LINK_SECRET;
   if (!magicLinkSecret && process.env.NODE_ENV === 'production') {
     throw new Error('JWT_MAGIC_LINK_SECRET must be provided in production');
   }
 
-  return {
+  cachedJwtConfiguration = {
     accessPrivateKey: privateKey,
     accessPublicKey: publicKey,
     accessExpiry: process.env.JWT_ACCESS_EXPIRY || '15m',
@@ -63,7 +78,10 @@ export const jwtConfig = registerAs('jwt', () => {
     magicLinkSecret: magicLinkSecret || crypto.randomBytes(32).toString('hex'),
     magicLinkExpiry: process.env.JWT_MAGIC_LINK_EXPIRY || '10m',
   };
-});
+  return cachedJwtConfiguration;
+}
+
+export const jwtConfig = registerAs('jwt', () => buildJwtConfiguration());
 
 export const redisConfig = registerAs('redis', () => {
   let host = process.env.REDIS_HOST || 'localhost';

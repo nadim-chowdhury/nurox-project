@@ -12,9 +12,6 @@ import { Shift } from '../hr/entities/shift.entity';
 import { Branch } from '../system/entities/branch.entity';
 import { AttendanceService } from './attendance.service';
 import { AttendanceController } from './attendance.controller';
-import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -27,14 +24,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       Shift,
       Branch,
     ]),
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        publicKey: config.get<string>('jwt.accessPublicKey')!,
-        verifyOptions: { algorithms: ['RS256'] },
-      }),
-    }),
   ],
   controllers: [AttendanceController],
   providers: [AttendanceService],

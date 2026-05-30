@@ -13,6 +13,8 @@ services:
     environment:
       PORT: "3001"
       DOCKER_DB_BOOTSTRAP: "true"
+      JWT_ACCESS_PRIVATE_KEY: ""
+      JWT_ACCESS_PUBLIC_KEY: ""
     ports:
       - "3001:3001"
     depends_on:

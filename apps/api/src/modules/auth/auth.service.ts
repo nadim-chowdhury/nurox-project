@@ -4,6 +4,7 @@ import {
   ConflictException,
   ForbiddenException,
   NotFoundException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -129,6 +130,7 @@ export class AuthService {
       try {
         payload = await this.jwtService.verifyAsync(data.token, {
           secret: this.config.get<string>('jwt.refreshSecret'),
+          algorithms: ['HS256'],
         });
       } catch {
         throw new UnauthorizedException('Invalid or expired invitation token');
@@ -373,8 +375,11 @@ export class AuthService {
     userId: string,
     refreshToken: string,
     familyId: string,
-    metadata: { userAgent?: string; ipAddress?: string },
+    metadata: { userAgent?: string; ipAddress?: string; tenantId?: string },
   ) {
+    if (!metadata.tenantId) {
+      throw new BadRequestException('x-tenant-id header is required');
+    }
     // Enforce max concurrent sessions (default 5)
     const MAX_SESSIONS = 5;
     const activeSessions = await this.sessionRepo.find({
@@ -424,6 +429,7 @@ export class AuthService {
 
     await this.sessionRepo.save(
       this.sessionRepo.create({
+        tenantId: metadata.tenantId,
         userId,
         refreshTokenHash,
         familyId,
@@ -496,6 +502,7 @@ export class AuthService {
     try {
       payload = this.jwtService.verify<JwtPayload>(refreshToken, {
         secret: this.config.get<string>('jwt.refreshSecret'),
+        algorithms: ['HS256'],
       });
     } catch {
       throw new UnauthorizedException('Invalid or expired refresh token');
@@ -846,6 +853,7 @@ export class AuthService {
       {
         secret: this.config.get<string>('jwt.magicLinkSecret'),
         expiresIn: this.config.get<string>('jwt.magicLinkExpiry') as any,
+        algorithm: 'HS256',
       },
     );
 
@@ -870,6 +878,7 @@ export class AuthService {
     try {
       payload = await this.jwtService.verifyAsync(token, {
         secret: this.config.get<string>('jwt.magicLinkSecret'),
+        algorithms: ['HS256'],
       });
     } catch {
       throw new UnauthorizedException('Invalid or expired magic link');
@@ -1075,13 +1084,12 @@ export class AuthService {
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(jwtPayload, {
-        secret: this.config.get<string>('jwt.accessPrivateKey'),
         expiresIn: this.config.get<string>('jwt.accessExpiry') as any,
-        algorithm: 'RS256',
       }),
       this.jwtService.signAsync(refreshPayload, {
         secret: this.config.get<string>('jwt.refreshSecret'),
         expiresIn: this.config.get<string>('jwt.refreshExpiry') as any,
+        algorithm: 'HS256',
       }),
     ]);
 

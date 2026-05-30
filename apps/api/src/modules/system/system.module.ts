@@ -20,7 +20,6 @@ import { SystemController } from './system.controller';
 import { HealthController } from './health.controller';
 import { NotificationController } from './notification.controller';
 import { NotificationsGateway } from './gateways/notifications.gateway';
-import { JwtModule } from '@nestjs/jwt';
 import { DatabaseInitService } from './database-init.service';
 import { LoginEventsListener } from './listeners/login-events.listener';
 import { GdprController } from './gdpr.controller';
@@ -72,7 +71,6 @@ import { UsersModule } from '../users/users.module';
       ApiKey,
     ]),
     TerminusModule, // Health checks for K8s probes
-    JwtModule,
     RedisModule,
     BullModule.registerQueue(
       { name: 'system' },

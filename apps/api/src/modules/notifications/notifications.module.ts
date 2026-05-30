@@ -1,9 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bullmq';
-import { JwtModule } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-
 import { Notification } from './entities/notification.entity';
 import { NotificationPreference } from './entities/notification-preference.entity';
 import { NotificationsGateway } from './notifications.gateway';
@@ -18,12 +15,6 @@ import { User } from '../users/entities/user.entity';
     TypeOrmModule.forFeature([Notification, NotificationPreference, User]),
     BullModule.registerQueue({
       name: 'notifications',
-    }),
-    JwtModule.registerAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET'),
-      }),
     }),
     MailerModule,
   ],

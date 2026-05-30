@@ -178,6 +178,7 @@ export class UsersService {
       {
         secret: this.config.get<string>('jwt.refreshSecret'), // Reusing refresh secret
         expiresIn: '48h',
+        algorithm: 'HS256',
       },
     );
 

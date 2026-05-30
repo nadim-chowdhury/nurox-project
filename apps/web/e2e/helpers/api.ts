@@ -41,13 +41,19 @@ export async function login(request: APIRequestContext): Promise<LoginResult> {
   }
 
   const json = (await response.json()) as {
-    user: { id: string; email: string };
-    tokens: { accessToken: string };
+    data?: {
+      user: { id: string; email: string };
+      tokens: { accessToken: string };
+    };
+    user?: { id: string; email: string };
+    tokens?: { accessToken: string };
   };
 
+  const payload = json.data ?? json;
+
   return {
-    accessToken: json.tokens.accessToken,
-    user: json.user,
+    accessToken: payload.tokens!.accessToken,
+    user: payload.user!,
   };
 }
 

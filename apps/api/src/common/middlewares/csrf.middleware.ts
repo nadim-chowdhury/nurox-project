@@ -24,9 +24,12 @@ export class CsrfMiddleware implements NestMiddleware {
       path.includes('/auth/refresh') ||
       path.includes('/auth/magic-link');
 
+    // Bearer-authenticated API clients (E2E, mobile, integrations) skip cookie CSRF
+    const bearerAuth = req.headers.authorization?.startsWith('Bearer ');
+
     // On mutations, verify the token
     const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
-    if (!safeMethods.includes(req.method) && !csrfExempt) {
+    if (!safeMethods.includes(req.method) && !csrfExempt && !bearerAuth) {
       const headerToken = req.headers['x-csrf-token'];
       const cookieToken = req.cookies['csrf-token'];
 

@@ -6,8 +6,6 @@ import { UsersService } from './users.service';
 import { UserPreferencesService } from './user-preferences.service';
 import { UsersController } from './users.controller';
 import { SystemModule } from '../system/system.module';
-import { JwtModule } from '@nestjs/jwt';
-
 import { UserDashboardWidget } from './entities/user-dashboard-widget.entity';
 import { UserDashboardService } from './user-dashboard.service';
 
@@ -15,7 +13,6 @@ import { UserDashboardService } from './user-dashboard.service';
   imports: [
     TypeOrmModule.forFeature([User, UserPreference, UserDashboardWidget]),
     forwardRef(() => SystemModule),
-    JwtModule,
   ],
   controllers: [UsersController],
   providers: [UsersService, UserPreferencesService, UserDashboardService],

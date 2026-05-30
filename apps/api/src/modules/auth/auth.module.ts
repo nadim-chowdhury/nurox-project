@@ -1,7 +1,8 @@
 import { Module, Global } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
+import { buildJwtConfiguration } from '../../config/app.config';
 import { AuthService } from './auth.service';
 import { RolesService } from './roles.service';
 import { AuthController } from './auth.controller';
@@ -36,16 +37,19 @@ import { forwardRef } from '@nestjs/common';
     TypeOrmModule.forFeature([UserSession, LoginEvent, Role, Membership]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
+      global: true,
       imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        privateKey: config.get<string>('jwt.accessPrivateKey')!,
-        publicKey: config.get<string>('jwt.accessPublicKey')!,
-        signOptions: {
-          expiresIn: config.get<string>('jwt.accessExpiry')! as any,
-          algorithm: 'RS256',
-        },
-      }),
+      useFactory: () => {
+        const jwt = buildJwtConfiguration();
+        return {
+          privateKey: jwt.accessPrivateKey,
+          publicKey: jwt.accessPublicKey,
+          signOptions: {
+            expiresIn: jwt.accessExpiry as any,
+            algorithm: 'RS256',
+          },
+        };
+      },
     }),
   ],
   controllers: [
@@ -67,6 +71,12 @@ import { forwardRef } from '@nestjs/common';
     WebauthnService,
     PushService,
   ],
-  exports: [AuthService, RolesService, PermissionsGuard, TypeOrmModule],
+  exports: [
+    AuthService,
+    RolesService,
+    PermissionsGuard,
+    TypeOrmModule,
+    JwtModule,
+  ],
 })
 export class AuthModule {}
