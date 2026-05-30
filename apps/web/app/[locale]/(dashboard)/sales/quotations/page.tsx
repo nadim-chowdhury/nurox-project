@@ -1,87 +1,70 @@
 "use client";
 
-import React, { useState } from "react";
-import { Button } from "antd";
-import { PlusOutlined, EyeOutlined } from "@ant-design/icons";
+import React, { useMemo, useState } from "react";
+import { Button, message, Dropdown } from "antd";
+import type { MenuProps } from "antd";
+import {
+  PlusOutlined,
+  EyeOutlined,
+  SendOutlined,
+  SwapOutlined,
+  MoreOutlined,
+} from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/tables/DataTable";
 import { TableToolbar } from "@/components/tables/TableToolbar";
 import { StatusTag } from "@/components/common/StatusTag";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { ColumnsType } from "antd/es/table";
-
-interface Quotation {
-  id: string;
-  quoteNo: string;
-  customer: string;
-  items: number;
-  total: number;
-  validUntil: string;
-  status: string;
-}
-
-const mockQuotes: Quotation[] = [
-  {
-    id: "1",
-    quoteNo: "QT-2026-0018",
-    customer: "Acme Corp",
-    items: 4,
-    total: 13750,
-    validUntil: "2026-05-15",
-    status: "pending",
-  },
-  {
-    id: "2",
-    quoteNo: "QT-2026-0019",
-    customer: "TechStart Inc",
-    items: 2,
-    total: 85000,
-    validUntil: "2026-05-01",
-    status: "approved",
-  },
-  {
-    id: "3",
-    quoteNo: "QT-2026-0020",
-    customer: "FinEdge",
-    items: 3,
-    total: 45000,
-    validUntil: "2026-05-20",
-    status: "draft",
-  },
-  {
-    id: "4",
-    quoteNo: "QT-2026-0021",
-    customer: "GreenLogix",
-    items: 5,
-    total: 65000,
-    validUntil: "2026-04-30",
-    status: "expired",
-  },
-  {
-    id: "5",
-    quoteNo: "QT-2026-0022",
-    customer: "BuildRight Co",
-    items: 1,
-    total: 28000,
-    validUntil: "2026-05-10",
-    status: "approved",
-  },
-];
+import { CreateQuotationModal } from "@/components/modules/sales/CreateQuotationModal";
+import {
+  useGetQuotationsQuery,
+  useSendQuotationMutation,
+  useConvertQuotationMutation,
+  quotationDisplayTotal,
+  type QuotationRecord,
+} from "@/store/api/salesApi";
 
 export default function QuotationsPage() {
   const [search, setSearch] = useState("");
-  const filtered = mockQuotes.filter(
-    (q) =>
-      q.customer.toLowerCase().includes(search.toLowerCase()) ||
-      q.quoteNo.toLowerCase().includes(search.toLowerCase()),
-  );
+  const [createOpen, setCreateOpen] = useState(false);
+  const {
+    data: quotations = [],
+    isLoading,
+    isFetching,
+  } = useGetQuotationsQuery();
+  const [sendQuotation, { isLoading: sending }] = useSendQuotationMutation();
+  const [convertQuotation, { isLoading: converting }] =
+    useConvertQuotationMutation();
 
-  const columns: ColumnsType<Quotation> = [
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return quotations.filter(
+      (row) =>
+        row.quotationNumber.toLowerCase().includes(q) ||
+        (row.account?.name ?? "").toLowerCase().includes(q),
+    );
+  }, [quotations, search]);
+
+  const runAction = async (label: string, action: () => Promise<unknown>) => {
+    try {
+      await action();
+      message.success(label);
+    } catch (err: unknown) {
+      const e = err as { data?: { message?: string | string[] } };
+      const msg = e.data?.message;
+      message.error(
+        Array.isArray(msg) ? msg.join(", ") : (msg ?? "Action failed"),
+      );
+    }
+  };
+
+  const columns: ColumnsType<QuotationRecord> = [
     {
       title: "Quote #",
-      dataIndex: "quoteNo",
-      key: "quoteNo",
-      width: 150,
+      dataIndex: "quotationNumber",
+      key: "quotationNumber",
+      width: 160,
       render: (v: string) => (
         <span
           style={{
@@ -97,10 +80,9 @@ export default function QuotationsPage() {
     },
     {
       title: "Customer",
-      dataIndex: "customer",
       key: "customer",
       width: 180,
-      render: (v: string) => (
+      render: (_: unknown, row) => (
         <span
           style={{
             color: "var(--color-on-surface)",
@@ -108,28 +90,26 @@ export default function QuotationsPage() {
             fontSize: 13,
           }}
         >
-          {v}
+          {row.account?.name ?? "—"}
         </span>
       ),
     },
     {
       title: "Items",
-      dataIndex: "items",
       key: "items",
       width: 80,
-      render: (v: number) => (
+      render: (_: unknown, row) => (
         <span style={{ fontFamily: "var(--font-display)", fontWeight: 600 }}>
-          {v}
+          {row.lines?.length ?? 0}
         </span>
       ),
     },
     {
       title: "Total",
-      dataIndex: "total",
       key: "total",
       width: 130,
-      sorter: (a, b) => a.total - b.total,
-      render: (v: number) => (
+      sorter: (a, b) => quotationDisplayTotal(a) - quotationDisplayTotal(b),
+      render: (_: unknown, row) => (
         <span
           style={{
             fontFamily: "var(--font-display)",
@@ -137,14 +117,14 @@ export default function QuotationsPage() {
             fontWeight: 700,
           }}
         >
-          {formatCurrency(v)}
+          {formatCurrency(quotationDisplayTotal(row), row.currency)}
         </span>
       ),
     },
     {
-      title: "Valid Until",
+      title: "Valid until",
       dataIndex: "validUntil",
-      key: "valid",
+      key: "validUntil",
       width: 120,
       render: (d: string) => (
         <span
@@ -158,21 +138,66 @@ export default function QuotationsPage() {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      width: 110,
+      width: 120,
       render: (s: string) => <StatusTag status={s} />,
     },
     {
       title: "",
       key: "actions",
-      width: 50,
-      render: () => (
-        <Button
-          type="text"
-          size="small"
-          icon={<EyeOutlined />}
-          style={{ color: "var(--color-on-surface-variant)" }}
-        />
-      ),
+      width: 80,
+      render: (_: unknown, record) => {
+        const items: MenuProps["items"] = [];
+
+        if (record.status === "DRAFT") {
+          items.push({
+            key: "send",
+            icon: <SendOutlined />,
+            label: "Send to customer",
+            onClick: () =>
+              runAction("Quotation sent", () =>
+                sendQuotation(record.id).unwrap(),
+              ),
+          });
+        }
+
+        if (
+          (record.status === "DRAFT" || record.status === "SENT") &&
+          record.accountId
+        ) {
+          items.push({
+            key: "convert",
+            icon: <SwapOutlined />,
+            label: "Convert to sales order",
+            onClick: () =>
+              runAction("Converted to sales order", () =>
+                convertQuotation(record.id).unwrap(),
+              ),
+          });
+        }
+
+        if (items.length === 0) {
+          return (
+            <Button
+              type="text"
+              size="small"
+              icon={<EyeOutlined />}
+              disabled
+              style={{ color: "var(--color-on-surface-variant)" }}
+            />
+          );
+        }
+
+        return (
+          <Dropdown menu={{ items }} trigger={["click"]}>
+            <Button
+              type="text"
+              size="small"
+              icon={<MoreOutlined />}
+              loading={sending || converting}
+            />
+          </Dropdown>
+        );
+      },
     },
   ];
 
@@ -187,8 +212,12 @@ export default function QuotationsPage() {
           { label: "Quotations" },
         ]}
         extra={
-          <Button type="primary" icon={<PlusOutlined />}>
-            Create Quote
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setCreateOpen(true)}
+          >
+            Create quote
           </Button>
         }
       />
@@ -198,10 +227,16 @@ export default function QuotationsPage() {
         searchPlaceholder="Search quotes..."
         showExport
       />
-      <DataTable<Quotation>
+      <DataTable<QuotationRecord>
         columns={columns}
         dataSource={filtered}
         rowKey="id"
+        loading={isLoading || isFetching}
+      />
+
+      <CreateQuotationModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
       />
     </div>
   );

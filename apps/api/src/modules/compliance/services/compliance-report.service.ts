@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { TaxFilingExport } from '../entities/tax-filing.entity';
 import { Between } from 'typeorm';
 import { Mushak91Dto } from '@repo/shared-schemas';
+import { ProcurementService } from '../../procurement/procurement.service';
 
 @Injectable()
 export class ComplianceReportService {
@@ -15,6 +16,7 @@ export class ComplianceReportService {
 
   constructor(
     private readonly pdfService: PdfService,
+    private readonly procurementService: ProcurementService,
     @InjectRepository(Mushak63)
     private readonly mushak63Repo: Repository<Mushak63>,
     @InjectRepository(VdsCertificate)
@@ -70,10 +72,16 @@ export class ComplianceReportService {
       0,
     );
 
-    // 3. Mock Input Tax (Purchases) - In real app, query Purchase/Inventory modules
-    const totalPurchaseValue = 0;
-    const totalInputVat = 0;
-    const totalInputSd = 0;
+    // 3. Input Tax (Purchases) from procurement vendor bills
+    const purchaseTax =
+      await this.procurementService.getPurchaseInputTaxForPeriod(
+        tenantId,
+        startDate,
+        endDate,
+      );
+    const totalPurchaseValue = purchaseTax.totalPurchaseValue;
+    const totalInputVat = purchaseTax.totalInputVat;
+    const totalInputSd = purchaseTax.totalInputSd;
 
     const netTaxPayable =
       totalOutputVat +

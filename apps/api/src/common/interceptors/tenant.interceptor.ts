@@ -3,6 +3,8 @@ import {
   NestInterceptor,
   ExecutionContext,
   CallHandler,
+  Inject,
+  Optional,
 } from '@nestjs/common';
 import { Observable, from } from 'rxjs';
 import { TenantConnectionService } from '../../database/tenant-connection.service';
@@ -12,11 +14,17 @@ import { ClsService } from 'nestjs-cls';
 export class TenantInterceptor implements NestInterceptor {
   constructor(
     private readonly tenantConnection: TenantConnectionService,
-    private readonly cls: ClsService,
+    @Optional() @Inject(ClsService) private readonly cls?: ClsService,
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const tenantId = this.cls.get('tenantId');
+    const request = context.switchToHttp().getRequest<{ url?: string }>();
+    const url = request.url ?? '';
+    if (url.includes('/health')) {
+      return next.handle();
+    }
+
+    const tenantId = this.cls?.get('tenantId');
 
     if (!tenantId) {
       return next.handle();

@@ -161,8 +161,7 @@ export class BillingController {
       );
 
       switch (event.type) {
-        case 'checkout.session.completed':
-          // Update tenant subscription status to active
+        case 'checkout.session.completed': {
           const session = event.data.object;
           if (session.metadata?.tenantId) {
             await this.subscriptionRepo.update(
@@ -171,8 +170,8 @@ export class BillingController {
             );
           }
           break;
-        case 'invoice.paid':
-          // Create / update invoice entity
+        }
+        case 'invoice.paid': {
           const invoice = event.data.object;
           if (invoice.subscription) {
             await this.subscriptionRepo.update(
@@ -181,8 +180,8 @@ export class BillingController {
             );
           }
           break;
-        case 'invoice.payment_failed':
-          // Handle failed payment (dunning)
+        }
+        case 'invoice.payment_failed': {
           const failedInvoice = event.data.object;
           if (failedInvoice.subscription) {
             const sub = await this.subscriptionRepo.findOne({
@@ -190,13 +189,13 @@ export class BillingController {
               relations: ['tenant'],
             });
             if (sub) {
-              // Mark as past_due, if multiple failures, suspend
               sub.status =
                 failedInvoice.attempt_count >= 3 ? 'suspended' : 'past_due';
               await this.subscriptionRepo.save(sub);
             }
           }
           break;
+        }
       }
 
       res.status(200).send({ received: true });

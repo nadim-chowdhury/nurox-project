@@ -4,6 +4,7 @@ const { spawn, execSync } = require('child_process');
 
 const rootDir = path.resolve(__dirname, '..');
 const contextAnchorPath = path.join(rootDir, 'docs', 'AI_CONTEXT_ANCHOR.md');
+const aiStartHerePath = path.join(rootDir, 'docs', 'AI_START_HERE.md');
 const geminiRulesPath = path.join(rootDir, 'GEMINI.md');
 
 function getGitStatus() {
@@ -49,9 +50,16 @@ async function main() {
   console.log('\x1b[36m%s\x1b[0m', '🔄 Gathering Nurox ERP Development Context...');
 
   let contextAnchor = '';
+  let aiStartHere = '';
   let geminiRules = '';
 
   try {
+    if (fs.existsSync(aiStartHerePath)) {
+      aiStartHere = fs.readFileSync(aiStartHerePath, 'utf8');
+    } else {
+      console.warn('⚠️ docs/AI_START_HERE.md not found.');
+    }
+
     if (fs.existsSync(contextAnchorPath)) {
       contextAnchor = fs.readFileSync(contextAnchorPath, 'utf8');
     } else {
@@ -70,6 +78,14 @@ async function main() {
 
   const { branch, status } = getGitStatus();
 
+  let nextTaskLine = 'See AI_CONTEXT_ANCHOR.md §5';
+  const nextMatch = contextAnchor.match(
+    /\*\*NEXT TASK[^*]*\*\*[^`\n]*Task\s*\*\*([^*]+)\*\*[^\n]*/i,
+  );
+  if (nextMatch) {
+    nextTaskLine = nextMatch[0].replace(/\*\*/g, '').trim();
+  }
+
   const aggregatePrompt = `======================================================================
 NUROX ERP — SESSION RECOVERY & CONTEXT BOOTSTRAP
 ======================================================================
@@ -78,6 +94,9 @@ I am resuming development of Nurox ERP. Below is the absolute source of truth
 regarding project rules, design systems, and current progress.
 
 Please absorb this state completely before proceeding with any edits or logic.
+
+>>> YOUR SINGLE TASK THIS SESSION: ${nextTaskLine}
+>>> Do NOT implement other modules or the full 692-feature spec.
 
 ----------------------------------------------------------------------
 1. SYSTEM STATE & ACTIVE BRANCH
@@ -88,12 +107,17 @@ Git Status (Modified Files):
 ${status || 'No modified files (working directory clean)'}
 
 ----------------------------------------------------------------------
-2. DEVELOPMENT GUIDELINES (GEMINI.md)
+2. SESSION BOOTSTRAP (docs/AI_START_HERE.md)
+----------------------------------------------------------------------
+${aiStartHere || 'No AI_START_HERE.md found.'}
+
+----------------------------------------------------------------------
+3. DEVELOPMENT GUIDELINES (GEMINI.md)
 ----------------------------------------------------------------------
 ${geminiRules || 'No GEMINI.md found.'}
 
 ----------------------------------------------------------------------
-3. CURRENT PROGRESS & ROADMAP (docs/AI_CONTEXT_ANCHOR.md)
+4. CURRENT PROGRESS & ROADMAP (docs/AI_CONTEXT_ANCHOR.md)
 ----------------------------------------------------------------------
 ${contextAnchor || 'No AI_CONTEXT_ANCHOR.md found.'}
 

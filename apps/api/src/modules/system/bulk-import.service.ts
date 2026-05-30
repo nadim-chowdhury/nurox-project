@@ -73,9 +73,9 @@ export class BulkImportService {
 
           resolve(jobId);
         })
-        .on('error', (err) => {
+        .on('error', (err: unknown) => {
           this.logger.error(`Error streaming CSV file ${filePath}`, err);
-          reject(err);
+          reject(err instanceof Error ? err : new Error(String(err)));
         });
     });
   }

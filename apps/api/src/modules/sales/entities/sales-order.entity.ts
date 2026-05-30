@@ -40,6 +40,27 @@ export class SalesOrder extends TenantBaseEntity {
   @Column({ type: 'varchar', length: 10, default: 'USD' })
   currency: string;
 
+  @Column({ type: 'decimal', precision: 14, scale: 2, default: 0 })
+  subTotal: number;
+
+  @Column({ type: 'decimal', precision: 14, scale: 2, default: 0 })
+  vatTotal: number;
+
+  @Column({ type: 'decimal', precision: 14, scale: 2, default: 0 })
+  sdTotal: number;
+
+  @Column({ type: 'decimal', precision: 14, scale: 2, default: 0 })
+  taxTotal: number;
+
+  @Column({ type: 'decimal', precision: 14, scale: 2, default: 0 })
+  totalAmount: number;
+
+  @Column({ type: 'uuid', nullable: true })
+  financeInvoiceId: string | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  mushak63Id: string | null;
+
   @OneToMany(() => SalesOrderLine, (line) => line.salesOrder, { cascade: true })
   lines: SalesOrderLine[];
 }

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { UserPreference } from './entities/user-preference.entity';
@@ -14,7 +14,7 @@ import { UserDashboardService } from './user-dashboard.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, UserPreference, UserDashboardWidget]),
-    SystemModule,
+    forwardRef(() => SystemModule),
     JwtModule,
   ],
   controllers: [UsersController],

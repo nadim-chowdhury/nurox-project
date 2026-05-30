@@ -64,7 +64,7 @@ EXPOSE 3001
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=3s \
-  CMD curl -f http://localhost:3001/api/v1/health || exit 1
+  CMD curl -f http://localhost:3001/api/health || exit 1
 
 # Start the server
 CMD ["node", "apps/api/dist/main.js"]

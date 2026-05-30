@@ -1,14 +1,37 @@
 "use client";
 
 import React, { useState } from "react";
-import { Table, Tag, Button, Space, Card, Modal, Form, Input, Select, InputNumber, message, Avatar, Row, Col } from "antd";
-import { PlusOutlined, InboxOutlined, BarcodeOutlined, ExperimentOutlined } from "@ant-design/icons";
+import {
+  Table,
+  Tag,
+  Button,
+  Space,
+  Card,
+  Modal,
+  Form,
+  Input,
+  Select,
+  InputNumber,
+  message,
+  Avatar,
+  Row,
+  Col,
+} from "antd";
+import {
+  PlusOutlined,
+  InboxOutlined,
+  BarcodeOutlined,
+  ExperimentOutlined,
+} from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
-import { useGetProductsQuery, useCreateProductMutation } from "@/store/api/inventoryApi";
+import {
+  useGetProductsQuery,
+  useCreateProductMutation,
+} from "@/store/api/inventoryApi";
 import { formatCurrency } from "@/lib/utils";
 
 export default function ProductsPage() {
-  const { data: products, isLoading } = useGetProductsQuery({});
+  const { data: products, isLoading } = useGetProductsQuery();
   const [createProduct] = useCreateProductMutation();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
@@ -30,16 +53,18 @@ export default function ProductsPage() {
       key: "product",
       render: (_: any, record: any) => (
         <Space>
-          <Avatar 
-            shape="square" 
-            size={40} 
-            src={record.imageUrl} 
-            icon={<InboxOutlined />} 
+          <Avatar
+            shape="square"
+            size={40}
+            src={record.imageUrl}
+            icon={<InboxOutlined />}
             style={{ backgroundColor: "var(--color-surface-variant)" }}
           />
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span style={{ fontWeight: 600 }}>{record.name}</span>
-            <span style={{ fontSize: 12, color: "gray" }}>SKU: {record.sku}</span>
+            <span style={{ fontSize: 12, color: "gray" }}>
+              SKU: {record.sku}
+            </span>
           </div>
         </Space>
       ),
@@ -80,8 +105,12 @@ export default function ProductsPage() {
       key: "action",
       render: (_: any, _record: any) => (
         <Space>
-          <Button icon={<ExperimentOutlined />} size="small">Variants</Button>
-          <Button type="link" size="small">Edit</Button>
+          <Button icon={<ExperimentOutlined />} size="small">
+            Variants
+          </Button>
+          <Button type="link" size="small">
+            Edit
+          </Button>
         </Space>
       ),
     },
@@ -126,7 +155,11 @@ export default function ProductsPage() {
         <Form form={form} layout="vertical" onFinish={handleCreate}>
           <Row gutter={16}>
             <Col span={16}>
-              <Form.Item name="name" label="Product Name" rules={[{ required: true }]}>
+              <Form.Item
+                name="name"
+                label="Product Name"
+                rules={[{ required: true }]}
+              >
                 <Input placeholder="e.g. Industrial Drill" />
               </Form.Item>
             </Col>
@@ -140,7 +173,13 @@ export default function ProductsPage() {
           <Row gutter={16}>
             <Col span={8}>
               <Form.Item name="uom" label="UOM" initialValue="PCS">
-                <Select options={[{ label: "Pieces", value: "PCS" }, { label: "KG", value: "KG" }, { label: "Litre", value: "L" }]} />
+                <Select
+                  options={[
+                    { label: "Pieces", value: "PCS" },
+                    { label: "KG", value: "KG" },
+                    { label: "Litre", value: "L" },
+                  ]}
+                />
               </Form.Item>
             </Col>
             <Col span={8}>
@@ -149,20 +188,30 @@ export default function ProductsPage() {
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name="reorderPoint" label="Reorder Point" initialValue={10}>
+              <Form.Item
+                name="reorderPoint"
+                label="Reorder Point"
+                initialValue={10}
+              >
                 <InputNumber style={{ width: "100%" }} min={0} />
               </Form.Item>
             </Col>
           </Row>
 
-          <Form.Item name="valuationMethod" label="Valuation Method" initialValue="FIFO">
-            <Select options={[
-              { label: "First-In First-Out (FIFO)", value: "FIFO" },
-              { label: "Last-In First-Out (LIFO)", value: "LIFO" },
-              { label: "First-Expired First-Out (FEFO)", value: "FEFO" },
-            ]} />
+          <Form.Item
+            name="valuationMethod"
+            label="Valuation Method"
+            initialValue="FIFO"
+          >
+            <Select
+              options={[
+                { label: "First-In First-Out (FIFO)", value: "FIFO" },
+                { label: "Last-In First-Out (LIFO)", value: "LIFO" },
+                { label: "First-Expired First-Out (FEFO)", value: "FEFO" },
+              ]}
+            />
           </Form.Item>
-          
+
           <Form.Item name="description" label="Description">
             <Input.TextArea rows={3} />
           </Form.Item>

@@ -263,14 +263,29 @@ export class FinanceService {
       }),
     );
 
-    const subtotal = lines.reduce((sum, l) => sum + Number(l.lineTotal), 0);
-    const totalAmount = subtotal + totalTax;
+    const dtoTotals = dto as CreateInvoiceDto & {
+      subtotal?: number;
+      taxAmount?: number;
+      totalAmount?: number;
+    };
+    const subtotal =
+      dtoTotals.subtotal !== undefined
+        ? Number(dtoTotals.subtotal)
+        : lines.reduce((sum, l) => sum + Number(l.lineTotal), 0);
+    const taxAmount =
+      dtoTotals.taxAmount !== undefined
+        ? Number(dtoTotals.taxAmount)
+        : totalTax;
+    const totalAmount =
+      dtoTotals.totalAmount !== undefined
+        ? Number(dtoTotals.totalAmount)
+        : subtotal + taxAmount;
 
     const invoice = this.invoiceRepo.create({
       ...dto,
       tenantId: this.tenantId,
       subtotal,
-      taxAmount: totalTax,
+      taxAmount,
       totalAmount,
       lines,
       status: dto.isProforma
@@ -1124,12 +1139,16 @@ export class FinanceService {
       return line;
     });
 
-    const subtotal = lines.reduce(
-      (sum: number, l: any) => sum + Number(l.lineTotal),
-      0,
-    );
-    const taxAmount = subtotal * 0.1; // Default tax
-    const totalAmount = subtotal + taxAmount;
+    const subtotal =
+      dto.subtotal !== undefined
+        ? Number(dto.subtotal)
+        : lines.reduce((sum: number, l: any) => sum + Number(l.lineTotal), 0);
+    const taxAmount =
+      dto.taxAmount !== undefined ? Number(dto.taxAmount) : subtotal * 0.1;
+    const totalAmount =
+      dto.totalAmount !== undefined
+        ? Number(dto.totalAmount)
+        : subtotal + taxAmount;
 
     const bill = this.billRepo.create({
       ...dto,

@@ -7,7 +7,7 @@ import { Document } from './entities/document.entity';
 import { DocumentVersion } from './entities/document-version.entity';
 import { StorageService } from '../system/storage.service';
 import * as Tesseract from 'tesseract.js';
-// @ts-ignore - moduleResolution: node can't resolve meilisearch exports
+// @ts-expect-error - moduleResolution: node can't resolve meilisearch exports
 import { Meilisearch } from 'meilisearch';
 import { ConfigService } from '@nestjs/config';
 

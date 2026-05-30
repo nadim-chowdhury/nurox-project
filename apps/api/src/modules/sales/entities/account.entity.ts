@@ -14,4 +14,10 @@ export class Account extends TenantBaseEntity {
 
   @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true })
   annualRevenue: number | null;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  taxBin: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  billingAddress: string | null;
 }

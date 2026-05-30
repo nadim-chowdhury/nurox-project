@@ -17,8 +17,10 @@ import { DebitNote } from './entities/debit-note.entity';
 import { ApprovalMatrix } from './entities/approval-matrix.entity';
 import { VendorEvaluation } from './entities/vendor-evaluation.entity';
 import { VendorBill } from './entities/vendor-bill.entity';
+import { VendorBillLine } from './entities/vendor-bill-line.entity';
 import { InventoryModule } from '../inventory/inventory.module';
 import { MailerModule } from '../mailer/mailer.module';
+import { FinanceModule } from '../finance/finance.module';
 
 @Module({
   imports: [
@@ -36,9 +38,11 @@ import { MailerModule } from '../mailer/mailer.module';
       ApprovalMatrix,
       VendorEvaluation,
       VendorBill,
+      VendorBillLine,
     ]),
     InventoryModule,
     MailerModule,
+    FinanceModule,
   ],
   controllers: [ProcurementController],
   providers: [ProcurementService],

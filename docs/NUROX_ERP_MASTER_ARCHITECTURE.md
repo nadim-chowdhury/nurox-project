@@ -1,9 +1,13 @@
 # NUROX ERP — Ultimate SaaS Master Documentation
 
-> **Version:** 2.2 · **Last Updated:** May 2026
+> **Version:** 2.4 · **Last Updated:** May 2026
 > **Stack:** Next.js 16 · NestJS 11 · TypeORM 0.3.x · PostgreSQL 17 · Ant Design 6.x · RTK Query · Custom JWT Auth (Passport.js)
 > **Design System:** Liquid Precision — "The Architectural Infinite"
 > **Architecture:** Multi-Tenant SaaS · Module-Based · API-First · Event-Driven
+
+> **AI developers:** Read **`docs/AI_START_HERE.md`** first (short). Use this file as the deep reference encyclopedia — not as the session bootstrap doc.
+> **Step-by-step shipping plan:** **`docs/PRODUCTION_ROADMAP.md`** (engineering phases + module readiness).
+> **Live progress:** **`docs/AI_CONTEXT_ANCHOR.md`** (update after every session).
 
 ---
 
@@ -13,8 +17,9 @@
 
 ### 0.1 Session Persistence (Memory Protocol)
 
-- **Codebase as Memory:** Do not rely on your internal training data or session history. Treat this documentation as the absolute source of truth.
-- **Initialization:** Every session MUST read `GEMINI.md` and `docs/AI_CONTEXT_ANCHOR.md` first.
+- **Codebase as Memory:** Do not rely on your internal training data or session history. Treat the repo files as the absolute source of truth.
+- **Initialization:** Every session MUST read `docs/AI_START_HERE.md`, then `GEMINI.md`, then `docs/AI_CONTEXT_ANCHOR.md`.
+- **Context recovery:** Run `pnpm ai:context` when switching AI accounts; paste the output into the new session.
 - **Anchor Updates:** Upon finishing a task, update `docs/AI_CONTEXT_ANCHOR.md` with the new status.
 
 ### 0.2 Architectural Non-Negotiables (Guardrails)
@@ -51,6 +56,25 @@ Every module implemented or refactored MUST adhere to these four pillars:
     - Forms MUST use `react-hook-form` + `zodResolver`.
     - Inputs MUST use standardized wrappers (e.g., `RhfInput`, `RhfSelect`) from `@/components/common/forms/`.
     - Tables MUST support server-side pagination and consistent "Liquid Precision" styling.
+
+### 0.5 Implementation status vs this document (May 2026)
+
+This file lists **~692 aspirational features** across 30 modules. The repo implements a **subset** to production quality. Do not treat unchecked `[ ]` items as missing bugs — treat them as backlog.
+
+| Area                       | Status in repo              | Where to verify                           |
+| -------------------------- | --------------------------- | ----------------------------------------- |
+| Docker one-command         | ✅ `pnpm docker:up`         | `docker-compose.yml`, `.env.docker`       |
+| Multi-tenant auth + RBAC   | ✅                          | `apps/api` auth modules                   |
+| Finance + journals         | ✅ core                     | `apps/api/src/modules/finance`            |
+| BD VAT Mushak 6.3/6.6/9.1  | ✅                          | `compliance` module                       |
+| Inventory + manufacturing  | ✅ core                     | inventory + manufacturing modules         |
+| Procurement vendor bills   | ✅                          | procurement module                        |
+| Sales quote → SO → invoice | ✅ API + UI (quotes/orders) | `SalesOrderFlowService`, sales pages      |
+| SaaS billing / Stripe      | ⬜ scaffold                 | billing module — **required before sell** |
+| Full CRM UI (leads/deals)  | ⬜ mock pages               | wire to existing sales APIs               |
+| All 30 modules complete    | ⬜ long-term                | `docs/PRODUCTION_ROADMAP.md`              |
+
+**Engineering task order:** `docs/AI_CONTEXT_ANCHOR.md` §2 — not the month-based table in §7.6 below.
 
 ---
 
@@ -1012,7 +1036,8 @@ import { setAccessToken, clearAuth } from "@/store/slices/authSlice";
 import { refreshAccessToken } from "@/lib/auth";
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: process.env.NEXT_PUBLIC_API_URL + "/api",
+  // NEXT_PUBLIC_API_URL must already include /api/v1 (e.g. http://localhost:3001/api/v1)
+  baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1",
   credentials: "include",
   prepareHeaders: (headers, { getState }) => {
     const token = (getState() as RootState).auth.accessToken;
@@ -1445,7 +1470,9 @@ CREATE TABLE tenant_modules (
 
 ---
 
-### 7.6 Development Priority Phases
+### 7.6 Development Priority Phases (business / GTM timeline)
+
+> **For day-to-day AI development**, use **`docs/PRODUCTION_ROADMAP.md`** and **`docs/AI_CONTEXT_ANCHOR.md`** — those track what is built in _this_ repository. This table is the long-term product vision.
 
 | Phase                      | Modules                                       | Timeline    | Business Value                        |
 | -------------------------- | --------------------------------------------- | ----------- | ------------------------------------- |
@@ -1455,6 +1482,8 @@ CREATE TABLE tenant_modules (
 | **Phase 4 — Advanced**     | Projects, Assets, Documents, Manufacturing    | Month 13-16 | Enterprise feature completeness       |
 | **Phase 5 — Scale**        | SaaS Billing, AI, POS, Logistics, Mobile      | Month 17-20 | Revenue expansion, mobile, AI         |
 | **Phase 6 — Hardening**    | Security, DevOps, Compliance, Support         | Ongoing     | Production hardening, compliance      |
+
+**Repo engineering phases (actual):** 0 Foundation → 1 Auth → 2 Finance/VAT → 3 Inventory/MFG → 4 Procurement/Sales API → 5 E2E/UI → 6 Sellable SaaS → 7 Hardening. See `docs/PRODUCTION_ROADMAP.md`.
 
 ---
 
@@ -2112,7 +2141,7 @@ CREATE TABLE tenant_modules (
 - [ ] `husky` + `lint-staged` — ESLint + Prettier + Zod schema check pre-commit
 - [ ] Multi-stage Dockerfiles — builder → production; no dev deps in final image; non-root user
 - [ ] `docker-compose.yml` local dev — Next.js, NestJS, PostgreSQL 17, Redis, MinIO, MailHog, Bull Board, MeiliSearch
-- [ ] `HEALTHCHECK CMD curl -f /health` in all Dockerfiles
+- [x] `HEALTHCHECK CMD curl -f http://localhost:3001/api/health` in API Dockerfile (version-neutral path)
 - [ ] Non-root user `node:alpine` in all containers
 - [ ] Helm chart — deployment, service, ingress, HPA, PDB, ConfigMap, Secret templates
 - [ ] HPA — NestJS API scales on CPU > 70%; min 2, max 10 replicas
@@ -2125,7 +2154,7 @@ CREATE TABLE tenant_modules (
 - [ ] Grafana dashboards — API latency P50/P95/P99, error rate, DB connection pool, queue depths
 - [ ] Sentry — `sentry.client.config.ts` (Next.js) + global exception filter (NestJS); release tracking
 - [ ] OpenTelemetry traces → Jaeger; trace every HTTP request + DB query + queue job
-- [ ] Better Uptime — monitors `/health`, `/api/v1/health`, and key frontend pages; public status page
+- [ ] Better Uptime — monitors `/api/health` and key frontend pages; public status page
 - [ ] Vitest unit tests — ≥70% coverage threshold; coverage report uploaded to CI artifacts
 - [ ] Playwright E2E — login, create employee, run payroll, create invoice, approve leave, manage inventory
 - [ ] Testcontainers — NestJS integration tests with real PostgreSQL 17 + Redis; no mock ORM
@@ -2485,7 +2514,7 @@ npx ts-node src/database/seeds/run-seeds.ts
 
 ```bash
 # ── apps/web/.env.local ──────────────────────────────────────────────
-NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
 API_URL=http://localhost:3001
 NEXT_PUBLIC_SOCKET_URL=http://localhost:3001
 GOOGLE_CLIENT_ID=
@@ -2563,6 +2592,15 @@ FRONTEND_URL=http://localhost:3000
 ```
 
 ### Appendix E — Production-Ready Docker Compose & Seeding
+
+**Two Docker modes:**
+
+| Mode           | Command             | Use case                                                  |
+| -------------- | ------------------- | --------------------------------------------------------- |
+| **Full stack** | `pnpm docker:up`    | Production-like test: API + Web + all infra in containers |
+| **Infra only** | `pnpm docker:infra` | Hybrid dev: infra in Docker, `pnpm dev` on host with HMR  |
+
+See `docs/AI_START_HERE.md` for URLs, default login, and env rules.
 
 The root `docker-compose.yml` provides a unified, production-ready stack designed to run the entire monorepo seamlessly.
 
@@ -2828,7 +2866,8 @@ Documents     GET|POST /api/v1/documents · GET /api/v1/documents/:id/presigned-
 Reports       GET /api/v1/reports/:type?format=pdf|xlsx|csv
 Admin         GET|POST /api/v1/admin/users|roles|settings|audit-logs|feature-flags
 Billing       GET|POST /api/v1/billing/subscriptions|invoices · POST /api/v1/billing/webhooks/stripe
-Health        GET /health · GET /api/v1/health
+Health        GET /api/health (full) · GET /api/health/liveness · GET /api/health/readiness
+              Note: health is version-neutral — not under /api/v1
 ```
 
 ### Appendix H — Database Indexing Strategy
@@ -2992,7 +3031,7 @@ Code Range    Module              Examples
 
 ---
 
-_Nurox ERP Master Documentation — May 2026 — v2.2_
+_Nurox ERP Master Documentation — May 2026 — v2.3_
 _Stack: Next.js 16 · NestJS 11 · Ant Design 6 · TypeORM 0.3.x · PostgreSQL 17 · Redux Toolkit + RTK Query · React Hook Form · Zod 4 · Custom JWT Auth · Redis · BullMQ · MeiliSearch · Docker · Kubernetes_
 _Design System: Liquid Precision — "The Architectural Infinite" · Deep Space Palette · Space Grotesk + Manrope_
 _Total: 30 modules · ~692 feature items · SaaS-first · Multi-tenant · API-first · Event-driven_

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TerminusModule } from '@nestjs/terminus';
 import { Tenant } from './entities/tenant.entity';
@@ -47,9 +47,11 @@ import { BullBoardModule } from '@bull-board/nestjs';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ApiKeyService } from './api-key.service';
 import { BulkImportService } from './bulk-import.service';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
+    forwardRef(() => UsersModule),
     TypeOrmModule.forFeature([
       Tenant,
       TenantModuleEntity,

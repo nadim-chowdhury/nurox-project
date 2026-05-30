@@ -145,6 +145,15 @@ export class InventoryService implements OnModuleInit {
     this.logger.log('Scheduled daily reorder point and expiry checks');
   }
 
+  async findProducts(tenantId?: string): Promise<Product[]> {
+    const tid = tenantId ?? this.cls.get('tenantId');
+    return this.productRepo.find({
+      where: tid ? { tenantId: tid } : {},
+      order: { name: 'ASC' },
+      take: 500,
+    });
+  }
+
   async createProduct(dto: Partial<Product>): Promise<Product> {
     const exists = await this.productRepo.findOne({ where: { sku: dto.sku } });
     if (exists) throw new ConflictException(`SKU "${dto.sku}" already exists`);

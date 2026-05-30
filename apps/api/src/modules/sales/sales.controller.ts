@@ -10,29 +10,43 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  UsePipes,
 } from '@nestjs/common';
 import { SalesService } from './sales.service';
+import { SalesOrderFlowService } from './sales-order-flow.service';
 import {
   createLeadSchema,
   updateLeadSchema,
   createDealSchema,
   updateDealSchema,
+  createQuotationSchema,
+  createAccountSchema,
+  invoiceFromSalesOrderSchema,
   type CreateLeadDto,
   type UpdateLeadDto,
   type CreateDealDto,
   type UpdateDealDto,
+  type CreateQuotationDto,
+  type CreateAccountDto,
+  type InvoiceFromSalesOrderDto,
 } from '@repo/shared-schemas';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { Permission } from '../auth/enums/permissions.enum';
 import { CheckModule } from '../../common/guards/module.guard';
+import { TenantGuard } from '../../common/guards/tenant.guard';
+import { CurrentTenant } from '../../common/decorators/current-tenant.decorator';
+import { ZodValidationPipe } from 'nestjs-zod';
 
 @Controller('sales')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard, TenantGuard)
 @CheckModule('sales')
 export class SalesController {
-  constructor(private readonly salesService: SalesService) {}
+  constructor(
+    private readonly salesService: SalesService,
+    private readonly salesOrderFlow: SalesOrderFlowService,
+  ) {}
 
   @Post('leads')
   @RequirePermissions(Permission.SALES_MANAGE_LEADS)
@@ -122,9 +136,48 @@ export class SalesController {
     return this.salesService.assignLeadRoundRobin(id, userIds);
   }
 
+  @Post('accounts')
+  @UsePipes(new ZodValidationPipe(createAccountSchema))
+  createAccount(
+    @CurrentTenant() tenantId: string,
+    @Body() dto: CreateAccountDto,
+  ) {
+    return this.salesOrderFlow.createAccount(tenantId, dto);
+  }
+
+  @Get('accounts')
+  listAccounts(@CurrentTenant() tenantId: string) {
+    return this.salesOrderFlow.listAccounts(tenantId);
+  }
+
   @Post('quotations')
-  createQuotation(@Body() dto: any) {
-    return this.salesService.createQuotation(dto);
+  @UsePipes(new ZodValidationPipe(createQuotationSchema))
+  createQuotation(
+    @CurrentTenant() tenantId: string,
+    @Body() dto: CreateQuotationDto,
+  ) {
+    return this.salesOrderFlow.createQuotation(tenantId, dto);
+  }
+
+  @Get('quotations')
+  listQuotations(@CurrentTenant() tenantId: string) {
+    return this.salesOrderFlow.listQuotations(tenantId);
+  }
+
+  @Get('quotations/:id')
+  getQuotation(
+    @CurrentTenant() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.salesOrderFlow.getQuotation(tenantId, id);
+  }
+
+  @Post('quotations/:id/send')
+  sendQuotation(
+    @CurrentTenant() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.salesOrderFlow.sendQuotation(tenantId, id);
   }
 
   @Post('quotations/:id/resend')
@@ -133,8 +186,42 @@ export class SalesController {
   }
 
   @Post('quotations/:id/convert')
-  convertQuotationToSO(@Param('id', ParseUUIDPipe) id: string) {
-    return this.salesService.convertQuotationToSO(id);
+  convertQuotationToSO(
+    @CurrentTenant() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.salesOrderFlow.convertQuotationToSalesOrder(tenantId, id);
+  }
+
+  @Get('sales-orders')
+  listSalesOrders(@CurrentTenant() tenantId: string) {
+    return this.salesOrderFlow.listSalesOrders(tenantId);
+  }
+
+  @Get('sales-orders/:id')
+  getSalesOrder(
+    @CurrentTenant() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.salesOrderFlow.getSalesOrder(tenantId, id);
+  }
+
+  @Post('sales-orders/:id/confirm')
+  confirmSalesOrder(
+    @CurrentTenant() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.salesOrderFlow.confirmSalesOrder(tenantId, id);
+  }
+
+  @Post('sales-orders/:id/create-invoice')
+  @UsePipes(new ZodValidationPipe(invoiceFromSalesOrderSchema))
+  createInvoiceFromSalesOrder(
+    @CurrentTenant() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: InvoiceFromSalesOrderDto,
+  ) {
+    return this.salesOrderFlow.createInvoiceFromSalesOrder(tenantId, id, dto);
   }
 
   @Post('delivery-orders')

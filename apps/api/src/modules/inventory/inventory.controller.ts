@@ -30,6 +30,12 @@ import {
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
+  @Get('products')
+  @ApiOperation({ summary: 'List products' })
+  listProducts() {
+    return this.inventoryService.findProducts();
+  }
+
   @Post('products')
   @ApiOperation({ summary: 'Create a new product' })
   createProduct(@Body() dto: ProductDto) {

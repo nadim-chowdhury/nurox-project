@@ -1,8 +1,9 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { TenantBaseEntity } from '../../../common/entities/tenant-base.entity';
 import { Tenant } from '../../system/entities/tenant.entity';
 import { Bom } from './bom.entity';
 import { Workcenter } from './workcenter.entity';
+import { WorkOrderStage } from './work-order-stage.entity';
 
 @Entity('work_orders')
 export class WorkOrder extends TenantBaseEntity {
@@ -23,6 +24,15 @@ export class WorkOrder extends TenantBaseEntity {
   @ManyToOne(() => Workcenter)
   @JoinColumn({ name: 'workcenterId' })
   workcenter: Workcenter;
+
+  /** Warehouse where raw materials are issued and FG is received. */
+  @Column({ type: 'uuid' })
+  warehouseId: string;
+
+  @OneToMany(() => WorkOrderStage, (stage) => stage.workOrder, {
+    cascade: true,
+  })
+  stages: WorkOrderStage[];
 
   @Column({
     type: 'enum',

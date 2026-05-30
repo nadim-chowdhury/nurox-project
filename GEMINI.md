@@ -4,9 +4,12 @@
 
 ## 0. Session Initialization (CRITICAL)
 
-- **Mandate:** Any new AI session MUST read `docs/AI_CONTEXT_ANCHOR.md` before writing any code.
-- **Purpose:** This file acts as the project's long-term memory, preventing context loss when switching between AI accounts or sessions.
+- **Mandate:** Any new AI session MUST read `docs/AI_START_HERE.md`, then `docs/AI_CONTEXT_ANCHOR.md`, before writing any code.
+- **Roadmap:** See `docs/PRODUCTION_ROADMAP.md` for sellable-SaaS phases; do not implement the entire master spec in one session.
+- **Context recovery:** Run `pnpm ai:context` when switching AI accounts; paste the clipboard into the new session.
+- **Purpose:** The anchor file is the project's long-term memory, preventing context loss between sessions.
 - **Update Rule:** Upon completing a significant task, the AI MUST update `docs/AI_CONTEXT_ANCHOR.md` with the new status.
+- **Scope:** Work one roadmap task at a time — never attempt full-module or multi-module rewrites in a single session.
 
 ## 1. Architectural Mandates
 
@@ -99,7 +102,7 @@ const onSubmit = (data) => { ... };
 Every feature or refactor implemented by AI MUST meet this checklist before being considered complete:
 
 - [ ] **Multi-Tenancy:** Ensure `tenant_id` isolation is verified in backend DB queries via `ClsService`, middleware, or TypeORM scoping. Frontend requests must carry the correct tenant context headers.
-- [ ] ** централизованная Validation:** 100% boundary check using Zod schemas from `packages/shared-schemas`. No local types or unvalidated JSON input allowed.
+- [ ] **Centralized Validation:** 100% boundary check using Zod schemas from `packages/shared-schemas`. No local types or unvalidated JSON input allowed.
 - [ ] **Audit Trail:** Verify that the `AuditLogInterceptor` or relevant event publisher is active on all mutation endpoints (`POST`, `PUT`, `PATCH`, `DELETE`).
 - [ ] **UI Consistency:** Forms must strictly use the standardized wrappers from `@/components/common/forms/` (e.g., `RhfInput`, `RhfSelect`, `RhfDatePicker`, `RhfInputNumber`, `RhfRate`). Direct Antd controls or manual controllers are prohibited.
 - [ ] **Automated Verification:** Bug fixes must have a reproduction test, and new features must include unit/integration tests or a Playwright E2E spec.

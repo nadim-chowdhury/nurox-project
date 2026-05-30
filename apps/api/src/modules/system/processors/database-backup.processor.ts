@@ -67,35 +67,38 @@ export class DatabaseBackupProcessor extends WorkerHost {
         reject(err);
       });
 
-      gzip.on('close', async (code) => {
-        if (code !== 0) {
-          reject(new Error(`gzip process exited with code ${code}`));
-          return;
-        }
+      gzip.on('close', (code) => {
+        void (async () => {
+          if (code !== 0) {
+            reject(new Error(`gzip process exited with code ${code}`));
+            return;
+          }
 
-        this.logger.log(
-          `Backup created locally at ${tempFilePath}. Uploading to storage...`,
-        );
-
-        try {
-          const fileBuffer = await fs.promises.readFile(tempFilePath);
-          const key = `backups/${filename}`;
-          const uploadResultUrl = await this.storageService.uploadBuffer(
-            key,
-            fileBuffer,
-            'application/gzip',
+          this.logger.log(
+            `Backup created locally at ${tempFilePath}. Uploading to storage...`,
           );
 
-          this.logger.log(`Backup uploaded successfully: ${uploadResultUrl}`);
+          try {
+            const fileBuffer = await fs.promises.readFile(tempFilePath);
+            const key = `backups/${filename}`;
+            const uploadResultUrl = await this.storageService.uploadBuffer(
+              key,
+              fileBuffer,
+              'application/gzip',
+            );
 
-          // Cleanup local file
-          await fs.promises.unlink(tempFilePath);
+            this.logger.log(`Backup uploaded successfully: ${uploadResultUrl}`);
 
-          resolve(uploadResultUrl);
-        } catch (error) {
-          this.logger.error(`Failed to upload backup: ${error.message}`);
-          reject(error);
-        }
+            await fs.promises.unlink(tempFilePath);
+
+            resolve(uploadResultUrl);
+          } catch (error) {
+            const err =
+              error instanceof Error ? error : new Error(String(error));
+            this.logger.error(`Failed to upload backup: ${err.message}`);
+            reject(err);
+          }
+        })();
       });
     });
   }

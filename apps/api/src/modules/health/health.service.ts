@@ -54,7 +54,7 @@ export class HealthService {
     const [database, redis, memory] = await Promise.all([
       this.checkDatabase(),
       this.checkRedis(),
-      this.checkMemory(),
+      Promise.resolve(this.checkMemory()),
     ]);
 
     const allUp =

@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -17,9 +18,12 @@ import { Grn, GrnStatus, GrnLine } from './entities/grn.entity';
 import { DebitNote } from './entities/debit-note.entity';
 import { ApprovalMatrix } from './entities/approval-matrix.entity';
 import { VendorEvaluation } from './entities/vendor-evaluation.entity';
-import { VendorBill } from './entities/vendor-bill.entity';
+import { VendorBill, VendorBillStatus } from './entities/vendor-bill.entity';
+import { VendorBillLine } from './entities/vendor-bill-line.entity';
 import { InventoryService } from '../inventory/inventory.service';
 import { MailerService } from '../mailer/mailer.service';
+import { FinanceService } from '../finance/finance.service';
+import { CreateVendorBillDto } from '@repo/shared-schemas';
 import * as puppeteer from 'puppeteer';
 
 @Injectable()
@@ -47,10 +51,28 @@ export class ProcurementService {
     private readonly evaluationRepo: Repository<VendorEvaluation>,
     @InjectRepository(VendorBill)
     private readonly billRepo: Repository<VendorBill>,
+    @InjectRepository(VendorBillLine)
+    private readonly billLineRepo: Repository<VendorBillLine>,
     private readonly inventoryService: InventoryService,
     private readonly mailerService: MailerService,
+    private readonly financeService: FinanceService,
     private readonly dataSource: DataSource,
   ) {}
+
+  /** Bangladesh NBR-style VAT on purchases (SD on base, VAT on base+SD). */
+  private calculatePurchaseLineTax(
+    lineSubtotal: number,
+    vatRatePercent: number,
+    sdRatePercent: number,
+  ) {
+    const sdAmount = lineSubtotal * (sdRatePercent / 100);
+    const vatAmount = (lineSubtotal + sdAmount) * (vatRatePercent / 100);
+    return {
+      sdAmount: Math.round(sdAmount * 100) / 100,
+      vatAmount: Math.round(vatAmount * 100) / 100,
+      lineTaxTotal: Math.round((sdAmount + vatAmount) * 100) / 100,
+    };
+  }
 
   async createVendor(dto: any) {
     const vendor = this.vendorRepo.create(dto as object);
@@ -554,6 +576,226 @@ export class ProcurementService {
 
       return manager.save(grn);
     });
+  }
+
+  async createVendorBill(tenantId: string, dto: CreateVendorBillDto) {
+    return this.dataSource.transaction(async (manager) => {
+      const po = await manager.findOne(PurchaseOrder, {
+        where: { id: dto.poId, tenantId },
+        relations: ['lines', 'vendor'],
+      });
+      if (!po) throw new NotFoundException('Purchase order not found');
+      if (po.vendorId !== dto.vendorId) {
+        throw new BadRequestException('Vendor does not match purchase order');
+      }
+
+      if (dto.grnId) {
+        const grn = await manager.findOne(Grn, {
+          where: { id: dto.grnId, tenantId, poId: dto.poId },
+        });
+        if (!grn) {
+          throw new BadRequestException(
+            'GRN not found for this purchase order',
+          );
+        }
+      }
+
+      const existing = await manager.findOne(VendorBill, {
+        where: { tenantId, billNumber: dto.billNumber },
+      });
+      if (existing) {
+        throw new ConflictException(
+          `Vendor bill number ${dto.billNumber} already exists`,
+        );
+      }
+
+      let subTotal = 0;
+      let vatTotal = 0;
+      let sdTotal = 0;
+      let taxTotal = 0;
+
+      const lineEntities: VendorBillLine[] = [];
+
+      for (const line of dto.lines) {
+        const lineSubtotal = line.quantity * line.unitCost;
+        const tax = this.calculatePurchaseLineTax(
+          lineSubtotal,
+          line.vatRate ?? 15,
+          line.sdRate ?? 0,
+        );
+
+        subTotal += lineSubtotal;
+        vatTotal += tax.vatAmount;
+        sdTotal += tax.sdAmount;
+        taxTotal += tax.lineTaxTotal;
+
+        if (line.poLineId) {
+          const poLine = po.lines.find((pl) => pl.id === line.poLineId);
+          if (!poLine) {
+            throw new BadRequestException(
+              `PO line ${line.poLineId} not found on purchase order`,
+            );
+          }
+          if (line.quantity > Number(poLine.quantity)) {
+            throw new BadRequestException(
+              `Bill quantity exceeds PO quantity for line ${line.poLineId}`,
+            );
+          }
+        }
+
+        lineEntities.push(
+          manager.create(VendorBillLine, {
+            tenantId,
+            productId: line.productId ?? null,
+            poLineId: line.poLineId ?? null,
+            description: line.description,
+            quantity: line.quantity,
+            unitCost: line.unitCost,
+            lineSubtotal,
+            vatRate: line.vatRate ?? 15,
+            sdRate: line.sdRate ?? 0,
+            vatAmount: tax.vatAmount,
+            sdAmount: tax.sdAmount,
+            lineTaxTotal: tax.lineTaxTotal,
+          }),
+        );
+      }
+
+      const totalAmount = subTotal + taxTotal;
+
+      const bill = manager.create(VendorBill, {
+        tenantId,
+        vendorId: dto.vendorId,
+        poId: dto.poId,
+        grnId: dto.grnId ?? null,
+        billNumber: dto.billNumber,
+        billDate: new Date(dto.billDate),
+        dueDate: new Date(dto.dueDate),
+        currency: dto.currency,
+        subTotal,
+        vatTotal,
+        sdTotal,
+        taxTotal,
+        totalAmount,
+        status: VendorBillStatus.DRAFT,
+        notes: dto.notes ?? null,
+        lines: lineEntities,
+      });
+
+      const saved = await manager.save(bill);
+      return manager.findOne(VendorBill, {
+        where: { id: saved.id, tenantId },
+        relations: ['lines', 'vendor', 'purchaseOrder'],
+      });
+    });
+  }
+
+  async findVendorBills(tenantId: string, status?: VendorBillStatus) {
+    return this.billRepo.find({
+      where: status ? { tenantId, status } : { tenantId },
+      relations: ['lines', 'vendor'],
+      order: { billDate: 'DESC' },
+    });
+  }
+
+  async getVendorBill(tenantId: string, id: string) {
+    const bill = await this.billRepo.findOne({
+      where: { id, tenantId },
+      relations: ['lines', 'vendor', 'purchaseOrder', 'grn'],
+    });
+    if (!bill) throw new NotFoundException('Vendor bill not found');
+    return bill;
+  }
+
+  async submitVendorBill(tenantId: string, id: string) {
+    const bill = await this.getVendorBill(tenantId, id);
+    if (bill.status !== VendorBillStatus.DRAFT) {
+      throw new BadRequestException('Only DRAFT vendor bills can be submitted');
+    }
+
+    const match = await this.verifyThreeWayMatch(bill.poId);
+    if (!match.isMatch) {
+      this.logger.warn(
+        `Three-way match warnings for PO ${bill.poId}: ${JSON.stringify(match.mismatches)}`,
+      );
+    }
+
+    const vendor = await this.vendorRepo.findOne({
+      where: { id: bill.vendorId, tenantId },
+    });
+
+    const financeBill = await this.financeService.createBill({
+      billNumber: bill.billNumber,
+      vendorName: vendor?.name ?? 'Vendor',
+      vendorId: bill.vendorId,
+      issueDate: bill.billDate.toISOString().slice(0, 10),
+      dueDate: bill.dueDate.toISOString().slice(0, 10),
+      currency: bill.currency,
+      purchaseOrderId: bill.poId,
+      grnId: bill.grnId,
+      subtotal: bill.subTotal,
+      taxAmount: bill.taxTotal,
+      totalAmount: bill.totalAmount,
+      lines: bill.lines.map((line) => ({
+        description: line.description,
+        quantity: Number(line.quantity),
+        unitPrice: Number(line.unitCost),
+        taxAmount: Number(line.lineTaxTotal),
+      })),
+    });
+
+    bill.status = VendorBillStatus.PENDING_PAYMENT;
+    bill.financeBillId = financeBill.id;
+    return this.billRepo.save(bill);
+  }
+
+  async markVendorBillPaid(tenantId: string, id: string) {
+    const bill = await this.getVendorBill(tenantId, id);
+    if (bill.status !== VendorBillStatus.PENDING_PAYMENT) {
+      throw new BadRequestException(
+        'Only PENDING_PAYMENT bills can be marked paid',
+      );
+    }
+    bill.status = VendorBillStatus.PAID;
+    return this.billRepo.save(bill);
+  }
+
+  async cancelVendorBill(tenantId: string, id: string) {
+    const bill = await this.getVendorBill(tenantId, id);
+    if (bill.status === VendorBillStatus.PAID) {
+      throw new BadRequestException('Cannot cancel a paid vendor bill');
+    }
+    bill.status = VendorBillStatus.CANCELLED;
+    return this.billRepo.save(bill);
+  }
+
+  /**
+   * Aggregates purchase input VAT/SD for Mushak 9.1 and VAT return reports.
+   */
+  async getPurchaseInputTaxForPeriod(
+    tenantId: string,
+    startDate: Date,
+    endDate: Date,
+  ) {
+    const statuses = [VendorBillStatus.PENDING_PAYMENT, VendorBillStatus.PAID];
+
+    const result = await this.billLineRepo
+      .createQueryBuilder('line')
+      .innerJoin('line.vendorBill', 'bill')
+      .where('bill.tenant_id = :tenantId', { tenantId })
+      .andWhere('bill.billDate >= :startDate', { startDate })
+      .andWhere('bill.billDate < :endDate', { endDate })
+      .andWhere('bill.status IN (:...statuses)', { statuses })
+      .select('COALESCE(SUM(line.lineSubtotal), 0)', 'purchaseValue')
+      .addSelect('COALESCE(SUM(line.vatAmount), 0)', 'inputVat')
+      .addSelect('COALESCE(SUM(line.sdAmount), 0)', 'inputSd')
+      .getRawOne();
+
+    return {
+      totalPurchaseValue: Number(result?.purchaseValue) || 0,
+      totalInputVat: Number(result?.inputVat) || 0,
+      totalInputSd: Number(result?.inputSd) || 0,
+    };
   }
 
   async getSpendAnalytics() {

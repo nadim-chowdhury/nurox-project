@@ -1,23 +1,24 @@
-# Nurox ERP — Local Development Stack
-# Usage: docker compose up -d
-# Docs: NUROX_ERP_MASTER_ARCHITECTURE.md § Appendix E
+# Nurox ERP — Infrastructure-only stack (hybrid local dev)
+# Usage: pnpm docker:infra
+# Run API + Web on host: pnpm dev (see docs/AI_START_HERE.md)
+# For full production-like stack use root: pnpm docker:up
 
 services:
-  # ─── PostgreSQL 18 ──────────────────────────────────────────────
+  # ─── PostgreSQL 17 (matches production stack) ─────────────────────
   postgres:
-    image: postgres:18-alpine
+    image: postgres:17-alpine
     container_name: nurox-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: nurox
-      POSTGRES_PASSWORD: nurox_dev
-      POSTGRES_DB: nurox_erp
+      POSTGRES_PASSWORD: nurox_dev_password
+      POSTGRES_DB: nurox_db
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U nurox -d nurox_erp"]
+      test: ["CMD-SHELL", "pg_isready -U nurox -d nurox_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -47,8 +48,8 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     ports:
-      - "9000:9000"   # S3 API
-      - "9001:9001"   # Console UI
+      - "9000:9000" # S3 API
+      - "9001:9001" # Console UI
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
@@ -71,7 +72,14 @@ services:
     volumes:
       - meilisearch_data:/meili_data
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--spider", "http://localhost:7700/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--spider",
+          "http://localhost:7700/health",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -82,8 +90,8 @@ services:
     container_name: nurox-mailhog
     restart: unless-stopped
     ports:
-      - "1025:1025"   # SMTP
-      - "8025:8025"   # Web UI (view sent emails)
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI (view sent emails)
 
 volumes:
   postgres_data:

@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChatChannel } from './entities/chat-channel.entity';
 import { ChatMessage } from './entities/chat-message.entity';
-// @ts-ignore - moduleResolution: node can't resolve meilisearch exports
+// @ts-expect-error - moduleResolution: node can't resolve meilisearch exports
 import { Meilisearch } from 'meilisearch';
 import { ConfigService } from '@nestjs/config';
 

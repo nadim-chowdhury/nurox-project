@@ -198,7 +198,10 @@ import { AuditLogInterceptor } from './common/interceptors/audit-log.interceptor
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        autoSchemaFile: path.join(process.cwd(), 'src/schema.gql'),
+        autoSchemaFile:
+          config.get<string>('app.nodeEnv') === 'production'
+            ? true
+            : path.join(process.cwd(), 'src/schema.gql'),
         // SECURITY: playground and introspection disabled in production
         playground: config.get<string>('app.nodeEnv') !== 'production',
         introspection: config.get<string>('app.nodeEnv') !== 'production',
@@ -266,7 +269,8 @@ export class AppModule implements NestModule {
       .exclude(
         { path: 'auth/(.*)', method: RequestMethod.ALL },
         { path: 'api/docs', method: RequestMethod.ALL },
-        { path: 'health', method: RequestMethod.GET },
+        { path: 'health', method: RequestMethod.ALL },
+        { path: 'health/(.*)', method: RequestMethod.ALL },
         { path: 'billing/webhook/(.*)', method: RequestMethod.ALL },
       )
       .forRoutes(

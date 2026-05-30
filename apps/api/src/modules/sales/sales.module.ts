@@ -14,6 +14,10 @@ import {
   DeliveryOrderLine,
 } from './entities/delivery-order.entity';
 import { Pricelist, PricelistItem } from './entities/pricelist.entity';
+import { Product } from '../inventory/entities/product.entity';
+import { FinanceModule } from '../finance/finance.module';
+import { ComplianceModule } from '../compliance/compliance.module';
+import { SalesOrderFlowService } from './sales-order-flow.service';
 
 @Module({
   imports: [
@@ -31,10 +35,13 @@ import { Pricelist, PricelistItem } from './entities/pricelist.entity';
       DeliveryOrderLine,
       Pricelist,
       PricelistItem,
+      Product,
     ]),
+    FinanceModule,
+    ComplianceModule,
   ],
   controllers: [SalesController],
-  providers: [SalesService],
-  exports: [SalesService],
+  providers: [SalesService, SalesOrderFlowService],
+  exports: [SalesService, SalesOrderFlowService],
 })
 export class SalesModule {}

@@ -3,14 +3,14 @@ import { Job } from 'bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Notification } from './entities/notification.entity';
+import { Notification, NotificationType } from './entities/notification.entity';
 import {
   NotificationPreference,
   NotificationChannel,
 } from './entities/notification-preference.entity';
 import { MailerService } from '../mailer/mailer.service';
 import * as webpush from 'web-push';
-const twilio = require('twilio');
+import twilio from 'twilio';
 import { ConfigService } from '@nestjs/config';
 import { User } from '../users/entities/user.entity';
 
@@ -112,7 +112,7 @@ export class NotificationsProcessor extends WorkerHost {
       }
 
       // Dispatch Webhooks
-      if (notification.type === 'ALERT') {
+      if (notification.type === NotificationType.ALERT) {
         const webhookUrl = this.configService.get<string>(
           'OUTBOUND_WEBHOOK_URL',
         );

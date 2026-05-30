@@ -34,31 +34,35 @@ export class AuditLogInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap({
-        next: async (data) => {
-          const durationMs = Date.now() - start;
-          const tenantId = this.cls.get('tenantId') || request.tenantId;
-          const userId = user?.id || null;
+        next: (data) => {
+          void (async () => {
+            const durationMs = Date.now() - start;
+            const tenantId = this.cls.get('tenantId') || request.tenantId;
+            const userId = user?.id || null;
 
-          try {
-            await this.auditService.log({
-              tenantId,
-              userId,
-              action: method,
-              module: moduleName,
-              description: `${method} request to ${url}`,
-              entityType: moduleName,
-              entityId: data?.id || request.params?.id || null,
-              newValue: method !== 'DELETE' ? data : null,
-              ipAddress: ip,
-              userAgent: headers['user-agent'],
-              durationMs,
-            });
-          } catch (error) {
-            this.logger.error(
-              `Failed to save audit log: ${error.message}`,
-              error.stack,
-            );
-          }
+            try {
+              await this.auditService.log({
+                tenantId,
+                userId,
+                action: method,
+                module: moduleName,
+                description: `${method} request to ${url}`,
+                entityType: moduleName,
+                entityId: data?.id || request.params?.id || null,
+                newValue: method !== 'DELETE' ? data : null,
+                ipAddress: ip,
+                userAgent: headers['user-agent'],
+                durationMs,
+              });
+            } catch (error) {
+              const err =
+                error instanceof Error ? error : new Error(String(error));
+              this.logger.error(
+                `Failed to save audit log: ${err.message}`,
+                err.stack,
+              );
+            }
+          })();
         },
         error: (err) => {
           // Optionally log failed attempts as well

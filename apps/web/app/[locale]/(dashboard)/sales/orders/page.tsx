@@ -1,103 +1,48 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Button } from "antd";
-import { PlusOutlined, EyeOutlined } from "@ant-design/icons";
+import { EyeOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/tables/DataTable";
 import { TableToolbar } from "@/components/tables/TableToolbar";
 import { StatusTag } from "@/components/common/StatusTag";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { ColumnsType } from "antd/es/table";
+import { SalesOrderDetailDrawer } from "@/components/modules/sales/SalesOrderDetailDrawer";
+import {
+  useGetSalesOrdersQuery,
+  calcSalesLineTotal,
+  type SalesOrderRecord,
+} from "@/store/api/salesApi";
 
-interface Order {
-  id: string;
-  orderNo: string;
-  customer: string;
-  items: number;
-  total: number;
-  orderDate: string;
-  deliveryDate: string;
-  status: string;
+function orderDisplayTotal(order: SalesOrderRecord): number {
+  if (order.totalAmount != null) return Number(order.totalAmount);
+  return (
+    order.lines?.reduce((sum, line) => sum + calcSalesLineTotal(line), 0) ?? 0
+  );
 }
-
-const mockOrders: Order[] = [
-  {
-    id: "1",
-    orderNo: "SO-2026-0102",
-    customer: "Acme Corp",
-    items: 4,
-    total: 13750,
-    orderDate: "2026-04-15",
-    deliveryDate: "2026-04-30",
-    status: "completed",
-  },
-  {
-    id: "2",
-    orderNo: "SO-2026-0103",
-    customer: "TechStart Inc",
-    items: 2,
-    total: 85000,
-    orderDate: "2026-04-16",
-    deliveryDate: "2026-05-10",
-    status: "in_progress",
-  },
-  {
-    id: "3",
-    orderNo: "SO-2026-0104",
-    customer: "FinEdge",
-    items: 3,
-    total: 42000,
-    orderDate: "2026-04-18",
-    deliveryDate: "2026-05-15",
-    status: "pending",
-  },
-  {
-    id: "4",
-    orderNo: "SO-2026-0105",
-    customer: "GreenLogix",
-    items: 1,
-    total: 12500,
-    orderDate: "2026-04-19",
-    deliveryDate: "2026-04-25",
-    status: "completed",
-  },
-  {
-    id: "5",
-    orderNo: "SO-2026-0106",
-    customer: "NovaHealth",
-    items: 6,
-    total: 58000,
-    orderDate: "2026-04-20",
-    deliveryDate: "2026-05-20",
-    status: "in_progress",
-  },
-  {
-    id: "6",
-    orderNo: "SO-2026-0107",
-    customer: "BuildRight Co",
-    items: 2,
-    total: 28000,
-    orderDate: "2026-04-21",
-    deliveryDate: "2026-05-05",
-    status: "cancelled",
-  },
-];
 
 export default function OrdersPage() {
   const [search, setSearch] = useState("");
-  const filtered = mockOrders.filter(
-    (o) =>
-      o.customer.toLowerCase().includes(search.toLowerCase()) ||
-      o.orderNo.toLowerCase().includes(search.toLowerCase()),
-  );
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { data: orders = [], isLoading, isFetching } = useGetSalesOrdersQuery();
 
-  const columns: ColumnsType<Order> = [
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return orders.filter(
+      (row) =>
+        row.soNumber.toLowerCase().includes(q) ||
+        (row.account?.name ?? "").toLowerCase().includes(q),
+    );
+  }, [orders, search]);
+
+  const columns: ColumnsType<SalesOrderRecord> = [
     {
       title: "Order #",
-      dataIndex: "orderNo",
-      key: "order",
-      width: 150,
+      dataIndex: "soNumber",
+      key: "soNumber",
+      width: 160,
       render: (v: string) => (
         <span
           style={{
@@ -113,10 +58,9 @@ export default function OrdersPage() {
     },
     {
       title: "Customer",
-      dataIndex: "customer",
       key: "customer",
-      width: 160,
-      render: (v: string) => (
+      width: 180,
+      render: (_: unknown, row) => (
         <span
           style={{
             color: "var(--color-on-surface)",
@@ -124,28 +68,26 @@ export default function OrdersPage() {
             fontSize: 13,
           }}
         >
-          {v}
+          {row.account?.name ?? "—"}
         </span>
       ),
     },
     {
       title: "Items",
-      dataIndex: "items",
       key: "items",
-      width: 70,
-      render: (v: number) => (
+      width: 80,
+      render: (_: unknown, row) => (
         <span style={{ fontFamily: "var(--font-display)", fontWeight: 600 }}>
-          {v}
+          {row.lines?.length ?? 0}
         </span>
       ),
     },
     {
       title: "Total",
-      dataIndex: "total",
       key: "total",
       width: 130,
-      sorter: (a, b) => a.total - b.total,
-      render: (v: number) => (
+      sorter: (a, b) => orderDisplayTotal(a) - orderDisplayTotal(b),
+      render: (_: unknown, row) => (
         <span
           style={{
             fontFamily: "var(--font-display)",
@@ -153,27 +95,14 @@ export default function OrdersPage() {
             fontWeight: 700,
           }}
         >
-          {formatCurrency(v)}
+          {formatCurrency(orderDisplayTotal(row), row.currency)}
         </span>
       ),
     },
     {
-      title: "Order Date",
+      title: "Order date",
       dataIndex: "orderDate",
-      key: "order_date",
-      width: 120,
-      render: (d: string) => (
-        <span
-          style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
-        >
-          {formatDate(d)}
-        </span>
-      ),
-    },
-    {
-      title: "Delivery",
-      dataIndex: "deliveryDate",
-      key: "delivery",
+      key: "orderDate",
       width: 120,
       render: (d: string) => (
         <span
@@ -187,19 +116,37 @@ export default function OrdersPage() {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      width: 120,
+      width: 130,
       render: (s: string) => <StatusTag status={s} />,
+    },
+    {
+      title: "Invoice",
+      key: "invoice",
+      width: 100,
+      render: (_: unknown, row) =>
+        row.financeInvoiceId ? (
+          <span style={{ fontSize: 12, color: "var(--color-success)" }}>
+            Created
+          </span>
+        ) : (
+          <span
+            style={{ fontSize: 12, color: "var(--color-on-surface-variant)" }}
+          >
+            —
+          </span>
+        ),
     },
     {
       title: "",
       key: "actions",
       width: 50,
-      render: () => (
+      render: (_: unknown, record) => (
         <Button
           type="text"
           size="small"
           icon={<EyeOutlined />}
           style={{ color: "var(--color-on-surface-variant)" }}
+          onClick={() => setSelectedId(record.id)}
         />
       ),
     },
@@ -215,11 +162,6 @@ export default function OrdersPage() {
           { label: "Sales", href: "/sales" },
           { label: "Orders" },
         ]}
-        extra={
-          <Button type="primary" icon={<PlusOutlined />}>
-            Create Order
-          </Button>
-        }
       />
       <TableToolbar
         searchValue={search}
@@ -227,7 +169,17 @@ export default function OrdersPage() {
         searchPlaceholder="Search orders..."
         showExport
       />
-      <DataTable<Order> columns={columns} dataSource={filtered} rowKey="id" />
+      <DataTable<SalesOrderRecord>
+        columns={columns}
+        dataSource={filtered}
+        rowKey="id"
+        loading={isLoading || isFetching}
+      />
+
+      <SalesOrderDetailDrawer
+        orderId={selectedId}
+        onClose={() => setSelectedId(null)}
+      />
     </div>
   );
 }

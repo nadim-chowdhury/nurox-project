@@ -13,9 +13,11 @@ import { BangladeshTaxStrategy } from './strategies/bangladesh-tax.strategy';
 import { IndiaTaxStrategy } from './strategies/india-tax.strategy';
 import { UsaTaxStrategy } from './strategies/usa-tax.strategy';
 import { PdfService } from '../system/pdf.service';
+import { ProcurementModule } from '../procurement/procurement.module';
 
 @Module({
   imports: [
+    ProcurementModule,
     TypeOrmModule.forFeature([
       TaxRule,
       TaxFilingExport,
@@ -34,6 +36,6 @@ import { PdfService } from '../system/pdf.service';
     UsaTaxStrategy,
     PdfService,
   ],
-  exports: [TaxEngineService, MushakService],
+  exports: [TaxEngineService, MushakService, ComplianceReportService],
 })
 export class ComplianceModule {}

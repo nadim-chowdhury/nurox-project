@@ -6,6 +6,7 @@ import { Mushak63 } from '../entities/mushak-63.entity';
 import { VdsCertificate } from '../entities/vds-certificate.entity';
 import { TaxFilingExport } from '../entities/tax-filing.entity';
 import { NotFoundException } from '@nestjs/common';
+import { ProcurementService } from '../../procurement/procurement.service';
 
 describe('ComplianceReportService', () => {
   let service: ComplianceReportService;
@@ -30,11 +31,23 @@ describe('ComplianceReportService', () => {
     generatePdf: jest.fn().mockResolvedValue(Buffer.from('pdf-content')),
   };
 
+  const mockProcurementService = {
+    getPurchaseInputTaxForPeriod: jest.fn().mockResolvedValue({
+      totalPurchaseValue: 5000,
+      totalInputVat: 750,
+      totalInputSd: 25,
+    }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ComplianceReportService,
         { provide: PdfService, useValue: mockPdfService },
+        {
+          provide: ProcurementService,
+          useValue: mockProcurementService,
+        },
         { provide: getRepositoryToken(Mushak63), useValue: mockMushak63Repo },
         { provide: getRepositoryToken(VdsCertificate), useValue: mockVdsRepo },
         {
@@ -69,7 +82,7 @@ describe('ComplianceReportService', () => {
       mockMushak63Repo.findOne.mockResolvedValue(mushak);
       const result = await service.generateMushak63Pdf('t1', 'id');
       expect(result).toBeDefined();
-      expect(pdfService.generatePdf).toHaveBeenCalled();
+      expect(pdfService.generatePdf.mock.calls.length).toBeGreaterThan(0);
     });
   });
 
@@ -86,7 +99,13 @@ describe('ComplianceReportService', () => {
       expect(result.payload.totalSalesValue).toBe(3000);
       expect(result.payload.totalOutputVat).toBe(450);
       expect(result.payload.decreasingAdjustments).toBe(100);
-      expect(result.payload.netTaxPayable).toBe(400); // (450+50) - 100 = 400
+      // (450+50) - (750+25) - 100 = -375
+      expect(result.payload.totalInputVat).toBe(750);
+      expect(result.payload.totalPurchaseValue).toBe(5000);
+      expect(result.payload.netTaxPayable).toBe(-375);
+      expect(
+        mockProcurementService.getPurchaseInputTaxForPeriod,
+      ).toHaveBeenCalled();
       expect(mockExportRepo.save).toHaveBeenCalled();
     });
   });

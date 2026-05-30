@@ -5,12 +5,18 @@ import {
   Body,
   Param,
   Patch,
+  Query,
   UseGuards,
+  UsePipes,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ProcurementService } from './procurement.service';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { TenantGuard } from '../../common/guards/tenant.guard';
 import { CheckModule } from '../../common/guards/module.guard';
+import { CurrentTenant } from '../../common/decorators/current-tenant.decorator';
+import { ZodValidationPipe } from 'nestjs-zod';
 import {
   VendorDto,
   PurchaseRequestDto,
@@ -18,11 +24,14 @@ import {
   PurchaseOrderDto,
   GrnDto,
   VendorQuoteDto,
+  CreateVendorBillDto,
+  createVendorBillSchema,
 } from '@repo/shared-schemas';
+import { VendorBillStatus } from './entities/vendor-bill.entity';
 
 @ApiTags('Procurement')
 @Controller('procurement')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, TenantGuard)
 @CheckModule('procurement')
 export class ProcurementController {
   constructor(private readonly procurementService: ProcurementService) {}
@@ -139,5 +148,56 @@ export class ProcurementController {
   @Get('analytics/spend')
   getSpendAnalytics() {
     return this.procurementService.getSpendAnalytics();
+  }
+
+  // ─── Vendor Bills (AP + input VAT) ───────────────────────────────
+
+  @Post('vendor-bills')
+  @UsePipes(new ZodValidationPipe(createVendorBillSchema))
+  createVendorBill(
+    @CurrentTenant() tenantId: string,
+    @Body() dto: CreateVendorBillDto,
+  ) {
+    return this.procurementService.createVendorBill(tenantId, dto);
+  }
+
+  @Get('vendor-bills')
+  listVendorBills(
+    @CurrentTenant() tenantId: string,
+    @Query('status') status?: VendorBillStatus,
+  ) {
+    return this.procurementService.findVendorBills(tenantId, status);
+  }
+
+  @Get('vendor-bills/:id')
+  getVendorBill(
+    @CurrentTenant() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.procurementService.getVendorBill(tenantId, id);
+  }
+
+  @Post('vendor-bills/:id/submit')
+  submitVendorBill(
+    @CurrentTenant() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.procurementService.submitVendorBill(tenantId, id);
+  }
+
+  @Post('vendor-bills/:id/mark-paid')
+  markVendorBillPaid(
+    @CurrentTenant() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.procurementService.markVendorBillPaid(tenantId, id);
+  }
+
+  @Post('vendor-bills/:id/cancel')
+  cancelVendorBill(
+    @CurrentTenant() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.procurementService.cancelVendorBill(tenantId, id);
   }
 }

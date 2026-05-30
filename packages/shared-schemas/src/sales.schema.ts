@@ -1,19 +1,19 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const leadStatusSchema = z.enum([
-  'NEW',
-  'CONTACTED',
-  'QUALIFIED',
-  'PROPOSAL',
-  'NEGOTIATION',
-  'WON',
-  'LOST',
+  "NEW",
+  "CONTACTED",
+  "QUALIFIED",
+  "PROPOSAL",
+  "NEGOTIATION",
+  "WON",
+  "LOST",
 ]);
 
 export const createLeadSchema = z.object({
   name: z.string().min(1).max(150),
   company: z.string().max(150).optional(),
-  email: z.string().email().optional().or(z.literal('')),
+  email: z.string().email().optional().or(z.literal("")),
   phone: z.string().max(20).optional(),
   source: z.string().max(100).optional(),
   status: leadStatusSchema.optional(),
@@ -28,14 +28,14 @@ export type CreateLeadDto = z.infer<typeof createLeadSchema>;
 export const updateLeadSchema = createLeadSchema.partial();
 export type UpdateLeadDto = z.infer<typeof updateLeadSchema>;
 
-export const dealStatusSchema = z.enum(['OPEN', 'WON', 'LOST']);
+export const dealStatusSchema = z.enum(["OPEN", "WON", "LOST"]);
 export const dealStageSchema = z.enum([
-  'PROSPECTING',
-  'QUALIFICATION',
-  'PROPOSAL',
-  'NEGOTIATION',
-  'CLOSED_WON',
-  'CLOSED_LOST',
+  "PROSPECTING",
+  "QUALIFICATION",
+  "PROPOSAL",
+  "NEGOTIATION",
+  "CLOSED_WON",
+  "CLOSED_LOST",
 ]);
 
 export const createDealSchema = z.object({
@@ -63,6 +63,8 @@ export const createAccountSchema = z.object({
   industry: z.string().max(100).optional().nullable(),
   website: z.string().url().optional().nullable(),
   annualRevenue: z.number().min(0).optional().nullable(),
+  taxBin: z.string().max(20).optional().nullable(),
+  billingAddress: z.string().optional().nullable(),
 });
 export type CreateAccountDto = z.infer<typeof createAccountSchema>;
 
@@ -79,10 +81,16 @@ export const createContactSchema = z.object({
 export type CreateContactDto = z.infer<typeof createContactSchema>;
 
 // Activity Log
-export const activityTypeSchema = z.enum(['CALL', 'EMAIL', 'MEETING', 'NOTE', 'TASK']);
+export const activityTypeSchema = z.enum([
+  "CALL",
+  "EMAIL",
+  "MEETING",
+  "NOTE",
+  "TASK",
+]);
 export const createActivityLogSchema = z.object({
   id: z.string().uuid().optional(),
-  entityType: z.enum(['LEAD', 'CONTACT', 'DEAL', 'ACCOUNT']),
+  entityType: z.enum(["LEAD", "CONTACT", "DEAL", "ACCOUNT"]),
   entityId: z.string().uuid(),
   type: activityTypeSchema,
   subject: z.string().min(1).max(200),
@@ -94,14 +102,22 @@ export const createActivityLogSchema = z.object({
 export type CreateActivityLogDto = z.infer<typeof createActivityLogSchema>;
 
 // Quotation
-export const quotationStatusSchema = z.enum(['DRAFT', 'SENT', 'ACCEPTED', 'REJECTED', 'EXPIRED']);
+export const quotationStatusSchema = z.enum([
+  "DRAFT",
+  "SENT",
+  "ACCEPTED",
+  "REJECTED",
+  "EXPIRED",
+]);
 export const createQuotationLineSchema = z.object({
   productId: z.string().uuid(),
   variantId: z.string().uuid().optional().nullable(),
-  quantity: z.number().min(1),
+  quantity: z.number().min(0.0001),
   unitPrice: z.number().min(0),
   discountPercent: z.number().min(0).max(100).default(0),
-  taxPercent: z.number().min(0).max(100).default(0),
+  taxPercent: z.number().min(0).max(100).default(15),
+  sdPercent: z.number().min(0).max(100).default(0),
+  productName: z.string().optional(),
 });
 export const createQuotationSchema = z.object({
   id: z.string().uuid().optional(),
@@ -110,16 +126,23 @@ export const createQuotationSchema = z.object({
   dealId: z.string().uuid().optional().nullable(),
   quotationNumber: z.string().optional(),
   version: z.number().default(1),
-  status: quotationStatusSchema.default('DRAFT'),
+  status: quotationStatusSchema.default("DRAFT"),
   issueDate: z.string().datetime(),
   validUntil: z.string().datetime(),
-  currency: z.string().default('USD'),
+  currency: z.string().default("USD"),
   lines: z.array(createQuotationLineSchema),
 });
 export type CreateQuotationDto = z.infer<typeof createQuotationSchema>;
 
 // Sales Order
-export const soStatusSchema = z.enum(['DRAFT', 'CONFIRMED', 'PARTIALLY_DELIVERED', 'DELIVERED', 'INVOICED', 'CANCELLED']);
+export const soStatusSchema = z.enum([
+  "DRAFT",
+  "CONFIRMED",
+  "PARTIALLY_DELIVERED",
+  "DELIVERED",
+  "INVOICED",
+  "CANCELLED",
+]);
 export const createSalesOrderLineSchema = createQuotationLineSchema.extend({
   deliveredQuantity: z.number().default(0),
   invoicedQuantity: z.number().default(0),
@@ -129,15 +152,42 @@ export const createSalesOrderSchema = z.object({
   quotationId: z.string().uuid().optional().nullable(),
   accountId: z.string().uuid(),
   soNumber: z.string().optional(),
-  status: soStatusSchema.default('DRAFT'),
+  status: soStatusSchema.default("DRAFT"),
   orderDate: z.string().datetime(),
-  currency: z.string().default('USD'),
+  currency: z.string().default("USD"),
   lines: z.array(createSalesOrderLineSchema),
 });
 export type CreateSalesOrderDto = z.infer<typeof createSalesOrderSchema>;
 
+export const invoiceFromSalesOrderSchema = z.object({
+  dueDate: z.string().datetime().optional(),
+  sellerName: z.string().min(1),
+  sellerBin: z.string().min(1),
+  sellerAddress: z.string().min(1),
+  buyerName: z.string().optional(),
+  buyerBin: z.string().optional(),
+  buyerAddress: z.string().optional(),
+  vehicleNumber: z.string().optional(),
+});
+
+export type InvoiceFromSalesOrderDto = z.infer<
+  typeof invoiceFromSalesOrderSchema
+>;
+
+export const salesOrderToInvoiceResultSchema = z.object({
+  salesOrderId: z.string().uuid(),
+  financeInvoiceId: z.string().uuid(),
+  mushak63Id: z.string().uuid(),
+  invoiceNumber: z.string(),
+});
+
 // Delivery Order
-export const doStatusSchema = z.enum(['DRAFT', 'SHIPPED', 'DELIVERED', 'CANCELLED']);
+export const doStatusSchema = z.enum([
+  "DRAFT",
+  "SHIPPED",
+  "DELIVERED",
+  "CANCELLED",
+]);
 export const createDeliveryOrderLineSchema = z.object({
   soLineId: z.string().uuid(),
   productId: z.string().uuid(),
@@ -147,7 +197,7 @@ export const createDeliveryOrderSchema = z.object({
   id: z.string().uuid().optional(),
   salesOrderId: z.string().uuid(),
   doNumber: z.string().optional(),
-  status: doStatusSchema.default('DRAFT'),
+  status: doStatusSchema.default("DRAFT"),
   deliveryDate: z.string().datetime().optional().nullable(),
   lines: z.array(createDeliveryOrderLineSchema),
 });
@@ -163,7 +213,7 @@ export const createPricelistItemSchema = z.object({
 export const createPricelistSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().min(1).max(100),
-  currency: z.string().default('USD'),
+  currency: z.string().default("USD"),
   isActive: z.boolean().default(true),
   validFrom: z.string().datetime().optional().nullable(),
   validTo: z.string().datetime().optional().nullable(),

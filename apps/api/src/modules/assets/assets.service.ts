@@ -215,29 +215,34 @@ export class AssetsService {
       bufferStream
         .pipe(csv())
         .on('data', (data) => results.push(data))
-        .on('end', async () => {
-          let imported = 0;
-          for (const row of results) {
-            // Very basic mapping, assumes row headers match DTO loosely
-            try {
-              const asset = this.assetRepo.create({
-                tenantId,
-                name: row.name,
-                assetCode: row.assetCode || `AST-${Date.now()}-${imported}`,
-                categoryId: row.categoryId,
-                purchaseDate: new Date(row.purchaseDate || Date.now()),
-                purchaseCost: parseFloat(row.purchaseCost || '0'),
-                status: 'PURCHASED',
-              });
-              await this.assetRepo.save(asset);
-              imported++;
-            } catch (err) {
-              console.error('Failed to import row', row, err);
+        .on('end', () => {
+          void (async () => {
+            let imported = 0;
+            for (const row of results) {
+              try {
+                const asset = this.assetRepo.create({
+                  tenantId,
+                  name: row.name,
+                  assetCode: row.assetCode || `AST-${Date.now()}-${imported}`,
+                  categoryId: row.categoryId,
+                  purchaseDate: new Date(row.purchaseDate || Date.now()),
+                  purchaseCost: parseFloat(row.purchaseCost || '0'),
+                  status: 'PURCHASED',
+                });
+                await this.assetRepo.save(asset);
+                imported++;
+              } catch (err) {
+                console.error('Failed to import row', row, err);
+              }
             }
-          }
-          resolve({ imported, total: results.length });
+            resolve({ imported, total: results.length });
+          })().catch((err: unknown) => {
+            reject(err instanceof Error ? err : new Error(String(err)));
+          });
         })
-        .on('error', (err) => reject(err));
+        .on('error', (err: unknown) => {
+          reject(err instanceof Error ? err : new Error(String(err)));
+        });
     });
   }
 }

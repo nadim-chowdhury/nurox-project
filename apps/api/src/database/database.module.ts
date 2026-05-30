@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { join } from 'path';
 import { TenantConnectionService } from './tenant-connection.service';
 import { AutoSeedService } from './seeds/auto-seed.service';
 
@@ -11,6 +12,7 @@ import { AutoSeedService } from './seeds/auto-seed.service';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         const isProduction = config.get<string>('app.nodeEnv') === 'production';
+        const dockerBootstrap = process.env.DOCKER_DB_BOOTSTRAP === 'true';
 
         return {
           type: 'postgres' as const,
@@ -33,9 +35,12 @@ import { AutoSeedService } from './seeds/auto-seed.service';
               config.get<string>('database.ssl') !== 'false')
               ? { rejectUnauthorized: false }
               : false,
-          // Production: TypeORM CLI runs migrations via init container
-          migrations: isProduction ? ['dist/database/migrations/*.js'] : [],
-          migrationsRun: isProduction,
+          // Production: run migrations on boot (path relative to compiled database.module.js)
+          migrations:
+            isProduction && !dockerBootstrap
+              ? [join(__dirname, 'migrations', '*.js')]
+              : [],
+          migrationsRun: isProduction && !dockerBootstrap,
         };
       },
     }),

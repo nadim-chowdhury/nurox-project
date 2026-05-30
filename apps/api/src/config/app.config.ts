@@ -1,6 +1,12 @@
 import { registerAs } from '@nestjs/config';
 import * as crypto from 'crypto';
 
+/** Docker .env files often store PEM keys with literal `\\n` — normalize for jsonwebtoken. */
+function normalizePem(value: string | undefined): string | undefined {
+  if (!value) return value;
+  return value.replace(/\\n/g, '\n').trim();
+}
+
 export const databaseConfig = registerAs('database', () => ({
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5432', 10),
@@ -13,8 +19,8 @@ export const databaseConfig = registerAs('database', () => ({
 }));
 
 export const jwtConfig = registerAs('jwt', () => {
-  let privateKey = process.env.JWT_ACCESS_PRIVATE_KEY;
-  let publicKey = process.env.JWT_ACCESS_PUBLIC_KEY;
+  let privateKey = normalizePem(process.env.JWT_ACCESS_PRIVATE_KEY);
+  let publicKey = normalizePem(process.env.JWT_ACCESS_PUBLIC_KEY);
 
   if (!privateKey || !publicKey) {
     if (process.env.NODE_ENV !== 'production') {

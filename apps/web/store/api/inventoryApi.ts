@@ -7,11 +7,31 @@ import type {
 
 export const inventoryApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getProducts: builder.query<any, any>({
-      query: (params) => ({
-        url: "/inventory/products",
-        params,
-      }),
+    getProducts: builder.query<
+      Array<{ id: string; sku: string; name: string; basePrice: number }>,
+      void
+    >({
+      query: () => "/inventory/products",
+      transformResponse: (res: { data: unknown } | unknown) => {
+        if (res && typeof res === "object" && "data" in res) {
+          return (
+            res as {
+              data: Array<{
+                id: string;
+                sku: string;
+                name: string;
+                basePrice: number;
+              }>;
+            }
+          ).data;
+        }
+        return res as Array<{
+          id: string;
+          sku: string;
+          name: string;
+          basePrice: number;
+        }>;
+      },
       providesTags: ["Product"],
     }),
 

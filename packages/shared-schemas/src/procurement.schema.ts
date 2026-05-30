@@ -12,8 +12,12 @@ export const vendorSchema = z.object({
   paymentTerms: z.string().optional().nullable(),
   creditLimit: z.number().min(0).default(0),
   kycStatus: z.enum(["PENDING", "VERIFIED", "REJECTED"]).default("PENDING"),
-  category: z.enum(["PREFERRED", "BLACKLISTED", "APPROVED", "STANDARD"]).default("STANDARD"),
-  approvalStatus: z.enum(["PENDING", "APPROVED", "REJECTED"]).default("PENDING"),
+  category: z
+    .enum(["PREFERRED", "BLACKLISTED", "APPROVED", "STANDARD"])
+    .default("STANDARD"),
+  approvalStatus: z
+    .enum(["PENDING", "APPROVED", "REJECTED"])
+    .default("PENDING"),
   taxId: z.string().optional().nullable(),
   bankDetails: z.record(z.string(), z.any()).optional().nullable(),
   isActive: z.boolean().default(true),
@@ -21,7 +25,15 @@ export const vendorSchema = z.object({
 
 export type VendorDto = z.infer<typeof vendorSchema>;
 
-export const purchaseRequestStatusEnum = z.enum(["DRAFT", "PENDING_APPROVAL", "APPROVED", "REJECTED", "CONVERTED_TO_RFQ", "CONVERTED_TO_PO", "CANCELLED"]);
+export const purchaseRequestStatusEnum = z.enum([
+  "DRAFT",
+  "PENDING_APPROVAL",
+  "APPROVED",
+  "REJECTED",
+  "CONVERTED_TO_RFQ",
+  "CONVERTED_TO_PO",
+  "CANCELLED",
+]);
 export type PurchaseRequestStatus = z.infer<typeof purchaseRequestStatusEnum>;
 
 export const purchaseRequestLineSchema = z.object({
@@ -46,7 +58,13 @@ export const purchaseRequestSchema = z.object({
 
 export type PurchaseRequestDto = z.infer<typeof purchaseRequestSchema>;
 
-export const rfqStatusEnum = z.enum(["DRAFT", "SENT", "RECEIVED", "CLOSED", "CANCELLED"]);
+export const rfqStatusEnum = z.enum([
+  "DRAFT",
+  "SENT",
+  "RECEIVED",
+  "CLOSED",
+  "CANCELLED",
+]);
 export type RfqStatus = z.infer<typeof rfqStatusEnum>;
 
 export const rfqSchema = z.object({
@@ -70,18 +88,27 @@ export const vendorQuoteSchema = z.object({
   validUntil: z.string().datetime().optional().nullable(),
   currency: z.string().default("USD"),
   totalAmount: z.number(),
-  lines: z.array(z.object({
-    productId: z.string().uuid(),
-    variantId: z.string().uuid().optional().nullable(),
-    quotedQuantity: z.number(),
-    quotedUnitCost: z.number(),
-    leadTimeDays: z.number().optional().nullable(),
-  })),
+  lines: z.array(
+    z.object({
+      productId: z.string().uuid(),
+      variantId: z.string().uuid().optional().nullable(),
+      quotedQuantity: z.number(),
+      quotedUnitCost: z.number(),
+      leadTimeDays: z.number().optional().nullable(),
+    }),
+  ),
 });
 
 export type VendorQuoteDto = z.infer<typeof vendorQuoteSchema>;
 
-export const poStatusEnum = z.enum(["DRAFT", "SENT", "PARTIALLY_RECEIVED", "FULLY_RECEIVED", "CANCELLED", "CLOSED"]);
+export const poStatusEnum = z.enum([
+  "DRAFT",
+  "SENT",
+  "PARTIALLY_RECEIVED",
+  "FULLY_RECEIVED",
+  "CANCELLED",
+  "CLOSED",
+]);
 export type PoStatus = z.infer<typeof poStatusEnum>;
 
 export const purchaseOrderLineSchema = z.object({
@@ -186,17 +213,49 @@ export const vendorEvaluationSchema = z.object({
 
 export type VendorEvaluationDto = z.infer<typeof vendorEvaluationSchema>;
 
-export const vendorBillSchema = z.object({
-  id: z.string().uuid().optional(),
+export const vendorBillLineSchema = z.object({
+  productId: z.string().uuid().optional().nullable(),
+  poLineId: z.string().uuid().optional().nullable(),
+  description: z.string().min(1).max(255),
+  quantity: z.number().min(0.0001),
+  unitCost: z.number().min(0),
+  vatRate: z.number().min(0).max(100).default(15),
+  sdRate: z.number().min(0).max(100).default(0),
+});
+
+export type VendorBillLineDto = z.infer<typeof vendorBillLineSchema>;
+
+export const createVendorBillSchema = z.object({
   vendorId: z.string().uuid(),
   poId: z.string().uuid(),
   grnId: z.string().uuid().optional().nullable(),
-  billNumber: z.string().min(1),
+  billNumber: z.string().min(1).max(100),
   billDate: z.string().datetime(),
   dueDate: z.string().datetime(),
   currency: z.string().default("USD"),
-  totalAmount: z.number().min(0),
-  status: z.enum(["DRAFT", "PENDING_PAYMENT", "PAID", "CANCELLED"]).default("DRAFT"),
+  jurisdiction: z.enum(["BD", "IN", "US"]).default("BD"),
+  notes: z.string().optional().nullable(),
+  lines: z.array(vendorBillLineSchema).min(1),
+});
+
+export type CreateVendorBillDto = z.infer<typeof createVendorBillSchema>;
+
+export const vendorBillStatusEnum = z.enum([
+  "DRAFT",
+  "PENDING_PAYMENT",
+  "PAID",
+  "CANCELLED",
+]);
+
+export const vendorBillSchema = createVendorBillSchema.extend({
+  id: z.string().uuid().optional(),
+  status: vendorBillStatusEnum.default("DRAFT"),
+  subTotal: z.number().optional(),
+  vatTotal: z.number().optional(),
+  sdTotal: z.number().optional(),
+  taxTotal: z.number().optional(),
+  totalAmount: z.number().optional(),
+  financeBillId: z.string().uuid().optional().nullable(),
 });
 
 export type VendorBillDto = z.infer<typeof vendorBillSchema>;

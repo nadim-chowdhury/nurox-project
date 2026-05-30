@@ -1,159 +1,115 @@
-# Turborepo starter
+# NUROX ERP
 
-This Turborepo starter is maintained by the Turborepo core team.
+Multi-tenant SaaS ERP — HR, Payroll, Finance, Inventory, Sales, Manufacturing, and more.
 
-## Using this example
+**Stack:** Next.js 16 · NestJS 11 · PostgreSQL 17 · Redis · TypeORM · Ant Design 6 · RTK Query · Zod · Turborepo
 
-Run the following command:
+---
 
-```sh
-npx create-turbo@latest
+## Quick start (one command — full production-like stack)
+
+```bash
+pnpm install
+pnpm docker:up
+pnpm docker:verify   # optional smoke check
 ```
 
-## What's inside?
+Open **http://localhost:3000/en/login**
 
-This Turborepo includes the following packages/apps:
+| Service | URL                            |
+| ------- | ------------------------------ |
+| Web     | http://localhost:3000          |
+| API     | http://localhost:3001/api/v1   |
+| Swagger | http://localhost:3001/api/docs |
+| MailHog | http://localhost:8025          |
 
-### Apps and Packages
+**Default credentials** (auto-created on first API boot):
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+- Email: `admin@nurox.app`
+- Password: `password123`
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+```bash
+pnpm docker:logs    # follow logs
+pnpm docker:down    # stop all services
 ```
 
-Without global `turbo`, use your package manager:
+---
 
-```sh
-cd my-turborepo
-npx turbo build
-pnpm dlx turbo build
-pnpm exec turbo build
+## Local development (hot reload)
+
+Infrastructure in Docker, apps on the host:
+
+```bash
+pnpm docker:infra   # Postgres, Redis, MinIO, MeiliSearch, MailHog only
+cp apps/api/.env.example apps/api/.env
+pnpm dev            # API :3001 + Web :3000
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+Create `apps/web/.env.local`:
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo build --filter=docs
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
 ```
 
-Without global `turbo`:
+---
 
-```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+## AI-assisted development
+
+This project is built for **multi-session, multi-account AI** workflows:
+
+1. AI reads `GEMINI.md` + `docs/AI_START_HERE.md` + `docs/AI_CONTEXT_ANCHOR.md`
+2. AI works **one roadmap task** at a time
+3. Run `pnpm ai:context` before switching accounts — paste into the new session
+
+See **`docs/AI_START_HERE.md`** for the full playbook.
+
+---
+
+## Documentation
+
+| Document                                                     | Purpose                                       |
+| ------------------------------------------------------------ | --------------------------------------------- |
+| [AI Start Here](docs/AI_START_HERE.md)                       | Session bootstrap, Docker, rules (read first) |
+| [AI Context Anchor](docs/AI_CONTEXT_ANCHOR.md)               | Current phase and next task                   |
+| [Production Roadmap](docs/PRODUCTION_ROADMAP.md)             | Step-by-step path to sellable SaaS            |
+| [Master Architecture](docs/NUROX_ERP_MASTER_ARCHITECTURE.md) | Full spec (~692 features, 30 modules)         |
+| [API Contract](docs/API_CONTRACT.md)                         | REST conventions                              |
+| [Business Logic](docs/BUSINESS_LOGIC.md)                     | Domain rules                                  |
+
+---
+
+## Monorepo structure
+
+```
+apps/
+  api/          NestJS backend
+  web/          Next.js frontend
+packages/
+  shared-schemas/   Zod schemas (shared FE/BE)
+  ui/               Shared UI components
+  ui-tokens/        Design tokens
+infra/
+  docker/       Infrastructure-only compose (hybrid dev)
+  k8s/          Kubernetes / Helm
 ```
 
-### Develop
+---
 
-To develop all apps and packages, run the following command:
+## Scripts
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+| Command              | Description                                 |
+| -------------------- | ------------------------------------------- |
+| `pnpm dev`           | Start api + web in dev mode                 |
+| `pnpm build`         | Build entire monorepo                       |
+| `pnpm lint`          | Lint all packages                           |
+| `pnpm docker:up`     | Full stack (API + Web + infra)              |
+| `pnpm docker:verify` | Wait for API + web health after `docker:up` |
+| `pnpm docker:infra`  | Infra only (for `pnpm dev`)                 |
+| `pnpm docker:down`   | Stop Docker services                        |
+| `pnpm ai:context`    | Copy session context to clipboard           |
 
-```sh
-cd my-turborepo
-turbo dev
-```
+---
 
-Without global `turbo`, use your package manager:
+## License
 
-```sh
-cd my-turborepo
-npx turbo dev
-pnpm exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-pnpm exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-pnpm exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+Proprietary — Nurox ERP.

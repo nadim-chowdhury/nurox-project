@@ -11,7 +11,6 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
-  UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
 import { FinanceService } from './finance.service';
@@ -33,13 +32,11 @@ import {
   type InvoiceDto,
   type JournalEntryDto,
 } from '@repo/shared-schemas';
-import { AuditLogInterceptor } from '../../common/interceptors/audit-log.interceptor';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 
 @Controller('finance')
 @UseGuards(JwtAuthGuard)
 @CheckModule('finance')
-@UseInterceptors(AuditLogInterceptor)
 export class FinanceController {
   constructor(private readonly financeService: FinanceService) {}
 

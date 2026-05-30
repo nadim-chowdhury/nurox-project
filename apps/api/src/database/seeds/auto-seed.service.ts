@@ -23,6 +23,17 @@ export class AutoSeedService implements OnApplicationBootstrap {
   async onApplicationBootstrap() {
     this.logger.log('Checking database seed status...');
     try {
+      if (!this.dataSource.isInitialized) {
+        await this.dataSource.initialize();
+      }
+
+      if (process.env.DOCKER_DB_BOOTSTRAP === 'true') {
+        this.logger.log(
+          'Docker bootstrap: synchronizing schema from entities...',
+        );
+        await this.dataSource.synchronize();
+      }
+
       const tenantRepo = this.dataSource.getRepository(Tenant);
       const tenantCount = await tenantRepo.count();
 

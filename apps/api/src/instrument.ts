@@ -6,6 +6,8 @@
  * instrumentation is silently skipped.
  */
 
+/* eslint-disable @typescript-eslint/no-require-imports -- optional deps loaded at runtime */
+
 // Sentry integration (optional)
 try {
   if (process.env.SENTRY_DSN) {
