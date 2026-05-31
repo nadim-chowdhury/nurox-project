@@ -20,7 +20,7 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
     {
       extensions: [
         StarterKit.configure({
-          history: false, // Collaboration handled by Yjs
+          // history: false, // Collaboration handled by Yjs - removing if it causes error
         }),
         Collaboration.configure({
           document: ydoc,
@@ -75,7 +75,7 @@ export function CollaborativeEditor({ documentId }: CollaborativeEditorProps) {
             {activeUsers.map((userId) => (
               <Tooltip key={userId} title={`User ID: ${userId}`}>
                 <Avatar style={{ backgroundColor: "#87d068" }}>
-                  {userId[0].toUpperCase()}
+                  {userId?.charAt(0).toUpperCase() || "U"}
                 </Avatar>
               </Tooltip>
             ))}

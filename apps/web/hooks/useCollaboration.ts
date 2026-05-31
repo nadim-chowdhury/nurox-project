@@ -11,7 +11,7 @@ export function useCollaboration(documentId: string) {
   const [provider, setProvider] = useState<HocuspocusProvider | null>(null);
   const [activeUsers, setActiveUsers] = useState<string[]>([]);
   const user = useAppSelector((s) => s.auth.user);
-  const token = useAppSelector((s) => s.auth.token);
+  const token = useAppSelector((s) => s.auth.accessToken);
 
   useEffect(() => {
     if (!documentId || !token) return;

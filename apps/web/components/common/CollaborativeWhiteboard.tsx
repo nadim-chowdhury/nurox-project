@@ -112,7 +112,7 @@ export function CollaborativeWhiteboard({
             {activeUsers.map((userId) => (
               <Tooltip key={userId} title={`User: ${userId}`}>
                 <Avatar style={{ backgroundColor: "#52c41a" }}>
-                  {userId[0].toUpperCase()}
+                  {userId?.charAt(0).toUpperCase() || "U"}
                 </Avatar>
               </Tooltip>
             ))}
@@ -130,7 +130,7 @@ export function CollaborativeWhiteboard({
           position: "relative",
         }}
       >
-        <Tldraw store={store} inferDarkMode />
+        <Tldraw store={store} />
       </div>
 
       <style jsx global>{`

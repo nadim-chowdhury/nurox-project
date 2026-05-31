@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository, Between, IsNull } from 'typeorm';
 import { DemandForecast } from '../entities/demand-forecast.entity';
 import { Product } from '../../inventory/entities/product.entity';
 import {
@@ -89,7 +89,7 @@ export class ForecastingService {
       const result = JSON.parse(jsonStr);
 
       // 3. Store forecasts
-      const savedForecasts = [];
+      const savedForecasts: DemandForecast[] = [];
       for (const f of result.forecasts) {
         const forecast = this.forecastRepo.create({
           tenantId,

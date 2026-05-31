@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useGetCurrentSubscriptionQuery } from "@/store/api/billingApi";
 import { Alert } from "antd";
+import { GlobalSearch } from "@/components/common/GlobalSearch";
 
 const { Content } = Layout;
 

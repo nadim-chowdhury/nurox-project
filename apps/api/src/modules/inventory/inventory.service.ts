@@ -7,9 +7,9 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, IsNull } from 'typeorm';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { EntityManager, Repository, DataSource, IsNull } from 'typeorm';
 import { Product, ValuationMethod } from './entities/product.entity';
 import { Warehouse } from './entities/warehouse.entity';
 import { ProductVariant } from './entities/product-variant.entity';
@@ -35,7 +35,6 @@ import { SerialNumber } from './entities/serial-number.entity';
 import { Bom } from './entities/bom.entity';
 import { UomGroup } from './entities/uom-group.entity';
 import { Inventory } from './entities/inventory.entity';
-import { EntityManager, Repository, DataSource, IsNull } from 'typeorm';
 import { ClsService } from 'nestjs-cls';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 

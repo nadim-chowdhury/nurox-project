@@ -15,7 +15,8 @@ export type ChatRequestDto = z.infer<typeof chatRequestSchema>;
 
 export const textGenerationRequestSchema = z.object({
   prompt: z.string().min(1),
-  type: z.enum(["email", "meeting_summary", "report_description"]),
+  type: z.enum(["email", "meeting_summary", "report_description", "analytics"]),
+  maxTokens: z.number().int().positive().optional(),
 });
 
 export type TextGenerationRequestDto = z.infer<

@@ -29,6 +29,12 @@ import { ARReminderProcessor } from './ar-reminder.processor';
 import { RecurringJournalProcessor } from './recurring-journal.processor';
 import { RecurringInvoiceProcessor } from './recurring-invoice.processor';
 import { BankReconciliationService } from './services/bank-reconciliation.service';
+import {
+  PaymentBatch,
+  PaymentBatchItem,
+} from './entities/payment-batch.entity';
+import { PaymentBatchService } from './services/payment-batch.service';
+import { Vendor } from '../procurement/entities/vendor.entity';
 
 @Module({
   imports: [
@@ -54,6 +60,9 @@ import { BankReconciliationService } from './services/bank-reconciliation.servic
       PettyCashTransaction,
       GRN,
       PurchaseOrder,
+      PaymentBatch,
+      PaymentBatchItem,
+      Vendor,
     ]),
     BullModule.registerQueue(
       { name: 'ar_reminders' },
@@ -70,11 +79,13 @@ import { BankReconciliationService } from './services/bank-reconciliation.servic
     RecurringInvoiceProcessor,
     CurrencyConversionService,
     BankReconciliationService,
+    PaymentBatchService,
   ],
   exports: [
     FinanceService,
     CurrencyConversionService,
     BankReconciliationService,
+    PaymentBatchService,
   ],
 })
 export class FinanceModule {}

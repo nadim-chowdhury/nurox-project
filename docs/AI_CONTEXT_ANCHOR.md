@@ -31,13 +31,15 @@
 - [x] 9.2 Automated Low-Stock & Procurement Alerts (Smart Reordering)
 - [x] 9.3 Multi-Warehouse Inventory Optimization (Smart Stock Balancing)
 - [x] 10.1 Automated Financial Reconciliation (Bank Matching)
+- [x] 10.2 Automated Tax Filing & Compliance (Mushak 9.1)
+- [x] 10.3 Automated Vendor Payment Batching (Bulk Payouts)
 
 ---
 
 ## 3. Latest Architecture Improvements (May 2026)
 
-- **Automated Financial Reconciliation:** Implemented `BankReconciliationService` (Finance module) to automate the matching of bank transactions with internal ledger entries. The service uses a weighted scoring system based on exact amounts, date proximity (+/- 15 days), reference matching, and fuzzy description similarity (Dice Coefficient). Exposed endpoints for retrieving intelligent reconciliation suggestions and approving matches.
-- **Multi-Warehouse Inventory Optimization:** Enhanced demand forecasting to support `warehouseId` granularity. Implemented `InventoryOptimizationService` which analyzes stock imbalances across locations and suggests "Smart Stock Transfers" to move surplus inventory to warehouses with predicted deficits.
+- **Automated Vendor Payment Batching:** Implemented `PaymentBatchService` (Finance module) to streamline vendor payouts. The system allows grouping multiple approved bills into a single batch, automatically fetching vendor bank details, and generating CSV instruction files for bank processing (e.g., BEFTN). Finalizing a batch automatically updates bill payment statuses and paid amounts.
+- **Automated Tax Filing & Compliance:** Implemented `TaxFilingService` (Compliance module) to automate the preparation of VAT returns. Features include "Filing Readiness Checks" that validate company BIN and vendor tax data for a given period, and "Filing Package Generation" which creates a ZIP archive containing the Mushak 9.1 PDF and structured data summaries.
   ...
 
 ---
@@ -45,15 +47,15 @@
 ## 5. Session Recovery Context
 
 **LAST ACTION:**
-Implemented Task 10.1: Automated Financial Reconciliation. Added `BankReconciliationService` with fuzzy matching and a confidence-based scoring system for bank-to-ledger matching.
+Implemented Task 10.3: Automated Vendor Payment Batching. Added `PaymentBatch` entities and service to handle bulk vendor payouts and generate bank instruction files.
 
 **NEXT TASK:**
-**Task 10.2: Automated Tax Filing & Compliance (Mushak).**
-Enhance the compliance module by:
+**Task 11.1: Multi-Channel Customer Support AI.**
+Enhance the support module with AI-driven automation by:
 
-1.  Implementing `TaxFilingService` that aggregates VAT data into a draft Mushak 9.1 form.
-2.  Adding "Filing Readiness Checks" that identify missing data (e.g., missing vendor BINs) before submission.
-3.  Providing a one-click "Generate Filing Package" (ZIP with PDF 9.1 + supporting schedules).
+1.  Implementing `SupportAiService` that uses OpenAI to analyze incoming support tickets and suggest resolutions based on the knowledge base.
+2.  Adding "Sentiment Analysis" to tickets to prioritize frustrated customers.
+3.  Providing an API for "Auto-Reply Suggestions" in the support agent UI.
 
 ---
 

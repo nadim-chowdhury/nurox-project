@@ -25,7 +25,7 @@ export class CollaborationService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit() {
-    this.hocuspocusServer = Server.configure({
+    this.hocuspocusServer = new Server({
       name: 'nurox-collaboration',
       port: 3002, // Collaboration dedicated port or handled via gateway
 
@@ -91,6 +91,8 @@ export class CollaborationService implements OnModuleInit, OnModuleDestroy {
 
   // Helper to convert Yjs binary to Tiptap JSON (useful for exports/previews)
   getYjsAsJson(binary: Buffer) {
-    return TiptapTransformer.fromYdoc(binary);
+    const doc = new Y.Doc();
+    Y.applyUpdate(doc, new Uint8Array(binary));
+    return TiptapTransformer.fromYdoc(doc);
   }
 }

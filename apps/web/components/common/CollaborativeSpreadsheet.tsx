@@ -4,7 +4,7 @@ import React, { useRef, useEffect, useState, useCallback } from "react";
 import { HotTable } from "@handsontable/react";
 import { registerAllModules } from "handsontable/registry";
 import { HyperFormula } from "hyperformula";
-import "handsontable/dist/handsontable.full.min.css";
+import "handsontable/styles/handsontable.min.css";
 import * as Y from "yjs";
 import { useCollaboration } from "@/hooks/useCollaboration";
 import { Badge, Space, Tag, Tooltip, Avatar, Typography } from "antd";
@@ -40,10 +40,10 @@ export function CollaborativeSpreadsheet({
       const newData = Array.from({ length: 20 }, () => Array(10).fill(""));
       cellsMap.forEach((val: any, key: string) => {
         const match = key.match(/R(\d+)C(\d+)/);
-        if (match) {
+        if (match && match[1] && match[2]) {
           const row = parseInt(match[1]);
           const col = parseInt(match[2]);
-          if (row < 20 && col < 10) {
+          if (row < 20 && col < 10 && newData[row]) {
             newData[row][col] = val.value;
           }
         }
@@ -88,6 +88,7 @@ export function CollaborativeSpreadsheet({
 
   const onAfterSelection = useCallback(
     (row: number, col: number) => {
+      if (!currentUser?.id) return;
       const key = `R${row}C${col}`;
       locksMap.set(key, currentUser?.id);
 
@@ -130,7 +131,7 @@ export function CollaborativeSpreadsheet({
             {activeUsers.map((userId) => (
               <Tooltip key={userId} title={`User: ${userId}`}>
                 <Avatar style={{ backgroundColor: "#1890ff" }}>
-                  {userId[0].toUpperCase()}
+                  {userId?.charAt(0).toUpperCase() || "U"}
                 </Avatar>
               </Tooltip>
             ))}

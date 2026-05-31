@@ -13,7 +13,7 @@ import {
 import { BankAccount } from '../entities/bank-account.entity';
 import { JournalLine } from '../entities/journal.entity';
 import { ClsService } from 'nestjs-cls';
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 
 export interface ReconciliationSuggestion {
   transaction: BankTransaction;

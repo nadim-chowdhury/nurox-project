@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { FinanceService } from './finance.service';
 import { BankReconciliationService } from './services/bank-reconciliation.service';
+import { PaymentBatchService } from './services/payment-batch.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CheckModule } from '../../common/guards/module.guard';
 import { InvoiceStatus } from './entities/invoice.entity';
@@ -42,6 +43,7 @@ export class FinanceController {
   constructor(
     private readonly financeService: FinanceService,
     private readonly reconciliationService: BankReconciliationService,
+    private readonly paymentBatchService: PaymentBatchService,
   ) {}
 
   @Post('accounts')
@@ -78,6 +80,52 @@ export class FinanceController {
   @HttpCode(HttpStatus.NO_CONTENT)
   removeAccount(@Param('id', ParseUUIDPipe) id: string) {
     return this.financeService.removeAccount(id);
+  }
+
+  // --- Payment Batches ---
+  @Post('payments/batches')
+  createPaymentBatch(
+    @Body()
+    dto: {
+      bankAccountId: string;
+      billIds: string[];
+      paymentDate?: string;
+      notes?: string;
+    },
+  ) {
+    return this.paymentBatchService.createBatch({
+      ...dto,
+      paymentDate: dto.paymentDate ? new Date(dto.paymentDate) : undefined,
+    });
+  }
+
+  @Get('payments/batches')
+  findAllPaymentBatches() {
+    return this.paymentBatchService.findAll();
+  }
+
+  @Get('payments/batches/:id')
+  findOnePaymentBatch(@Param('id', ParseUUIDPipe) id: string) {
+    return this.paymentBatchService.findOne(id);
+  }
+
+  @Get('payments/batches/:id/export')
+  async exportPaymentBatch(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ) {
+    const { filename, content } =
+      await this.paymentBatchService.generateBankInstructionFile(id);
+    res.set({
+      'Content-Type': 'text/csv',
+      'Content-Disposition': `attachment; filename=${filename}`,
+    });
+    res.send(content);
+  }
+
+  @Post('payments/batches/:id/finalize')
+  finalizePaymentBatch(@Param('id', ParseUUIDPipe) id: string) {
+    return this.paymentBatchService.finalizeBatch(id);
   }
 
   @Post('invoices')

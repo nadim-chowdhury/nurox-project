@@ -13,6 +13,7 @@ import {
   MoreThanOrEqual,
   In,
   Like,
+  IsNull,
   DataSource,
   EntityManager,
 } from 'typeorm';
@@ -1771,7 +1772,7 @@ export class FinanceService {
       const line = await manager.findOne(JournalLine, {
         where: {
           journalEntryId,
-          accountId: bankAccount.glAccountId,
+          accountId: bankAccount.glAccountId ?? IsNull(),
           tenantId: this.tenantId,
           isReconciled: false,
         },

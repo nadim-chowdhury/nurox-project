@@ -19,6 +19,7 @@ import {
   updateLeadSchema,
   createDealSchema,
   updateDealSchema,
+  createAccountSchema,
   createQuotationSchema,
   createSalesOrderSchema,
   invoiceFromSalesOrderSchema,

@@ -8,7 +8,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { SearchService } from './search.service';
-import { TenantId } from '../../common/decorators/tenant-id.decorator';
+import { CurrentTenant } from '../../common/decorators/current-tenant.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 
@@ -22,7 +22,7 @@ export class SearchController {
   @ApiOperation({ summary: 'Global search across multiple entities' })
   @ApiQuery({ name: 'q', description: 'Search query' })
   async globalSearch(
-    @TenantId() tenantId: string,
+    @CurrentTenant() tenantId: string,
     @Query('q') query: string,
     @Request() req: any,
   ) {
@@ -52,7 +52,7 @@ export class SearchController {
   @Post('click/:queryId')
   @ApiOperation({ summary: 'Track click on search result' })
   async trackClick(
-    @TenantId() tenantId: string,
+    @CurrentTenant() tenantId: string,
     @Param('queryId') queryId: string,
     @Query('entityId') entityId: string,
   ) {
@@ -62,7 +62,7 @@ export class SearchController {
   @Get('products')
   @ApiOperation({ summary: 'Search products' })
   async searchProducts(
-    @TenantId() tenantId: string,
+    @CurrentTenant() tenantId: string,
     @Query('q') query: string,
   ) {
     return this.searchService.search(tenantId, 'products', query);
@@ -71,7 +71,7 @@ export class SearchController {
   @Get('invoices')
   @ApiOperation({ summary: 'Search invoices' })
   async searchInvoices(
-    @TenantId() tenantId: string,
+    @CurrentTenant() tenantId: string,
     @Query('q') query: string,
   ) {
     return this.searchService.search(tenantId, 'invoices', query);
@@ -80,7 +80,7 @@ export class SearchController {
   @Get('employees')
   @ApiOperation({ summary: 'Search employees' })
   async searchEmployees(
-    @TenantId() tenantId: string,
+    @CurrentTenant() tenantId: string,
     @Query('q') query: string,
   ) {
     return this.searchService.search(tenantId, 'employees', query);

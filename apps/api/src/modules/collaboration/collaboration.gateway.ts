@@ -51,7 +51,7 @@ export class CollaborationGateway
     if (!this.activeUsers.has(documentId)) {
       this.activeUsers.set(documentId, new Set());
     }
-    this.activeUsers.get(documentId).add(userId);
+    this.activeUsers.get(documentId)?.add(userId);
 
     this.logger.debug(`User ${userId} joined document ${documentId}`);
     this.broadcastPresence(documentId);
@@ -64,14 +64,16 @@ export class CollaborationGateway
 
     client.leave(`doc:${documentId}`);
 
-    if (this.activeUsers.has(documentId)) {
-      this.activeUsers.get(documentId).delete(userId);
+    const users = this.activeUsers.get(documentId);
+    if (users) {
+      users.delete(userId);
       this.broadcastPresence(documentId);
     }
   }
 
   private broadcastPresence(documentId: string) {
-    const users = Array.from(this.activeUsers.get(documentId) || []);
+    const usersSet = this.activeUsers.get(documentId);
+    const users = Array.from(usersSet || []);
     this.server.to(`doc:${documentId}`).emit('presence', {
       documentId,
       activeUsers: users,

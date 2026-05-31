@@ -80,6 +80,7 @@ export const invoiceLineSchema = z.object({
   quantity: z.number().min(1),
   unitPrice: z.number().min(0),
   taxRateId: z.string().uuid().optional().nullable(),
+  lineTotal: z.number(),
 });
 
 export const invoiceSchema = z.object({
@@ -89,10 +90,13 @@ export const invoiceSchema = z.object({
   customerEmail: z.string().email().optional().nullable(),
   issueDate: z.string().datetime(),
   dueDate: z.string().datetime(),
-  status: invoiceStatusEnum.default("DRAFT"),
-  isProforma: z.boolean().default(false),
-  isTaxInvoice: z.boolean().default(true),
+  status: invoiceStatusEnum,
+  isProforma: z.boolean(),
+  isTaxInvoice: z.boolean(),
   lines: z.array(invoiceLineSchema).min(1),
+  subtotal: z.number(),
+  taxAmount: z.number(),
+  totalAmount: z.number(),
   notes: z.string().optional().nullable(),
 });
 

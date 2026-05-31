@@ -10,7 +10,7 @@ import {
   WifiOutlined,
 } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
-import { useAppSelector } from "@/hooks/useRedux";
+import { useAppSelector, useAppDispatch } from "@/hooks/useRedux";
 import { useLogoutMutation } from "@/store/api/authApi";
 import { Breadcrumbs } from "../common/Breadcrumbs";
 import { NotificationDropdown } from "./NotificationDropdown";

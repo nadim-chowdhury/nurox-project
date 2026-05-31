@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Table, Button, Modal, message, Tag, Space } from "antd";
 import {
   PlusOutlined,
@@ -41,6 +41,9 @@ export default function Invoices() {
         customerEmail: "",
         issueDate: dayjs().toISOString(),
         dueDate: dayjs().add(30, "day").toISOString(),
+        status: "DRAFT",
+        isProforma: false,
+        isTaxInvoice: true,
         lines: [{ description: "", quantity: 1, unitPrice: 0, lineTotal: 0 }],
         subtotal: 0,
         taxAmount: 0,
@@ -57,7 +60,7 @@ export default function Invoices() {
 
   // Watch lines to auto-calculate totals
   const lines = watch("lines");
-  const calculateTotals = () => {
+  const calculateTotals = useCallback(() => {
     const subtotal = lines.reduce(
       (acc, line) => acc + line.quantity * line.unitPrice,
       0,
@@ -68,7 +71,11 @@ export default function Invoices() {
     setValue("subtotal", subtotal);
     setValue("taxAmount", taxAmount);
     setValue("totalAmount", totalAmount);
-  };
+  }, [lines, setValue]);
+
+  useEffect(() => {
+    calculateTotals();
+  }, [calculateTotals]);
 
   const handleDownloadPdf = async (id: string, invoiceNumber: string) => {
     try {

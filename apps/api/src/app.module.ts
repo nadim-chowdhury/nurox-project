@@ -64,6 +64,8 @@ import { PosModule } from './modules/pos/pos.module';
 import { ManufacturingModule } from './modules/manufacturing/manufacturing.module';
 import { FleetModule } from './modules/fleet/fleet.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
+import { SearchModule } from './modules/search/search.module';
+import { CollaborationModule } from './modules/collaboration/collaboration.module';
 import { CommonModule } from './common/common.module';
 import { HealthModule } from './modules/health/health.module';
 
