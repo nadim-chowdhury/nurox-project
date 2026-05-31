@@ -8,6 +8,7 @@ import { RedisService } from '../../redis/redis.service';
 
 export interface UserLoginEventPayload {
   userId: string;
+  email: string;
   tenantId: string;
   ipAddress: string;
   userAgent: string;
@@ -71,6 +72,7 @@ export class LoginEventsListener {
       const loginEvent = this.loginEventRepo.create({
         tenantId: payload.tenantId,
         userId: payload.userId,
+        email: payload.email,
         ipAddress: payload.ipAddress,
         userAgent: payload.userAgent,
         deviceFingerprint: payload.deviceFingerprint,

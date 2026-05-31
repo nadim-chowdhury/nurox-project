@@ -96,7 +96,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const parsed = loginSchema.parse(body);
-    const tenantId = req.headers['x-tenant-id'] as string;
+    const tenantId = (req as any).tenantId;
 
     const result = await this.authService.login(parsed.email, parsed.password, {
       userAgent: req.headers['user-agent'],

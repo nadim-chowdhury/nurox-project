@@ -68,6 +68,7 @@ export class AuthService {
     userAgent?: string;
     result: 'SUCCESS' | 'FAILED' | 'LOCKED';
     failureReason?: string;
+    tenantId?: string;
   }) {
     try {
       let deviceType = 'desktop';
@@ -75,8 +76,6 @@ export class AuthService {
       if (ua.includes('mobi')) deviceType = 'mobile';
       else if (ua.includes('tablet')) deviceType = 'tablet';
 
-      // Simulate Geo-IP lookup for city and country
-      // In production, use a library like 'geoip-lite' or a service like ipapi.co
       let city = 'Unknown';
       let country = 'Unknown';
 
@@ -85,12 +84,13 @@ export class AuthService {
         data.ipAddress !== '::1' &&
         data.ipAddress !== '127.0.0.1'
       ) {
-        city = 'Dhaka'; // Mocked
-        country = 'Bangladesh'; // Mocked
+        city = 'Dhaka';
+        country = 'Bangladesh';
       }
 
       await this.loginEventRepo.save(
         this.loginEventRepo.create({
+          tenantId: data.tenantId || '00000000-0000-0000-0000-000000000000', // System tenant or default if unknown
           userId: data.userId,
           email: data.email.toLowerCase(),
           ipAddress: data.ipAddress,
@@ -102,10 +102,8 @@ export class AuthService {
           failureReason: data.failureReason,
         }),
       );
-    } catch (_error) {
-      // logger is not defined here as a class property in original read but used in incrementLockout
-      // looking at read_file output, logger is not defined at top level, but it is used.
-      // Wait, let me check where logger is defined in auth.service.ts
+    } catch (error) {
+      this.logger.error(`Failed to save login event: ${error.message}`);
     }
   }
 
@@ -245,6 +243,7 @@ export class AuthService {
         userAgent: metadata.userAgent,
         result: 'LOCKED',
         failureReason: 'Account or IP locked',
+        tenantId: metadata.tenantId,
       });
       throw new ForbiddenException(
         'Account or IP locked due to too many failed attempts. Try again in 15 minutes.',
@@ -267,6 +266,7 @@ export class AuthService {
     }
 
     const user = await this.usersService.findByEmail(email, {
+      tenantId: metadata.tenantId,
       includePassword: true,
       includeTwoFactor: true,
     });
@@ -278,6 +278,7 @@ export class AuthService {
         userAgent: metadata.userAgent,
         result: 'FAILED',
         failureReason: 'User not found',
+        tenantId: metadata.tenantId,
       });
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -298,6 +299,7 @@ export class AuthService {
         userAgent: metadata.userAgent,
         result: 'FAILED',
         failureReason: 'Invalid password',
+        tenantId: metadata.tenantId,
       });
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -310,6 +312,7 @@ export class AuthService {
         userAgent: metadata.userAgent,
         result: 'FAILED',
         failureReason: `Account status is ${user.status}`,
+        tenantId: metadata.tenantId,
       });
       throw new UnauthorizedException('Account is not active');
     }
@@ -324,10 +327,12 @@ export class AuthService {
       ipAddress: metadata.ipAddress,
       userAgent: metadata.userAgent,
       result: 'SUCCESS',
+      tenantId: metadata.tenantId,
     });
 
     this.eventEmitter.emit('user.login', {
       userId: user.id,
+      email: user.email,
       tenantId: metadata.tenantId || '',
       ipAddress: metadata.ipAddress,
       userAgent: metadata.userAgent,

@@ -12,7 +12,7 @@
 # Error details
 
 ```
-Error: Create account failed (400): {"statusCode":400,"timestamp":"2026-05-30T11:16:16.911Z","path":"/api/v1/sales/accounts","method":"POST","correlationId":"N/A","message":"Validation failed"}
+Error: Create account failed (403): {"statusCode":403,"timestamp":"2026-05-31T11:45:38.362Z","path":"/api/v1/sales/accounts","method":"POST","correlationId":"N/A","message":"You do not have access to this tenant."}
 ```
 
 # Test source
@@ -92,7 +92,7 @@ Error: Create account failed (400): {"statusCode":400,"timestamp":"2026-05-30T11
   72 |   if (!response.ok()) {
   73 |     const body = await response.text();
 > 74 |     throw new Error(`${label} failed (${response.status()}): ${body}`);
-     |           ^ Error: Create account failed (400): {"statusCode":400,"timestamp":"2026-05-30T11:16:16.911Z","path":"/api/v1/sales/accounts","method":"POST","correlationId":"N/A","message":"Validation failed"}
+     |           ^ Error: Create account failed (403): {"statusCode":403,"timestamp":"2026-05-31T11:45:38.362Z","path":"/api/v1/sales/accounts","method":"POST","correlationId":"N/A","message":"You do not have access to this tenant."}
   75 |   }
   76 | }
   77 |

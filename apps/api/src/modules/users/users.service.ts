@@ -36,6 +36,7 @@ export class UsersService {
   async findByEmail(
     email: string,
     options: {
+      tenantId?: string;
       includePassword?: boolean;
       includeResetFields?: boolean;
       includeTwoFactor?: boolean;
@@ -45,6 +46,10 @@ export class UsersService {
     const qb = this.usersRepo
       .createQueryBuilder('user')
       .where('user.email = :email', { email: email.toLowerCase() });
+
+    if (options.tenantId) {
+      qb.andWhere('user.tenantId = :tenantId', { tenantId: options.tenantId });
+    }
 
     if (options.includePassword) {
       qb.addSelect('user.passwordHash');

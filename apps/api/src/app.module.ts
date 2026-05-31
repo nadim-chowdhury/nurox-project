@@ -265,50 +265,20 @@ import { AuditLogInterceptor } from './common/interceptors/audit-log.interceptor
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(ClsMiddleware, MaintenanceMiddleware, CsrfMiddleware)
-      .forRoutes('*');
+    // 1. Resolve Tenant first (Slug -> UUID)
     consumer
       .apply(TenantMiddleware)
       .exclude(
-        { path: 'auth/(.*)', method: RequestMethod.ALL },
         { path: 'api/docs', method: RequestMethod.ALL },
         { path: 'health', method: RequestMethod.ALL },
         { path: 'health/(.*)', method: RequestMethod.ALL },
         { path: 'billing/webhook/(.*)', method: RequestMethod.ALL },
       )
-      .forRoutes(
-        // All tenant-scoped modules — every module that stores tenant data
-        // MUST be listed here to enforce tenant isolation via middleware.
-        { path: 'hr/(.*)', method: RequestMethod.ALL },
-        { path: 'attendance/(.*)', method: RequestMethod.ALL },
-        { path: 'leave/(.*)', method: RequestMethod.ALL },
-        { path: 'notifications/(.*)', method: RequestMethod.ALL },
-        { path: 'recruitment/(.*)', method: RequestMethod.ALL },
-        { path: 'finance/(.*)', method: RequestMethod.ALL },
-        { path: 'inventory/(.*)', method: RequestMethod.ALL },
-        { path: 'procurement/(.*)', method: RequestMethod.ALL },
-        { path: 'projects/(.*)', method: RequestMethod.ALL },
-        { path: 'sales/(.*)', method: RequestMethod.ALL },
-        { path: 'payroll/(.*)', method: RequestMethod.ALL },
-        { path: 'system/(.*)', method: RequestMethod.ALL },
-        { path: 'analytics/(.*)', method: RequestMethod.ALL },
-        { path: 'chat/(.*)', method: RequestMethod.ALL },
-        { path: 'billing/(.*)', method: RequestMethod.ALL },
-        // Previously missing — these modules were bypassing tenant scoping
-        { path: 'documents/(.*)', method: RequestMethod.ALL },
-        { path: 'assets/(.*)', method: RequestMethod.ALL },
-        { path: 'reports/(.*)', method: RequestMethod.ALL },
-        { path: 'support/(.*)', method: RequestMethod.ALL },
-        { path: 'ai/(.*)', method: RequestMethod.ALL },
-        { path: 'automation/(.*)', method: RequestMethod.ALL },
-        { path: 'pos/(.*)', method: RequestMethod.ALL },
-        { path: 'manufacturing/(.*)', method: RequestMethod.ALL },
-        { path: 'fleet/(.*)', method: RequestMethod.ALL },
-        { path: 'compliance/(.*)', method: RequestMethod.ALL },
-        { path: 'integrations/(.*)', method: RequestMethod.ALL },
-        { path: 'users/(.*)', method: RequestMethod.ALL },
-        { path: 'search/(.*)', method: RequestMethod.ALL },
-      );
+      .forRoutes('*');
+
+    // 2. Initialize Async Context (CLS) — now has access to resolved tenantId
+    consumer
+      .apply(ClsMiddleware, MaintenanceMiddleware, CsrfMiddleware)
+      .forRoutes('*');
   }
 }
