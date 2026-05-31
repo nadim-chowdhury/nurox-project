@@ -14,7 +14,7 @@
 | **Shared Schemas**     | ✅ Done | Zod schemas in `packages/shared-schemas` used in API & Web             |
 | **Audit Logs**         | ✅ Done | Global `AuditLogInterceptor` captures all mutations                    |
 | **Form Consistency**   | 🟡 WIP  | Refactored `Invoices` to RHF; other modules need audit                 |
-| **One-Command Run**    | ✅ Done | `pnpm docker:up` builds and seeds entire stack                         |
+| **One-Command Run**    | ✅ Done | `pnpm docker:up` builds and seeds entire stack (Tiptap fix applied)    |
 | **Session Continuity** | ✅ Done | `pnpm ai:context` protocol established in `GEMINI.md`                  |
 
 ---
@@ -47,7 +47,7 @@
 ## 5. Session Recovery Context
 
 **LAST ACTION:**
-Implemented Task 10.3: Automated Vendor Payment Batching. Added `PaymentBatch` entities and service to handle bulk vendor payouts and generate bank instruction files.
+Resolved Tiptap dependency conflicts and fixed `web` build failure. Verified that `pnpm build` and `pnpm lint` pass for the entire monorepo. The project is now fully ready for one-command Docker deployment.
 
 **NEXT TASK:**
 **Task 11.1: Multi-Channel Customer Support AI.**

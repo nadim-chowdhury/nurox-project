@@ -39,6 +39,14 @@
     "vitest": "^4.1.7"
   },
   "packageManager": "pnpm@9.0.0",
+  "pnpm": {
+    "overrides": {
+      "@tiptap/core": "3.24.0",
+      "@tiptap/pm": "3.24.0",
+      "@tiptap/extension-highlight": "3.24.0",
+      "@tiptap/suggestion": "3.24.0"
+    }
+  },
   "engines": {
     "node": ">=18"
   },
