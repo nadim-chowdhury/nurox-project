@@ -24,6 +24,7 @@ export class PayrollComputeService {
     arrears: number = 0,
     loanDeductions: number = 0,
     advanceDeductions: number = 0,
+    unpaidLeaveDays: number = 0,
   ) {
     const items: Array<{
       name: string;
@@ -39,6 +40,20 @@ export class PayrollComputeService {
     items.push({ name: 'Basic Salary', amount: baseSalary, type: 'EARNING' });
     let grossPay = baseSalary;
     let taxableAmount = baseSalary;
+
+    // Loss of Pay (LOP) Calculation
+    if (unpaidLeaveDays > 0) {
+      const perDaySalary = baseSalary / 30; // Standard 30 days divisor for LOP
+      const lopAmount = unpaidLeaveDays * perDaySalary;
+      items.push({
+        name: 'Loss of Pay (LOP)',
+        amount: -lopAmount,
+        type: 'DEDUCTION',
+      });
+      // LOP reduces gross pay and taxable amount
+      grossPay -= lopAmount;
+      taxableAmount -= lopAmount;
+    }
 
     // Leave Encashment Calculation
     if (leaveEncashmentDays > 0) {

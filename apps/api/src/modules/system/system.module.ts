@@ -46,6 +46,7 @@ import { BullBoardModule } from '@bull-board/nestjs';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ApiKeyService } from './api-key.service';
 import { BulkImportService } from './bulk-import.service';
+import { SequenceService } from './sequence.service';
 import { UsersModule } from '../users/users.module';
 
 @Module({
@@ -131,6 +132,7 @@ import { UsersModule } from '../users/users.module';
     VirusScanProcessor,
     ApiKeyService,
     BulkImportService,
+    SequenceService,
   ],
   exports: [
     TypeOrmModule,
@@ -144,6 +146,7 @@ import { UsersModule } from '../users/users.module';
     NotificationService,
     ApiKeyService,
     BulkImportService,
+    SequenceService,
   ],
 })
 export class SystemModule {}

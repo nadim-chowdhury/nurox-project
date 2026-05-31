@@ -20,8 +20,9 @@ import {
   createDealSchema,
   updateDealSchema,
   createQuotationSchema,
-  createAccountSchema,
+  createSalesOrderSchema,
   invoiceFromSalesOrderSchema,
+  createDeliveryOrderSchema,
   type CreateLeadDto,
   type UpdateLeadDto,
   type CreateDealDto,
@@ -29,7 +30,9 @@ import {
   type CreateQuotationDto,
   type CreateAccountDto,
   type InvoiceFromSalesOrderDto,
+  type CreateDeliveryOrderDto,
 } from '@repo/shared-schemas';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
@@ -225,8 +228,21 @@ export class SalesController {
   }
 
   @Post('delivery-orders')
-  createDeliveryOrder(@Body() dto: any) {
-    return this.salesService.createDeliveryOrder(dto);
+  @UsePipes(new ZodValidationPipe(createDeliveryOrderSchema))
+  createDeliveryOrder(
+    @CurrentTenant() tenantId: string,
+    @Body() dto: CreateDeliveryOrderDto,
+  ) {
+    return this.salesOrderFlow.createDeliveryOrder(tenantId, dto);
+  }
+
+  @Post('delivery-orders/:id/ship')
+  shipDeliveryOrder(
+    @CurrentTenant() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('warehouseId', ParseUUIDPipe) warehouseId: string,
+  ) {
+    return this.salesOrderFlow.shipDeliveryOrder(tenantId, id, warehouseId);
   }
 
   @Get('analytics/funnel')

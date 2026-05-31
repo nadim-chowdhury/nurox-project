@@ -63,6 +63,10 @@ const envSchema = z.object({
 
   // AI
   OPENAI_API_KEY: z.string().optional(),
+
+  // MeiliSearch
+  MEILI_HOST: z.string().default('http://localhost:7700'),
+  MEILI_MASTER_KEY: z.string().default('masterKey'),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

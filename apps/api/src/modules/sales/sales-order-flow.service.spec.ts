@@ -3,18 +3,40 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { SalesOrderFlowService } from './sales-order-flow.service';
 import { Quotation, QuotationStatus } from './entities/quotation.entity';
-import { SalesOrder, SOStatus } from './entities/sales-order.entity';
+import {
+  SalesOrder,
+  SOStatus,
+  SalesOrderLine,
+} from './entities/sales-order.entity';
+import {
+  DeliveryOrder,
+  DOStatus,
+  DeliveryOrderLine,
+} from './entities/delivery-order.entity';
 import { Account } from './entities/account.entity';
 import { Product } from '../inventory/entities/product.entity';
 import { FinanceService } from '../finance/finance.service';
 import { MushakService } from '../compliance/services/mushak.service';
+import { InventoryService } from '../inventory/inventory.service';
 
 describe('SalesOrderFlowService', () => {
   let service: SalesOrderFlowService;
-  let soRepo: { findOne: jest.Mock; save: jest.Mock; create: jest.Mock };
+  let soRepo: {
+    findOne: jest.Mock;
+    save: jest.Mock;
+    create: jest.Mock;
+    manager: any;
+  };
   let quotationRepo: { findOne: jest.Mock; save: jest.Mock; create: jest.Mock };
+  let doRepo: {
+    findOne: jest.Mock;
+    save: jest.Mock;
+    create: jest.Mock;
+    manager: any;
+  };
   let financeService: { createInvoice: jest.Mock };
   let mushakService: { createMushak63: jest.Mock };
+  let inventoryService: { issueStock: jest.Mock };
 
   const tenantId = 'd3b07384-d113-4c4e-9c8e-cf00257e8412';
 
@@ -23,17 +45,24 @@ describe('SalesOrderFlowService', () => {
     find: jest.fn(),
     save: jest.fn((e) => Promise.resolve(e)),
     create: jest.fn((dto) => dto),
-    manager: { create: jest.fn((_, dto) => dto) },
+    manager: {
+      create: jest.fn((_, dto) => dto),
+      save: jest.fn((_, dto) => Promise.resolve(dto)),
+    },
   });
 
   beforeEach(async () => {
     soRepo = mockRepo();
     quotationRepo = mockRepo();
+    doRepo = mockRepo();
     financeService = {
       createInvoice: jest.fn().mockResolvedValue({ id: 'inv-1' }),
     };
     mushakService = {
       createMushak63: jest.fn().mockResolvedValue({ id: 'mushak-1' }),
+    };
+    inventoryService = {
+      issueStock: jest.fn().mockResolvedValue([{ id: 'movement-1' }]),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -41,10 +70,16 @@ describe('SalesOrderFlowService', () => {
         SalesOrderFlowService,
         { provide: getRepositoryToken(Quotation), useValue: quotationRepo },
         { provide: getRepositoryToken(SalesOrder), useValue: soRepo },
+        { provide: getRepositoryToken(DeliveryOrder), useValue: doRepo },
+        {
+          provide: getRepositoryToken(DeliveryOrderLine),
+          useValue: mockRepo(),
+        },
         { provide: getRepositoryToken(Account), useValue: mockRepo() },
         { provide: getRepositoryToken(Product), useValue: mockRepo() },
         { provide: FinanceService, useValue: financeService },
         { provide: MushakService, useValue: mushakService },
+        { provide: InventoryService, useValue: inventoryService },
       ],
     }).compile();
 
@@ -149,6 +184,57 @@ describe('SalesOrderFlowService', () => {
       await expect(
         service.convertQuotationToSalesOrder(tenantId, 'qt-1'),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('createDeliveryOrder', () => {
+    it('creates a delivery order from a confirmed sales order', async () => {
+      soRepo.findOne.mockResolvedValue({
+        id: 'so-1',
+        tenantId,
+        status: SOStatus.CONFIRMED,
+        lines: [],
+      });
+
+      const result = await service.createDeliveryOrder(tenantId, {
+        salesOrderId: 'so-1',
+        lines: [{ soLineId: 'sol-1', productId: 'p-1', quantity: 5 }],
+      });
+
+      expect(doRepo.save).toHaveBeenCalled();
+      expect(result.salesOrderId).toBe('so-1');
+      expect(result.status).toBe(DOStatus.DRAFT);
+    });
+  });
+
+  describe('shipDeliveryOrder', () => {
+    it('issues stock and updates delivered quantities', async () => {
+      const deliveryOrder = {
+        id: 'do-1',
+        tenantId,
+        status: DOStatus.DRAFT,
+        doNumber: 'DO-100',
+        lines: [{ soLineId: 'sol-1', productId: 'p-1', quantity: 5 }],
+        salesOrder: {
+          id: 'so-1',
+          lines: [{ id: 'sol-1', quantity: 10, deliveredQuantity: 0 }],
+        },
+      };
+
+      doRepo.findOne.mockResolvedValue(deliveryOrder);
+
+      const result = await service.shipDeliveryOrder(tenantId, 'do-1', 'wh-1');
+
+      expect(inventoryService.issueStock).toHaveBeenCalledWith({
+        productId: 'p-1',
+        warehouseId: 'wh-1',
+        quantity: 5,
+        reference: 'DO-100',
+      });
+      expect(result.status).toBe(DOStatus.SHIPPED);
+      expect(deliveryOrder.salesOrder.status).toBe(
+        SOStatus.PARTIALLY_DELIVERED,
+      );
     });
   });
 });

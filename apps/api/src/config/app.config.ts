@@ -150,6 +150,11 @@ export const aiConfig = registerAs('ai', () => ({
   openaiApiKey: process.env.OPENAI_API_KEY,
 }));
 
+export const searchConfig = registerAs('search', () => ({
+  host: process.env.MEILI_HOST || 'http://localhost:7700',
+  apiKey: process.env.MEILI_MASTER_KEY || 'masterKey',
+}));
+
 export const financeConfig = registerAs('finance', () => ({
   fixerApiKey: process.env.FIXER_API_KEY,
 }));

@@ -304,6 +304,7 @@ export class AppModule implements NestModule {
         { path: 'compliance/(.*)', method: RequestMethod.ALL },
         { path: 'integrations/(.*)', method: RequestMethod.ALL },
         { path: 'users/(.*)', method: RequestMethod.ALL },
+        { path: 'search/(.*)', method: RequestMethod.ALL },
       );
   }
 }

@@ -230,40 +230,6 @@ export class SalesService {
     return true;
   }
 
-  // --- FULFILLMENT ---
-  async createDeliveryOrder(dto: any): Promise<DeliveryOrder> {
-    const doRecord = this.doRepo.create({
-      ...dto,
-      doNumber: `DO-${Date.now()}`,
-    } as unknown as DeliveryOrder);
-    const saved = await this.doRepo.save(doRecord);
-
-    // Update SO delivered quantities
-    const so = await this.soRepo.findOne({
-      where: { id: dto.salesOrderId },
-      relations: ['lines'],
-    });
-    if (so) {
-      for (const line of saved.lines) {
-        const soLine = so.lines.find((l) => l.id === line.soLineId);
-        if (soLine) {
-          soLine.deliveredQuantity =
-            Number(soLine.deliveredQuantity) + Number(line.quantity);
-        }
-      }
-
-      const allDelivered = so.lines.every(
-        (l) => Number(l.deliveredQuantity) >= Number(l.quantity),
-      );
-      so.status = allDelivered
-        ? SOStatus.DELIVERED
-        : SOStatus.PARTIALLY_DELIVERED;
-      await this.soRepo.save(so);
-    }
-
-    return saved;
-  }
-
   // --- ANALYTICS ---
   async getSalesFunnelAnalytics() {
     const leadsByStatus = await this.leadRepo

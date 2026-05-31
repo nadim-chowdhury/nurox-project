@@ -78,6 +78,25 @@ export class AiService implements OnModuleInit {
     }
   }
 
+  async createEmbedding(text: string): Promise<number[]> {
+    if (!this.isConfigured) {
+      // Return a random vector of 1536 dimensions (text-embedding-3-small default)
+      return Array.from({ length: 1536 }, () => Math.random());
+    }
+
+    try {
+      const response = await this.openai.embeddings.create({
+        model: 'text-embedding-3-small',
+        input: text,
+      });
+
+      return response.data[0].embedding;
+    } catch (error) {
+      this.logger.error('Failed to create embedding', error);
+      return Array.from({ length: 1536 }, () => Math.random());
+    }
+  }
+
   private getSystemPromptForGenerationType(type: string): string {
     switch (type) {
       case 'email':

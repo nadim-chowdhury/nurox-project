@@ -17,6 +17,7 @@ import { Pricelist, PricelistItem } from './entities/pricelist.entity';
 import { Product } from '../inventory/entities/product.entity';
 import { FinanceModule } from '../finance/finance.module';
 import { ComplianceModule } from '../compliance/compliance.module';
+import { InventoryModule } from '../inventory/inventory.module';
 import { SalesOrderFlowService } from './sales-order-flow.service';
 
 @Module({
@@ -39,6 +40,7 @@ import { SalesOrderFlowService } from './sales-order-flow.service';
     ]),
     FinanceModule,
     ComplianceModule,
+    InventoryModule,
   ],
   controllers: [SalesController],
   providers: [SalesService, SalesOrderFlowService],

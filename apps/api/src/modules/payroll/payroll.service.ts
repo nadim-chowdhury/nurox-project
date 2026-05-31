@@ -28,9 +28,17 @@ import {
 import { EmployeeBonus } from './entities/bonus.entity';
 import { PayrollAudit } from './entities/payroll-audit.entity';
 import { SalaryHistory } from '../hr/entities/salary-history.entity';
-import { AttendanceRecord } from '../attendance/entities/attendance.entity';
+import {
+  AttendanceRecord,
+  AttendanceStatus,
+} from '../attendance/entities/attendance.entity';
 import { AttendanceService } from '../attendance/attendance.service';
 import { LeaveService } from '../leave/leave.service';
+import {
+  LeaveRequest,
+  LeaveRequestStatus,
+  LeaveType,
+} from '../leave/entities/leave.entity';
 import { PayrollComputeService } from './payroll-compute.service';
 import { PdfService } from '../system/pdf.service';
 import { StorageService } from '../system/storage.service';
@@ -267,8 +275,35 @@ export class PayrollService {
     run.status = PayrollRunStatus.PROCESSING;
     await this.runRepo.save(run);
 
+    await this.payrollQueue.add('process-payroll', {
+      runId,
+      filters,
+      tenantId: this.tenantId,
+    });
+
+    return run;
+  }
+
+  /**
+   * Actual computation logic for background worker
+   */
+  async executeRunComputation(
+    runId: string,
+    tenantId: string,
+    filters?: {
+      employeeId?: string;
+      branchId?: string;
+      departmentId?: string;
+      gradeId?: string;
+    },
+  ) {
+    const run = await this.runRepo.findOne({
+      where: { id: runId, tenantId },
+    });
+    if (!run) return;
+
     const taxConfig = await this.taxRepo.findOne({
-      where: { isActive: true, tenantId: this.tenantId },
+      where: { isActive: true, tenantId },
       relations: ['brackets'],
     });
 
@@ -278,7 +313,7 @@ export class PayrollService {
       .innerJoinAndSelect('assignment.salaryStructure', 'structure')
       .innerJoinAndSelect('structure.components', 'components')
       .where('assignment.isActive = :isActive', { isActive: true })
-      .andWhere('assignment.tenantId = :tenantId', { tenantId: this.tenantId });
+      .andWhere('assignment.tenantId = :tenantId', { tenantId });
 
     if (filters?.employeeId) {
       qb.andWhere('employee.id = :employeeId', {
@@ -307,19 +342,23 @@ export class PayrollService {
 
     const payslips: Payslip[] = [];
 
+    // Helper to get fiscal year in background (no cls)
+    const getFiscalYear = () => {
+      const today = new Date();
+      const year = today.getFullYear();
+      return today.getMonth() >= 3
+        ? `${year}-${(year + 1).toString().slice(-2)}`
+        : `${year - 1}-${year.toString().slice(-2)}`;
+    };
+
     for (const assign of assignments) {
-      if (assign.employee.isSalaryOnHold) {
-        this.logger.log(
-          `Skipping employee ${assign.employee.firstName} ${assign.employee.lastName} (Salary on hold)`,
-        );
-        continue;
-      }
+      if (assign.employee.isSalaryOnHold) continue;
 
       // Calculate Overtime for the month
       const attendance = await this.attendanceRepo.find({
         where: {
           employeeId: assign.employeeId,
-          tenantId: this.tenantId,
+          tenantId,
           date: Between(`${run.period}-01`, `${run.period}-31`),
         },
       });
@@ -335,14 +374,15 @@ export class PayrollService {
       if (run.period.endsWith('-03')) {
         encashmentDays = await this.leaveService.getEncashableLeaveDays(
           assign.employeeId,
-          this.fiscalYear,
+          getFiscalYear(),
         );
       }
 
       // Calculate Arrears
-      const arrears = await this.getArrearsForEmployee(
+      const arrears = await this.getArrearsForEmployeeInBg(
         assign.employeeId,
         run.period,
+        tenantId,
       );
 
       // Fetch active loans and calculate deduction
@@ -350,7 +390,7 @@ export class PayrollService {
         where: {
           employeeId: assign.employeeId,
           status: LoanStatus.ACTIVE,
-          tenantId: this.tenantId,
+          tenantId,
         },
       });
       const loanDeduction = loans.reduce(
@@ -364,7 +404,7 @@ export class PayrollService {
           employeeId: assign.employeeId,
           status: AdvanceSalaryStatus.APPROVED,
           deductionPeriod: run.period,
-          tenantId: this.tenantId,
+          tenantId,
         },
       });
       const advanceDeduction = advances.reduce(
@@ -378,10 +418,37 @@ export class PayrollService {
           employeeId: assign.employeeId,
           payrollPeriod: run.period,
           isProcessed: false,
-          tenantId: this.tenantId,
+          tenantId,
         },
       });
       const totalBonus = bonuses.reduce((sum, b) => sum + Number(b.amount), 0);
+
+      // Calculate Unpaid Days (LOP)
+      const unpaidLeaveRequests = await this.runRepo.manager.find(
+        LeaveRequest,
+        {
+          where: {
+            employeeId: assign.employeeId,
+            status: LeaveRequestStatus.APPROVED,
+            leaveType: LeaveType.UNPAID,
+            tenantId,
+            startDate: Between(`${run.period}-01`, `${run.period}-31`),
+          },
+        },
+      );
+
+      const unpaidLeaveDaysFromRequests = unpaidLeaveRequests.reduce(
+        (sum, r) => sum + Number(r.totalDays),
+        0,
+      );
+
+      const absenteeismDays = attendance.reduce((sum, a) => {
+        if (a.status === AttendanceStatus.ABSENT) return sum + 1;
+        if (a.status === AttendanceStatus.HALF_DAY) return sum + 0.5;
+        return sum;
+      }, 0);
+
+      const totalUnpaidDays = unpaidLeaveDaysFromRequests + absenteeismDays;
 
       const {
         items,
@@ -400,10 +467,11 @@ export class PayrollService {
         arrears,
         loanDeduction,
         advanceDeduction,
+        totalUnpaidDays,
       );
 
       const payslip = this.payslipRepo.create({
-        tenantId: this.tenantId,
+        tenantId,
         payrollRunId: run.id,
         employeeId: assign.employeeId,
         grossPay,
@@ -430,15 +498,53 @@ export class PayrollService {
       run.employeeCount = assignments.length;
       await manager.save(run);
 
-      // Audit Log
-      await this.logPayrollAudit(run.id, 'COMPUTE', null, {
-        employeeCount: assignments.length,
-        totalGross,
-        totalNet,
-      });
+      await manager.save(
+        this.auditRepo.create({
+          tenantId,
+          payrollRunId: run.id,
+          action: 'COMPUTE',
+          afterValue: {
+            employeeCount: assignments.length,
+            totalGross,
+            totalNet,
+          },
+        }),
+      );
+    });
+  }
+
+  private async getArrearsForEmployeeInBg(
+    employeeId: string,
+    currentPeriod: string,
+    tenantId: string,
+  ): Promise<number> {
+    const history = await this.salaryHistoryRepo.find({
+      where: {
+        employeeId,
+        isProcessedInPayroll: false,
+        tenantId,
+      },
+      order: { effectiveDate: 'ASC' },
     });
 
-    return run;
+    let totalArrear = 0;
+    const currentPeriodDate = new Date(currentPeriod + '-01');
+
+    for (const record of history) {
+      const effectiveDate = new Date(record.effectiveDate);
+      if (effectiveDate < currentPeriodDate) {
+        const diff = Number(record.newSalary) - Number(record.previousSalary);
+
+        const months =
+          (currentPeriodDate.getFullYear() - effectiveDate.getFullYear()) * 12 +
+          (currentPeriodDate.getMonth() - effectiveDate.getMonth());
+
+        if (months > 0) {
+          totalArrear += diff * months;
+        }
+      }
+    }
+    return totalArrear;
   }
 
   async markAsPaid(runId: string) {
@@ -967,5 +1073,31 @@ export class PayrollService {
     });
 
     return comparison;
+  }
+
+  async getPayrollAudits(payrollRunId: string) {
+    return this.auditRepo.find({
+      where: { payrollRunId, tenantId: this.tenantId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async updatePayslip(id: string, dto: any) {
+    const payslip = await this.payslipRepo.findOne({
+      where: { id, tenantId: this.tenantId },
+    });
+    if (!payslip) throw new NotFoundException('Payslip not found');
+
+    const before = JSON.parse(JSON.stringify(payslip));
+    Object.assign(payslip, dto);
+    const saved = await this.payslipRepo.save(payslip);
+
+    await this.logPayrollAudit(
+      payslip.payrollRunId,
+      'EDIT_PAYSLIP',
+      before,
+      saved,
+    );
+    return saved;
   }
 }

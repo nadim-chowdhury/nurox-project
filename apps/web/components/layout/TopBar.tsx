@@ -19,6 +19,7 @@ const { Header } = Layout;
 
 export function TopBar() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
   const {
     sidebarCollapsed: collapsed,

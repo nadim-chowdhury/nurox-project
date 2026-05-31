@@ -158,7 +158,9 @@ export class InventoryService implements OnModuleInit {
     const exists = await this.productRepo.findOne({ where: { sku: dto.sku } });
     if (exists) throw new ConflictException(`SKU "${dto.sku}" already exists`);
     const product = this.productRepo.create(dto);
-    return this.productRepo.save(product);
+    const saved = await this.productRepo.save(product);
+    this.eventEmitter.emit('product.created', saved);
+    return saved;
   }
 
   async createVariant(dto: Partial<ProductVariant>): Promise<ProductVariant> {

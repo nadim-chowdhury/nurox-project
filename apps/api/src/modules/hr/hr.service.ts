@@ -151,6 +151,7 @@ export class HrService implements OnModuleInit {
     private readonly hrQueue: Queue,
     private readonly configService: ConfigService,
     private readonly cls: ClsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   private get tenantId(): string {
@@ -197,6 +198,7 @@ export class HrService implements OnModuleInit {
       // ... rest of createEmployee
 
       const saved = await manager.save(employee);
+      this.eventEmitter.emit('employee.created', saved);
 
       const history = manager.create(EmploymentHistory, {
         employeeId: saved.id,

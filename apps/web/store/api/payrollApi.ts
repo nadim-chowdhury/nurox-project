@@ -175,6 +175,19 @@ export const payrollApi = baseApi.injectEndpoints({
         body,
       }),
     }),
+
+    getPayrollAudits: builder.query<any[], string>({
+      query: (id) => `/payroll/runs/${id}/audits`,
+    }),
+
+    updatePayslip: builder.mutation<any, { id: string; body: any }>({
+      query: ({ id, body }) => ({
+        url: `/payroll/payslips/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["Payslip", "Payroll"],
+    }),
   }),
   overrideExisting: false,
 });
@@ -201,4 +214,6 @@ export const {
   useGetPayrollComparisonQuery,
   useCreateAdvanceRequestMutation,
   useUpdateAdvanceStatusMutation,
+  useGetPayrollAuditsQuery,
+  useUpdatePayslipMutation,
 } = payrollApi;

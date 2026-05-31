@@ -3,13 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChatChannel } from './entities/chat-channel.entity';
 import { ChatMessage } from './entities/chat-message.entity';
-// @ts-expect-error - moduleResolution: node can't resolve meilisearch exports
-import { Meilisearch } from 'meilisearch';
-import { ConfigService } from '@nestjs/config';
+import { SearchService } from '../search/search.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class ChatService {
-  private meiliSearchClient: Meilisearch;
   private readonly logger = new Logger(ChatService.name);
 
   constructor(
@@ -17,20 +15,9 @@ export class ChatService {
     private readonly channelRepo: Repository<ChatChannel>,
     @InjectRepository(ChatMessage)
     private readonly messageRepo: Repository<ChatMessage>,
-    private readonly configService: ConfigService,
-  ) {
-    try {
-      this.meiliSearchClient = new Meilisearch({
-        host:
-          this.configService.get<string>('MEILISEARCH_HOST') ||
-          'http://localhost:7700',
-        apiKey:
-          this.configService.get<string>('MEILISEARCH_API_KEY') || 'masterKey',
-      });
-    } catch (e) {
-      this.logger.warn('Meilisearch not configured');
-    }
-  }
+    private readonly searchService: SearchService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   async saveMessage(
     tenantId: string,
@@ -48,26 +35,11 @@ export class ChatService {
       content: dto.content,
       mentions: dto.mentions,
     });
-    await this.messageRepo.save(message);
+    const saved = await this.messageRepo.save(message);
 
-    if (this.meiliSearchClient) {
-      try {
-        await this.meiliSearchClient.index('chat_messages').addDocuments([
-          {
-            id: message.id,
-            tenantId,
-            channelId: message.channelId,
-            senderId: message.senderId,
-            content: message.content,
-            createdAt: message.createdAt,
-          },
-        ]);
-      } catch (e) {
-        this.logger.error('Failed to index chat message', e);
-      }
-    }
+    this.eventEmitter.emit('chat.message_sent', saved);
 
-    return message;
+    return saved;
   }
 
   async getChannelMessages(tenantId: string, channelId: string, limit = 50) {

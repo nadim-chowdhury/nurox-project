@@ -184,6 +184,18 @@ export class PayrollController {
     return this.payrollService.getPayrollComparison(id, previousRunId);
   }
 
+  @Get('runs/:id/audits')
+  @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
+  getPayrollAudits(@Param('id', ParseUUIDPipe) id: string) {
+    return this.payrollService.getPayrollAudits(id);
+  }
+
+  @Patch('payslips/:id')
+  @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
+  updatePayslip(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+    return this.payrollService.updatePayslip(id, dto);
+  }
+
   @Get('runs/:id/bank-transfer')
   @RequirePermissions(Permission.FINANCE_MANAGE_INVOICES)
   async exportBankTransfer(

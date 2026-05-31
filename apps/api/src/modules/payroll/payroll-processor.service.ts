@@ -17,10 +17,36 @@ export class PayrollProcessor extends WorkerHost {
 
   async process(job: Job<any, any, string>): Promise<any> {
     switch (job.name) {
+      case 'process-payroll':
+        return this.handlePayrollProcessing(job.data);
       case 'distribute-payslips':
         return this.handlePayslipDistribution(job.data);
       default:
         this.logger.warn(`Unknown job name: ${job.name}`);
+    }
+  }
+
+  private async handlePayrollProcessing(data: {
+    runId: string;
+    filters?: any;
+    tenantId: string;
+  }) {
+    this.logger.log(`Background processing for payroll run: ${data.runId}`);
+    try {
+      // We'll need a way to run this within the correct tenant context.
+      // Since this is a background job, we'll pass tenantId and set it in the service if needed.
+      // Or we can just call a specialized method in PayrollService.
+      await this.payrollService.executeRunComputation(
+        data.runId,
+        data.tenantId,
+        data.filters,
+      );
+      this.logger.log(`Completed processing for run: ${data.runId}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to process payroll run ${data.runId}: ${error.message}`,
+      );
+      throw error;
     }
   }
 

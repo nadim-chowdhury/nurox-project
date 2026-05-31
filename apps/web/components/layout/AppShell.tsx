@@ -104,6 +104,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Breadcrumbs />
           {children}
           <FloatingActions />
+          <GlobalSearch />
         </Content>
         <MobileTabBar />
       </Layout>

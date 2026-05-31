@@ -245,4 +245,61 @@ describe('FinanceService', () => {
       expect(mockManager.createQueryBuilder).toHaveBeenCalledTimes(2);
     });
   });
+
+  describe('autoMatchTransactions', () => {
+    it('should match a bank transaction with a corresponding journal line', async () => {
+      const bankAccountId = 'bank-acc-1';
+      const glAccountId = 'gl-acc-1';
+      const tenantId = 'test-tenant-id';
+
+      const bankAccount = { id: bankAccountId, glAccountId, tenantId };
+      const bankTrx = {
+        id: 'trx-1',
+        amount: 1000,
+        date: '2026-05-31',
+        tenantId,
+        status: 'UNRECONCILED',
+      };
+
+      const journalLine = {
+        id: 'line-1',
+        journalEntryId: 'entry-1',
+        debit: 1000,
+        credit: 0,
+        isReconciled: false,
+        journalEntry: {
+          id: 'entry-1',
+          entryDate: '2026-05-31',
+          reference: 'REF-123',
+        },
+      };
+
+      const bankAccountRepo = module.get(getRepositoryToken(BankAccount));
+      const bankTrxRepo = module.get(getRepositoryToken(BankTransaction));
+      const journalLineRepo = module.get(getRepositoryToken(JournalLine));
+
+      bankAccountRepo.findOne.mockResolvedValue(bankAccount);
+      bankTrxRepo.find.mockResolvedValue([bankTrx]);
+
+      const mockQueryBuilder = {
+        innerJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([journalLine]),
+      };
+      journalLineRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+      const mockManager = {
+        save: jest.fn().mockResolvedValue(true),
+      };
+      (mockDataSource.transaction as jest.Mock).mockImplementation(async (cb) =>
+        cb(mockManager),
+      );
+
+      const result = await service.autoMatchTransactions(bankAccountId);
+
+      expect(result.matchCount).toBe(1);
+      expect(mockManager.save).toHaveBeenCalledTimes(2); // One for trx, one for line
+    });
+  });
 });

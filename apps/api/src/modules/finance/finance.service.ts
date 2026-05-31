@@ -61,6 +61,8 @@ import dayjs from 'dayjs';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 
+import { EventEmitter2 } from '@nestjs/event-emitter';
+
 @Injectable()
 export class FinanceService {
   private readonly logger = new Logger(FinanceService.name);
@@ -111,6 +113,7 @@ export class FinanceService {
     private readonly cls: ClsService,
     private readonly dataSource: DataSource,
     @InjectQueue('ar_reminders') private arReminderQueue: Queue,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   private get tenantId(): string {
@@ -294,6 +297,7 @@ export class FinanceService {
     });
 
     const saved = await this.invoiceRepo.save(invoice);
+    this.eventEmitter.emit('invoice.created', saved);
     this.logger.log(
       `Invoice created: ${saved.invoiceNumber} — $${totalAmount} (Proforma: ${saved.isProforma})`,
     );
@@ -607,6 +611,13 @@ export class FinanceService {
   }
 
   async autoMatchTransactions(bankAccountId: string) {
+    const account = await this.bankAccountRepo.findOne({
+      where: { id: bankAccountId, tenantId: this.tenantId },
+    });
+    if (!account || !account.glAccountId) {
+      throw new BadRequestException('Bank account not linked to GL account');
+    }
+
     const unreconciled = await this.bankTransactionRepo.find({
       where: {
         bankAccountId,
@@ -617,24 +628,53 @@ export class FinanceService {
 
     let matchCount = 0;
     for (const trx of unreconciled) {
-      // Fuzzy match: same amount and date within +/- 3 days
       const amount = Math.abs(Number(trx.amount));
-      const startDate = dayjs(trx.date).subtract(3, 'day').format('YYYY-MM-DD');
-      const endDate = dayjs(trx.date).add(3, 'day').format('YYYY-MM-DD');
+      const isDebit = Number(trx.amount) > 0;
 
-      const potentialMatch = await this.journalLineRepo
+      const startDate = dayjs(trx.date).subtract(7, 'day').format('YYYY-MM-DD');
+      const endDate = dayjs(trx.date).add(7, 'day').format('YYYY-MM-DD');
+
+      const potentialMatches = await this.journalLineRepo
         .createQueryBuilder('line')
         .innerJoinAndSelect('line.journalEntry', 'entry')
-        .where('ABS(line.debit - line.credit) = :amount', { amount })
+        .where('line.accountId = :glAccountId', {
+          glAccountId: account.glAccountId,
+        })
         .andWhere('line.tenantId = :tenantId', { tenantId: this.tenantId })
+        .andWhere('line.isReconciled = :isReconciled', { isReconciled: false })
         .andWhere('entry.entryDate >= :startDate', { startDate })
         .andWhere('entry.entryDate <= :endDate', { endDate })
-        .getOne();
+        .andWhere(isDebit ? 'line.debit = :amount' : 'line.credit = :amount', {
+          amount,
+        })
+        .getMany();
 
-      if (potentialMatch) {
-        trx.status = TransactionStatus.RECONCILED;
-        trx.matchedJournalEntryId = potentialMatch.journalEntryId;
-        await this.bankTransactionRepo.save(trx);
+      if (potentialMatches.length > 0) {
+        // Scoring: Exact date match = 50, Reference match = 40
+        let bestMatch = potentialMatches[0];
+        let maxScore = -1;
+
+        for (const match of potentialMatches) {
+          let score = 0;
+          if (match.journalEntry.entryDate === trx.date) score += 50;
+          if (trx.reference && match.journalEntry.reference === trx.reference)
+            score += 40;
+
+          if (score > maxScore) {
+            maxScore = score;
+            bestMatch = match;
+          }
+        }
+
+        await this.dataSource.transaction(async (manager) => {
+          trx.status = TransactionStatus.RECONCILED;
+          trx.matchedJournalEntryId = bestMatch.journalEntryId;
+          await manager.save(trx);
+
+          bestMatch.isReconciled = true;
+          await manager.save(bestMatch);
+        });
+
         matchCount++;
       }
     }
@@ -1716,9 +1756,34 @@ export class FinanceService {
     });
     if (!trx) throw new NotFoundException('Transaction not found');
 
-    trx.status = TransactionStatus.RECONCILED;
-    trx.matchedJournalEntryId = journalEntryId;
-    return this.bankTransactionRepo.save(trx);
+    const bankAccount = await this.bankAccountRepo.findOne({
+      where: { id: trx.bankAccountId, tenantId: this.tenantId },
+    });
+    if (!bankAccount) throw new NotFoundException('Bank account not found');
+
+    return this.dataSource.transaction(async (manager) => {
+      // 1. Update Bank Transaction
+      trx.status = TransactionStatus.RECONCILED;
+      trx.matchedJournalEntryId = journalEntryId;
+      await manager.save(trx);
+
+      // 2. Find and update Journal Line for the GL account associated with the bank
+      const line = await manager.findOne(JournalLine, {
+        where: {
+          journalEntryId,
+          accountId: bankAccount.glAccountId,
+          tenantId: this.tenantId,
+          isReconciled: false,
+        },
+      });
+
+      if (line) {
+        line.isReconciled = true;
+        await manager.save(line);
+      }
+
+      return trx;
+    });
   }
 
   async createTaxRate(dto: any) {

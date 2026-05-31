@@ -5,31 +5,32 @@
 ## 0. Session Initialization (CRITICAL)
 
 - **Mandate:** Any new AI session MUST read `docs/AI_START_HERE.md`, then `docs/AI_CONTEXT_ANCHOR.md`, before writing any code.
+- **Context recovery:** Run `pnpm ai:context` when switching AI accounts; paste the clipboard into the new session. This is the **only** way to prevent context drift and ensure architectural integrity across multiple accounts.
 - **Roadmap:** See `docs/PRODUCTION_ROADMAP.md` for sellable-SaaS phases; do not implement the entire master spec in one session.
-- **Context recovery:** Run `pnpm ai:context` when switching AI accounts; paste the clipboard into the new session.
-- **Purpose:** The anchor file is the project's long-term memory, preventing context loss between sessions.
-- **Update Rule:** Upon completing a significant task, the AI MUST update `docs/AI_CONTEXT_ANCHOR.md` with the new status.
+- **Purpose:** The anchor file is the project's long-term memory. If it is not updated, the project will fail due to context loss.
+- **Update Rule:** Upon completing a significant task, the AI MUST update `docs/AI_CONTEXT_ANCHOR.md` with the new status, exact current state, and next steps.
 - **Scope:** Work one roadmap task at a time — never attempt full-module or multi-module rewrites in a single session.
 
 ## 1. Architectural Mandates
 
 ### 1.1 Multi-Tenancy
 
-- **Backend:** Every tenant-scoped entity MUST include a `tenant_id` UUID column.
-- **Backend:** All queries MUST be scoped by `tenant_id` via the `TenantMiddleware` or RLS.
+- **Backend:** Every tenant-scoped entity MUST include a `tenant_id` UUID column and extend `TenantBaseEntity`.
+- **Backend:** All queries MUST be scoped by `tenant_id` via the `TenantMiddleware`, `TenantInterceptor`, or TypeORM `TenantSubscriber`.
 - **Frontend:** Always include the `x-tenant-id` header in API requests (handled by `baseApi`).
 
 ### 1.2 RTK Query Standardization
 
 - NEVER create a new `createApi` instance for a module.
 - ALWAYS use `baseApi.injectEndpoints` from `@/store/api/baseApi`.
-- ALWAYS provide appropriate `tagTypes` for caching and invalidation.
+- ALWAYS provide appropriate `tagTypes` (e.g., `Invoice`, `Journal`, `ChartOfAccount`) for caching and invalidation.
 
 ### 1.3 Validation & Type Safety
 
 - NEVER define local DTOs in controllers.
 - ALWAYS use shared Zod schemas from `packages/shared-schemas`.
-- Backend controllers MUST use `ZodValidationPipe` with the corresponding shared schema.
+- Backend controllers MUST use `ZodValidationPipe` with the corresponding shared schema for ALL mutation endpoints.
+- NO `any` allowed in business logic or entity mappings; use proper interfaces or `Zod.infer`.
 
 ## 2. Frontend Development Standards
 
@@ -38,11 +39,12 @@
 - **Primary Library:** Ant Design (antd) 6.x.
 - **Styling:** Use Vanilla CSS or Tailwind spacing utilities. Avoid complex Tailwind configurations.
 - **Design System:** Adhere to "Liquid Precision" — use CSS variables for colors (e.g., `var(--color-primary)`).
-- **Forms:**
+- **Forms (STRICT MANDATE):**
   - ALWAYS use `react-hook-form` (RHF) for form state management.
   - ALWAYS use `zodResolver` with shared schemas from `@repo/shared-schemas`.
-  - Use standardized RHF wrappers from `@/components/common/forms/` (e.g., `RhfInput`, `RhfSelect`).
+  - Use standardized RHF wrappers from `@/components/common/forms/` (e.g., `RhfInput`, `RhfSelect`, `RhfDatePicker`, `RhfInputNumber`, `RhfTextArea`).
   - Pass the `control` and `name` props to these wrappers.
+  - **Manual usage of `Form.Item` or standard Antd controls for input is prohibited.**
 
 ### 2.2 Standard Form Structure
 
@@ -60,7 +62,7 @@ const onSubmit = (data) => { ... };
 </form>
 ```
 
-### 2.2 Routing
+### 2.3 Routing
 
 - **App Router:** Use Next.js 16 App Router with `[locale]` segments for i18n.
 - **Middleware:** Ensure routes are protected via `middleware.ts`.
@@ -101,10 +103,11 @@ const onSubmit = (data) => { ... };
 
 Every feature or refactor implemented by AI MUST meet this checklist before being considered complete:
 
-- [ ] **Multi-Tenancy:** Ensure `tenant_id` isolation is verified in backend DB queries via `ClsService`, middleware, or TypeORM scoping. Frontend requests must carry the correct tenant context headers.
-- [ ] **Centralized Validation:** 100% boundary check using Zod schemas from `packages/shared-schemas`. No local types or unvalidated JSON input allowed.
-- [ ] **Audit Trail:** Verify that the `AuditLogInterceptor` or relevant event publisher is active on all mutation endpoints (`POST`, `PUT`, `PATCH`, `DELETE`).
-- [ ] **UI Consistency:** Forms must strictly use the standardized wrappers from `@/components/common/forms/` (e.g., `RhfInput`, `RhfSelect`, `RhfDatePicker`, `RhfInputNumber`, `RhfRate`). Direct Antd controls or manual controllers are prohibited.
-- [ ] **Automated Verification:** Bug fixes must have a reproduction test, and new features must include unit/integration tests or a Playwright E2E spec.
-- [ ] **Code Quality & Typing:** No usage of `any`. Run `pnpm lint` and `pnpm format` to confirm no linter errors are introduced.
-- [ ] **Context Anchor:** Update `docs/AI_CONTEXT_ANCHOR.md` with the exact current state and task completions to prevent context drift in subsequent sessions.
+- [ ] **Multi-Tenancy:** `tenant_id` isolation verified in backend DB queries and entities. Frontend requests carry correct tenant context.
+- [ ] **Centralized Validation:** 100% boundary check using Zod schemas from `packages/shared-schemas`.
+- [ ] **Audit Trail:** `AuditLogInterceptor` active on all mutation endpoints.
+- [ ] **UI Consistency:** Forms strictly use standardized RHF wrappers. Direct Antd controls are removed.
+- [ ] **Automated Verification:** Bug fixes have a reproduction test; new features have unit/integration tests or a Playwright E2E spec.
+- [ ] **Code Quality:** No usage of `any`. `pnpm lint` and `pnpm format` pass.
+- [ ] **Session Recovery:** `docs/AI_CONTEXT_ANCHOR.md` updated with exact current state to prevent context drift in subsequent sessions.
+- [ ] **Infrastructure:** `pnpm docker:verify` passes, ensuring the "one-command" setup is healthy.

@@ -16,15 +16,22 @@ import {
   SOStatus,
   SalesOrderLine,
 } from './entities/sales-order.entity';
+import {
+  DeliveryOrder,
+  DOStatus,
+  DeliveryOrderLine,
+} from './entities/delivery-order.entity';
 import { Account } from './entities/account.entity';
 import { Product } from '../inventory/entities/product.entity';
 import { FinanceService } from '../finance/finance.service';
 import { MushakService } from '../compliance/services/mushak.service';
+import { InventoryService } from '../inventory/inventory.service';
 import { InvoiceStatus } from '../finance/entities/invoice.entity';
 import {
   CreateQuotationDto,
   CreateAccountDto,
   InvoiceFromSalesOrderDto,
+  CreateDeliveryOrderDto,
 } from '@repo/shared-schemas';
 
 export interface SalesLineTaxBreakdown {
@@ -42,12 +49,17 @@ export class SalesOrderFlowService {
     private readonly quotationRepo: Repository<Quotation>,
     @InjectRepository(SalesOrder)
     private readonly soRepo: Repository<SalesOrder>,
+    @InjectRepository(DeliveryOrder)
+    private readonly doRepo: Repository<DeliveryOrder>,
+    @InjectRepository(DeliveryOrderLine)
+    private readonly doLineRepo: Repository<DeliveryOrderLine>,
     @InjectRepository(Account)
     private readonly accountRepo: Repository<Account>,
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
     private readonly financeService: FinanceService,
     private readonly mushakService: MushakService,
+    private readonly inventoryService: InventoryService,
   ) {}
 
   async createAccount(
@@ -419,5 +431,94 @@ export class SalesOrderFlowService {
       invoice,
       mushak63: mushak,
     };
+  }
+
+  async createDeliveryOrder(
+    tenantId: string,
+    dto: CreateDeliveryOrderDto,
+  ): Promise<DeliveryOrder> {
+    const so = await this.getSalesOrder(tenantId, dto.salesOrderId);
+    if (
+      so.status !== SOStatus.CONFIRMED &&
+      so.status !== SOStatus.PARTIALLY_DELIVERED
+    ) {
+      throw new BadRequestException(
+        'Sales order must be CONFIRMED or PARTIALLY_DELIVERED to create a delivery order',
+      );
+    }
+
+    const lines = dto.lines.map((line) =>
+      this.doRepo.manager.create(DeliveryOrderLine, {
+        tenantId,
+        soLineId: line.soLineId,
+        productId: line.productId,
+        quantity: line.quantity,
+      }),
+    );
+
+    const doRecord = this.doRepo.create({
+      tenantId,
+      salesOrderId: dto.salesOrderId,
+      doNumber: dto.doNumber ?? `DO-${Date.now()}`,
+      status: DOStatus.DRAFT,
+      deliveryDate: dto.deliveryDate ? new Date(dto.deliveryDate) : null,
+      lines,
+    });
+
+    return this.doRepo.save(doRecord);
+  }
+
+  async shipDeliveryOrder(
+    tenantId: string,
+    doId: string,
+    warehouseId: string,
+  ): Promise<DeliveryOrder> {
+    const deliveryOrder = await this.doRepo.findOne({
+      where: { id: doId, tenantId },
+      relations: ['lines', 'salesOrder', 'salesOrder.lines'],
+    });
+
+    if (!deliveryOrder) throw new NotFoundException('Delivery order not found');
+    if (deliveryOrder.status !== DOStatus.DRAFT) {
+      throw new BadRequestException(
+        'Only DRAFT delivery orders can be shipped',
+      );
+    }
+
+    // 1. Issue stock for each line
+    for (const line of deliveryOrder.lines) {
+      await this.inventoryService.issueStock({
+        productId: line.productId,
+        warehouseId,
+        quantity: Number(line.quantity),
+        reference: deliveryOrder.doNumber,
+      });
+
+      // 2. Update Sales Order Line delivered quantity
+      const soLine = deliveryOrder.salesOrder.lines.find(
+        (l) => l.id === line.soLineId,
+      );
+      if (soLine) {
+        soLine.deliveredQuantity =
+          Number(soLine.deliveredQuantity) + Number(line.quantity);
+        await this.soRepo.manager.save(SalesOrderLine, soLine);
+      }
+    }
+
+    // 3. Update Delivery Order status
+    deliveryOrder.status = DOStatus.SHIPPED;
+    await this.doRepo.save(deliveryOrder);
+
+    // 4. Update Sales Order status
+    const so = deliveryOrder.salesOrder;
+    const allDelivered = so.lines.every(
+      (l) => Number(l.deliveredQuantity) >= Number(l.quantity),
+    );
+    so.status = allDelivered
+      ? SOStatus.DELIVERED
+      : SOStatus.PARTIALLY_DELIVERED;
+    await this.soRepo.save(so);
+
+    return deliveryOrder;
   }
 }

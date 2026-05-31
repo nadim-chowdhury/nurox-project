@@ -3,6 +3,7 @@ import { MushakService } from './mushak.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Mushak63 } from '../entities/mushak-63.entity';
 import { VdsCertificate } from '../entities/vds-certificate.entity';
+import { SequenceService } from '../../system/sequence.service';
 
 describe('MushakService', () => {
   let service: MushakService;
@@ -20,6 +21,10 @@ describe('MushakService', () => {
     find: jest.fn(),
   };
 
+  const mockSequenceService = {
+    getNextNumber: jest.fn().mockResolvedValue('AUTO-NUM-123'),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -31,6 +36,10 @@ describe('MushakService', () => {
         {
           provide: getRepositoryToken(VdsCertificate),
           useValue: mockVdsRepo,
+        },
+        {
+          provide: SequenceService,
+          useValue: mockSequenceService,
         },
       ],
     }).compile();
@@ -73,6 +82,29 @@ describe('MushakService', () => {
       expect(result).toBeDefined();
       expect(result.id).toBe('mushak-id');
       expect(mockMushak63Repo.save).toHaveBeenCalled();
+    });
+
+    it('should use SequenceService if invoiceNumber is missing', async () => {
+      const dto = {
+        issueDate: new Date().toISOString(),
+        sellerName: 'Seller',
+        sellerBin: '123',
+        sellerAddress: 'Addr',
+        buyerName: 'Buyer',
+        buyerAddress: 'Addr',
+        totalBaseAmount: 1000,
+        totalVatAmount: 150,
+        totalAmountInclTax: 1150,
+        items: [],
+      };
+
+      const result = await service.createMushak63('tenant-1', dto as any);
+      expect(mockSequenceService.getNextNumber).toHaveBeenCalledWith(
+        'tenant-1',
+        'MUSHAK_6.3',
+        'VAT-',
+      );
+      expect(result.invoiceNumber).toBe('AUTO-NUM-123');
     });
   });
 
