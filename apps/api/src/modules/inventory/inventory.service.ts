@@ -35,8 +35,9 @@ import { SerialNumber } from './entities/serial-number.entity';
 import { Bom } from './entities/bom.entity';
 import { UomGroup } from './entities/uom-group.entity';
 import { Inventory } from './entities/inventory.entity';
-import { EntityManager } from 'typeorm';
+import { EntityManager, Repository, DataSource, IsNull } from 'typeorm';
 import { ClsService } from 'nestjs-cls';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class InventoryService implements OnModuleInit {
@@ -65,6 +66,7 @@ export class InventoryService implements OnModuleInit {
     private readonly alertQueue: Queue,
     private readonly dataSource: DataSource,
     private readonly cls: ClsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   private async updateInventoryBalance(
@@ -694,16 +696,19 @@ export class InventoryService implements OnModuleInit {
 
       const totalStock = Number(stock?.total || 0);
       if (totalStock <= product.reorderPoint) {
-        alerts.push({
+        const alert = {
+          tenantId: product.tenantId,
           productId: product.id,
           sku: product.sku,
           name: product.name,
           currentStock: totalStock,
           reorderPoint: product.reorderPoint,
-        });
+        };
+        alerts.push(alert);
         this.logger.warn(
           `Reorder alert for ${product.sku}: Current stock ${totalStock} <= Reorder point ${product.reorderPoint}`,
         );
+        this.eventEmitter.emit('inventory.low_stock', alert);
       }
     }
     return alerts;

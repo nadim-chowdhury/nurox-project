@@ -14,6 +14,9 @@ import { IndiaTaxStrategy } from './strategies/india-tax.strategy';
 import { UsaTaxStrategy } from './strategies/usa-tax.strategy';
 import { ProcurementModule } from '../procurement/procurement.module';
 import { SystemModule } from '../system/system.module';
+import { TaxFilingService } from './services/tax-filing.service';
+import { Vendor } from '../procurement/entities/vendor.entity';
+import { Tenant } from '../system/entities/tenant.entity';
 
 @Module({
   imports: [
@@ -25,6 +28,8 @@ import { SystemModule } from '../system/system.module';
       Mushak63,
       Mushak63Item,
       VdsCertificate,
+      Vendor,
+      Tenant,
     ]),
   ],
   controllers: [ComplianceController],
@@ -35,7 +40,13 @@ import { SystemModule } from '../system/system.module';
     BangladeshTaxStrategy,
     IndiaTaxStrategy,
     UsaTaxStrategy,
+    TaxFilingService,
   ],
-  exports: [TaxEngineService, MushakService, ComplianceReportService],
+  exports: [
+    TaxEngineService,
+    MushakService,
+    ComplianceReportService,
+    TaxFilingService,
+  ],
 })
 export class ComplianceModule {}

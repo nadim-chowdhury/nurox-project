@@ -21,49 +21,39 @@
 
 ## 2. Active Roadmap Progress
 
-**Current Phase:** Phase 7 — Advanced Features & Search
+**Current Phase:** Phase 9 — Predictive Analytics & AI Forecasting
 
-- [x] 5.1 Multi-tenant Chart of Accounts (COA) templates
-- [x] 5.2 Dynamic Journal Posting for Invoice Payments
-- [x] 5.3 PDF Invoice Generation (Puppeteer)
-- [x] 5.4 Delivery order fulfillment + stock issue on ship
-- [x] 5.5 Bank Statement Reconciliation (Matching Logic)
-- [x] 6.1 Automated Payroll Calculation Engine
-- [x] 6.2 One-click Payroll Generation with Audit Logs
-- [x] 6.3 Automated Compliance (Mushak 6.3/6.6) Generation
-- [x] 7.1 Multi-tenant Search with MeiliSearch (Global Search)
 - [x] 7.2 AI-Powered Search Re-ranking (Hybrid Search + Analytics)
+- [x] 8.1 Real-time Collaborative Editing (Operational Transformation)
+- [x] 8.2 Real-time Spreadsheet Collaboration (Financial Modeling)
+- [x] 8.3 Collaborative Drawing & Diagramming (Whiteboard)
+- [x] 9.1 AI-Powered Demand Forecasting (Predictive Inventory)
+- [x] 9.2 Automated Low-Stock & Procurement Alerts (Smart Reordering)
+- [x] 9.3 Multi-Warehouse Inventory Optimization (Smart Stock Balancing)
+- [x] 10.1 Automated Financial Reconciliation (Bank Matching)
 
 ---
 
 ## 3. Latest Architecture Improvements (May 2026)
 
-- **AI Hybrid Search:** Implemented `SearchModule` with MeiliSearch and OpenAI embeddings (`text-embedding-3-small`). Search uses a hybrid 50/50 semantic-to-keyword ratio with multi-tenant isolation.
-- **Search Analytics:** Added `SearchQuery` tracking for popular queries and click-through rates (CTR) via a dedicated `/search/click` endpoint.
-- **Global Search:** Added a Command Palette (⌘K) in the frontend for unified cross-module entity discovery.
-- **Backend Fulfillment:** `SalesOrderFlowService` orchestrates the end-to-end fulfillment process...
-
----
-
-## 4. Pending Bug Fixes / Debt
-
-- [ ] Audit all frontend modules for direct Antd Form usage; refactor to RHF.
-- [ ] Replace remaining `any` in `FinanceService`, `SalesService`, and `PayrollService` with proper Zod-inferred types.
-- [ ] Add Playwright E2E test for the new `Invoice`, `DeliveryOrder`, `Payroll`, and `Compliance` flows.
+- **Automated Financial Reconciliation:** Implemented `BankReconciliationService` (Finance module) to automate the matching of bank transactions with internal ledger entries. The service uses a weighted scoring system based on exact amounts, date proximity (+/- 15 days), reference matching, and fuzzy description similarity (Dice Coefficient). Exposed endpoints for retrieving intelligent reconciliation suggestions and approving matches.
+- **Multi-Warehouse Inventory Optimization:** Enhanced demand forecasting to support `warehouseId` granularity. Implemented `InventoryOptimizationService` which analyzes stock imbalances across locations and suggests "Smart Stock Transfers" to move surplus inventory to warehouses with predicted deficits.
+  ...
 
 ---
 
 ## 5. Session Recovery Context
 
 **LAST ACTION:**
-Implemented Task 7.2: AI-Powered Search Re-ranking. Integrated OpenAI embeddings for hybrid search in MeiliSearch. Added `SearchQuery` analytics for tracking popular queries and result clicks.
+Implemented Task 10.1: Automated Financial Reconciliation. Added `BankReconciliationService` with fuzzy matching and a confidence-based scoring system for bank-to-ledger matching.
 
 **NEXT TASK:**
-**Task 8.1: Real-time Collaborative Editing (Operational Transformation).**
-This begins Phase 8 (Real-time Collaboration).
-This requires:
+**Task 10.2: Automated Tax Filing & Compliance (Mushak).**
+Enhance the compliance module by:
 
-1.  Implementing a WebSocket-based synchronization layer for shared documents and spreadsheets. 2. Using Yjs or Automerge for conflict-free replicated data types (CRDTs). 3. Adding "Presence" indicators (who is currently viewing/editing).
+1.  Implementing `TaxFilingService` that aggregates VAT data into a draft Mushak 9.1 form.
+2.  Adding "Filing Readiness Checks" that identify missing data (e.g., missing vendor BINs) before submission.
+3.  Providing a one-click "Generate Filing Package" (ZIP with PDF 9.1 + supporting schedules).
 
 ---
 

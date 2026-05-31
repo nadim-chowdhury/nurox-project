@@ -246,6 +246,8 @@ import { AuditLogInterceptor } from './common/interceptors/audit-log.interceptor
     ManufacturingModule,
     FleetModule,
     ComplianceModule,
+    SearchModule,
+    CollaborationModule,
   ],
   controllers: [AppController],
   providers: [

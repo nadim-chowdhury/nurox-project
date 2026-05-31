@@ -69,6 +69,19 @@ export const analyticsApi = baseApi.injectEndpoints({
     getPerformanceCalibration: builder.query<any[], void>({
       query: () => "/analytics/performance-calibration",
     }),
+    generateDemandForecast: builder.mutation<
+      any,
+      { productId: string; months?: number }
+    >({
+      query: ({ productId, months }) => ({
+        url: `/analytics/forecasting/demand/${productId}`,
+        method: "POST",
+        params: { months },
+      }),
+    }),
+    getDemandForecasts: builder.query<any[], string>({
+      query: (productId) => `/analytics/forecasting/demand/${productId}`,
+    }),
   }),
   overrideExisting: false,
 });
@@ -82,4 +95,6 @@ export const {
   useGetComparisonQuery,
   useGetHRAnalyticsQuery,
   useGetPerformanceCalibrationQuery,
+  useGenerateDemandForecastMutation,
+  useGetDemandForecastsQuery,
 } = analyticsApi;

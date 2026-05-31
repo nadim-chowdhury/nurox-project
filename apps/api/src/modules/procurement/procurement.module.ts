@@ -21,6 +21,10 @@ import { VendorBillLine } from './entities/vendor-bill-line.entity';
 import { InventoryModule } from '../inventory/inventory.module';
 import { MailerModule } from '../mailer/mailer.module';
 import { FinanceModule } from '../finance/finance.module';
+import { SmartProcurementService } from './services/smart-procurement.service';
+import { User } from '../users/entities/user.entity';
+import { Product } from '../inventory/entities/product.entity';
+import { ProductVariant } from '../inventory/entities/product-variant.entity';
 
 @Module({
   imports: [
@@ -39,13 +43,16 @@ import { FinanceModule } from '../finance/finance.module';
       VendorEvaluation,
       VendorBill,
       VendorBillLine,
+      User,
+      Product,
+      ProductVariant,
     ]),
     InventoryModule,
     MailerModule,
     FinanceModule,
   ],
   controllers: [ProcurementController],
-  providers: [ProcurementService],
-  exports: [ProcurementService],
+  providers: [ProcurementService, SmartProcurementService],
+  exports: [ProcurementService, SmartProcurementService],
 })
 export class ProcurementModule {}

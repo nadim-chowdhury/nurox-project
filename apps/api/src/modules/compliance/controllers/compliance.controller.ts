@@ -17,6 +17,7 @@ import { TenantGuard } from '../../../common/guards/tenant.guard';
 import { CurrentTenant } from '../../../common/decorators/current-tenant.decorator';
 import { MushakService } from '../services/mushak.service';
 import { ComplianceReportService } from '../services/compliance-report.service';
+import { TaxFilingService } from '../services/tax-filing.service';
 import { Response } from 'express';
 import { Res } from '@nestjs/common';
 
@@ -27,6 +28,7 @@ export class ComplianceController {
     private readonly taxEngine: TaxEngineService,
     private readonly mushakService: MushakService,
     private readonly reportService: ComplianceReportService,
+    private readonly filingService: TaxFilingService,
   ) {}
 
   @Post('calculate')
@@ -36,6 +38,23 @@ export class ComplianceController {
     @Body() payload: CalculateTaxPayloadDto,
   ) {
     return this.taxEngine.calculateTax(tenantId, payload);
+  }
+
+  @Get('readiness/:period')
+  async checkReadiness(
+    @CurrentTenant() tenantId: string,
+    @Param('period') period: string,
+  ) {
+    return this.filingService.checkReadiness(tenantId, period);
+  }
+
+  @Get('filing-package/:period')
+  async downloadFilingPackage(
+    @CurrentTenant() tenantId: string,
+    @Param('period') period: string,
+    @Res() res: Response,
+  ) {
+    return this.filingService.generateFilingPackage(tenantId, period, res);
   }
 
   @Post('export/:jurisdiction')

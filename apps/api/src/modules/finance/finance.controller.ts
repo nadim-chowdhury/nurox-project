@@ -14,6 +14,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { FinanceService } from './finance.service';
+import { BankReconciliationService } from './services/bank-reconciliation.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CheckModule } from '../../common/guards/module.guard';
 import { InvoiceStatus } from './entities/invoice.entity';
@@ -38,7 +39,10 @@ import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 @UseGuards(JwtAuthGuard)
 @CheckModule('finance')
 export class FinanceController {
-  constructor(private readonly financeService: FinanceService) {}
+  constructor(
+    private readonly financeService: FinanceService,
+    private readonly reconciliationService: BankReconciliationService,
+  ) {}
 
   @Post('accounts')
   @UsePipes(new ZodValidationPipe(accountSchema))
@@ -497,5 +501,20 @@ export class FinanceController {
     @Body() dto: Partial<TaxRateDto>,
   ) {
     return this.financeService.updateTaxRate(id, dto as any);
+  }
+
+  @Get('banking/reconciliation-suggestions/:bankAccountId')
+  getReconciliationSuggestions(
+    @Param('bankAccountId', ParseUUIDPipe) bankAccountId: string,
+  ) {
+    return this.reconciliationService.getSuggestions(bankAccountId);
+  }
+
+  @Post('banking/reconcile-match')
+  reconcileMatch(
+    @Body('transactionId', ParseUUIDPipe) transactionId: string,
+    @Body('journalLineId', ParseUUIDPipe) journalLineId: string,
+  ) {
+    return this.reconciliationService.reconcile(transactionId, journalLineId);
   }
 }

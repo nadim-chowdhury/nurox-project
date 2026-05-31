@@ -28,6 +28,7 @@ import { SystemModule } from '../system/system.module';
 import { ARReminderProcessor } from './ar-reminder.processor';
 import { RecurringJournalProcessor } from './recurring-journal.processor';
 import { RecurringInvoiceProcessor } from './recurring-invoice.processor';
+import { BankReconciliationService } from './services/bank-reconciliation.service';
 
 @Module({
   imports: [
@@ -68,7 +69,12 @@ import { RecurringInvoiceProcessor } from './recurring-invoice.processor';
     RecurringJournalProcessor,
     RecurringInvoiceProcessor,
     CurrencyConversionService,
+    BankReconciliationService,
   ],
-  exports: [FinanceService, CurrencyConversionService],
+  exports: [
+    FinanceService,
+    CurrencyConversionService,
+    BankReconciliationService,
+  ],
 })
 export class FinanceModule {}

@@ -22,6 +22,7 @@ import {
   InboxOutlined,
   BarcodeOutlined,
   ExperimentOutlined,
+  RobotOutlined,
 } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import {
@@ -29,11 +30,16 @@ import {
   useCreateProductMutation,
 } from "@/store/api/inventoryApi";
 import { formatCurrency } from "@/lib/utils";
+import { DemandForecastWidget } from "@/components/modules/inventory/DemandForecastWidget";
 
 export default function ProductsPage() {
   const { data: products, isLoading } = useGetProductsQuery();
   const [createProduct] = useCreateProductMutation();
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isForecastVisible, setIsForecastVisible] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(
+    null,
+  );
   const [form] = Form.useForm();
 
   const handleCreate = async (values: any) => {
@@ -103,8 +109,18 @@ export default function ProductsPage() {
     {
       title: "Action",
       key: "action",
-      render: (_: any, _record: any) => (
+      render: (_: any, record: any) => (
         <Space>
+          <Button
+            icon={<RobotOutlined />}
+            size="small"
+            onClick={() => {
+              setSelectedProductId(record.id);
+              setIsForecastVisible(true);
+            }}
+          >
+            AI Forecast
+          </Button>
           <Button icon={<ExperimentOutlined />} size="small">
             Variants
           </Button>
@@ -144,6 +160,21 @@ export default function ProductsPage() {
         loading={isLoading}
         rowKey="id"
       />
+
+      <Modal
+        title="AI Demand Forecasting"
+        open={isForecastVisible}
+        onCancel={() => {
+          setIsForecastVisible(false);
+          setSelectedProductId(null);
+        }}
+        footer={null}
+        width={800}
+      >
+        {selectedProductId && (
+          <DemandForecastWidget productId={selectedProductId} />
+        )}
+      </Modal>
 
       <Modal
         title="Add New Product"
