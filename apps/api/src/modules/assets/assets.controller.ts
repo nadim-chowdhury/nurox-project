@@ -8,6 +8,8 @@ import {
   Query,
   UseGuards,
   Req,
+  UsePipes,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AssetsService } from './assets.service';
@@ -16,6 +18,26 @@ import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { Permission } from '../auth/enums/permissions.enum';
 import { CheckModule } from '../../common/guards/module.guard';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import {
+  createAssetSchema,
+  updateAssetSchema,
+  createAssetCategorySchema,
+  assignAssetSchema,
+  createAssetMaintenanceSchema,
+  disposeAssetSchema,
+  type CreateAssetDto,
+  type UpdateAssetDto,
+  type CreateAssetCategoryDto,
+  type AssignAssetDto,
+  type CreateAssetMaintenanceDto,
+  type DisposeAssetDto,
+} from '@repo/shared-schemas';
+import { Request } from 'express';
+
+interface TenantRequest extends Request {
+  tenantId: string;
+}
 
 @ApiTags('Asset Management')
 @ApiBearerAuth()
@@ -28,45 +50,54 @@ export class AssetsController {
   @Post('categories')
   @ApiOperation({ summary: 'Create a new asset category' })
   @RequirePermissions(Permission.ADMIN_WRITE)
-  async createCategory(@Req() req: any, @Body() dto: any) {
+  @UsePipes(new ZodValidationPipe(createAssetCategorySchema))
+  async createCategory(
+    @Req() req: TenantRequest,
+    @Body() dto: CreateAssetCategoryDto,
+  ) {
     return this.assetsService.createCategory(req.tenantId, dto);
   }
 
   @Get('categories')
   @ApiOperation({ summary: 'List all asset categories' })
   @RequirePermissions(Permission.ADMIN_READ)
-  async findAllCategories(@Req() req: any) {
+  async findAllCategories(@Req() req: TenantRequest) {
     return this.assetsService.findAllCategories(req.tenantId);
   }
 
   @Post()
   @ApiOperation({ summary: 'Create a new asset' })
   @RequirePermissions(Permission.ADMIN_WRITE)
-  async createAsset(@Req() req: any, @Body() dto: any) {
+  @UsePipes(new ZodValidationPipe(createAssetSchema))
+  async createAsset(@Req() req: TenantRequest, @Body() dto: CreateAssetDto) {
     return this.assetsService.createAsset(req.tenantId, dto);
   }
 
   @Get()
   @ApiOperation({ summary: 'List all assets' })
   @RequirePermissions(Permission.ADMIN_READ)
-  async findAllAssets(@Req() req: any, @Query() query: any) {
+  async findAllAssets(@Req() req: TenantRequest, @Query() query: any) {
     return this.assetsService.findAllAssets(req.tenantId, query);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get asset details' })
   @RequirePermissions(Permission.ADMIN_READ)
-  async findOneAsset(@Req() req: any, @Param('id') id: string) {
+  async findOneAsset(
+    @Req() req: TenantRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.assetsService.findOneAsset(req.tenantId, id);
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Update asset details' })
   @RequirePermissions(Permission.ADMIN_WRITE)
+  @UsePipes(new ZodValidationPipe(updateAssetSchema))
   async updateAsset(
-    @Req() req: any,
-    @Param('id') id: string,
-    @Body() dto: any,
+    @Req() req: TenantRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateAssetDto,
   ) {
     return this.assetsService.updateAsset(req.tenantId, id, dto);
   }
@@ -74,10 +105,11 @@ export class AssetsController {
   @Post(':id/assign')
   @ApiOperation({ summary: 'Assign asset to an employee' })
   @RequirePermissions(Permission.ADMIN_WRITE)
+  @UsePipes(new ZodValidationPipe(assignAssetSchema))
   async assignAsset(
-    @Req() req: any,
-    @Param('id') id: string,
-    @Body() dto: any,
+    @Req() req: TenantRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AssignAssetDto,
   ) {
     return this.assetsService.assignAsset(req.tenantId, id, dto);
   }
@@ -86,8 +118,8 @@ export class AssetsController {
   @ApiOperation({ summary: 'Mark asset as returned' })
   @RequirePermissions(Permission.ADMIN_WRITE)
   async returnAsset(
-    @Req() req: any,
-    @Param('id') id: string,
+    @Req() req: TenantRequest,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: { returnDate: string },
   ) {
     return this.assetsService.returnAsset(req.tenantId, id, dto.returnDate);
@@ -96,10 +128,11 @@ export class AssetsController {
   @Post(':id/maintenance')
   @ApiOperation({ summary: 'Record asset maintenance' })
   @RequirePermissions(Permission.ADMIN_WRITE)
+  @UsePipes(new ZodValidationPipe(createAssetMaintenanceSchema))
   async addMaintenance(
-    @Req() req: any,
-    @Param('id') id: string,
-    @Body() dto: any,
+    @Req() req: TenantRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CreateAssetMaintenanceDto,
   ) {
     return this.assetsService.addMaintenance(req.tenantId, id, dto);
   }
@@ -107,10 +140,11 @@ export class AssetsController {
   @Post(':id/dispose')
   @ApiOperation({ summary: 'Mark asset as disposed' })
   @RequirePermissions(Permission.ADMIN_WRITE)
+  @UsePipes(new ZodValidationPipe(disposeAssetSchema))
   async disposeAsset(
-    @Req() req: any,
-    @Param('id') id: string,
-    @Body() dto: any,
+    @Req() req: TenantRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: DisposeAssetDto,
   ) {
     return this.assetsService.disposeAsset(req.tenantId, id, dto);
   }
@@ -118,7 +152,10 @@ export class AssetsController {
   @Post(':id/qr')
   @ApiOperation({ summary: 'Generate QR code for asset' })
   @RequirePermissions(Permission.ADMIN_READ)
-  async generateQR(@Req() req: any, @Param('id') id: string) {
+  async generateQR(
+    @Req() req: TenantRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     const qrCodeUrl = await this.assetsService.generateAssetQR(
       req.tenantId,
       id,
@@ -126,12 +163,13 @@ export class AssetsController {
     return { qrCodeUrl };
   }
 
-  // NOTE: For CSV import, NestJS usually uses Interceptors for file uploads, but we'll simulate passing buffer or base64 in Body for simplicity if no FileInterceptor is imported
   @Post('import')
   @ApiOperation({ summary: 'Import assets from CSV' })
   @RequirePermissions(Permission.ADMIN_WRITE)
-  async importAssets(@Req() req: any, @Body() body: { fileData: string }) {
-    // Expecting base64 string
+  async importAssets(
+    @Req() req: TenantRequest,
+    @Body() body: { fileData: string },
+  ) {
     const buffer = Buffer.from(body.fileData, 'base64');
     return this.assetsService.processCSVImport(req.tenantId, buffer);
   }

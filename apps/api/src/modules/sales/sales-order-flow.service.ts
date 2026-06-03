@@ -381,18 +381,21 @@ export class SalesOrderFlowService {
     const invoice = await this.financeService.createInvoice({
       invoiceNumber,
       customerName: buyerName,
-      customerId: so.accountId,
-      issueDate: issueDate.toISOString().slice(0, 10),
-      dueDate: dueDate.toISOString().slice(0, 10),
+      customerEmail: undefined,
+      issueDate: issueDate.toISOString(),
+      dueDate: dueDate.toISOString(),
       status: InvoiceStatus.SENT,
       isProforma: false,
       isTaxInvoice: true,
       subtotal: subTotal,
       taxAmount: taxTotal,
       totalAmount,
-      lines: invoiceLines,
+      lines: invoiceLines.map((l) => ({
+        ...l,
+        lineTotal: l.quantity * l.unitPrice,
+      })),
       notes: `Generated from sales order ${so.soNumber}`,
-    } as never);
+    });
 
     const mushak = await this.mushakService.createMushak63(tenantId, {
       invoiceNumber,

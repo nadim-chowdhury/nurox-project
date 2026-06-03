@@ -105,6 +105,10 @@ export class AiService implements OnModuleInit {
         return 'You are an assistant. Extract a concise summary and a list of actionable items from the provided meeting notes.';
       case 'report_description':
         return 'You are an ERP data analyst. Generate a clear summary describing what a report should contain based on the user request.';
+      case 'support_analysis':
+        return 'You are a support supervisor. Analyze the sentiment and urgency of support tickets.';
+      case 'support_reply':
+        return 'You are a helpful and professional customer support agent.';
       default:
         return 'You are a helpful assistant.';
     }
@@ -112,9 +116,35 @@ export class AiService implements OnModuleInit {
 
   private stubChatResponse(messages: ChatMessageDto[]): string {
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage.content.toLowerCase().includes('payroll')) {
+    const content = lastMessage.content.toLowerCase();
+
+    if (content.includes('payroll')) {
       return 'Sure! Based on the ERP data, your Q3 payroll expenses have increased by 4% due to new hires in Engineering.';
     }
+
+    if (content.includes('gap') && content.includes('kb')) {
+      return JSON.stringify([
+        {
+          title: 'Troubleshooting Common Printer Issues',
+          reason:
+            'Multiple tickets reported problems with office printers that are not covered in the KB.',
+          suggestedCategory: 'Hardware',
+        },
+        {
+          title: 'Understanding Your Monthly Statement',
+          reason:
+            'Customers frequently ask for clarification on billing items that are already standard.',
+          suggestedCategory: 'Billing',
+        },
+        {
+          title: 'How to Reset Two-Factor Authentication',
+          reason:
+            'A surge in tickets regarding 2FA lockouts indicates a need for a self-service guide.',
+          suggestedCategory: 'Security',
+        },
+      ]);
+    }
+
     return `[STUB RESPONSE] I am Nurox AI. You said: "${lastMessage.content}". Since no real API key is provided, I am functioning as a mock.`;
   }
 }

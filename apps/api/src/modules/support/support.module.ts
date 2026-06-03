@@ -11,21 +11,30 @@ import { KnowledgeBaseController } from './controllers/knowledge-base.controller
 import { SupportAnalyticsController } from './controllers/support-analytics.controller';
 import { SlaProcessor } from './processors/sla.processor';
 import { ImapService } from './services/imap.service';
+import { SupportAiService } from './services/support-ai.service';
 import { BullModule } from '@nestjs/bullmq';
 import { MailerModule } from '../mailer/mailer.module';
+import { AiModule } from '../ai/ai.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Ticket, TicketMessage, KbArticle, TicketSla]),
     BullModule.registerQueue({ name: 'support' }),
     MailerModule,
+    AiModule,
   ],
   controllers: [
     TicketsController,
     KnowledgeBaseController,
     SupportAnalyticsController,
   ],
-  providers: [TicketsService, SlaProcessor, ImapService, KnowledgeBaseService],
-  exports: [TicketsService, KnowledgeBaseService],
+  providers: [
+    TicketsService,
+    SlaProcessor,
+    ImapService,
+    KnowledgeBaseService,
+    SupportAiService,
+  ],
+  exports: [TicketsService, KnowledgeBaseService, SupportAiService],
 })
 export class SupportModule {}

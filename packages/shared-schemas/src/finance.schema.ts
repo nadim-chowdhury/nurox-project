@@ -145,3 +145,35 @@ export const taxRateSchema = z.object({
 });
 
 export type TaxRateDto = z.infer<typeof taxRateSchema>;
+
+export const pettyCashTypeEnum = z.enum([
+  "OPENING_BALANCE",
+  "REPLENISHMENT",
+  "DISBURSEMENT",
+]);
+export type PettyCashType = z.infer<typeof pettyCashTypeEnum>;
+
+export const pettyCashTransactionSchema = z.object({
+  fundId: z.string().uuid(),
+  transactionDate: z.string().datetime(),
+  type: pettyCashTypeEnum,
+  description: z.string().min(1),
+  amount: z.number().positive(),
+  reference: z.string().optional().nullable(),
+});
+
+export type PettyCashTransactionDto = z.infer<
+  typeof pettyCashTransactionSchema
+>;
+
+export const paymentSchema = z.object({
+  targetId: z.string().uuid(),
+  type: z.enum(["INVOICE", "BILL"]),
+  amount: z.number().positive(),
+  paymentDate: z.string().datetime(),
+  bankAccountId: z.string().uuid(),
+  reference: z.string().optional().nullable(),
+  tdsRate: z.number().min(0).max(100).optional().nullable(),
+});
+
+export type PaymentDto = z.infer<typeof paymentSchema>;

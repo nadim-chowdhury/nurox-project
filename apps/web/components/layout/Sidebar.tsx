@@ -18,6 +18,7 @@ import {
   FileOutlined,
   AuditOutlined,
   BarChartOutlined,
+  CustomerServiceOutlined,
 } from "@ant-design/icons";
 import { usePathname, useRouter } from "next/navigation";
 import { useAppSelector, useAppDispatch } from "@/hooks/useRedux";
@@ -31,12 +32,16 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { sidebarCollapsed: collapsed, primaryColor, logoUrl } = useAppSelector((s) => s.ui);
+  const {
+    sidebarCollapsed: collapsed,
+    primaryColor,
+    logoUrl,
+  } = useAppSelector((s) => s.ui);
   const { canPerform, Permission, isAdmin } = usePermission();
 
   // Fetch enabled modules for this tenant
   const { data: enabledModules = [] } = useGetModulesQuery();
-  const enabledModuleKeys = enabledModules.map(m => m.moduleKey);
+  const enabledModuleKeys = enabledModules.map((m) => m.moduleKey);
 
   const menuItems = [
     {
@@ -48,15 +53,25 @@ export function Sidebar() {
       key: "hr-menu",
       icon: <TeamOutlined />,
       label: "HR",
-      hidden: !enabledModuleKeys.includes("hr") || !canPerform(Permission.HR_VIEW_EMPLOYEES),
+      hidden:
+        !enabledModuleKeys.includes("hr") ||
+        !canPerform(Permission.HR_VIEW_EMPLOYEES),
       children: [
         { key: "/hr/employees", label: "Employees" },
         { key: "/hr/directory", label: "Team Directory" },
-        { key: "/hr/departments", label: "Departments", hidden: !canPerform(Permission.HR_VIEW_DEPARTMENTS) },
+        {
+          key: "/hr/departments",
+          label: "Departments",
+          hidden: !canPerform(Permission.HR_VIEW_DEPARTMENTS),
+        },
         { key: "/hr/designations", label: "Designations" },
         { key: "/hr/org-chart", label: "Org Chart" },
         { key: "/hr/recruitment", label: "Recruitment" },
-        { key: "/hr/performance", label: "Performance", hidden: !canPerform(Permission.HR_MANAGE_PERFORMANCE) },
+        {
+          key: "/hr/performance",
+          label: "Performance",
+          hidden: !canPerform(Permission.HR_MANAGE_PERFORMANCE),
+        },
       ],
     },
     {
@@ -78,7 +93,11 @@ export function Sidebar() {
       children: [
         { key: "/leave", label: "Overview" },
         { key: "/leave/apply", label: "Apply" },
-        { key: "/leave/approvals", label: "Approvals", hidden: !canPerform(Permission.HR_UPDATE_EMPLOYEE) },
+        {
+          key: "/leave/approvals",
+          label: "Approvals",
+          hidden: !canPerform(Permission.HR_UPDATE_EMPLOYEE),
+        },
         { key: "/leave/balances", label: "Balances" },
       ],
     },
@@ -86,7 +105,9 @@ export function Sidebar() {
       key: "payroll-menu",
       icon: <DollarOutlined />,
       label: "Payroll",
-      hidden: !enabledModuleKeys.includes("finance") || !canPerform(Permission.FINANCE_VIEW_ACCOUNTS),
+      hidden:
+        !enabledModuleKeys.includes("finance") ||
+        !canPerform(Permission.FINANCE_VIEW_ACCOUNTS),
       children: [
         { key: "/payroll/runs", label: "Payroll Runs" },
         { key: "/payroll/salary-structures", label: "Salary Structures" },
@@ -97,11 +118,17 @@ export function Sidebar() {
       key: "finance-menu",
       icon: <BankOutlined />,
       label: "Finance",
-      hidden: !enabledModuleKeys.includes("finance") || !canPerform(Permission.FINANCE_VIEW_ACCOUNTS),
+      hidden:
+        !enabledModuleKeys.includes("finance") ||
+        !canPerform(Permission.FINANCE_VIEW_ACCOUNTS),
       children: [
         { key: "/finance/chart-of-accounts", label: "Chart of Accounts" },
         { key: "/finance/journals", label: "Journals" },
-        { key: "/finance/invoices", label: "Invoices", hidden: !canPerform(Permission.FINANCE_VIEW_INVOICES) },
+        {
+          key: "/finance/invoices",
+          label: "Invoices",
+          hidden: !canPerform(Permission.FINANCE_VIEW_INVOICES),
+        },
         { key: "/finance/bills", label: "Bills" },
         { key: "/finance/banking", label: "Banking" },
         { key: "/finance/reports", label: "Reports" },
@@ -122,7 +149,9 @@ export function Sidebar() {
       key: "inventory-menu",
       icon: <InboxOutlined />,
       label: "Inventory",
-      hidden: !enabledModuleKeys.includes("inventory") || !canPerform(Permission.INVENTORY_VIEW),
+      hidden:
+        !enabledModuleKeys.includes("inventory") ||
+        !canPerform(Permission.INVENTORY_VIEW),
       children: [
         { key: "/inventory/products", label: "Products" },
         { key: "/inventory/warehouses", label: "Warehouses" },
@@ -133,7 +162,9 @@ export function Sidebar() {
       key: "sales-menu",
       icon: <ShoppingCartOutlined />,
       label: "Sales & CRM",
-      hidden: !enabledModuleKeys.includes("sales") || !canPerform(Permission.SALES_VIEW_LEADS),
+      hidden:
+        !enabledModuleKeys.includes("sales") ||
+        !canPerform(Permission.SALES_VIEW_LEADS),
       children: [
         { key: "/sales/deals", label: "Deals" },
         { key: "/sales/leads", label: "Leads" },
@@ -149,10 +180,22 @@ export function Sidebar() {
       key: "projects-menu",
       icon: <ProjectOutlined />,
       label: "Projects",
-      hidden: !enabledModuleKeys.includes("projects") || !canPerform(Permission.PROJECTS_VIEW),
+      hidden:
+        !enabledModuleKeys.includes("projects") ||
+        !canPerform(Permission.PROJECTS_VIEW),
       children: [
         { key: "/projects", label: "Overview" },
         { key: "/projects/tasks", label: "Tasks" },
+      ],
+    },
+    {
+      key: "support-menu",
+      icon: <CustomerServiceOutlined />,
+      label: "Support",
+      hidden: !enabledModuleKeys.includes("support"),
+      children: [
+        { key: "/support/tickets", label: "Tickets" },
+        { key: "/support/kb", label: "Knowledge Base" },
       ],
     },
     {
@@ -193,8 +236,8 @@ export function Sidebar() {
   // Recursively filter hidden items
   const filterMenuItems = (items: any[]): any[] => {
     return items
-      .filter(item => !item.hidden)
-      .map(item => {
+      .filter((item) => !item.hidden)
+      .map((item) => {
         if (item.children) {
           return { ...item, children: filterMenuItems(item.children) };
         }

@@ -1,7 +1,7 @@
 # NUROX ERP — Ultimate SaaS Master Documentation
 
-> **Version:** 2.4 · **Last Updated:** May 2026
-> **Stack:** Next.js 16 · NestJS 11 · TypeORM 0.3.x · PostgreSQL 17 · Ant Design 6.x · RTK Query · Custom JWT Auth (Passport.js)
+> **Version:** 2.5 · **Last Updated:** June 2026
+> **Stack:** Next.js 16.2 · NestJS 11.0 · TypeORM 0.3.x · PostgreSQL 17 · Ant Design 6.3 · RTK Query · Custom JWT Auth (Passport.js)
 > **Design System:** Liquid Precision — "The Architectural Infinite"
 > **Architecture:** Multi-Tenant SaaS · Module-Based · API-First · Event-Driven
 
@@ -24,7 +24,7 @@
 
 ### 0.2 Architectural Non-Negotiables (Guardrails)
 
-- **Zero-Tolerance for `any`:** Never use `any` in TypeScript. If a type is unknown, use `unknown` and a type guard, or define a proper interface.
+- **Zero-Tolerance for `any`:** Never use `any` in TypeScript. If a type is unknown, use `unknown` and a type guard, or define a proper interface. (Audit 2026: Cleaning up legacy `any` in Assets/Auth modules).
 - **Multi-Tenancy First:** Every database record MUST be scoped to a `tenant_id`. Every service call MUST verify tenant isolation.
 - **Centralized Validation:** No local DTOs. 100% of API boundaries must be validated via shared Zod schemas in `packages/shared-schemas`.
 - **UI Standard:** Forms MUST use the standardized RHF wrappers in `@/components/common/forms/`. Never use raw Antd input controls directly in forms.
@@ -57,22 +57,23 @@ Every module implemented or refactored MUST adhere to these four pillars:
     - Inputs MUST use standardized wrappers (e.g., `RhfInput`, `RhfSelect`) from `@/components/common/forms/`.
     - Tables MUST support server-side pagination and consistent "Liquid Precision" styling.
 
-### 0.5 Implementation status vs this document (May 2026)
+### 0.5 Implementation status vs this document (June 2026)
 
-This file lists **~692 aspirational features** across 30 modules. The repo implements a **subset** to production quality. Do not treat unchecked `[ ]` items as missing bugs — treat them as backlog.
+This file lists **~692 aspirational features** across 30 modules. The repo implements a **subset** to production quality.
 
-| Area                       | Status in repo              | Where to verify                           |
-| -------------------------- | --------------------------- | ----------------------------------------- |
-| Docker one-command         | ✅ `pnpm docker:up`         | `docker-compose.yml`, `.env.docker`       |
-| Multi-tenant auth + RBAC   | ✅                          | `apps/api` auth modules                   |
-| Finance + journals         | ✅ core                     | `apps/api/src/modules/finance`            |
-| BD VAT Mushak 6.3/6.6/9.1  | ✅                          | `compliance` module                       |
-| Inventory + manufacturing  | ✅ core                     | inventory + manufacturing modules         |
-| Procurement vendor bills   | ✅                          | procurement module                        |
-| Sales quote → SO → invoice | ✅ API + UI (quotes/orders) | `SalesOrderFlowService`, sales pages      |
-| SaaS billing / Stripe      | ⬜ scaffold                 | billing module — **required before sell** |
-| Full CRM UI (leads/deals)  | ⬜ mock pages               | wire to existing sales APIs               |
-| All 30 modules complete    | ⬜ long-term                | `docs/PRODUCTION_ROADMAP.md`              |
+| Area                       | Status in repo        | Where to verify                      |
+| -------------------------- | --------------------- | ------------------------------------ |
+| Docker one-command         | ✅ `pnpm docker:up`   | `docker-compose.yml`, `.env.docker`  |
+| Multi-tenant auth + RBAC   | ✅                    | `apps/api` auth modules              |
+| Finance + journals         | ✅                    | `apps/api/src/modules/finance`       |
+| BD VAT Mushak 6.3/6.6/9.1  | ✅                    | `compliance` module                  |
+| Inventory + manufacturing  | ✅                    | inventory + manufacturing modules    |
+| Procurement vendor bills   | ✅                    | procurement module                   |
+| Sales quote → SO → invoice | ✅                    | `SalesOrderFlowService`, sales pages |
+| Asset Management           | ✅ Hardened June 2026 | `apps/api/src/modules/assets`        |
+| SaaS billing / Stripe      | 🟡 scaffold (Phase 6) | billing module                       |
+| CRM UI (leads/deals)       | 🟡 UI refactor needed | `apps/web/app/sales`                 |
+| All 30 modules complete    | ⬜ long-term          | `docs/PRODUCTION_ROADMAP.md`         |
 
 **Engineering task order:** `docs/AI_CONTEXT_ANCHOR.md` §2 — not the month-based table in §7.6 below.
 

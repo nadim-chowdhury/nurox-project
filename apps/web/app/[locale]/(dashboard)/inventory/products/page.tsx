@@ -6,12 +6,7 @@ import {
   Tag,
   Button,
   Space,
-  Card,
   Modal,
-  Form,
-  Input,
-  Select,
-  InputNumber,
   message,
   Avatar,
   Row,
@@ -20,9 +15,8 @@ import {
 import {
   PlusOutlined,
   InboxOutlined,
-  BarcodeOutlined,
-  ExperimentOutlined,
   RobotOutlined,
+  ExperimentOutlined,
 } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import {
@@ -31,6 +25,13 @@ import {
 } from "@/store/api/inventoryApi";
 import { formatCurrency } from "@/lib/utils";
 import { DemandForecastWidget } from "@/components/modules/inventory/DemandForecastWidget";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { productSchema, type ProductDto } from "@repo/shared-schemas";
+import { RhfInput } from "@/components/common/forms/RhfInput";
+import { RhfSelect } from "@/components/common/forms/RhfSelect";
+import { RhfInputNumber } from "@/components/common/forms/RhfInputNumber";
+import { RhfTextArea } from "@/components/common/forms/RhfTextArea";
 
 export default function ProductsPage() {
   const { data: products, isLoading } = useGetProductsQuery();
@@ -40,14 +41,26 @@ export default function ProductsPage() {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
     null,
   );
-  const [form] = Form.useForm();
 
-  const handleCreate = async (values: any) => {
+  const { control, handleSubmit, reset } = useForm<ProductDto>({
+    resolver: zodResolver(productSchema) as any,
+    defaultValues: {
+      name: "",
+      sku: "",
+      uom: "PCS",
+      basePrice: 0,
+      reorderPoint: 10,
+      valuationMethod: "FIFO",
+      description: "",
+    },
+  });
+
+  const handleCreate = async (values: ProductDto) => {
     try {
       await createProduct(values).unwrap();
       message.success("Product added to catalog");
       setIsModalVisible(false);
-      form.resetFields();
+      reset();
     } catch (error) {
       message.error("Failed to add product");
     }
@@ -180,73 +193,80 @@ export default function ProductsPage() {
         title="Add New Product"
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
-        onOk={() => form.submit()}
+        onOk={handleSubmit(handleCreate)}
         width={600}
       >
-        <Form form={form} layout="vertical" onFinish={handleCreate}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <Row gutter={16}>
             <Col span={16}>
-              <Form.Item
+              <RhfInput
                 name="name"
+                control={control}
                 label="Product Name"
-                rules={[{ required: true }]}
-              >
-                <Input placeholder="e.g. Industrial Drill" />
-              </Form.Item>
+                placeholder="e.g. Industrial Drill"
+              />
             </Col>
             <Col span={8}>
-              <Form.Item name="sku" label="SKU" rules={[{ required: true }]}>
-                <Input placeholder="DRL-001" />
-              </Form.Item>
+              <RhfInput
+                name="sku"
+                control={control}
+                label="SKU"
+                placeholder="DRL-001"
+              />
             </Col>
           </Row>
 
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item name="uom" label="UOM" initialValue="PCS">
-                <Select
-                  options={[
-                    { label: "Pieces", value: "PCS" },
-                    { label: "KG", value: "KG" },
-                    { label: "Litre", value: "L" },
-                  ]}
-                />
-              </Form.Item>
+              <RhfSelect
+                name="uom"
+                control={control}
+                label="UOM"
+                options={[
+                  { label: "Pieces", value: "PCS" },
+                  { label: "KG", value: "KG" },
+                  { label: "Litre", value: "L" },
+                ]}
+              />
             </Col>
             <Col span={8}>
-              <Form.Item name="basePrice" label="Base Price" initialValue={0}>
-                <InputNumber style={{ width: "100%" }} min={0} />
-              </Form.Item>
+              <RhfInputNumber
+                name="basePrice"
+                control={control}
+                label="Base Price"
+                style={{ width: "100%" }}
+                min={0}
+              />
             </Col>
             <Col span={8}>
-              <Form.Item
+              <RhfInputNumber
                 name="reorderPoint"
+                control={control}
                 label="Reorder Point"
-                initialValue={10}
-              >
-                <InputNumber style={{ width: "100%" }} min={0} />
-              </Form.Item>
+                style={{ width: "100%" }}
+                min={0}
+              />
             </Col>
           </Row>
 
-          <Form.Item
+          <RhfSelect
             name="valuationMethod"
+            control={control}
             label="Valuation Method"
-            initialValue="FIFO"
-          >
-            <Select
-              options={[
-                { label: "First-In First-Out (FIFO)", value: "FIFO" },
-                { label: "Last-In First-Out (LIFO)", value: "LIFO" },
-                { label: "First-Expired First-Out (FEFO)", value: "FEFO" },
-              ]}
-            />
-          </Form.Item>
+            options={[
+              { label: "First-In First-Out (FIFO)", value: "FIFO" },
+              { label: "Last-In First-Out (LIFO)", value: "LIFO" },
+              { label: "First-Expired First-Out (FEFO)", value: "FEFO" },
+            ]}
+          />
 
-          <Form.Item name="description" label="Description">
-            <Input.TextArea rows={3} />
-          </Form.Item>
-        </Form>
+          <RhfTextArea
+            name="description"
+            control={control}
+            label="Description"
+            rows={3}
+          />
+        </div>
       </Modal>
     </div>
   );

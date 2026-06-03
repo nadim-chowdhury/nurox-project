@@ -6,6 +6,7 @@ import { TicketMessage } from '../entities/ticket-message.entity';
 import { CreateTicketDto } from '@repo/shared-schemas';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class TicketsService {
@@ -18,6 +19,7 @@ export class TicketsService {
     private readonly messageRepo: Repository<TicketMessage>,
     @InjectQueue('support')
     private readonly supportQueue: Queue,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async createTicket(
@@ -45,6 +47,8 @@ export class TicketsService {
 
     await this.ticketRepo.save(ticket);
     this.logger.log(`Ticket ${ticket.id} created by user ${requesterId}`);
+
+    this.eventEmitter.emit('ticket.created', { tenantId, ticketId: ticket.id });
 
     // Queue SLA Response Timer (e.g., 2 hours for P3)
     await this.supportQueue.add(
@@ -101,6 +105,13 @@ export class TicketsService {
     });
 
     await this.messageRepo.save(message);
+
+    this.eventEmitter.emit('ticket.message_added', {
+      tenantId,
+      ticketId,
+      senderId,
+      isInternal,
+    });
 
     // Automatically transition OPEN tickets to IN_PROGRESS or PENDING_USER based on who replied
     if (ticket.status === 'OPEN') {

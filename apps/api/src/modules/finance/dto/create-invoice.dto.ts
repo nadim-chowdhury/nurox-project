@@ -63,6 +63,18 @@ export class CreateInvoiceDto {
   @IsString()
   notes?: string;
 
+  @IsOptional()
+  @IsNumber()
+  subtotal?: number;
+
+  @IsOptional()
+  @IsNumber()
+  taxAmount?: number;
+
+  @IsOptional()
+  @IsNumber()
+  totalAmount?: number;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateInvoiceLineDto)

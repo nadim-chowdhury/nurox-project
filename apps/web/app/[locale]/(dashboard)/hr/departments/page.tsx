@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Button,
   Card,
@@ -9,9 +9,6 @@ import {
   Tooltip,
   message,
   Modal,
-  Form,
-  Input,
-  Select,
   Tabs,
   Row,
   Col,
@@ -32,8 +29,17 @@ import {
   useDeleteDepartmentMutation,
 } from "@/store/api/hrApi";
 import { confirmModal } from "@/components/common/ConfirmModal";
-import type { DepartmentDto } from "@repo/shared-schemas";
+import {
+  createDepartmentSchema,
+  type DepartmentDto,
+  type CreateDepartmentDto,
+} from "@repo/shared-schemas";
 import { OrgChart } from "@/components/modules/hr/OrgChart";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { RhfInput } from "@/components/common/forms/RhfInput";
+import { RhfSelect } from "@/components/common/forms/RhfSelect";
+import { RhfTextArea } from "@/components/common/forms/RhfTextArea";
 
 export default function DepartmentsPage() {
   const { data: departments, isLoading, refetch } = useGetDepartmentsQuery();
@@ -43,21 +49,40 @@ export default function DepartmentsPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDept, setEditingDept] = useState<DepartmentDto | null>(null);
-  const [parentId, setParentId] = useState<string | null>(null);
-  const [form] = Form.useForm();
+
+  const { control, handleSubmit, reset, setValue } =
+    useForm<CreateDepartmentDto>({
+      resolver: zodResolver(createDepartmentSchema),
+      defaultValues: {
+        name: "",
+        code: "",
+        description: "",
+        costCenter: "",
+        parentId: null,
+      },
+    });
 
   const handleAdd = (pId: string | null = null) => {
     setEditingDept(null);
-    setParentId(pId);
-    form.resetFields();
-    form.setFieldsValue({ parentId: pId });
+    reset({
+      name: "",
+      code: "",
+      description: "",
+      costCenter: "",
+      parentId: pId,
+    });
     setIsModalOpen(true);
   };
 
   const handleEdit = (dept: DepartmentDto) => {
     setEditingDept(dept);
-    setParentId(dept.parentId || null);
-    form.setFieldsValue(dept);
+    reset({
+      name: dept.name,
+      code: dept.code,
+      description: dept.description || "",
+      costCenter: dept.costCenter || "",
+      parentId: dept.parentId || null,
+    });
     setIsModalOpen(true);
   };
 
@@ -78,7 +103,7 @@ export default function DepartmentsPage() {
     });
   };
 
-  const onFinish = async (values: any) => {
+  const onSubmit = async (values: CreateDepartmentDto) => {
     try {
       if (editingDept) {
         await updateDept({ id: editingDept.id!, data: values }).unwrap();
@@ -94,7 +119,7 @@ export default function DepartmentsPage() {
     }
   };
 
-  // Convert flat list/trees from API to Ant Design Tree format
+  // ... (rest of methods unchanged)
   const renderTreeNodes = (data: any[]): TreeDataNode[] =>
     data.map((item) => ({
       title: (
@@ -249,52 +274,52 @@ export default function DepartmentsPage() {
         title={editingDept ? "Edit Department" : "Add Department"}
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
-        onOk={() => form.submit()}
+        onOk={handleSubmit(onSubmit)}
         destroyOnClose
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-          initialValues={{ parentId }}
-        >
-          <Form.Item name="parentId" label="Parent Department">
-            <Select
-              allowClear
-              placeholder="Select parent (optional)"
-              options={(departments || []).map((d) => ({
-                label: d.name,
-                value: d.id,
-              }))}
-            />
-          </Form.Item>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <RhfSelect
+            name="parentId"
+            control={control}
+            label="Parent Department"
+            placeholder="Select parent (optional)"
+            options={(departments || []).map((d) => ({
+              label: d.name,
+              value: d.id,
+            }))}
+            allowClear
+          />
           <Row gutter={16}>
             <Col span={16}>
-              <Form.Item
+              <RhfInput
                 name="name"
+                control={control}
                 label="Department Name"
-                rules={[{ required: true }]}
-              >
-                <Input placeholder="e.g. Engineering" />
-              </Form.Item>
+                placeholder="e.g. Engineering"
+              />
             </Col>
             <Col span={8}>
-              <Form.Item
+              <RhfInput
                 name="code"
+                control={control}
                 label="Code"
-                rules={[{ required: true }]}
-              >
-                <Input placeholder="e.g. ENG" />
-              </Form.Item>
+                placeholder="e.g. ENG"
+              />
             </Col>
           </Row>
-          <Form.Item name="costCenter" label="Cost Center">
-            <Input placeholder="e.g. CC-101" />
-          </Form.Item>
-          <Form.Item name="description" label="Description">
-            <Input.TextArea rows={3} />
-          </Form.Item>
-        </Form>
+          <RhfInput
+            name="costCenter"
+            control={control}
+            label="Cost Center"
+            placeholder="e.g. CC-101"
+          />
+          <RhfTextArea
+            name="description"
+            control={control}
+            label="Description"
+            rows={3}
+          />
+        </div>
       </Modal>
 
       <style jsx global>{`

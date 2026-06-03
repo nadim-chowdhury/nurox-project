@@ -8,6 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { KnowledgeBaseService } from '../services/knowledge-base.service';
+import { SupportAiService } from '../services/support-ai.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../../../common/guards/tenant.guard';
 import { CurrentTenant } from '../../../common/decorators/current-tenant.decorator';
@@ -16,7 +17,10 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 @UseGuards(JwtAuthGuard, TenantGuard)
 @Controller('support/kb')
 export class KnowledgeBaseController {
-  constructor(private readonly kbService: KnowledgeBaseService) {}
+  constructor(
+    private readonly kbService: KnowledgeBaseService,
+    private readonly supportAiService: SupportAiService,
+  ) {}
 
   @Post()
   async createArticle(
@@ -53,5 +57,10 @@ export class KnowledgeBaseController {
   async suggestArticles(@Query('q') query: string) {
     // AI Endpoint
     return this.kbService.suggestArticlesUsingAi(query);
+  }
+
+  @Post('gap-analysis')
+  async analyzeGaps(@CurrentTenant() tenantId: string) {
+    return this.supportAiService.analyzeGap(tenantId);
   }
 }

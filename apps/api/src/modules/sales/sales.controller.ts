@@ -11,9 +11,11 @@ import {
   HttpStatus,
   UseGuards,
   UsePipes,
+  UseInterceptors,
 } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { SalesOrderFlowService } from './sales-order-flow.service';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import {
   createLeadSchema,
   updateLeadSchema,
@@ -41,11 +43,15 @@ import { Permission } from '../auth/enums/permissions.enum';
 import { CheckModule } from '../../common/guards/module.guard';
 import { TenantGuard } from '../../common/guards/tenant.guard';
 import { CurrentTenant } from '../../common/decorators/current-tenant.decorator';
-import { ZodValidationPipe } from 'nestjs-zod';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { AuditLogInterceptor } from '../../common/interceptors/audit-log.interceptor';
 
+@ApiTags('Sales Management')
+@ApiBearerAuth()
 @Controller('sales')
 @UseGuards(JwtAuthGuard, PermissionsGuard, TenantGuard)
 @CheckModule('sales')
+@UseInterceptors(AuditLogInterceptor)
 export class SalesController {
   constructor(
     private readonly salesService: SalesService,
@@ -54,85 +60,96 @@ export class SalesController {
 
   @Post('leads')
   @RequirePermissions(Permission.SALES_MANAGE_LEADS)
+  @ApiOperation({ summary: 'Create a new lead' })
+  @UsePipes(new ZodValidationPipe(createLeadSchema))
   createLead(@Body() dto: CreateLeadDto) {
-    const parsed = createLeadSchema.parse(dto);
-    return this.salesService.createLead(parsed as any);
+    return this.salesService.createLead(dto as any);
   }
 
   @Get('leads')
   @RequirePermissions(Permission.SALES_VIEW_LEADS)
+  @ApiOperation({ summary: 'List all leads' })
   findAllLeads() {
     return this.salesService.findAllLeads();
   }
 
   @Get('leads/:id')
   @RequirePermissions(Permission.SALES_VIEW_LEADS)
+  @ApiOperation({ summary: 'Get lead details' })
   findLead(@Param('id', ParseUUIDPipe) id: string) {
     return this.salesService.findLeadById(id);
   }
 
   @Patch('leads/:id')
   @RequirePermissions(Permission.SALES_MANAGE_LEADS)
+  @ApiOperation({ summary: 'Update lead details' })
+  @UsePipes(new ZodValidationPipe(updateLeadSchema))
   updateLead(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateLeadDto,
   ) {
-    const parsed = updateLeadSchema.parse(dto);
-    return this.salesService.updateLead(id, parsed as any);
+    return this.salesService.updateLead(id, dto as any);
   }
 
   @Delete('leads/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermissions(Permission.SALES_MANAGE_LEADS)
+  @ApiOperation({ summary: 'Delete a lead' })
   removeLead(@Param('id', ParseUUIDPipe) id: string) {
     return this.salesService.removeLead(id);
   }
 
   @Post('deals')
   @RequirePermissions(Permission.SALES_MANAGE_DEALS)
+  @ApiOperation({ summary: 'Create a new deal' })
+  @UsePipes(new ZodValidationPipe(createDealSchema))
   createDeal(@Body() dto: CreateDealDto) {
-    const parsed = createDealSchema.parse(dto);
-    return this.salesService.createDeal(parsed as any);
+    return this.salesService.createDeal(dto as any);
   }
 
   @Get('deals')
   @RequirePermissions(Permission.SALES_VIEW_DEALS)
+  @ApiOperation({ summary: 'List all deals' })
   findAllDeals() {
     return this.salesService.findAllDeals();
   }
 
   @Get('deals/:id')
   @RequirePermissions(Permission.SALES_VIEW_DEALS)
+  @ApiOperation({ summary: 'Get deal details' })
   findDeal(@Param('id', ParseUUIDPipe) id: string) {
     return this.salesService.findDealById(id);
   }
 
   @Patch('deals/:id')
   @RequirePermissions(Permission.SALES_MANAGE_DEALS)
+  @ApiOperation({ summary: 'Update deal details' })
+  @UsePipes(new ZodValidationPipe(updateDealSchema))
   updateDeal(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateDealDto,
   ) {
-    const parsed = updateDealSchema.parse(dto);
-    return this.salesService.updateDeal(id, parsed as any);
+    return this.salesService.updateDeal(id, dto as any);
   }
 
   @Delete('deals/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermissions(Permission.SALES_MANAGE_DEALS)
+  @ApiOperation({ summary: 'Delete a deal' })
   removeDeal(@Param('id', ParseUUIDPipe) id: string) {
     return this.salesService.removeDeal(id);
   }
 
-  // --- NEW ENDPOINTS ---
   @Post('leads/:id/score')
   @RequirePermissions(Permission.SALES_MANAGE_LEADS)
+  @ApiOperation({ summary: 'Calculate lead score' })
   calculateLeadScore(@Param('id', ParseUUIDPipe) id: string) {
     return this.salesService.calculateLeadScore(id);
   }
 
   @Post('leads/:id/assign')
   @RequirePermissions(Permission.SALES_MANAGE_LEADS)
+  @ApiOperation({ summary: 'Assign lead to users' })
   assignLead(
     @Param('id', ParseUUIDPipe) id: string,
     @Body('userIds') userIds: string[],
@@ -141,6 +158,7 @@ export class SalesController {
   }
 
   @Post('accounts')
+  @ApiOperation({ summary: 'Create a new account' })
   @UsePipes(new ZodValidationPipe(createAccountSchema))
   createAccount(
     @CurrentTenant() tenantId: string,
@@ -150,11 +168,13 @@ export class SalesController {
   }
 
   @Get('accounts')
+  @ApiOperation({ summary: 'List all accounts' })
   listAccounts(@CurrentTenant() tenantId: string) {
     return this.salesOrderFlow.listAccounts(tenantId);
   }
 
   @Post('quotations')
+  @ApiOperation({ summary: 'Create a new quotation' })
   @UsePipes(new ZodValidationPipe(createQuotationSchema))
   createQuotation(
     @CurrentTenant() tenantId: string,
@@ -164,11 +184,13 @@ export class SalesController {
   }
 
   @Get('quotations')
+  @ApiOperation({ summary: 'List all quotations' })
   listQuotations(@CurrentTenant() tenantId: string) {
     return this.salesOrderFlow.listQuotations(tenantId);
   }
 
   @Get('quotations/:id')
+  @ApiOperation({ summary: 'Get quotation details' })
   getQuotation(
     @CurrentTenant() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -177,6 +199,7 @@ export class SalesController {
   }
 
   @Post('quotations/:id/send')
+  @ApiOperation({ summary: 'Send quotation to customer' })
   sendQuotation(
     @CurrentTenant() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -185,11 +208,13 @@ export class SalesController {
   }
 
   @Post('quotations/:id/resend')
+  @ApiOperation({ summary: 'Resend quotation' })
   resendQuotation(@Param('id', ParseUUIDPipe) id: string) {
     return this.salesService.resendQuotation(id);
   }
 
   @Post('quotations/:id/convert')
+  @ApiOperation({ summary: 'Convert quotation to sales order' })
   convertQuotationToSO(
     @CurrentTenant() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -198,11 +223,13 @@ export class SalesController {
   }
 
   @Get('sales-orders')
+  @ApiOperation({ summary: 'List all sales orders' })
   listSalesOrders(@CurrentTenant() tenantId: string) {
     return this.salesOrderFlow.listSalesOrders(tenantId);
   }
 
   @Get('sales-orders/:id')
+  @ApiOperation({ summary: 'Get sales order details' })
   getSalesOrder(
     @CurrentTenant() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -211,6 +238,7 @@ export class SalesController {
   }
 
   @Post('sales-orders/:id/confirm')
+  @ApiOperation({ summary: 'Confirm sales order' })
   confirmSalesOrder(
     @CurrentTenant() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -219,6 +247,7 @@ export class SalesController {
   }
 
   @Post('sales-orders/:id/create-invoice')
+  @ApiOperation({ summary: 'Create invoice from sales order' })
   @UsePipes(new ZodValidationPipe(invoiceFromSalesOrderSchema))
   createInvoiceFromSalesOrder(
     @CurrentTenant() tenantId: string,
@@ -229,6 +258,7 @@ export class SalesController {
   }
 
   @Post('delivery-orders')
+  @ApiOperation({ summary: 'Create a delivery order' })
   @UsePipes(new ZodValidationPipe(createDeliveryOrderSchema))
   createDeliveryOrder(
     @CurrentTenant() tenantId: string,
@@ -238,6 +268,7 @@ export class SalesController {
   }
 
   @Post('delivery-orders/:id/ship')
+  @ApiOperation({ summary: 'Ship delivery order' })
   shipDeliveryOrder(
     @CurrentTenant() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -247,6 +278,7 @@ export class SalesController {
   }
 
   @Get('analytics/funnel')
+  @ApiOperation({ summary: 'Get sales funnel analytics' })
   getSalesFunnelAnalytics() {
     return this.salesService.getSalesFunnelAnalytics();
   }

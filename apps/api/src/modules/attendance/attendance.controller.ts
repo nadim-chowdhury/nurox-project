@@ -10,8 +10,10 @@ import {
   ConflictException,
   UsePipes,
   ParseUUIDPipe,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AttendanceService } from './attendance.service';
 import { AttendanceMethod } from './entities/attendance.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -31,14 +33,19 @@ import {
   type ManualAttendanceEntryDto,
 } from '@repo/shared-schemas';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { AuditLogInterceptor } from '../../common/interceptors/audit-log.interceptor';
 
+@ApiTags('Attendance')
+@ApiBearerAuth()
 @Controller('attendance')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @CheckModule('attendance')
+@UseInterceptors(AuditLogInterceptor)
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
   @Post('qr')
+  @ApiOperation({ summary: 'Generate check-in QR token' })
   async getCheckInQr(@Body('employeeId', ParseUUIDPipe) employeeId: string) {
     const token = await this.attendanceService.generateCheckInQr(employeeId);
     return { token };

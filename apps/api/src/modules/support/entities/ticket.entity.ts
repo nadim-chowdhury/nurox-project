@@ -44,4 +44,10 @@ export class Ticket extends TenantBaseEntity {
 
   @Column({ type: 'timestamp', nullable: true })
   resolvedAt: Date;
+
+  @Column({ type: 'varchar', nullable: true })
+  sentiment: string;
+
+  @Column({ type: 'text', nullable: true })
+  aiSuggestion: string;
 }

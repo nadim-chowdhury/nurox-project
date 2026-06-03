@@ -9,6 +9,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { TicketsService } from '../services/tickets.service';
+import { SupportAiService } from '../services/support-ai.service';
 import { CreateTicketDto, createTicketSchema } from '@repo/shared-schemas';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { UsePipes } from '@nestjs/common';
@@ -20,7 +21,10 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 @UseGuards(JwtAuthGuard, TenantGuard)
 @Controller('support/tickets')
 export class TicketsController {
-  constructor(private readonly ticketsService: TicketsService) {}
+  constructor(
+    private readonly ticketsService: TicketsService,
+    private readonly supportAiService: SupportAiService,
+  ) {}
 
   @Post()
   @UsePipes(new ZodValidationPipe(createTicketSchema))
@@ -72,5 +76,25 @@ export class TicketsController {
     @Param('id') ticketId: string,
   ) {
     return this.ticketsService.resolveTicket(tenantId, ticketId, user.id);
+  }
+
+  @Post(':id/analyze')
+  async analyzeTicket(
+    @CurrentTenant() tenantId: string,
+    @Param('id') ticketId: string,
+  ) {
+    return this.supportAiService.analyzeTicket(tenantId, ticketId);
+  }
+
+  @Get(':id/suggested-reply')
+  async getSuggestedReply(
+    @CurrentTenant() tenantId: string,
+    @Param('id') ticketId: string,
+  ) {
+    const reply = await this.supportAiService.getSuggestedReply(
+      tenantId,
+      ticketId,
+    );
+    return { reply };
   }
 }
