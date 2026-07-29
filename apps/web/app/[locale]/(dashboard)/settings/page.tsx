@@ -14,9 +14,10 @@ import {
   Divider,
   Switch,
   message,
+  Checkbox,
   Space,
   Modal,
-  Checkbox,
+  App,
 } from "antd";
 import {
   SaveOutlined,
@@ -94,7 +95,7 @@ function ProfileTab() {
     const { file, onSuccess, onError } = options;
     try {
       const { uploadUrl, key } = await getUploadUrl(file.type).unwrap();
-      
+
       const response = await fetch(uploadUrl, {
         method: "PUT",
         body: file,
@@ -102,7 +103,7 @@ function ProfileTab() {
       });
 
       if (response.ok) {
-        const avatarUrl = `${process.env.NEXT_PUBLIC_S3_PUBLIC_URL || 'http://localhost:9000/nurox-erp'}/${key}`;
+        const avatarUrl = `${process.env.NEXT_PUBLIC_S3_PUBLIC_URL || "http://localhost:9000/nurox-erp"}/${key}`;
         await updateUser({ id: user!.id, data: { avatarUrl } }).unwrap();
         message.success("Avatar updated");
         onSuccess("ok");
@@ -213,11 +214,7 @@ function ProfileTab() {
             </Form.Item>
           </Col>
         </Row>
-        <Button
-          type="primary"
-          icon={<SaveOutlined />}
-          htmlType="submit"
-        >
+        <Button type="primary" icon={<SaveOutlined />} htmlType="submit">
           Save Changes
         </Button>
       </Form>
@@ -294,11 +291,7 @@ function CompanyTab() {
             </Form.Item>
           </Col>
         </Row>
-        <Button
-          type="primary"
-          icon={<SaveOutlined />}
-          htmlType="submit"
-        >
+        <Button type="primary" icon={<SaveOutlined />} htmlType="submit">
           Save
         </Button>
       </Form>
@@ -311,7 +304,7 @@ function BranchesTab() {
   const [createBranch] = useCreateBranchMutation();
   const [updateBranch] = useUpdateBranchMutation();
   const [deleteBranch] = useDeleteBranchMutation();
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState<any>(null);
   const [form] = Form.useForm();
@@ -399,7 +392,9 @@ function BranchesTab() {
             }}
           >
             <div>
-              <div style={{ fontWeight: 500, color: "var(--color-on-surface)" }}>
+              <div
+                style={{ fontWeight: 500, color: "var(--color-on-surface)" }}
+              >
                 {branch.name} ({branch.code})
               </div>
               <div
@@ -412,7 +407,12 @@ function BranchesTab() {
               </div>
             </div>
             <Space>
-              <Button type="text" size="small" icon={<EditOutlined />} onClick={() => handleEdit(branch)} />
+              <Button
+                type="text"
+                size="small"
+                icon={<EditOutlined />}
+                onClick={() => handleEdit(branch)}
+              />
               <Button
                 type="text"
                 danger
@@ -435,7 +435,11 @@ function BranchesTab() {
         <Form form={form} layout="vertical" onFinish={onFinish}>
           <Row gutter={16}>
             <Col span={16}>
-              <Form.Item name="name" label="Branch Name" rules={[{ required: true }]}>
+              <Form.Item
+                name="name"
+                label="Branch Name"
+                rules={[{ required: true }]}
+              >
                 <Input placeholder="Main Office" />
               </Form.Item>
             </Col>
@@ -446,7 +450,12 @@ function BranchesTab() {
             </Col>
           </Row>
           <Form.Item name="timezone" label="Timezone" initialValue="UTC">
-            <Select options={[{ value: 'UTC', label: 'UTC' }, { value: 'EST', label: 'Eastern' }]} />
+            <Select
+              options={[
+                { value: "UTC", label: "UTC" },
+                { value: "EST", label: "Eastern" },
+              ]}
+            />
           </Form.Item>
           <Form.Item name="address" label="Address">
             <Input.TextArea rows={2} />
@@ -471,7 +480,7 @@ function UsersTab() {
   const { data: roles } = useGetRolesQuery();
   const [inviteUser] = useInviteUserMutation();
   const [deleteUser] = useDeleteUserMutation();
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [form] = Form.useForm();
@@ -524,10 +533,18 @@ function UsersTab() {
           Users & Invites
         </h3>
         <Space>
-          <Button icon={<FileTextOutlined />} onClick={() => setIsBulkImportOpen(true)}>
+          <Button
+            icon={<FileTextOutlined />}
+            onClick={() => setIsBulkImportOpen(true)}
+          >
             Bulk Import
           </Button>
-          <Button type="primary" icon={<UserAddOutlined />} size="small" onClick={() => setIsModalOpen(true)}>
+          <Button
+            type="primary"
+            icon={<UserAddOutlined />}
+            size="small"
+            onClick={() => setIsModalOpen(true)}
+          >
             Invite User
           </Button>
         </Space>
@@ -548,7 +565,11 @@ function UsersTab() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <Avatar name={`${user.firstName} ${user.lastName}`} src={user.avatarUrl || undefined} size={36} />
+              <Avatar
+                name={`${user.firstName} ${user.lastName}`}
+                src={user.avatarUrl || undefined}
+                size={36}
+              />
               <div>
                 <div
                   style={{ fontWeight: 500, color: "var(--color-on-surface)" }}
@@ -591,29 +612,47 @@ function UsersTab() {
         <Form form={form} layout="vertical" onFinish={handleInvite}>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="firstName" label="First Name" rules={[{ required: true }]}>
+              <Form.Item
+                name="firstName"
+                label="First Name"
+                rules={[{ required: true }]}
+              >
                 <Input placeholder="John" />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="lastName" label="Last Name" rules={[{ required: true }]}>
+              <Form.Item
+                name="lastName"
+                label="Last Name"
+                rules={[{ required: true }]}
+              >
                 <Input placeholder="Doe" />
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item name="email" label="Email Address" rules={[{ required: true, type: 'email' }]}>
+          <Form.Item
+            name="email"
+            label="Email Address"
+            rules={[{ required: true, type: "email" }]}
+          >
             <Input placeholder="john.doe@company.com" />
           </Form.Item>
-          <Form.Item name="role" label="Assign Role" rules={[{ required: true }]}>
-            <Select options={roles?.map(r => ({ label: r.name, value: r.name }))} />
+          <Form.Item
+            name="role"
+            label="Assign Role"
+            rules={[{ required: true }]}
+          >
+            <Select
+              options={roles?.map((r) => ({ label: r.name, value: r.name }))}
+            />
           </Form.Item>
         </Form>
       </Modal>
 
-      <BulkUserImport 
-        open={isBulkImportOpen} 
-        onClose={() => setIsBulkImportOpen(false)} 
-        onSuccess={refetch} 
+      <BulkUserImport
+        open={isBulkImportOpen}
+        onClose={() => setIsBulkImportOpen(false)}
+        onSuccess={refetch}
       />
     </Card>
   );
@@ -624,9 +663,12 @@ function SecurityTab() {
   const [setup2FA] = useSetup2FAMutation();
   const [enable2FA] = useEnable2FAMutation();
   const [changePassword] = useChangePasswordMutation();
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [qrData, setQrData] = useState<{ qrCodeDataURL: string; secret: string } | null>(null);
+  const [qrData, setQrData] = useState<{
+    qrCodeDataURL: string;
+    secret: string;
+  } | null>(null);
   const [token, setToken] = useState("");
   const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -709,26 +751,22 @@ function SecurityTab() {
         <Form.Item
           name="confirm"
           label={<span style={labelStyle}>Confirm Password</span>}
-          dependencies={['newPassword']}
+          dependencies={["newPassword"]}
           rules={[
             { required: true },
             ({ getFieldValue }) => ({
               validator(_, value) {
-                if (!value || getFieldValue('newPassword') === value) {
+                if (!value || getFieldValue("newPassword") === value) {
                   return Promise.resolve();
                 }
-                return Promise.reject(new Error('Passwords do not match'));
+                return Promise.reject(new Error("Passwords do not match"));
               },
             }),
           ]}
         >
           <Input.Password />
         </Form.Item>
-        <Button
-          type="primary"
-          icon={<LockOutlined />}
-          htmlType="submit"
-        >
+        <Button type="primary" icon={<LockOutlined />} htmlType="submit">
           Update Password
         </Button>
       </Form>
@@ -743,9 +781,9 @@ function SecurityTab() {
         Two-Factor Authentication
       </h3>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <Switch 
-          checked={user?.isTwoFactorEnabled} 
-          onChange={handleToggle2FA} 
+        <Switch
+          checked={user?.isTwoFactorEnabled}
+          onChange={handleToggle2FA}
           disabled={user?.isTwoFactorEnabled}
         />
         <span
@@ -763,51 +801,98 @@ function SecurityTab() {
         destroyOnClose
       >
         {backupCodes ? (
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ color: 'var(--color-success)', fontWeight: 600, marginBottom: 16 }}>
+          <div style={{ textAlign: "center" }}>
+            <p
+              style={{
+                color: "var(--color-success)",
+                fontWeight: 600,
+                marginBottom: 16,
+              }}
+            >
               2FA Enabled Successfully!
             </p>
-            <p style={{ fontSize: 13, color: 'var(--color-on-surface-variant)', marginBottom: 16 }}>
-              Please save these backup codes in a safe place. Each code can be used once if you lose access to your authenticator app.
+            <p
+              style={{
+                fontSize: 13,
+                color: "var(--color-on-surface-variant)",
+                marginBottom: 16,
+              }}
+            >
+              Please save these backup codes in a safe place. Each code can be
+              used once if you lose access to your authenticator app.
             </p>
-            <div style={{ 
-              background: 'var(--color-surface-container-high)', 
-              padding: 16, 
-              borderRadius: 4, 
-              display: 'grid', 
-              gridTemplateColumns: '1fr 1fr',
-              gap: 8,
-              fontFamily: 'monospace',
-              marginBottom: 24
-            }}>
-              {backupCodes.map(code => <div key={code}>{code}</div>)}
+            <div
+              style={{
+                background: "var(--color-surface-container-high)",
+                padding: 16,
+                borderRadius: 4,
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 8,
+                fontFamily: "monospace",
+                marginBottom: 24,
+              }}
+            >
+              {backupCodes.map((code) => (
+                <div key={code}>{code}</div>
+              ))}
             </div>
-            <Button type="primary" block onClick={() => setIsModalOpen(false)}>Done</Button>
+            <Button type="primary" block onClick={() => setIsModalOpen(false)}>
+              Done
+            </Button>
           </div>
         ) : (
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: 13, color: 'var(--color-on-surface-variant)', marginBottom: 24 }}>
-              Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
+          <div style={{ textAlign: "center" }}>
+            <p
+              style={{
+                fontSize: 13,
+                color: "var(--color-on-surface-variant)",
+                marginBottom: 24,
+              }}
+            >
+              Scan this QR code with your authenticator app (Google
+              Authenticator, Authy, etc.)
             </p>
             {qrData && (
-              <img 
-                src={qrData.qrCodeDataURL} 
-                alt="2FA QR Code" 
-                style={{ width: 200, height: 200, marginBottom: 24, border: '4px solid white' }} 
+              <img
+                src={qrData.qrCodeDataURL}
+                alt="2FA QR Code"
+                style={{
+                  width: 200,
+                  height: 200,
+                  marginBottom: 24,
+                  border: "4px solid white",
+                }}
               />
             )}
             <div style={{ marginBottom: 24 }}>
-              <p style={{ fontSize: 12, opacity: 0.7, marginBottom: 4 }}>Or enter this secret manually:</p>
-              <code style={{ fontSize: 14, color: 'var(--color-primary)', fontWeight: 600 }}>{qrData?.secret}</code>
+              <p style={{ fontSize: 12, opacity: 0.7, marginBottom: 4 }}>
+                Or enter this secret manually:
+              </p>
+              <code
+                style={{
+                  fontSize: 14,
+                  color: "var(--color-primary)",
+                  fontWeight: 600,
+                }}
+              >
+                {qrData?.secret}
+              </code>
             </div>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <Input 
-                placeholder="6-digit token" 
-                value={token} 
-                onChange={e => setToken(e.target.value)} 
+            <div style={{ display: "flex", gap: 12 }}>
+              <Input
+                placeholder="6-digit token"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
                 maxLength={6}
               />
-              <Button type="primary" loading={isVerifying} onClick={handleVerify}>Verify</Button>
+              <Button
+                type="primary"
+                loading={isVerifying}
+                onClick={handleVerify}
+              >
+                Verify
+              </Button>
             </div>
           </div>
         )}
@@ -960,7 +1045,10 @@ function RolesTab() {
         { label: "Create Employee", value: Permission.HR_CREATE_EMPLOYEE },
         { label: "Update Employee", value: Permission.HR_UPDATE_EMPLOYEE },
         { label: "Delete Employee", value: Permission.HR_DELETE_EMPLOYEE },
-        { label: "Manage Performance", value: Permission.HR_MANAGE_PERFORMANCE },
+        {
+          label: "Manage Performance",
+          value: Permission.HR_MANAGE_PERFORMANCE,
+        },
       ],
     },
     {
@@ -982,11 +1070,11 @@ function RolesTab() {
       ],
     },
     {
-        title: "System",
-        permissions: [
-            { label: "Admin Access", value: Permission.SYSTEM_ADMIN_ACCESS },
-        ]
-    }
+      title: "System",
+      permissions: [
+        { label: "Admin Access", value: Permission.SYSTEM_ADMIN_ACCESS },
+      ],
+    },
   ];
 
   return (
@@ -1008,7 +1096,11 @@ function RolesTab() {
         >
           Roles & Permissions
         </h3>
-        <Button type="primary" size="small" onClick={() => setIsModalOpen(true)}>
+        <Button
+          type="primary"
+          size="small"
+          onClick={() => setIsModalOpen(true)}
+        >
           Create Role
         </Button>
       </div>
@@ -1094,17 +1186,36 @@ function RolesTab() {
             <Input.TextArea rows={2} />
           </Form.Item>
           <Divider titlePlacement="left">Permissions</Divider>
-          <Form.Item name="permissions" rules={[{ required: true, message: 'Please select at least one permission' }]}>
-            <div style={{ maxHeight: 400, overflow: 'auto' }}>
-              <Checkbox.Group style={{ width: '100%' }}>
-                {permissionGroups.map(group => (
+          <Form.Item
+            name="permissions"
+            rules={[
+              {
+                required: true,
+                message: "Please select at least one permission",
+              },
+            ]}
+          >
+            <div style={{ maxHeight: 400, overflow: "auto" }}>
+              <Checkbox.Group style={{ width: "100%" }}>
+                {permissionGroups.map((group) => (
                   <div key={group.title} style={{ marginBottom: 16 }}>
-                    <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 8, color: 'var(--color-primary)' }}>
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 12,
+                        marginBottom: 8,
+                        color: "var(--color-primary)",
+                      }}
+                    >
                       {group.title.toUpperCase()}
                     </div>
                     <Row>
-                      {group.permissions.map(p => (
-                        <Col span={12} key={p.value} style={{ marginBottom: 4 }}>
+                      {group.permissions.map((p) => (
+                        <Col
+                          span={12}
+                          key={p.value}
+                          style={{ marginBottom: 4 }}
+                        >
                           <Checkbox value={p.value}>{p.label}</Checkbox>
                         </Col>
                       ))}
@@ -1121,6 +1232,7 @@ function RolesTab() {
 }
 
 function PreferencesTab() {
+  const { message } = App.useApp();
   const { data: preferences } = useGetPreferencesQuery();
   const [setPreference] = useSetPreferenceMutation();
 
@@ -1383,10 +1495,17 @@ function LoginHistoryTab() {
                   alignItems: "center",
                   justifyContent: "center",
                   fontSize: 18,
-                  color: event.result === 'SUCCESS' ? 'var(--color-success)' : 'var(--color-error)',
+                  color:
+                    event.result === "SUCCESS"
+                      ? "var(--color-success)"
+                      : "var(--color-error)",
                 }}
               >
-                {event.result === 'SUCCESS' ? <CheckCircleOutlined /> : <ExclamationCircleOutlined />}
+                {event.result === "SUCCESS" ? (
+                  <CheckCircleOutlined />
+                ) : (
+                  <ExclamationCircleOutlined />
+                )}
               </div>
               <div>
                 <div
@@ -1396,7 +1515,9 @@ function LoginHistoryTab() {
                     fontWeight: 500,
                   }}
                 >
-                  {event.result === 'SUCCESS' ? 'Successful Login' : `Failed Login (${event.failureReason})`}
+                  {event.result === "SUCCESS"
+                    ? "Successful Login"
+                    : `Failed Login (${event.failureReason})`}
                 </div>
                 <div
                   style={{
@@ -1404,12 +1525,20 @@ function LoginHistoryTab() {
                     fontSize: 12,
                   }}
                 >
-                  {event.city}, {event.country} • {event.ipAddress} • {dayjs(event.createdAt).format('MMM D, YYYY h:mm A')}
+                  {event.city}, {event.country} • {event.ipAddress} •{" "}
+                  {dayjs(event.createdAt).format("MMM D, YYYY h:mm A")}
                 </div>
               </div>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 12, color: 'var(--color-on-surface-variant)' }}>{event.deviceType}</div>
+            <div style={{ textAlign: "right" }}>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: "var(--color-on-surface-variant)",
+                }}
+              >
+                {event.deviceType}
+              </div>
             </div>
           </div>
         ))
@@ -1442,25 +1571,34 @@ function SSOTab() {
       </p>
 
       <Form layout="vertical" size="large" initialValues={{ enabled: false }}>
-        <Form.Item name="enabled" label="Enable SAML SSO" valuePropName="checked">
+        <Form.Item
+          name="enabled"
+          label="Enable SAML SSO"
+          valuePropName="checked"
+        >
           <Switch />
         </Form.Item>
-        
+
         <Divider />
-        
+
         <Form.Item label="IdP Entry Point (SSO URL)" name="entryPoint">
           <Input placeholder="https://idp.example.com/adfs/ls/" />
         </Form.Item>
-        
+
         <Form.Item label="Issuer (Entity ID)" name="issuer">
           <Input placeholder="nurox-erp" />
         </Form.Item>
-        
+
         <Form.Item label="Public Certificate" name="cert">
-          <Input.TextArea rows={4} placeholder="Paste your IdP X.509 certificate here..." />
+          <Input.TextArea
+            rows={4}
+            placeholder="Paste your IdP X.509 certificate here..."
+          />
         </Form.Item>
-        
-        <Button type="primary" icon={<SaveOutlined />}>Save SSO Config</Button>
+
+        <Button type="primary" icon={<SaveOutlined />}>
+          Save SSO Config
+        </Button>
       </Form>
     </Card>
   );
