@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module, Global, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TerminusModule } from '@nestjs/terminus';
 import { Tenant } from './entities/tenant.entity';
@@ -49,6 +49,7 @@ import { BulkImportService } from './bulk-import.service';
 import { SequenceService } from './sequence.service';
 import { UsersModule } from '../users/users.module';
 
+@Global()
 @Module({
   imports: [
     forwardRef(() => UsersModule),
