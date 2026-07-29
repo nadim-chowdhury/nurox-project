@@ -23,7 +23,7 @@ const PUBLIC_ROUTES = [
 ];
 const REFRESH_COOKIE = "nurox_refresh_token";
 
-export default function middleware(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const url = request.nextUrl;
   const { pathname } = url;
   const hostname = request.headers.get("host") || "";
