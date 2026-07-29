@@ -78,9 +78,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         {subscription?.status === "past_due" && (
           <Alert
-            message="Payment Past Due"
-            description="Your recent payment failed. Please update your payment method to avoid service interruption."
             type="warning"
+            title="Payment Past Due"
+            description="Your tenant subscription payment is past due. Please update payment method."
             showIcon
             banner
           />
@@ -88,9 +88,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         {subscription?.status === "suspended" && (
           <Alert
-            message="Account Suspended"
-            description="Your account has been suspended due to unpaid invoices. Please update your payment method to restore access."
             type="error"
+            title="Account Suspended"
+            description="Your account has been suspended due to unpaid invoices. Please update your payment method to restore access."
             showIcon
             banner
           />

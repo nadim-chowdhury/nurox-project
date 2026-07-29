@@ -17,13 +17,17 @@ export default function RegisterPage() {
   const token = searchParams.get("token");
   const [form] = Form.useForm();
   const password = Form.useWatch("password", form);
-  
+
   const [register, { isLoading, error }] = useRegisterMutation();
 
   const inviteData = React.useMemo(() => {
     if (!token) return null;
     try {
-      return jwtDecode<{ email: string; firstName?: string; lastName?: string }>(token);
+      return jwtDecode<{
+        email: string;
+        firstName?: string;
+        lastName?: string;
+      }>(token);
     } catch {
       return null;
     }
@@ -90,7 +94,7 @@ export default function RegisterPage() {
             marginBottom: 24,
           }}
         >
-          {token 
+          {token
             ? "Set your details and password to join your organization."
             : "Fill in your details to create a new workspace account"}
         </Text>
@@ -98,7 +102,7 @@ export default function RegisterPage() {
         {apiError?.data?.message && (
           <Alert
             type="error"
-            message={apiError.data.message}
+            title={apiError.data.message}
             showIcon
             style={{ marginBottom: 20 }}
           />
@@ -279,7 +283,10 @@ export default function RegisterPage() {
               }}
             >
               <Text
-                style={{ color: "var(--color-on-surface-variant)", fontSize: 12 }}
+                style={{
+                  color: "var(--color-on-surface-variant)",
+                  fontSize: 12,
+                }}
               >
                 OR
               </Text>
@@ -287,7 +294,10 @@ export default function RegisterPage() {
 
             <div style={{ textAlign: "center" }}>
               <Text
-                style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
+                style={{
+                  color: "var(--color-on-surface-variant)",
+                  fontSize: 13,
+                }}
               >
                 Already have an account?{" "}
                 <Link

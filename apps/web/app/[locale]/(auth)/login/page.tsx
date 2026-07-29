@@ -96,7 +96,7 @@ export default function LoginPage() {
         {apiError?.data?.message && (
           <Alert
             type="error"
-            message={apiError.data.message}
+            title={apiError.data.message}
             showIcon
             style={{ marginBottom: 20 }}
           />

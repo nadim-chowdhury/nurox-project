@@ -13,12 +13,15 @@ export function AnnouncementBanner() {
     const mockAnnouncement = {
       id: "1",
       title: "System Maintenance",
-      message: "The system will be undergoing scheduled maintenance this Sunday from 2 AM to 4 AM UTC.",
+      message:
+        "The system will be undergoing scheduled maintenance this Sunday from 2 AM to 4 AM UTC.",
       type: "info" as const,
     };
 
     // Check if user has dismissed this announcement
-    const dismissed = localStorage.getItem(`announcement_dismissed_${mockAnnouncement.id}`);
+    const dismissed = localStorage.getItem(
+      `announcement_dismissed_${mockAnnouncement.id}`,
+    );
     if (!dismissed) {
       setAnnouncement(mockAnnouncement);
       setVisible(true);
@@ -37,11 +40,7 @@ export function AnnouncementBanner() {
   return (
     <div style={{ marginBottom: 24 }}>
       <Alert
-        message={
-          <span style={{ fontWeight: 600 }}>
-            {announcement.title}
-          </span>
-        }
+        title={<span style={{ fontWeight: 600 }}>{announcement.title}</span>}
         description={announcement.message}
         type={announcement.type}
         showIcon
@@ -49,8 +48,8 @@ export function AnnouncementBanner() {
         closable
         onClose={handleClose}
         style={{
-          background: 'rgba(195, 245, 255, 0.05)',
-          border: '1px solid rgba(195, 245, 255, 0.2)',
+          background: "rgba(195, 245, 255, 0.05)",
+          border: "1px solid rgba(195, 245, 255, 0.2)",
           borderRadius: 8,
         }}
       />
