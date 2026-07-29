@@ -26,8 +26,9 @@ export default function LoginPage() {
   const onFinish = async (values: { email: string; password: string }) => {
     try {
       const result = await login(values).unwrap();
-      if (result.user.forcePasswordChange) {
-        setTempUser(result.user);
+      const userData = (result as any)?.user || (result as any)?.data?.user;
+      if (userData?.forcePasswordChange) {
+        setTempUser(userData);
         setShowForcePassword(true);
       } else {
         router.push(callbackUrl);
@@ -271,10 +272,10 @@ export default function LoginPage() {
         </Text>
       </div>
 
-      <ForcePasswordChangeModal 
-        visible={showForcePassword} 
-        user={tempUser} 
-        onSuccess={() => router.push("/dashboard")} 
+      <ForcePasswordChangeModal
+        visible={showForcePassword}
+        user={tempUser}
+        onSuccess={() => router.push("/dashboard")}
       />
     </div>
   );

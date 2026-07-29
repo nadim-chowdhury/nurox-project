@@ -42,13 +42,18 @@ export const authApi = baseApi.injectEndpoints({
         method: "POST",
         body,
       }),
+      transformResponse: (response: any) => response?.data || response,
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
+          const authData = (data as any).data || data;
+          if (typeof document !== "undefined") {
+            document.cookie = `nurox_refresh_token=true; path=/; max-age=604800; SameSite=Lax`;
+          }
           dispatch(
             setCredentials({
-              user: data.user,
-              accessToken: data.tokens.accessToken,
+              user: authData.user,
+              accessToken: authData.tokens.accessToken,
             }),
           );
         } catch {
@@ -63,13 +68,18 @@ export const authApi = baseApi.injectEndpoints({
         method: "POST",
         body,
       }),
+      transformResponse: (response: any) => response?.data || response,
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
+          const authData = (data as any).data || data;
+          if (typeof document !== "undefined") {
+            document.cookie = `nurox_refresh_token=true; path=/; max-age=604800; SameSite=Lax`;
+          }
           dispatch(
             setCredentials({
-              user: data.user,
-              accessToken: data.tokens.accessToken,
+              user: authData.user,
+              accessToken: authData.tokens.accessToken,
             }),
           );
         } catch {
@@ -95,6 +105,9 @@ export const authApi = baseApi.injectEndpoints({
         try {
           await queryFulfilled;
         } finally {
+          if (typeof document !== "undefined") {
+            document.cookie = `nurox_refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
+          }
           dispatch(clearAuth());
         }
       },
@@ -103,10 +116,12 @@ export const authApi = baseApi.injectEndpoints({
     getMe: builder.query<AuthUser, void>({
       query: () => "/auth/me",
       providesTags: ["User"],
+      transformResponse: (response: any) => response?.data || response,
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
-          dispatch(setUser(data));
+          const userData = (data as any).data || data;
+          dispatch(setUser(userData));
         } catch {
           // Error handled by component
         }
