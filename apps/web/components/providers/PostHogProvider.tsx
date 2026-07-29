@@ -10,9 +10,10 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const tenantId = useAppSelector((state) => state.auth.user?.tenantId);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY || "", {
-        api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://app.posthog.com",
+    if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+      posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
+        api_host:
+          process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://app.posthog.com",
         person_profiles: "identified_only",
         capture_pageview: false, // Handled manually or via router
       });
@@ -20,6 +21,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
     if (user) {
       posthog.identify(user.id, {
         email: user.email,
