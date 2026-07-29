@@ -184,7 +184,7 @@ export default function Reports() {
                   value={incomeStatement?.netIncome}
                   precision={2}
                   prefix="$"
-                  valueStyle={{ color: "#3f8600" }}
+                  styles={{ content: { color: "#3f8600" } }}
                 />
               </Card>
             </Col>

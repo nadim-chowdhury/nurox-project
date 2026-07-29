@@ -38,10 +38,10 @@ export function KpiCard({
 
   return (
     <Card className="kpi-card" style={{ padding: 4 }}>
-      <Statistic 
-        prefix={icon} 
-        valueStyle={{ color }}
-        {...props} 
+      <Statistic
+        prefix={icon}
+        styles={{ content: color ? { color } : undefined }}
+        {...props}
       />
       {extra && <div style={{ marginTop: 8 }}>{extra}</div>}
       {trend && trendValue && (
