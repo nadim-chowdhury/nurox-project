@@ -9,13 +9,15 @@ import {
   tripLogSchema,
 } from '@repo/shared-schemas';
 import { ZodValidationPipe } from 'nestjs-zod';
-import { UsePipes } from '@nestjs/common';
+import { UsePipes, UseInterceptors } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../../../common/guards/tenant.guard';
 import { CurrentTenant } from '../../../common/decorators/current-tenant.decorator';
+import { AuditLogInterceptor } from '../../../common/interceptors/audit-log.interceptor';
 
 @UseGuards(JwtAuthGuard, TenantGuard)
 @Controller('fleet')
+@UseInterceptors(AuditLogInterceptor)
 export class FleetController {
   constructor(private readonly fleetService: FleetService) {}
 

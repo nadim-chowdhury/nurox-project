@@ -4,6 +4,7 @@ import { Ticket } from './entities/ticket.entity';
 import { TicketMessage } from './entities/ticket-message.entity';
 import { KbArticle } from './entities/kb-article.entity';
 import { TicketSla } from './entities/ticket-sla.entity';
+import { User } from '../users/entities/user.entity';
 import { TicketsService } from './services/tickets.service';
 import { TicketsController } from './controllers/tickets.controller';
 import { KnowledgeBaseService } from './services/knowledge-base.service';
@@ -18,7 +19,13 @@ import { AiModule } from '../ai/ai.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Ticket, TicketMessage, KbArticle, TicketSla]),
+    TypeOrmModule.forFeature([
+      Ticket,
+      TicketMessage,
+      KbArticle,
+      TicketSla,
+      User,
+    ]),
     BullModule.registerQueue({ name: 'support' }),
     MailerModule,
     AiModule,

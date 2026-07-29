@@ -7,6 +7,8 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/tables/DataTable";
 import type { ColumnsType } from "antd/es/table";
 
+import { useGetDealsQuery } from "@/store/api/salesApi";
+
 interface Deal {
   id: string;
   title: string;
@@ -100,11 +102,11 @@ const columns: ColumnsType<Deal> = [
   {
     title: "Value",
     dataIndex: "value",
-    sorter: (a, b) => a.value - b.value,
+    sorter: (a, b) => (a.value || 0) - (b.value || 0),
     align: "right" as const,
     render: (v: number) => (
       <span className="font-display" style={{ color: "var(--color-primary)" }}>
-        ${v.toLocaleString()}
+        ${(v || 0).toLocaleString()}
       </span>
     ),
   },
@@ -120,7 +122,7 @@ const columns: ColumnsType<Deal> = [
     ],
     onFilter: (value, record) => record.stage === value,
     render: (s: string) => (
-      <Tag color={stageMap[s] || "default"}>{s.replace(/_/g, " ")}</Tag>
+      <Tag color={stageMap[s] || "default"}>{(s || "").replace(/_/g, " ")}</Tag>
     ),
   },
   {
@@ -139,7 +141,7 @@ const columns: ColumnsType<Deal> = [
                 : "var(--color-on-surface-variant)",
         }}
       >
-        {v}%
+        {v || 0}%
       </span>
     ),
   },
@@ -154,20 +156,26 @@ const columns: ColumnsType<Deal> = [
     title: "Close Date",
     dataIndex: "closeDate",
     sorter: (a, b) =>
-      new Date(a.closeDate).getTime() - new Date(b.closeDate).getTime(),
+      new Date(a.closeDate || 0).getTime() -
+      new Date(b.closeDate || 0).getTime(),
     render: (v: string) => (
       <span style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}>
-        {new Date(v).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })}
+        {v
+          ? new Date(v).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })
+          : "-"}
       </span>
     ),
   },
 ];
 
 export default function DealsPage() {
+  const { data: apiDeals, isLoading } = useGetDealsQuery();
+  const deals: Deal[] = apiDeals && apiDeals.length > 0 ? apiDeals : mockDeals;
+
   return (
     <div className="animate-fade-in-up">
       <PageHeader
@@ -190,7 +198,12 @@ export default function DealsPage() {
           borderColor: "var(--ghost-border)",
         }}
       >
-        <DataTable<Deal> columns={columns} dataSource={mockDeals} rowKey="id" />
+        <DataTable<Deal>
+          columns={columns}
+          dataSource={deals}
+          loading={isLoading}
+          rowKey="id"
+        />
       </Card>
     </div>
   );

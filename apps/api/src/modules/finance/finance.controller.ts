@@ -61,7 +61,7 @@ export class FinanceController {
   @ApiOperation({ summary: 'Create a new chart of account' })
   @UsePipes(new ZodValidationPipe(accountSchema))
   createAccount(@Body() dto: AccountDto) {
-    return this.financeService.createAccount(dto);
+    return this.financeService.createAccount(dto as any);
   }
 
   @Get('accounts')
@@ -89,7 +89,7 @@ export class FinanceController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: Partial<AccountDto>,
   ) {
-    return this.financeService.updateAccount(id, dto);
+    return this.financeService.updateAccount(id, dto as any);
   }
 
   @Delete('accounts/:id')
@@ -104,7 +104,7 @@ export class FinanceController {
   @ApiOperation({ summary: 'Create a new invoice' })
   @UsePipes(new ZodValidationPipe(invoiceSchema))
   createInvoice(@Body() dto: InvoiceDto) {
-    return this.financeService.createInvoice(dto);
+    return this.financeService.createInvoice(dto as any);
   }
 
   @Get('invoices')
@@ -164,7 +164,7 @@ export class FinanceController {
   @ApiOperation({ summary: 'Create a manual journal entry' })
   @UsePipes(new ZodValidationPipe(journalEntrySchema))
   createJournal(@Body() dto: JournalEntryDto) {
-    return this.financeService.createJournalEntry(dto);
+    return this.financeService.createJournalEntry(dto as any);
   }
 
   @Get('journals')
@@ -250,7 +250,7 @@ export class FinanceController {
   @ApiOperation({ summary: 'Record a payment for invoice or bill' })
   @UsePipes(new ZodValidationPipe(paymentSchema))
   recordPayment(@Body() dto: PaymentDto) {
-    return this.financeService.recordPayment(dto);
+    return this.financeService.recordPayment(dto as any);
   }
 
   @Get('payments/:id/export/tds-challan')
@@ -464,7 +464,7 @@ export class FinanceController {
   @ApiOperation({ summary: 'Record a petty cash transaction' })
   @UsePipes(new ZodValidationPipe(pettyCashTransactionSchema))
   recordPettyCashTransaction(@Body() dto: PettyCashTransactionDto) {
-    return this.financeService.recordPettyCashTransaction(dto);
+    return this.financeService.recordPettyCashTransaction(dto as any);
   }
 
   @Get('petty-cash/funds/:id/transactions')

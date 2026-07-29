@@ -7,6 +7,8 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/tables/DataTable";
 import type { ColumnsType } from "antd/es/table";
 
+import { useGetSalesAccountsQuery } from "@/store/api/salesApi";
+
 interface Customer {
   id: string;
   name: string;
@@ -86,7 +88,7 @@ const columns: ColumnsType<Customer> = [
             fontSize: 13,
           }}
         >
-          {r.name
+          {(r.name || "Customer")
             .split(" ")
             .map((n) => n[0])
             .join("")}
@@ -114,7 +116,9 @@ const columns: ColumnsType<Customer> = [
     title: "Company",
     dataIndex: "company",
     render: (v: string) => (
-      <span style={{ color: "var(--color-on-surface-variant)" }}>{v}</span>
+      <span style={{ color: "var(--color-on-surface-variant)" }}>
+        {v || "-"}
+      </span>
     ),
   },
   {
@@ -126,29 +130,47 @@ const columns: ColumnsType<Customer> = [
         className="font-display"
         style={{ color: "var(--color-on-surface)" }}
       >
-        {v}
+        {v || 0}
       </span>
     ),
   },
   {
     title: "Total Value",
     dataIndex: "totalValue",
-    sorter: (a, b) => a.totalValue - b.totalValue,
+    sorter: (a, b) => (a.totalValue || 0) - (b.totalValue || 0),
     align: "right" as const,
     render: (v: number) => (
       <span className="font-display" style={{ color: "var(--color-primary)" }}>
-        ${v.toLocaleString()}
+        ${(v || 0).toLocaleString()}
       </span>
     ),
   },
   {
     title: "Status",
     dataIndex: "status",
-    render: (s: string) => <Tag color={statusMap[s] || "default"}>{s}</Tag>,
+    render: (s: string) => (
+      <Tag color={statusMap[s] || "default"}>{s || "ACTIVE"}</Tag>
+    ),
   },
 ];
 
 export default function CustomersPage() {
+  const { data: apiAccounts, isLoading } = useGetSalesAccountsQuery();
+  const customers: Customer[] =
+    apiAccounts && apiAccounts.length > 0
+      ? apiAccounts.map((a: any) => ({
+          id: a.id,
+          name: a.name,
+          company: a.name,
+          email:
+            a.email ||
+            `${a.name.toLowerCase().replace(/\s+/g, "")}@example.com`,
+          totalDeals: 1,
+          totalValue: 0,
+          status: "ACTIVE",
+        }))
+      : mockCustomers;
+
   return (
     <div className="animate-fade-in-up">
       <PageHeader
@@ -173,7 +195,8 @@ export default function CustomersPage() {
       >
         <DataTable<Customer>
           columns={columns}
-          dataSource={mockCustomers}
+          dataSource={customers}
+          loading={isLoading}
           rowKey="id"
         />
       </Card>

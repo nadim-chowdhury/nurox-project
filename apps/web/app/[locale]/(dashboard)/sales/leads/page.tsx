@@ -11,6 +11,8 @@ import { Avatar } from "@/components/common/Avatar";
 import { formatDate } from "@/lib/utils";
 import type { ColumnsType } from "antd/es/table";
 
+import { useGetLeadsQuery } from "@/store/api/salesApi";
+
 interface Lead {
   id: string;
   name: string;
@@ -95,10 +97,13 @@ const SOURCE_COLORS: Record<string, string> = {
 
 export default function LeadsPage() {
   const [search, setSearch] = useState("");
-  const filtered = mockLeads.filter(
+  const { data: apiLeads, isLoading } = useGetLeadsQuery();
+  const leads: Lead[] = apiLeads && apiLeads.length > 0 ? apiLeads : mockLeads;
+
+  const filtered = leads.filter(
     (l) =>
-      l.name.toLowerCase().includes(search.toLowerCase()) ||
-      l.company.toLowerCase().includes(search.toLowerCase()),
+      (l.name || "").toLowerCase().includes(search.toLowerCase()) ||
+      (l.company || "").toLowerCase().includes(search.toLowerCase()),
   );
 
   const columns: ColumnsType<Lead> = [

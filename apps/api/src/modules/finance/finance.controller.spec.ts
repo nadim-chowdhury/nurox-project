@@ -1,6 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { FinanceController } from './finance.controller';
 import { FinanceService } from './finance.service';
+import { BankReconciliationService } from './services/bank-reconciliation.service';
+import { PaymentBatchService } from './services/payment-batch.service';
+import { AuditLogInterceptor } from '../../common/interceptors/audit-log.interceptor';
 
 describe('FinanceController', () => {
   let controller: FinanceController;
@@ -51,8 +54,28 @@ describe('FinanceController', () => {
             exportTrialBalanceExcel: jest.fn(),
           },
         },
+        {
+          provide: BankReconciliationService,
+          useValue: {
+            importBankStatement: jest.fn(),
+            autoMatchTransactions: jest.fn(),
+          },
+        },
+        {
+          provide: PaymentBatchService,
+          useValue: {
+            createBatch: jest.fn(),
+            processBatch: jest.fn(),
+          },
+        },
       ],
-    }).compile();
+    })
+      .overrideInterceptor(AuditLogInterceptor)
+      .useValue({
+        intercept: (_: unknown, next: { handle: () => unknown }) =>
+          next.handle(),
+      })
+      .compile();
 
     controller = module.get<FinanceController>(FinanceController);
   });

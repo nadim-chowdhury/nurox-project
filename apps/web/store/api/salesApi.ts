@@ -198,6 +198,38 @@ export const salesApi = baseApi.injectEndpoints({
         "Invoice",
       ],
     }),
+
+    getLeads: builder.query<any[], void>({
+      query: () => "/sales/leads",
+      transformResponse: (res: ApiEnvelope<any[]>) => unwrap(res),
+      providesTags: ["Lead"],
+    }),
+
+    createLead: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/sales/leads",
+        method: "POST",
+        body,
+      }),
+      transformResponse: (res: ApiEnvelope<any>) => unwrap(res),
+      invalidatesTags: ["Lead"],
+    }),
+
+    getDeals: builder.query<any[], void>({
+      query: () => "/sales/deals",
+      transformResponse: (res: ApiEnvelope<any[]>) => unwrap(res),
+      providesTags: ["Deal"],
+    }),
+
+    createDeal: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/sales/deals",
+        method: "POST",
+        body,
+      }),
+      transformResponse: (res: ApiEnvelope<any>) => unwrap(res),
+      invalidatesTags: ["Deal"],
+    }),
   }),
   overrideExisting: false,
 });
@@ -214,4 +246,8 @@ export const {
   useGetSalesOrderQuery,
   useConfirmSalesOrderMutation,
   useCreateInvoiceFromSalesOrderMutation,
+  useGetLeadsQuery,
+  useCreateLeadMutation,
+  useGetDealsQuery,
+  useCreateDealMutation,
 } = salesApi;

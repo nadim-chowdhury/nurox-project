@@ -5,7 +5,7 @@ import { TicketsService } from './tickets.service';
 import { KnowledgeBaseService } from './knowledge-base.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Ticket } from '../entities/ticket.entity';
-import { Repository } from 'typeorm';
+import { User } from '../../users/entities/user.entity';
 
 describe('SupportAiService', () => {
   let service: SupportAiService;
@@ -14,6 +14,10 @@ describe('SupportAiService', () => {
     find: jest.fn(),
     save: jest.fn(),
     findOne: jest.fn(),
+  };
+
+  const mockUserRepo = {
+    find: jest.fn(),
   };
 
   const mockAiService = {
@@ -37,6 +41,7 @@ describe('SupportAiService', () => {
         { provide: TicketsService, useValue: mockTicketsService },
         { provide: KnowledgeBaseService, useValue: mockKbService },
         { provide: getRepositoryToken(Ticket), useValue: mockTicketRepo },
+        { provide: getRepositoryToken(User), useValue: mockUserRepo },
       ],
     }).compile();
 
@@ -100,6 +105,84 @@ describe('SupportAiService', () => {
 
       expect(result.suggestions).toHaveLength(0);
       expect(result.error).toBeDefined();
+    });
+  });
+
+  describe('routeTicket', () => {
+    it('should route frustrated ticket to admin based on rule', async () => {
+      const tenantId = 'test-tenant';
+      const mockTicket = {
+        id: 't-1',
+        title: 'Billing Issue',
+        description: 'Overcharged',
+        sentiment: 'FRUSTRATED',
+        priority: 'P1',
+        category: 'BILLING',
+      } as Ticket;
+
+      const mockAgents = [
+        {
+          id: 'u-1',
+          firstName: 'John',
+          lastName: 'Doe',
+          role: 'EMPLOYEE',
+          status: 'ACTIVE',
+        },
+        {
+          id: 'u-2',
+          firstName: 'Admin',
+          lastName: 'User',
+          role: 'ADMIN',
+          status: 'ACTIVE',
+        },
+      ] as User[];
+
+      mockTicketsService.getTicket.mockResolvedValue(mockTicket);
+      mockUserRepo.find.mockResolvedValue(mockAgents);
+      mockTicketRepo.save.mockImplementation((t) => Promise.resolve(t));
+
+      const result = await service.routeTicket(tenantId, 't-1');
+
+      expect(result.assigneeId).toBe('u-2');
+      expect(result.routingMethod).toBe('RULE');
+      expect(mockTicketRepo.save).toHaveBeenCalled();
+    });
+
+    it('should route category FINANCE to finance manager', async () => {
+      const tenantId = 'test-tenant';
+      const mockTicket = {
+        id: 't-2',
+        title: 'Invoice Help',
+        sentiment: 'NEUTRAL',
+        priority: 'P3',
+        category: 'FINANCE',
+      } as Ticket;
+
+      const mockAgents = [
+        {
+          id: 'u-1',
+          firstName: 'Jane',
+          lastName: 'Doe',
+          role: 'EMPLOYEE',
+          status: 'ACTIVE',
+        },
+        {
+          id: 'u-3',
+          firstName: 'Fin',
+          lastName: 'Mgr',
+          role: 'FINANCE_MANAGER',
+          status: 'ACTIVE',
+        },
+      ] as User[];
+
+      mockTicketsService.getTicket.mockResolvedValue(mockTicket);
+      mockUserRepo.find.mockResolvedValue(mockAgents);
+      mockTicketRepo.save.mockImplementation((t) => Promise.resolve(t));
+
+      const result = await service.routeTicket(tenantId, 't-2');
+
+      expect(result.assigneeId).toBe('u-3');
+      expect(result.routingMethod).toBe('RULE');
     });
   });
 });

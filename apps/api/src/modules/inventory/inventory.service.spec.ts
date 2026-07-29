@@ -13,6 +13,7 @@ import { Inventory } from './entities/inventory.entity';
 import { getQueueToken } from '@nestjs/bullmq';
 import { DataSource } from 'typeorm';
 import { ClsService } from 'nestjs-cls';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 describe('InventoryService', () => {
   let service: InventoryService;
@@ -77,6 +78,10 @@ describe('InventoryService', () => {
           useValue: {
             get: jest.fn().mockReturnValue('test-tenant'),
           },
+        },
+        {
+          provide: EventEmitter2,
+          useValue: { emit: jest.fn() },
         },
       ],
     }).compile();

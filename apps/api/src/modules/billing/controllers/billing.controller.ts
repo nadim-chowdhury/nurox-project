@@ -25,6 +25,9 @@ import { CurrentTenant } from '../../../common/decorators/current-tenant.decorat
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../../../common/guards/tenant.guard';
+import { UseInterceptors, UsePipes } from '@nestjs/common';
+import { ZodValidationPipe } from '../../../common/pipes/zod-validation.pipe';
+import { AuditLogInterceptor } from '../../../common/interceptors/audit-log.interceptor';
 import {
   CheckoutRequestDto,
   checkoutRequestSchema,
@@ -33,6 +36,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 
 @Controller('billing')
+@UseInterceptors(AuditLogInterceptor)
 export class BillingController {
   constructor(
     private readonly stripeService: StripeService,
@@ -73,6 +77,7 @@ export class BillingController {
 
   @UseGuards(JwtAuthGuard, TenantGuard)
   @Post('checkout')
+  @UsePipes(new ZodValidationPipe(checkoutRequestSchema))
   async createCheckoutSession(
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: any,

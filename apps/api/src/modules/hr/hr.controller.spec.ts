@@ -6,6 +6,7 @@ import { AttendanceService } from '../attendance/attendance.service';
 import { Role } from '../auth/entities/role.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { AuditLogInterceptor } from '../../common/interceptors/audit-log.interceptor';
 
 describe('HrController', () => {
   let controller: HrController;
@@ -76,6 +77,11 @@ describe('HrController', () => {
       .useValue({ canActivate: () => true })
       .overrideGuard(PermissionsGuard)
       .useValue({ canActivate: () => true })
+      .overrideInterceptor(AuditLogInterceptor)
+      .useValue({
+        intercept: (_: unknown, next: { handle: () => unknown }) =>
+          next.handle(),
+      })
       .compile();
 
     controller = module.get<HrController>(HrController);

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { InventoryController } from './inventory.controller';
 import { InventoryService } from './inventory.service';
+import { AuditLogInterceptor } from '../../common/interceptors/audit-log.interceptor';
 
 describe('InventoryController', () => {
   let controller: InventoryController;
@@ -30,7 +31,13 @@ describe('InventoryController', () => {
           },
         },
       ],
-    }).compile();
+    })
+      .overrideInterceptor(AuditLogInterceptor)
+      .useValue({
+        intercept: (_: unknown, next: { handle: () => unknown }) =>
+          next.handle(),
+      })
+      .compile();
 
     controller = module.get<InventoryController>(InventoryController);
   });

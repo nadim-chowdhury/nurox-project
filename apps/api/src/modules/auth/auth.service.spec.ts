@@ -10,6 +10,7 @@ import { RedisService } from '../redis/redis.service';
 import { MailerService } from '../mailer/mailer.service';
 import { EncryptionService } from '../../common/utils/encryption.util';
 import { SmsService } from '../sms/sms.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -100,6 +101,12 @@ describe('AuthService', () => {
           provide: SmsService,
           useValue: {
             sendOtp: jest.fn(),
+          },
+        },
+        {
+          provide: EventEmitter2,
+          useValue: {
+            emit: jest.fn(),
           },
         },
       ],

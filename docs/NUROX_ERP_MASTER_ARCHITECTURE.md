@@ -61,19 +61,19 @@ Every module implemented or refactored MUST adhere to these four pillars:
 
 This file lists **~692 aspirational features** across 30 modules. The repo implements a **subset** to production quality.
 
-| Area                       | Status in repo        | Where to verify                      |
-| -------------------------- | --------------------- | ------------------------------------ |
-| Docker one-command         | ✅ `pnpm docker:up`   | `docker-compose.yml`, `.env.docker`  |
-| Multi-tenant auth + RBAC   | ✅                    | `apps/api` auth modules              |
-| Finance + journals         | ✅                    | `apps/api/src/modules/finance`       |
-| BD VAT Mushak 6.3/6.6/9.1  | ✅                    | `compliance` module                  |
-| Inventory + manufacturing  | ✅                    | inventory + manufacturing modules    |
-| Procurement vendor bills   | ✅                    | procurement module                   |
-| Sales quote → SO → invoice | ✅                    | `SalesOrderFlowService`, sales pages |
-| Asset Management           | ✅ Hardened June 2026 | `apps/api/src/modules/assets`        |
-| SaaS billing / Stripe      | 🟡 scaffold (Phase 6) | billing module                       |
-| CRM UI (leads/deals)       | 🟡 UI refactor needed | `apps/web/app/sales`                 |
-| All 30 modules complete    | ⬜ long-term          | `docs/PRODUCTION_ROADMAP.md`         |
+| Area                       | Status in repo        | Where to verify                          |
+| -------------------------- | --------------------- | ---------------------------------------- |
+| Docker one-command         | ✅ `pnpm docker:up`   | `docker-compose.yml`, `.env.docker`      |
+| Multi-tenant auth + RBAC   | ✅                    | `apps/api` auth modules                  |
+| Finance + journals         | ✅                    | `apps/api/src/modules/finance`           |
+| BD VAT Mushak 6.3/6.6/9.1  | ✅                    | `compliance` module                      |
+| Inventory + manufacturing  | ✅                    | inventory + manufacturing modules        |
+| Procurement vendor bills   | ✅                    | procurement module                       |
+| Sales quote → SO → invoice | ✅                    | `SalesOrderFlowService`, sales pages     |
+| Asset Management           | ✅ Hardened June 2026 | `apps/api/src/modules/assets`            |
+| SaaS billing / Stripe      | ✅ Hardened June 2026 | `billing` module & `BillingSettingsPage` |
+| CRM UI (leads/deals)       | ✅ Hardened June 2026 | `salesApi` & `apps/web/app/sales`        |
+| All 30 modules complete    | ⬜ long-term          | `docs/PRODUCTION_ROADMAP.md`             |
 
 **Engineering task order:** `docs/AI_CONTEXT_ANCHOR.md` §2 — not the month-based table in §7.6 below.
 

@@ -4,6 +4,7 @@ import { TicketsService } from './tickets.service';
 import { KnowledgeBaseService } from './knowledge-base.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Ticket } from '../entities/ticket.entity';
+import { User } from '../../users/entities/user.entity';
 import { Repository } from 'typeorm';
 import { OnEvent } from '@nestjs/event-emitter';
 
@@ -17,6 +18,8 @@ export class SupportAiService {
     private readonly kbService: KnowledgeBaseService,
     @InjectRepository(Ticket)
     private readonly ticketRepo: Repository<Ticket>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
   ) {}
 
   async analyzeTicket(tenantId: string, ticketId: string) {
@@ -157,13 +160,129 @@ export class SupportAiService {
     );
   }
 
+  async routeTicket(tenantId: string, ticketId: string) {
+    const ticket = await this.ticketsService.getTicket(tenantId, ticketId);
+    if (!ticket) {
+      throw new Error(`Ticket ${ticketId} not found`);
+    }
+
+    const agents = await this.userRepo.find({
+      where: { tenantId, status: 'ACTIVE' },
+    });
+
+    if (agents.length === 0) {
+      this.logger.warn(
+        `No active agents available for tenant ${tenantId} to route ticket ${ticketId}`,
+      );
+      return {
+        ticketId,
+        assigneeId: null,
+        routingMethod: 'NONE',
+        reason: 'No active agents available',
+      };
+    }
+
+    let matchedAgent: User | undefined;
+    let routingMethod = 'RULE';
+
+    const category = (ticket.category || '').toUpperCase();
+    const sentiment = (ticket.sentiment || '').toUpperCase();
+
+    // Priority / Urgent Rule: Frustrated or P1 sentiment routes to ADMIN / SUPER_ADMIN if available
+    if (sentiment === 'FRUSTRATED' || ticket.priority === 'P1') {
+      matchedAgent = agents.find(
+        (a) => a.role === 'ADMIN' || a.role === 'SUPER_ADMIN',
+      );
+    }
+
+    // Category-specific Rule
+    if (!matchedAgent && category) {
+      if (category.includes('FINANCE') || category.includes('BILLING')) {
+        matchedAgent = agents.find(
+          (a) => a.role === 'FINANCE_MANAGER' || a.role === 'ADMIN',
+        );
+      } else if (category.includes('HR') || category.includes('PAYROLL')) {
+        matchedAgent = agents.find(
+          (a) => a.role === 'HR_MANAGER' || a.role === 'ADMIN',
+        );
+      } else if (category.includes('INVENTORY') || category.includes('STOCK')) {
+        matchedAgent = agents.find(
+          (a) => a.role === 'INVENTORY_MANAGER' || a.role === 'ADMIN',
+        );
+      } else if (category.includes('PROJECT')) {
+        matchedAgent = agents.find(
+          (a) => a.role === 'PROJECT_MANAGER' || a.role === 'ADMIN',
+        );
+      }
+    }
+
+    // AI-assisted routing fallback
+    if (!matchedAgent && agents.length > 1) {
+      try {
+        routingMethod = 'AI';
+        const candidates = agents
+          .map(
+            (a) =>
+              `ID: ${a.id}, Name: ${a.firstName} ${a.lastName}, Role: ${a.role}`,
+          )
+          .join('\n');
+
+        const prompt = `Select the single best agent to assign to this ticket based on their role.
+        Ticket Title: ${ticket.title}
+        Ticket Description: ${ticket.description}
+        Category: ${ticket.category || 'N/A'}
+        Sentiment: ${ticket.sentiment || 'N/A'}
+        Priority: ${ticket.priority}
+
+        CANDIDATE AGENTS:
+        ${candidates}
+
+        Respond with ONLY the candidate agent ID.`;
+
+        const chosenId = await this.aiService.generateText({
+          prompt,
+          type: 'support_analysis',
+        });
+
+        const selected = agents.find((a) => chosenId.includes(a.id));
+        if (selected) {
+          matchedAgent = selected;
+        }
+      } catch (err) {
+        this.logger.error(
+          `AI-assisted routing failed for ticket ${ticketId}: ${err}`,
+        );
+      }
+    }
+
+    // Fallback to first available agent if no match
+    if (!matchedAgent) {
+      matchedAgent = agents[0];
+    }
+
+    ticket.assigneeId = matchedAgent.id;
+    await this.ticketRepo.save(ticket);
+
+    this.logger.log(
+      `Routed ticket ${ticketId} to agent ${matchedAgent.email} via ${routingMethod}`,
+    );
+
+    return {
+      ticketId,
+      assigneeId: matchedAgent.id,
+      assigneeName: `${matchedAgent.firstName} ${matchedAgent.lastName}`,
+      routingMethod,
+    };
+  }
+
   @OnEvent('ticket.created')
   async handleTicketCreated(payload: { tenantId: string; ticketId: string }) {
     try {
       await this.analyzeTicket(payload.tenantId, payload.ticketId);
+      await this.routeTicket(payload.tenantId, payload.ticketId);
     } catch (error) {
       this.logger.error(
-        `Failed to automatically analyze ticket ${payload.ticketId}`,
+        `Failed to automatically analyze and route ticket ${payload.ticketId}`,
         error,
       );
     }

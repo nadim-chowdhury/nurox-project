@@ -26,6 +26,7 @@ import { CurrencyConversionService } from './currency-conversion.service';
 import { ClsService } from 'nestjs-cls';
 import { DataSource } from 'typeorm';
 import { getQueueToken } from '@nestjs/bullmq';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 describe('FinanceService', () => {
   let service: FinanceService;
@@ -154,6 +155,10 @@ describe('FinanceService', () => {
         {
           provide: getQueueToken('ar_reminders'),
           useValue: { add: jest.fn() },
+        },
+        {
+          provide: EventEmitter2,
+          useValue: { emit: jest.fn() },
         },
       ],
     }).compile();

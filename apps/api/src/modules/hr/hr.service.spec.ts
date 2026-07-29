@@ -26,8 +26,13 @@ import { Termination } from './entities/termination.entity';
 import { ExitInterview } from './entities/exit-interview.entity';
 import { ClearanceChecklist } from './entities/clearance-checklist.entity';
 import { Shift } from './entities/shift.entity';
+import { Grade } from './entities/grade.entity';
 import { PdfService } from '../system/pdf.service';
 import { getQueueToken } from '@nestjs/bullmq';
+
+import { ConfigService } from '@nestjs/config';
+import { ClsService } from 'nestjs-cls';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 describe('HrService', () => {
   let service: HrService;
@@ -152,6 +157,7 @@ describe('HrService', () => {
           useFactory: mockRepository,
         },
         { provide: getRepositoryToken(Shift), useFactory: mockRepository },
+        { provide: getRepositoryToken(Grade), useFactory: mockRepository },
         {
           provide: PdfService,
           useValue: {
@@ -163,6 +169,18 @@ describe('HrService', () => {
           useValue: {
             add: jest.fn(),
           },
+        },
+        {
+          provide: ConfigService,
+          useValue: { get: jest.fn() },
+        },
+        {
+          provide: ClsService,
+          useValue: { get: jest.fn().mockReturnValue('test-tenant-id') },
+        },
+        {
+          provide: EventEmitter2,
+          useValue: { emit: jest.fn() },
         },
       ],
     }).compile();

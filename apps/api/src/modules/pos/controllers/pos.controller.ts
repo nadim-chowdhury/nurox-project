@@ -7,14 +7,16 @@ import {
   createPosOrderSchema,
 } from '@repo/shared-schemas';
 import { ZodValidationPipe } from 'nestjs-zod';
-import { UsePipes } from '@nestjs/common';
+import { UsePipes, UseInterceptors } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../../../common/guards/tenant.guard';
 import { CurrentTenant } from '../../../common/decorators/current-tenant.decorator';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { AuditLogInterceptor } from '../../../common/interceptors/audit-log.interceptor';
 
 @UseGuards(JwtAuthGuard, TenantGuard)
 @Controller('pos')
+@UseInterceptors(AuditLogInterceptor)
 export class PosController {
   constructor(private readonly posService: PosService) {}
 

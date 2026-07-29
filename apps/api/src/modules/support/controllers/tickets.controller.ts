@@ -97,4 +97,12 @@ export class TicketsController {
     );
     return { reply };
   }
+
+  @Post(':id/route')
+  async routeTicket(
+    @CurrentTenant() tenantId: string,
+    @Param('id') ticketId: string,
+  ) {
+    return this.supportAiService.routeTicket(tenantId, ticketId);
+  }
 }

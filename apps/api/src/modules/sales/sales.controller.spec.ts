@@ -1,10 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SalesController } from './sales.controller';
 import { SalesService } from './sales.service';
+import { SalesOrderFlowService } from './sales-order-flow.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Role } from '../auth/entities/role.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { TenantGuard } from '../../common/guards/tenant.guard';
+import { AuditLogInterceptor } from '../../common/interceptors/audit-log.interceptor';
 
 describe('SalesController', () => {
   let controller: SalesController;
@@ -29,6 +32,15 @@ describe('SalesController', () => {
           },
         },
         {
+          provide: SalesOrderFlowService,
+          useValue: {
+            createQuotation: jest.fn(),
+            convertQuotationToOrder: jest.fn(),
+            createDeliveryOrder: jest.fn(),
+            createInvoiceFromOrder: jest.fn(),
+          },
+        },
+        {
           provide: getRepositoryToken(Role),
           useValue: {
             findOne: jest.fn(),
@@ -40,6 +52,13 @@ describe('SalesController', () => {
       .useValue({ canActivate: () => true })
       .overrideGuard(PermissionsGuard)
       .useValue({ canActivate: () => true })
+      .overrideGuard(TenantGuard)
+      .useValue({ canActivate: () => true })
+      .overrideInterceptor(AuditLogInterceptor)
+      .useValue({
+        intercept: (_: unknown, next: { handle: () => unknown }) =>
+          next.handle(),
+      })
       .compile();
 
     controller = module.get<SalesController>(SalesController);
