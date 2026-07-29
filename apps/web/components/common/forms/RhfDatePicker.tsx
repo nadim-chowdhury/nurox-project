@@ -38,9 +38,24 @@ export function RhfDatePicker<T extends FieldValues>({
           <DatePicker
             {...field}
             {...props}
-            value={value ? dayjs(value) : null}
+            value={
+              value
+                ? dayjs.isDayjs(value)
+                  ? value
+                  : dayjs(value).isValid()
+                    ? dayjs(value)
+                    : null
+                : null
+            }
             onChange={(date) =>
-              onChange(date && !Array.isArray(date) ? date.toISOString() : null)
+              onChange(
+                date &&
+                  !Array.isArray(date) &&
+                  dayjs.isDayjs(date) &&
+                  date.isValid()
+                  ? date.toISOString()
+                  : null,
+              )
             }
             style={{ width: "100%", ...props.style }}
           />

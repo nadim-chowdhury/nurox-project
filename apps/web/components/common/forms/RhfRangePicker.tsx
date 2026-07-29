@@ -41,10 +41,25 @@ export function RhfRangePicker<T extends FieldValues>({
           <DatePicker.RangePicker
             {...field}
             {...props}
-            value={value ? [dayjs(value[0]), dayjs(value[1])] : null}
+            value={
+              Array.isArray(value) && value.length === 2
+                ? [
+                    dayjs.isDayjs(value[0])
+                      ? value[0]
+                      : dayjs(value[0]).isValid()
+                        ? dayjs(value[0])
+                        : null,
+                    dayjs.isDayjs(value[1])
+                      ? value[1]
+                      : dayjs(value[1]).isValid()
+                        ? dayjs(value[1])
+                        : null,
+                  ]
+                : null
+            }
             onChange={(dates) => {
-              if (dates) {
-                onChange([dates[0]?.toISOString(), dates[1]?.toISOString()]);
+              if (dates && dates[0] && dates[1]) {
+                onChange([dates[0].toISOString(), dates[1].toISOString()]);
               } else {
                 onChange(null);
               }
