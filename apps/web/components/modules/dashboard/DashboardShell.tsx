@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { Row, Col } from "antd";
 import dayjs from "dayjs";
@@ -15,19 +17,29 @@ interface Props {
 }
 
 export function DashboardShell({ startDate, endDate, showComparison }: Props) {
-  const dateRange: [dayjs.Dayjs, dayjs.Dayjs] = [dayjs(startDate), dayjs(endDate)];
+  const dateRange: [dayjs.Dayjs, dayjs.Dayjs] = [
+    dayjs(startDate),
+    dayjs(endDate),
+  ];
 
   return (
     <>
       <AnnouncementBanner />
-      
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 24,
+        }}
+      >
         <ComparisonToggle checked={showComparison} />
         <DashboardFilter value={dateRange} />
       </div>
 
       {showComparison && <ComparisonMode dateRange={dateRange} />}
-      
+
       <Row gutter={[24, 24]}>
         <Col xs={24} xl={18}>
           <DashboardGrid dateRange={dateRange} />
