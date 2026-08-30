@@ -184,7 +184,13 @@ export default function BillingSettingsPage() {
 
       <Card title="Billing History" className="border-colorSplit shadow-sm">
         <Table
-          dataSource={invoicesData?.data || []}
+          dataSource={
+            Array.isArray(invoicesData?.data)
+              ? invoicesData.data
+              : Array.isArray(invoicesData)
+                ? invoicesData
+                : []
+          }
           columns={invoiceColumns}
           rowKey="id"
           pagination={false}
@@ -214,7 +220,7 @@ export default function BillingSettingsPage() {
         </div>
 
         <Row gutter={[16, 16]}>
-          {plans?.map((plan) => (
+          {(Array.isArray(plans) ? plans : []).map((plan) => (
             <Col span={8} key={plan.id}>
               <Card
                 hoverable

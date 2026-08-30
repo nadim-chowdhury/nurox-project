@@ -26,7 +26,7 @@ export const usersApi = baseApi.injectEndpoints({
         params,
       }),
       providesTags: (result) =>
-        result
+        result && Array.isArray(result.data)
           ? [
               ...result.data.map(({ id }) => ({
                 type: "User" as const,

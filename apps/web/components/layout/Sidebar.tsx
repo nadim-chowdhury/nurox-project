@@ -19,6 +19,7 @@ import {
   AuditOutlined,
   BarChartOutlined,
   CustomerServiceOutlined,
+  CarOutlined,
 } from "@ant-design/icons";
 import { usePathname, useRouter } from "next/navigation";
 import { useAppSelector, useAppDispatch } from "@/hooks/useRedux";
@@ -41,7 +42,26 @@ export function Sidebar() {
 
   // Fetch enabled modules for this tenant
   const { data: enabledModules = [] } = useGetModulesQuery();
-  const enabledModuleKeys = enabledModules.map((m) => m.moduleKey);
+  const modulesList = Array.isArray(enabledModules)
+    ? enabledModules
+    : (enabledModules as any)?.data || [];
+  const hasConfiguredModules = modulesList.length > 0;
+  const enabledModuleKeys = hasConfiguredModules
+    ? modulesList.map((m: any) => m.moduleKey)
+    : [
+        "hr",
+        "finance",
+        "inventory",
+        "sales",
+        "procurement",
+        "projects",
+        "support",
+        "pos",
+        "manufacturing",
+        "assets",
+        "documents",
+        "fleet",
+      ];
 
   const menuItems = [
     {
@@ -217,6 +237,12 @@ export function Sidebar() {
       key: "/assets",
       icon: <AuditOutlined />,
       label: "Assets",
+    },
+    {
+      key: "/fleet",
+      icon: <CarOutlined />,
+      label: "Fleet & Logistics",
+      hidden: !enabledModuleKeys.includes("fleet"),
     },
     {
       key: "/reports",

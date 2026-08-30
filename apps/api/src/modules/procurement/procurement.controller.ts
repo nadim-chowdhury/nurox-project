@@ -94,6 +94,12 @@ export class ProcurementController {
     return this.procurementService.createPO(dto as any);
   }
 
+  @Get('purchase-orders')
+  @ApiOperation({ summary: 'List all purchase orders' })
+  findAllPOs(@Query('page') page?: number, @Query('limit') limit?: number) {
+    return this.procurementService.findAllPOs(page || 1, limit || 20);
+  }
+
   @Post('purchase-orders/:id/send')
   @ApiOperation({ summary: 'Send PO to vendor' })
   sendPO(@Param('id') id: string) {

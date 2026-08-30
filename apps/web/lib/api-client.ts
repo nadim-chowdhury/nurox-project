@@ -8,8 +8,24 @@ import type { RootState } from "@/store/store";
 import { setAccessToken, clearAuth } from "@/store/slices/authSlice";
 import { notification } from "antd";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+const getApiUrl = () => {
+  if (typeof window !== "undefined") {
+    const envUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (envUrl && !envUrl.includes("localhost")) {
+      return envUrl;
+    }
+    const { protocol, hostname } = window.location;
+    if (hostname !== "localhost" && hostname !== "127.0.0.1") {
+      return `${protocol}//${hostname}:3001/api/v1`;
+    }
+    return envUrl || "http://localhost:3001/api/v1";
+  }
+  return (
+    process.env.INTERNAL_API_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:3001/api/v1"
+  );
+};
 
 /**
  * Base fetch configured with:
@@ -18,7 +34,7 @@ const API_URL =
  * - x-tenant-id header from cookie
  */
 const baseQuery = fetchBaseQuery({
-  baseUrl: API_URL,
+  baseUrl: getApiUrl(),
   credentials: "include",
   prepareHeaders: (headers, { getState }) => {
     // 1. Set Authorization Header
@@ -28,13 +44,16 @@ const baseQuery = fetchBaseQuery({
     }
 
     // 2. Set Tenant ID Header
-    // Read from cookie (set by middleware)
-    if (typeof document !== 'undefined') {
+    // Check Redux auth state first, then document.cookie
+    const authTenantId = (getState() as RootState).auth.user?.tenantId;
+    if (authTenantId) {
+      headers.set("x-tenant-id", authTenantId);
+    } else if (typeof document !== "undefined") {
       const tenantId = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('nurox_tenant_id='))
-        ?.split('=')[1];
-      
+        .split("; ")
+        .find((row) => row.startsWith("nurox_tenant_id="))
+        ?.split("=")[1];
+
       if (tenantId) {
         headers.set("x-tenant-id", tenantId);
       }
@@ -71,14 +90,17 @@ export const baseQueryWithReauth: BaseQueryFn<
       );
 
       if (refreshResult.data) {
-        const data = refreshResult.data as {
-          accessToken: string;
-          expiresIn: number;
-        };
-        // Store new access token
-        api.dispatch(setAccessToken(data.accessToken));
-        // Retry original request with new token
-        result = await baseQuery(args, api, extraOptions);
+        const raw = refreshResult.data as any;
+        const authPayload = raw?.data || raw;
+        const accessToken =
+          authPayload?.accessToken || authPayload?.tokens?.accessToken;
+
+        if (accessToken) {
+          api.dispatch(setAccessToken(accessToken));
+          result = await baseQuery(args, api, extraOptions);
+        } else {
+          api.dispatch(clearAuth());
+        }
       } else {
         // Refresh failed — clear auth state
         api.dispatch(clearAuth());
@@ -86,7 +108,7 @@ export const baseQueryWithReauth: BaseQueryFn<
     } else if (result.error.status === 429) {
       const retryAfterStr = result.meta?.response?.headers.get("retry-after");
       const retryAfter = retryAfterStr ? parseInt(retryAfterStr, 10) : 60;
-      
+
       notification.error({
         message: "Rate Limit Exceeded",
         description: `Too many requests. Please try again in ${retryAfter} seconds.`,
@@ -97,11 +119,26 @@ export const baseQueryWithReauth: BaseQueryFn<
       const data = result.error.data as any;
       notification.warning({
         message: "System Maintenance",
-        description: data?.message || "The system is currently undergoing maintenance. Please try again later.",
+        description:
+          data?.message ||
+          "The system is currently undergoing maintenance. Please try again later.",
         duration: 0, // Persistent
         key: "maintenance-warning",
       });
     }
+  }
+
+  // Automatically unwrap backend TransformInterceptor envelope ({ data: ..., statusCode: 200 })
+  if (
+    result.data &&
+    typeof result.data === "object" &&
+    "data" in result.data &&
+    "statusCode" in result.data
+  ) {
+    result = {
+      ...result,
+      data: (result.data as any).data,
+    };
   }
 
   return result;

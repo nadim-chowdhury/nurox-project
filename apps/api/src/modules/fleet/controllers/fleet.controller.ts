@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, UseGuards } from '@nestjs/common';
 import { FleetService } from '../services/fleet.service';
 import {
   CreateVehicleDto,
@@ -20,6 +20,49 @@ import { AuditLogInterceptor } from '../../../common/interceptors/audit-log.inte
 @UseInterceptors(AuditLogInterceptor)
 export class FleetController {
   constructor(private readonly fleetService: FleetService) {}
+
+  @Get('vehicles')
+  async getVehicles(
+    @CurrentTenant() tenantId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.fleetService.findAllVehicles(
+      tenantId,
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 50,
+    );
+  }
+
+  @Get('fuel-logs')
+  async getFuelLogs(
+    @CurrentTenant() tenantId: string,
+    @Query('vehicleId') vehicleId?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.fleetService.findAllFuelLogs(
+      tenantId,
+      vehicleId,
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 50,
+    );
+  }
+
+  @Get('trip-logs')
+  async getTripLogs(
+    @CurrentTenant() tenantId: string,
+    @Query('vehicleId') vehicleId?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.fleetService.findAllTripLogs(
+      tenantId,
+      vehicleId,
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 50,
+    );
+  }
 
   @Post('vehicles')
   @UsePipes(new ZodValidationPipe(createVehicleSchema))

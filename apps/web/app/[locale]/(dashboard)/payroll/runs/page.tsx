@@ -6,6 +6,7 @@ import { PlusOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/tables/DataTable";
 import type { ColumnsType } from "antd/es/table";
+import { useGetPayrollRunsQuery } from "@/store/api/payrollApi";
 
 interface PayrollRun {
   id: string;
@@ -132,6 +133,14 @@ const columns: ColumnsType<PayrollRun> = [
 ];
 
 export default function PayrollRunsPage() {
+  const { data: runs, isLoading } = useGetPayrollRunsQuery();
+  const dataSource =
+    runs && Array.isArray(runs) && runs.length > 0
+      ? runs
+      : Array.isArray(runs)
+        ? []
+        : mockRuns;
+
   return (
     <div className="animate-fade-in-up">
       <PageHeader
@@ -154,9 +163,10 @@ export default function PayrollRunsPage() {
           borderColor: "var(--ghost-border)",
         }}
       >
-        <DataTable<PayrollRun>
+        <DataTable<any>
           columns={columns}
-          dataSource={mockRuns}
+          dataSource={dataSource}
+          loading={isLoading}
           rowKey="id"
         />
       </Card>

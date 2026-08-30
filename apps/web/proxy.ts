@@ -51,7 +51,7 @@ export default function proxy(request: NextRequest) {
 
   // Handle 'www' and other system subdomains
   if (["www", "app", "public", "localhost", "127.0.0.1"].includes(tenantId)) {
-    tenantId = "tenant_default";
+    tenantId = "d3b07384-d113-4c4e-9c8e-cf00257e8412";
   }
 
   // 2. Localization Middleware

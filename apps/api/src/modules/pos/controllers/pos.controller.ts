@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Param, UseGuards, Get } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Get,
+} from '@nestjs/common';
 import { PosService } from '../services/pos.service';
 import {
   CreatePosSessionDto,
@@ -19,6 +27,42 @@ import { AuditLogInterceptor } from '../../../common/interceptors/audit-log.inte
 @UseInterceptors(AuditLogInterceptor)
 export class PosController {
   constructor(private readonly posService: PosService) {}
+
+  @Get('sessions/current')
+  async getCurrentSession(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.posService.findCurrentSession(tenantId, user.id);
+  }
+
+  @Get('sessions')
+  async getSessions(
+    @CurrentTenant() tenantId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.posService.findAllSessions(
+      tenantId,
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 50,
+    );
+  }
+
+  @Get('orders')
+  async getOrders(
+    @CurrentTenant() tenantId: string,
+    @Query('sessionId') sessionId?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.posService.findAllOrders(
+      tenantId,
+      sessionId,
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 50,
+    );
+  }
 
   @Post('sessions')
   @UsePipes(new ZodValidationPipe(createPosSessionSchema))

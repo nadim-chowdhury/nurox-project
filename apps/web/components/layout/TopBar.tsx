@@ -9,7 +9,7 @@ import {
   SettingOutlined,
   WifiOutlined,
 } from "@ant-design/icons";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useAppSelector, useAppDispatch } from "@/hooks/useRedux";
 import { useLogoutMutation } from "@/store/api/authApi";
 import { Breadcrumbs } from "../common/Breadcrumbs";
@@ -19,6 +19,8 @@ const { Header } = Layout;
 
 export function TopBar() {
   const router = useRouter();
+  const params = useParams();
+  const locale = (params?.locale as string) || "en";
   const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
   const {
@@ -34,7 +36,7 @@ export function TopBar() {
     } catch {
       // Still clear local state
     }
-    router.push("/login");
+    router.push(`/${locale}/login`);
   };
 
   const userMenuItems = [
@@ -42,13 +44,13 @@ export function TopBar() {
       key: "profile",
       icon: <UserOutlined />,
       label: "Profile",
-      onClick: () => router.push("/settings"),
+      onClick: () => router.push(`/${locale}/settings`),
     },
     {
       key: "settings",
       icon: <SettingOutlined />,
       label: "Settings",
-      onClick: () => router.push("/settings"),
+      onClick: () => router.push(`/${locale}/settings`),
     },
     { type: "divider" as const },
     {

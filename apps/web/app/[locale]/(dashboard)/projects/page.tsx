@@ -2,14 +2,13 @@
 
 import React from "react";
 import { Row, Col, Card, Progress, Button } from "antd";
-import {
-  PlusOutlined,
-} from "@ant-design/icons";
+import { PlusOutlined } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/common/PageHeader";
 import { KpiCard } from "@/components/common/KpiCard";
 import { StatusTag } from "@/components/common/StatusTag";
 import { Avatar } from "@/components/common/Avatar";
+import { useGetProjectsQuery } from "@/store/api/projectsApi";
 
 interface Project {
   id: string;
@@ -71,6 +70,10 @@ const mockProjects: Project[] = [
 
 export default function ProjectsPage() {
   const router = useRouter();
+  const { data: apiProjects } = useGetProjectsQuery();
+  const rawList = (apiProjects as any)?.data || apiProjects;
+  const projectList: Project[] =
+    Array.isArray(rawList) && rawList.length > 0 ? rawList : mockProjects;
 
   return (
     <div className="animate-fade-in-up">
@@ -90,7 +93,10 @@ export default function ProjectsPage() {
 
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={12} sm={6}>
-          <KpiCard title="Active Projects" value="3" />
+          <KpiCard
+            title="Active Projects"
+            value={`${projectList.filter((p) => p.status === "in_progress").length || 3}`}
+          />
         </Col>
         <Col xs={12} sm={6}>
           <KpiCard title="Total Tasks" value="154" />
@@ -104,7 +110,7 @@ export default function ProjectsPage() {
       </Row>
 
       <Row gutter={[16, 16]}>
-        {mockProjects.map((p) => (
+        {projectList.map((p) => (
           <Col xs={24} sm={12} lg={8} key={p.id}>
             <Card
               hoverable

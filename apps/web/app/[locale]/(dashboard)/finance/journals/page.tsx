@@ -1,15 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { Table, Button, Modal, message, Tag, Select, Input, DatePicker, InputNumber, Space } from "antd";
+import {
+  Table,
+  Button,
+  Modal,
+  message,
+  Tag,
+  Select,
+  Input,
+  DatePicker,
+  InputNumber,
+  Space,
+} from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
-import { 
-  useGetJournalsQuery, 
-  useCreateJournalMutation, 
+import {
+  useGetJournalsQuery,
+  useCreateJournalMutation,
   useGetAccountsQuery,
   useReviewJournalMutation,
   useApproveJournalMutation,
-  usePostJournalMutation
+  usePostJournalMutation,
 } from "@/store/api/financeApi";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,7 +37,13 @@ export default function JournalEntries() {
   const [postJournal] = usePostJournalMutation();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { control, handleSubmit, watch, reset, formState: { errors } } = useForm({
+  const {
+    control,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm({
     resolver: zodResolver(journalEntrySchema),
     defaultValues: {
       entryDate: dayjs().toISOString(),
@@ -61,51 +78,90 @@ export default function JournalEntries() {
     }
   };
 
-  const handleAction = async (id: string, action: "review" | "approve" | "post") => {
-      try {
-          if (action === "review") await reviewJournal(id).unwrap();
-          if (action === "approve") await approveJournal(id).unwrap();
-          if (action === "post") await postJournal(id).unwrap();
-          message.success(`Journal ${action}ed successfully`);
-      } catch (err: any) {
-          message.error(err.data?.message || `Failed to ${action} journal`);
-      }
+  const handleAction = async (
+    id: string,
+    action: "review" | "approve" | "post",
+  ) => {
+    try {
+      if (action === "review") await reviewJournal(id).unwrap();
+      if (action === "approve") await approveJournal(id).unwrap();
+      if (action === "post") await postJournal(id).unwrap();
+      message.success(`Journal ${action}ed successfully`);
+    } catch (err: any) {
+      message.error(err.data?.message || `Failed to ${action} journal`);
+    }
   };
 
   const columns = [
-    { title: "Date", dataIndex: "entryDate", render: (date: string) => dayjs(date).format("YYYY-MM-DD") },
+    {
+      title: "Date",
+      dataIndex: "entryDate",
+      render: (date: string) => dayjs(date).format("YYYY-MM-DD"),
+    },
     { title: "Number", dataIndex: "entryNumber" },
     { title: "Description", dataIndex: "description", ellipsis: true },
-    { title: "Amount", dataIndex: "totalDebit", render: (val: number, record: any) => `${record.currency || 'USD'} ${val.toFixed(2)}` },
-    { 
-      title: "Status", 
-      dataIndex: "status",
-      render: (status: string) => {
-          let color = "orange";
-          if (status === "POSTED") color = "green";
-          if (status === "REJECTED") color = "red";
-          if (status === "APPROVED") color = "blue";
-          return <Tag color={color}>{status}</Tag>;
-      }
+    {
+      title: "Amount",
+      dataIndex: "totalDebit",
+      render: (val: number, record: any) =>
+        `${record.currency || "USD"} ${val.toFixed(2)}`,
     },
     {
-        title: "Actions",
-        key: "actions",
-        render: (_: any, record: any) => (
-            <Space>
-                {record.status === "DRAFT" && <Button size="small" onClick={() => handleAction(record.id, "review")}>Submit</Button>}
-                {record.status === "PENDING_REVIEW" && <Button size="small" type="primary" onClick={() => handleAction(record.id, "approve")}>Approve</Button>}
-                {record.status === "APPROVED" && <Button size="small" type="primary" onClick={() => handleAction(record.id, "post")}>Post</Button>}
-            </Space>
-        )
-    }
+      title: "Status",
+      dataIndex: "status",
+      render: (status: string) => {
+        let color = "orange";
+        if (status === "POSTED") color = "green";
+        if (status === "REJECTED") color = "red";
+        if (status === "APPROVED") color = "blue";
+        return <Tag color={color}>{status}</Tag>;
+      },
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_: any, record: any) => (
+        <Space>
+          {record.status === "DRAFT" && (
+            <Button
+              size="small"
+              onClick={() => handleAction(record.id, "review")}
+            >
+              Submit
+            </Button>
+          )}
+          {record.status === "PENDING_REVIEW" && (
+            <Button
+              size="small"
+              type="primary"
+              onClick={() => handleAction(record.id, "approve")}
+            >
+              Approve
+            </Button>
+          )}
+          {record.status === "APPROVED" && (
+            <Button
+              size="small"
+              type="primary"
+              onClick={() => handleAction(record.id, "post")}
+            >
+              Post
+            </Button>
+          )}
+        </Space>
+      ),
+    },
   ];
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold">Journal Entries</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => setIsModalOpen(true)}
+        >
           New Journal Entry
         </Button>
       </div>
@@ -133,33 +189,43 @@ export default function JournalEntries() {
         <div className="space-y-4">
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Entry Date</label>
+              <label className="block text-sm font-medium mb-1">
+                Entry Date
+              </label>
               <Controller
                 name="entryDate"
                 control={control}
                 render={({ field }) => (
-                  <DatePicker 
-                    className="w-full" 
-                    value={field.value ? dayjs(field.value) : null} 
-                    onChange={(date) => field.onChange(date?.toISOString())} 
+                  <DatePicker
+                    className="w-full"
+                    value={field.value ? dayjs(field.value) : null}
+                    onChange={(date) => field.onChange(date?.toISOString())}
                   />
                 )}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
+              <label className="block text-sm font-medium mb-1">
+                Description
+              </label>
               <Controller
                 name="description"
                 control={control}
-                render={({ field }) => <Input {...field} value={field.value ?? ""} />}
+                render={({ field }) => (
+                  <Input {...field} value={field.value ?? ""} />
+                )}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Reference</label>
+              <label className="block text-sm font-medium mb-1">
+                Reference
+              </label>
               <Controller
                 name="reference"
                 control={control}
-                render={({ field }) => <Input {...field} value={field.value ?? ""} />}
+                render={({ field }) => (
+                  <Input {...field} value={field.value ?? ""} />
+                )}
               />
             </div>
           </div>
@@ -187,7 +253,13 @@ export default function JournalEntries() {
                           value={field.value || undefined}
                           className="w-full"
                           showSearch
-                          options={accounts?.map(a => ({ label: `${a.code} - ${a.name}`, value: a.id }))}
+                          options={(Array.isArray(accounts)
+                            ? accounts
+                            : []
+                          ).map((a) => ({
+                            label: `${a.code} - ${a.name}`,
+                            value: a.id,
+                          }))}
                         />
                       )}
                     />
@@ -196,29 +268,47 @@ export default function JournalEntries() {
                     <Controller
                       name={`lines.${index}.description`}
                       control={control}
-                      render={({ field }) => <Input {...field} value={field.value ?? ""} />}
+                      render={({ field }) => (
+                        <Input {...field} value={field.value ?? ""} />
+                      )}
                     />
                   </td>
                   <td className="py-2 pr-2">
                     <Controller
                       name={`lines.${index}.debit`}
                       control={control}
-                      render={({ field }) => <InputNumber {...field} value={field.value ?? 0} className="w-full" min={0} precision={2} />}
+                      render={({ field }) => (
+                        <InputNumber
+                          {...field}
+                          value={field.value ?? 0}
+                          className="w-full"
+                          min={0}
+                          precision={2}
+                        />
+                      )}
                     />
                   </td>
                   <td className="py-2 pr-2">
                     <Controller
                       name={`lines.${index}.credit`}
                       control={control}
-                      render={({ field }) => <InputNumber {...field} value={field.value ?? 0} className="w-full" min={0} precision={2} />}
+                      render={({ field }) => (
+                        <InputNumber
+                          {...field}
+                          value={field.value ?? 0}
+                          className="w-full"
+                          min={0}
+                          precision={2}
+                        />
+                      )}
                     />
                   </td>
                   <td className="py-2">
-                    <Button 
-                      type="text" 
-                      danger 
-                      icon={<DeleteOutlined />} 
-                      onClick={() => remove(index)} 
+                    <Button
+                      type="text"
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={() => remove(index)}
                       disabled={fields.length <= 2}
                     />
                   </td>
@@ -227,7 +317,14 @@ export default function JournalEntries() {
             </tbody>
           </table>
 
-          <Button type="dashed" onClick={() => append({ accountId: "", description: "", debit: 0, credit: 0 })} block icon={<PlusOutlined />}>
+          <Button
+            type="dashed"
+            onClick={() =>
+              append({ accountId: "", description: "", debit: 0, credit: 0 })
+            }
+            block
+            icon={<PlusOutlined />}
+          >
             Add Line
           </Button>
 
@@ -245,10 +342,14 @@ export default function JournalEntries() {
             )}
           </div>
           {errors.lines?.root && (
-            <p className="text-red-500 text-sm">{(errors.lines.root as any).message}</p>
+            <p className="text-red-500 text-sm">
+              {(errors.lines.root as any).message}
+            </p>
           )}
           {errors && Object.keys(errors).length > 0 && !errors.lines?.root && (
-             <p className="text-red-500 text-sm">Please check the form for errors. {(errors.root as any)?.message}</p>
+            <p className="text-red-500 text-sm">
+              Please check the form for errors. {(errors.root as any)?.message}
+            </p>
           )}
         </div>
       </Modal>

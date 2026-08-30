@@ -55,7 +55,7 @@ export const hrApi = baseApi.injectEndpoints({
         params,
       }),
       providesTags: (result) =>
-        result
+        result && Array.isArray(result.data)
           ? [
               ...result.data.map(({ id }) => ({
                 type: "Employee" as const,

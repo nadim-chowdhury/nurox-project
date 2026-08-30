@@ -177,6 +177,19 @@ export class ProcurementService {
     });
   }
 
+  async findAllPOs(page = 1, limit = 20) {
+    const [data, total] = await this.poRepo.findAndCount({
+      relations: ['vendor', 'lines', 'lines.product'],
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return {
+      data,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
   async sendPOByEmail(poId: string) {
     const po = await this.poRepo.findOne({
       where: { id: poId },

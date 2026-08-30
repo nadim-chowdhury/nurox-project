@@ -11,33 +11,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const token = useSelector((state: RootState) => state.auth.accessToken);
   const user = useSelector((state: RootState) => state.auth.user);
 
-  // We call useGetMeQuery. Even if token is missing in Redux,
-  // baseQueryWithReauth will attempt to refresh if the httpOnly cookie exists.
+  const hasCookie =
+    typeof document !== "undefined" &&
+    document.cookie.includes("nurox_refresh_token");
+
   const {
     data: userData,
     isError,
-    isLoading,
+    isLoading: _isLoading,
   } = useGetMeQuery(undefined, {
-    // If we already have user and token, we can skip or just let it revalidate
-    skip: !!user && !!token,
+    skip: (!!user && !!token) || (!token && !hasCookie),
   });
 
   useEffect(() => {
-    if (userData && !user) {
-      // User data loaded successfully (either with existing token or after silent refresh)
-      // Note: setCredentials is usually called in onQueryStarted of login/register,
-      // but for getMe we might need to ensure user is in state if it's not already.
-      // However, authSlice should handle it if we add it to getMe endpoint.
-    }
     if (isError && token) {
       dispatch(clearAuth());
     }
   }, [userData, user, isError, token, dispatch]);
-
-  if (isLoading && !token) {
-    // Optional: show a loading splash screen during initial auth check
-    return null;
-  }
 
   return <>{children}</>;
 }

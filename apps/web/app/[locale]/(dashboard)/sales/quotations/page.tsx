@@ -39,7 +39,8 @@ export default function QuotationsPage() {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return quotations.filter(
+    const list = Array.isArray(quotations) ? quotations : [];
+    return list.filter(
       (row) =>
         row.quotationNumber.toLowerCase().includes(q) ||
         (row.account?.name ?? "").toLowerCase().includes(q),

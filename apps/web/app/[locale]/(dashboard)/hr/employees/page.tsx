@@ -17,7 +17,11 @@ import { Avatar } from "@/components/common/Avatar";
 import { confirmModal } from "@/components/common/ConfirmModal";
 import { formatDate } from "@/lib/utils";
 import type { ColumnsType } from "antd/es/table";
-import { useGetEmployeesQuery, useDeleteEmployeeMutation, type Employee } from "@/store/api/hrApi";
+import {
+  useGetEmployeesQuery,
+  useDeleteEmployeeMutation,
+  type Employee,
+} from "@/store/api/hrApi";
 import { usePagination } from "@/hooks/usePagination";
 import { message } from "antd";
 // Employee data is fetched via RTK Query
@@ -85,12 +89,13 @@ export default function EmployeesPage() {
       dataIndex: "department",
       key: "department",
       width: 180,
-      filters: data
-        ? [...new Set(data.data.map((e) => e.department))].map((d) => ({
-            text: String(d),
-            value: String(d),
-          }))
-        : [],
+      filters:
+        data && Array.isArray(data.data)
+          ? [...new Set(data.data.map((e) => e.department))].map((d) => ({
+              text: String(d),
+              value: String(d),
+            }))
+          : [],
       onFilter: (value, record) => record.department === value,
       render: (dept: string) => (
         <span

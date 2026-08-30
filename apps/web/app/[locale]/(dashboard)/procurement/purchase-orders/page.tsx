@@ -1,24 +1,39 @@
 "use client";
 
 import React, { useState } from "react";
-import { Table, Tag, Button, Space, message, Modal, List, Badge, Form, Input, InputNumber, Select, Divider } from "antd";
-import { 
-  PlusOutlined, 
-  MailOutlined, 
-  EyeOutlined, 
-  SafetyCertificateOutlined, 
+import {
+  Table,
+  Tag,
+  Button,
+  Space,
+  message,
+  Modal,
+  List,
+  Badge,
+  Form,
+  Input,
+  InputNumber,
+  Select,
+  Divider,
+} from "antd";
+import {
+  PlusOutlined,
+  MailOutlined,
+  EyeOutlined,
+  SafetyCertificateOutlined,
   HistoryOutlined,
   DownloadOutlined,
   RollbackOutlined,
-  DollarOutlined
+  DollarOutlined,
 } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
-import { 
-  useSendPOMutation, 
+import {
+  useSendPOMutation,
   useVerifyMatchQuery,
   useCreateGRNMutation,
   useAllocateLandedCostMutation,
-  useCreatePurchaseReturnMutation
+  useCreatePurchaseReturnMutation,
+  useGetPurchaseOrdersQuery,
 } from "@/store/api/procurementApi";
 import { formatCurrency } from "@/lib/utils";
 
@@ -34,19 +49,39 @@ const mockOrders = [
     currency: "USD",
     version: 2,
     lines: [
-      { id: "l1", productId: "p1", name: "Product A", quantity: 100, unitCost: 125, totalAmount: 12500, receivedQuantity: 0 }
+      {
+        id: "l1",
+        productId: "p1",
+        name: "Product A",
+        quantity: 100,
+        unitCost: 125,
+        totalAmount: 12500,
+        receivedQuantity: 0,
+      },
     ],
-    history: [
-      { version: 1, date: "2026-04-19", note: "Original creation" }
-    ]
-  }
+    history: [{ version: 1, date: "2026-04-19", note: "Original creation" }],
+  },
 ];
 
 export default function PurchaseOrdersPage() {
+  const [page, setPage] = useState(1);
+  const { data: poResponse, isLoading } = useGetPurchaseOrdersQuery({
+    page,
+    limit: 10,
+  });
   const [sendPO, { isLoading: isSending }] = useSendPOMutation();
   const [createGRN] = useCreateGRNMutation();
   const [allocateLandedCost] = useAllocateLandedCostMutation();
   const [createReturn] = useCreatePurchaseReturnMutation();
+
+  const orders =
+    poResponse?.data &&
+    Array.isArray(poResponse.data) &&
+    poResponse.data.length > 0
+      ? poResponse.data
+      : Array.isArray(poResponse?.data)
+        ? []
+        : mockOrders;
 
   const [matchPoId, setMatchPoId] = useState<string | null>(null);
   const [historyPo, setHistoryPo] = useState<any | null>(null);
@@ -58,9 +93,12 @@ export default function PurchaseOrdersPage() {
   const [landedCostForm] = Form.useForm();
   const [returnForm] = Form.useForm();
 
-  const { data: matchResult, isLoading: loadingMatch } = useVerifyMatchQuery(matchPoId!, {
-    skip: !matchPoId,
-  });
+  const { data: matchResult, isLoading: loadingMatch } = useVerifyMatchQuery(
+    matchPoId!,
+    {
+      skip: !matchPoId,
+    },
+  );
 
   const handleSend = async (id: string) => {
     try {
@@ -84,7 +122,7 @@ export default function PurchaseOrdersPage() {
           receivedQuantity: values[`qty_${l.id}`],
           warehouseId: "wh-1",
           batchNumber: values.batchNumber,
-        }))
+        })),
       }).unwrap();
       message.success("Goods received successfully. Inventory updated.");
       setReceiptPo(null);
@@ -164,34 +202,43 @@ export default function PurchaseOrdersPage() {
       key: "action",
       render: (_: any, record: any) => (
         <Space>
-          <Button 
-            icon={<DownloadOutlined />} 
-            size="small" 
-            title="Receive Items (GRN)" 
+          <Button
+            icon={<DownloadOutlined />}
+            size="small"
+            title="Receive Items (GRN)"
             onClick={() => setReceiptPo(record)}
           />
-          <Button 
-            icon={<DollarOutlined />} 
-            size="small" 
-            title="Landed Costs" 
+          <Button
+            icon={<DollarOutlined />}
+            size="small"
+            title="Landed Costs"
             onClick={() => setLandedCostGrnId(record.id)} // In real app, tied to GRN
           />
-          <Button 
-            icon={<SafetyCertificateOutlined />} 
-            size="small" 
+          <Button
+            icon={<SafetyCertificateOutlined />}
+            size="small"
             title="3-Way Match Check"
             onClick={() => setMatchPoId(record.id)}
           />
-          <Button 
-            icon={<RollbackOutlined />} 
-            size="small" 
+          <Button
+            icon={<RollbackOutlined />}
+            size="small"
             title="Purchase Return"
             danger
             onClick={() => setReturnPo(record)}
           />
-          <Button icon={<HistoryOutlined />} size="small" onClick={() => setHistoryPo(record)} />
+          <Button
+            icon={<HistoryOutlined />}
+            size="small"
+            onClick={() => setHistoryPo(record)}
+          />
           {record.status === "DRAFT" && (
-            <Button icon={<MailOutlined />} size="small" onClick={() => handleSend(record.id)} loading={isSending} />
+            <Button
+              icon={<MailOutlined />}
+              size="small"
+              onClick={() => handleSend(record.id)}
+              loading={isSending}
+            />
           )}
         </Space>
       ),
@@ -203,11 +250,30 @@ export default function PurchaseOrdersPage() {
       <PageHeader
         title="Purchase Orders"
         subtitle="Manage end-to-end procurement lifecycle"
-        breadcrumbs={[{ label: "Home", href: "/dashboard" }, { label: "Procurement", href: "/procurement" }, { label: "Orders" }]}
-        extra={[<Button key="add" type="primary" icon={<PlusOutlined />}>Create PO</Button>]}
+        breadcrumbs={[
+          { label: "Home", href: "/dashboard" },
+          { label: "Procurement", href: "/procurement" },
+          { label: "Orders" },
+        ]}
+        extra={[
+          <Button key="add" type="primary" icon={<PlusOutlined />}>
+            Create PO
+          </Button>,
+        ]}
       />
 
-      <Table dataSource={mockOrders} columns={columns} rowKey="id" />
+      <Table
+        dataSource={orders}
+        loading={isLoading}
+        pagination={{
+          total: poResponse?.meta?.total,
+          current: page,
+          pageSize: 10,
+          onChange: (p) => setPage(p),
+        }}
+        columns={columns}
+        rowKey="id"
+      />
 
       {/* GRN Modal */}
       <Modal
@@ -219,8 +285,17 @@ export default function PurchaseOrdersPage() {
         <Form form={grnForm} layout="vertical" onFinish={handleReceive}>
           <p>Record quantities for incoming items.</p>
           {receiptPo?.lines.map((line: any) => (
-            <Form.Item key={line.id} name={`qty_${line.id}`} label={`${line.name} (Ordered: ${line.quantity})`} initialValue={line.quantity}>
-              <InputNumber min={0} max={line.quantity} style={{ width: "100%" }} />
+            <Form.Item
+              key={line.id}
+              name={`qty_${line.id}`}
+              label={`${line.name} (Ordered: ${line.quantity})`}
+              initialValue={line.quantity}
+            >
+              <InputNumber
+                min={0}
+                max={line.quantity}
+                style={{ width: "100%" }}
+              />
             </Form.Item>
           ))}
           <Form.Item name="batchNumber" label="Batch/Lot Number">
@@ -234,11 +309,20 @@ export default function PurchaseOrdersPage() {
         title="3-Way Match Verification"
         open={!!matchPoId}
         onCancel={() => setMatchPoId(null)}
-        footer={[<Button key="ok" onClick={() => setMatchPoId(null)}>Close</Button>]}
+        footer={[
+          <Button key="ok" onClick={() => setMatchPoId(null)}>
+            Close
+          </Button>,
+        ]}
       >
-        {loadingMatch ? "Verifying PO vs GRN vs Invoices..." : (
+        {loadingMatch ? (
+          "Verifying PO vs GRN vs Invoices..."
+        ) : (
           <div>
-            <Badge status={matchResult?.isMatch ? "success" : "error"} text={matchResult?.isMatch ? "Matched" : "Mismatch!"} />
+            <Badge
+              status={matchResult?.isMatch ? "success" : "error"}
+              text={matchResult?.isMatch ? "Matched" : "Mismatch!"}
+            />
             <Table
               dataSource={matchResult?.mismatches || []}
               size="small"
@@ -246,8 +330,21 @@ export default function PurchaseOrdersPage() {
               columns={[
                 { title: "Product", dataIndex: "productId", key: "p" },
                 { title: "PO Qty", dataIndex: "poQuantity", key: "pq" },
-                { title: "Recvd Qty", dataIndex: "receivedQuantity", key: "rq" },
-                { title: "Diff", dataIndex: "difference", key: "df", render: (v) => <span style={{ color: v !== 0 ? "red" : "inherit" }}>{v}</span> },
+                {
+                  title: "Recvd Qty",
+                  dataIndex: "receivedQuantity",
+                  key: "rq",
+                },
+                {
+                  title: "Diff",
+                  dataIndex: "difference",
+                  key: "df",
+                  render: (v) => (
+                    <span style={{ color: v !== 0 ? "red" : "inherit" }}>
+                      {v}
+                    </span>
+                  ),
+                },
               ]}
             />
           </div>
@@ -261,14 +358,20 @@ export default function PurchaseOrdersPage() {
         onCancel={() => setLandedCostGrnId(null)}
         onOk={() => landedCostForm.submit()}
       >
-        <Form form={landedCostForm} layout="vertical" onFinish={handleLandedCostSubmit}>
+        <Form
+          form={landedCostForm}
+          layout="vertical"
+          onFinish={handleLandedCostSubmit}
+        >
           <Form.Item name="freight" label="Freight Charges" initialValue={0}>
             <InputNumber prefix="$" style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item name="duty" label="Customs Duties" initialValue={0}>
             <InputNumber prefix="$" style={{ width: "100%" }} />
           </Form.Item>
-          <p style={{ fontSize: 12, color: "gray" }}>Costs will be allocated across all items based on received quantity.</p>
+          <p style={{ fontSize: 12, color: "gray" }}>
+            Costs will be allocated across all items based on received quantity.
+          </p>
         </Form>
       </Modal>
 
@@ -282,14 +385,27 @@ export default function PurchaseOrdersPage() {
         okButtonProps={{ danger: true }}
       >
         <Form form={returnForm} layout="vertical" onFinish={handleReturnSubmit}>
-          <Form.Item name="reason" label="Reason for Return" rules={[{ required: true }]}>
-            <Select options={[{ label: "Damaged Goods", value: "DAMAGED" }, { label: "Wrong Item", value: "WRONG_ITEM" }, { label: "Expired", value: "EXPIRED" }]} />
+          <Form.Item
+            name="reason"
+            label="Reason for Return"
+            rules={[{ required: true }]}
+          >
+            <Select
+              options={[
+                { label: "Damaged Goods", value: "DAMAGED" },
+                { label: "Wrong Item", value: "WRONG_ITEM" },
+                { label: "Expired", value: "EXPIRED" },
+              ]}
+            />
           </Form.Item>
           <Form.Item name="notes" label="Additional Notes">
             <Input.TextArea rows={3} />
           </Form.Item>
           <Divider />
-          <p>Processing this return will reverse stock levels and generate a Debit Note for the vendor.</p>
+          <p>
+            Processing this return will reverse stock levels and generate a
+            Debit Note for the vendor.
+          </p>
         </Form>
       </Modal>
 
@@ -297,13 +413,20 @@ export default function PurchaseOrdersPage() {
         title="Version History & Amendments"
         open={!!historyPo}
         onCancel={() => setHistoryPo(null)}
-        footer={[<Button key="ok" onClick={() => setHistoryPo(null)}>Close</Button>]}
+        footer={[
+          <Button key="ok" onClick={() => setHistoryPo(null)}>
+            Close
+          </Button>,
+        ]}
       >
         <List
           dataSource={historyPo?.history || []}
           renderItem={(item: any) => (
             <List.Item>
-              <List.Item.Meta title={`Version ${item.version}`} description={`${item.date} — ${item.note}`} />
+              <List.Item.Meta
+                title={`Version ${item.version}`}
+                description={`${item.date} — ${item.note}`}
+              />
             </List.Item>
           )}
         />

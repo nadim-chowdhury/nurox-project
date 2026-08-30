@@ -1,7 +1,18 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button, Space, Tag, Layout, Tree, Spin, message, Modal, Upload } from "antd";
+import {
+  Button,
+  Space,
+  Tag,
+  Layout,
+  Tree,
+  Spin,
+  message,
+  Modal,
+  Upload,
+  Input,
+} from "antd";
 import {
   PlusOutlined,
   DownloadOutlined,
@@ -19,10 +30,10 @@ import { DataTable } from "@/components/tables/DataTable";
 import { Avatar } from "@/components/common/Avatar";
 import { formatDate } from "@/lib/utils";
 import type { ColumnsType } from "antd/es/table";
-import { 
-  useGetFoldersQuery, 
-  useGetDocumentsQuery, 
-  useGetUploadUrlMutation, 
+import {
+  useGetFoldersQuery,
+  useGetDocumentsQuery,
+  useGetUploadUrlMutation,
   useCreateDocumentMutation,
   useCreateFolderMutation,
   useGetDownloadUrlQuery,
@@ -34,8 +45,12 @@ const { Sider, Content } = Layout;
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
   "application/pdf": <FilePdfOutlined style={{ color: "#ffb4ab" }} />,
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": <FileExcelOutlined style={{ color: "#6dd58c" }} />,
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": <FileTextOutlined style={{ color: "#80d8ff" }} />,
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": (
+    <FileExcelOutlined style={{ color: "#6dd58c" }} />
+  ),
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": (
+    <FileTextOutlined style={{ color: "#80d8ff" }} />
+  ),
   "image/png": <FileImageOutlined style={{ color: "#ffb347" }} />,
   "image/jpeg": <FileImageOutlined style={{ color: "#ffb347" }} />,
 };
@@ -43,16 +58,40 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
 export default function DocumentsPage() {
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [isUploadModalVisible, setIsUploadModalVisible] = useState(false);
+  const [isFolderModalVisible, setIsFolderModalVisible] = useState(false);
+  const [folderName, setFolderName] = useState("");
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
 
   const { data: folders, isLoading: isLoadingFolders } = useGetFoldersQuery();
-  const { data: documents, isLoading: isLoadingDocs } = useGetDocumentsQuery(selectedFolderId || undefined);
-  
+  const { data: documents, isLoading: isLoadingDocs } = useGetDocumentsQuery(
+    selectedFolderId || undefined,
+  );
+
   const [getUploadUrl] = useGetUploadUrlMutation();
   const [createDocument] = useCreateDocumentMutation();
+  const [createFolder, { isLoading: isCreatingFolder }] =
+    useCreateFolderMutation();
   const [softDelete] = useSoftDeleteDocumentMutation();
-  
+
   const router = useRouter();
+
+  const handleCreateFolder = async () => {
+    if (!folderName.trim()) {
+      message.error("Please enter a folder name");
+      return;
+    }
+    try {
+      await createFolder({
+        name: folderName.trim(),
+        parentId: selectedFolderId || undefined,
+      }).unwrap();
+      message.success("Folder created successfully");
+      setIsFolderModalVisible(false);
+      setFolderName("");
+    } catch {
+      message.error("Failed to create folder");
+    }
+  };
 
   const handleUpload = async () => {
     if (!fileToUpload) return;
@@ -66,17 +105,17 @@ export default function DocumentsPage() {
 
       // 2. Upload directly to S3
       await fetch(uploadUrl, {
-        method: 'PUT',
+        method: "PUT",
         body: fileToUpload,
         headers: {
-          'Content-Type': fileToUpload.type,
+          "Content-Type": fileToUpload.type,
         },
       });
 
       // 3. Confirm with backend
       await createDocument({
         name: fileToUpload.name,
-        type: fileToUpload.name.split('.').pop() || 'unknown',
+        type: fileToUpload.name.split(".").pop() || "unknown",
         folderId: selectedFolderId || undefined,
         fileKey: key,
         fileSize: fileToUpload.size,
@@ -137,7 +176,9 @@ export default function DocumentsPage() {
       key: "version",
       width: 90,
       render: (v: number) => (
-        <span style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}>
+        <span
+          style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
+        >
           v{v}.0
         </span>
       ),
@@ -148,7 +189,9 @@ export default function DocumentsPage() {
       key: "date",
       width: 120,
       render: (d: string) => (
-        <span style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}>
+        <span
+          style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
+        >
           {formatDate(d)}
         </span>
       ),
@@ -184,13 +227,13 @@ export default function DocumentsPage() {
       title: "All Documents",
       key: "root",
       icon: <FolderOpenOutlined />,
-      children: folders?.map(f => ({
+      children: (Array.isArray(folders) ? folders : []).map((f) => ({
         title: f.name,
         key: f.id,
         icon: <FolderOpenOutlined />,
         isLeaf: true,
-      })) || [],
-    }
+      })),
+    },
   ];
 
   return (
@@ -204,8 +247,14 @@ export default function DocumentsPage() {
         ]}
         extra={
           <Space>
-            <Button 
-              type="primary" 
+            <Button
+              icon={<FolderOpenOutlined />}
+              onClick={() => setIsFolderModalVisible(true)}
+            >
+              New Folder
+            </Button>
+            <Button
+              type="primary"
               icon={<PlusOutlined />}
               onClick={() => setIsUploadModalVisible(true)}
             >
@@ -214,23 +263,50 @@ export default function DocumentsPage() {
           </Space>
         }
       />
-      
-      <Layout style={{ background: 'transparent', gap: 24, marginTop: 24 }}>
-        <Sider width={280} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 16 }}>
-          {isLoadingFolders ? <Spin /> : (
+
+      <Layout style={{ background: "transparent", gap: 24, marginTop: 24 }}>
+        <Sider
+          width={280}
+          style={{
+            background: "rgba(255,255,255,0.02)",
+            border: "1px solid rgba(255,255,255,0.05)",
+            borderRadius: 16,
+            padding: 16,
+          }}
+        >
+          {isLoadingFolders ? (
+            <Spin />
+          ) : (
             <Tree
               showIcon
               defaultExpandAll
               treeData={treeData}
-              onSelect={(keys) => setSelectedFolderId(keys[0] === 'root' ? null : keys[0] as string)}
-              style={{ background: 'transparent', color: 'var(--color-on-surface)' }}
+              onSelect={(keys) =>
+                setSelectedFolderId(
+                  keys[0] === "root" ? null : (keys[0] as string),
+                )
+              }
+              style={{
+                background: "transparent",
+                color: "var(--color-on-surface)",
+              }}
             />
           )}
         </Sider>
-        <Content style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16 }}>
+        <Content
+          style={{
+            background: "rgba(255,255,255,0.02)",
+            border: "1px solid rgba(255,255,255,0.05)",
+            borderRadius: 16,
+          }}
+        >
           <DataTable<any>
             columns={columns}
-            dataSource={documents || []}
+            dataSource={
+              Array.isArray(documents)
+                ? documents
+                : (documents as any)?.data || []
+            }
             rowKey="id"
             loading={isLoadingDocs}
           />
@@ -255,12 +331,39 @@ export default function DocumentsPage() {
           fileList={fileToUpload ? [fileToUpload as any] : []}
         >
           <p className="ant-upload-drag-icon">
-            <UploadOutlined style={{ color: 'var(--color-primary)' }} />
+            <UploadOutlined style={{ color: "var(--color-primary)" }} />
           </p>
-          <p className="ant-upload-text" style={{ color: 'var(--color-on-surface)' }}>
+          <p
+            className="ant-upload-text"
+            style={{ color: "var(--color-on-surface)" }}
+          >
             Click or drag file to this area to upload
           </p>
         </Upload.Dragger>
+      </Modal>
+
+      <Modal
+        title="Create New Folder"
+        open={isFolderModalVisible}
+        onCancel={() => {
+          setIsFolderModalVisible(false);
+          setFolderName("");
+        }}
+        onOk={handleCreateFolder}
+        confirmLoading={isCreatingFolder}
+        okText="Create Folder"
+      >
+        <div style={{ marginTop: 16 }}>
+          <p style={{ marginBottom: 8, color: "var(--color-on-surface)" }}>
+            Folder Name *
+          </p>
+          <Input
+            value={folderName}
+            onChange={(e) => setFolderName(e.target.value)}
+            placeholder="e.g. Invoices 2026 / Contracts / HR Policies"
+            onPressEnter={handleCreateFolder}
+          />
+        </div>
       </Modal>
     </div>
   );

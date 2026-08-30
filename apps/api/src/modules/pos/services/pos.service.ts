@@ -98,4 +98,53 @@ export class PosService {
 
     return order;
   }
+
+  async findCurrentSession(tenantId: string, cashierId: string) {
+    return this.sessionRepo.findOne({
+      where: { tenantId, cashierId, status: 'OPEN' },
+    });
+  }
+
+  async findAllSessions(tenantId: string, page = 1, limit = 50) {
+    const [data, total] = await this.sessionRepo.findAndCount({
+      where: { tenantId },
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async findAllOrders(
+    tenantId: string,
+    sessionId?: string,
+    page = 1,
+    limit = 50,
+  ) {
+    const where: any = { tenantId };
+    if (sessionId) where.sessionId = sessionId;
+    const [data, total] = await this.orderRepo.findAndCount({
+      where,
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
 }

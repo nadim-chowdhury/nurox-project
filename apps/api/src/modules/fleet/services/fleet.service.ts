@@ -74,6 +74,76 @@ export class FleetService {
     return this.tripRepo.save(trip);
   }
 
+  async findAllVehicles(tenantId: string, page = 1, limit = 50) {
+    const [data, total] = await this.vehicleRepo.findAndCount({
+      where: { tenantId },
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async findAllFuelLogs(
+    tenantId: string,
+    vehicleId?: string,
+    page = 1,
+    limit = 50,
+  ) {
+    const where: any = { tenantId };
+    if (vehicleId) where.vehicleId = vehicleId;
+    const [data, total] = await this.fuelRepo.findAndCount({
+      where,
+      relations: ['vehicle'],
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async findAllTripLogs(
+    tenantId: string,
+    vehicleId?: string,
+    page = 1,
+    limit = 50,
+  ) {
+    const where: any = { tenantId };
+    if (vehicleId) where.vehicleId = vehicleId;
+    const [data, total] = await this.tripRepo.findAndCount({
+      where,
+      relations: ['vehicle'],
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   async optimizeRoute(tenantId: string, stops: string[]) {
     this.logger.log(
       `Optimizing route for ${stops.length} stops via stubbed Google Maps API`,

@@ -2,7 +2,11 @@
 
 import React from "react";
 import { Card, Spin, Empty, Avatar, Tooltip } from "antd";
-import { HistoryOutlined, ClockCircleOutlined, UserOutlined } from "@ant-design/icons";
+import {
+  HistoryOutlined,
+  ClockCircleOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
 import { useGetAuditLogsQuery } from "@/store/api/analyticsApi";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -14,18 +18,18 @@ interface Props {
 }
 
 export function ActivityFeed({ dateRange }: Props) {
-  const { data, isLoading } = useGetAuditLogsQuery({ 
-    page: 1, 
+  const { data, isLoading } = useGetAuditLogsQuery({
+    page: 1,
     limit: 50,
     startDate: dateRange[0].toISOString(),
     endDate: dateRange[1].toISOString(),
   });
 
   const getTypeColor = (action: string) => {
-    if (action.includes('CREATE')) return 'var(--color-success)';
-    if (action.includes('UPDATE')) return 'var(--color-primary-fixed-dim)';
-    if (action.includes('DELETE')) return 'var(--color-error)';
-    return 'var(--color-primary)';
+    if (action.includes("CREATE")) return "var(--color-success)";
+    if (action.includes("UPDATE")) return "var(--color-primary-fixed-dim)";
+    if (action.includes("DELETE")) return "var(--color-error)";
+    return "var(--color-primary)";
   };
 
   return (
@@ -38,7 +42,9 @@ export function ActivityFeed({ dateRange }: Props) {
             fontWeight: 600,
           }}
         >
-          <HistoryOutlined style={{ color: "var(--color-tertiary)", marginRight: 8 }} />
+          <HistoryOutlined
+            style={{ color: "var(--color-tertiary)", marginRight: 8 }}
+          />
           Recent Activity
         </span>
       }
@@ -50,53 +56,82 @@ export function ActivityFeed({ dateRange }: Props) {
       styles={{ body: { padding: 0 } }}
     >
       {isLoading ? (
-        <div style={{ padding: 40, textAlign: 'center' }}><Spin /></div>
-      ) : data?.data?.length > 0 ? (
-        <div style={{ maxHeight: 400, overflow: 'auto' }}>
-          {data.data.map((item: any, i: number) => (
-            <div
-              key={item.id}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                padding: "12px 20px",
-                borderBottom:
-                  i < data.data.length - 1
-                    ? "1px solid var(--ghost-border)"
-                    : "none",
-              }}
-            >
-              <Avatar 
-                size="small" 
-                src={item.userAvatar} 
-                icon={<UserOutlined />} 
-                style={{ background: getTypeColor(item.action), flexShrink: 0 }}
-              />
-              <div style={{ flex: 1 }}>
-                <div style={{ color: "var(--color-on-surface)", fontSize: 13 }}>
-                  <span style={{ fontWeight: 600 }}>{item.userName || 'User'}</span> {item.description}
-                </div>
-                <div style={{ color: "var(--color-on-surface-variant)", fontSize: 11 }}>
-                   in {item.module}
-                </div>
-              </div>
-              <span
-                style={{
-                  color: "var(--color-on-surface-variant)",
-                  fontSize: 11,
-                  minWidth: 80,
-                  textAlign: "right",
-                }}
-              >
-                <ClockCircleOutlined style={{ marginRight: 4, fontSize: 10 }} />
-                {dayjs(item.createdAt).fromNow()}
-              </span>
-            </div>
-          ))}
+        <div style={{ padding: 40, textAlign: "center" }}>
+          <Spin />
         </div>
       ) : (
-        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No activity logged" />
+        (() => {
+          const logs = Array.isArray(data)
+            ? data
+            : Array.isArray((data as any)?.data)
+              ? (data as any).data
+              : [];
+          return logs.length > 0 ? (
+            <div style={{ maxHeight: 400, overflow: "auto" }}>
+              {logs.map((item: any, i: number) => (
+                <div
+                  key={item.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 14,
+                    padding: "12px 20px",
+                    borderBottom:
+                      i < logs.length - 1
+                        ? "1px solid var(--ghost-border)"
+                        : "none",
+                  }}
+                >
+                  <Avatar
+                    size="small"
+                    src={item.userAvatar}
+                    icon={<UserOutlined />}
+                    style={{
+                      background: getTypeColor(item.action),
+                      flexShrink: 0,
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{ color: "var(--color-on-surface)", fontSize: 13 }}
+                    >
+                      <span style={{ fontWeight: 600 }}>
+                        {item.userName || "User"}
+                      </span>{" "}
+                      {item.description}
+                    </div>
+                    <div
+                      style={{
+                        color: "var(--color-on-surface-variant)",
+                        fontSize: 11,
+                      }}
+                    >
+                      in {item.module}
+                    </div>
+                  </div>
+                  <span
+                    style={{
+                      color: "var(--color-on-surface-variant)",
+                      fontSize: 11,
+                      minWidth: 80,
+                      textAlign: "right",
+                    }}
+                  >
+                    <ClockCircleOutlined
+                      style={{ marginRight: 4, fontSize: 10 }}
+                    />
+                    {dayjs(item.createdAt).fromNow()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description="No activity logged"
+            />
+          );
+        })()
       )}
     </Card>
   );

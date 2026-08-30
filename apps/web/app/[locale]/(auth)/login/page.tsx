@@ -9,7 +9,7 @@ import {
   WindowsOutlined,
 } from "@ant-design/icons";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { useLoginMutation } from "@/store/api/authApi";
 import { ForcePasswordChangeModal } from "@/components/modules/auth/ForcePasswordChangeModal";
 
@@ -17,8 +17,13 @@ const { Title, Text } = Typography;
 
 export default function LoginPage() {
   const router = useRouter();
+  const params = useParams();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const locale = (params?.locale as string) || "en";
+  const rawCallback = searchParams.get("callbackUrl") || `/${locale}/dashboard`;
+  const callbackUrl = rawCallback.startsWith(`/${locale}`)
+    ? rawCallback
+    : `/${locale}${rawCallback.startsWith("/") ? rawCallback : `/${rawCallback}`}`;
   const [login, { isLoading, error }] = useLoginMutation();
   const [showForcePassword, setShowForcePassword] = React.useState(false);
   const [tempUser, setTempUser] = React.useState<any>(null);

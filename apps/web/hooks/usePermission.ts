@@ -29,8 +29,8 @@ export function usePermission() {
     canAccess: (allowedRoles: UserRole[]): boolean =>
       role ? allowedRoles.includes(role) : false,
 
-    /** Convenience: is ADMIN */
-    isAdmin: role === "ADMIN",
+    /** Convenience: is ADMIN or SUPER_ADMIN */
+    isAdmin: role === "ADMIN" || role === "SUPER_ADMIN",
 
     /** Convenience: is authenticated */
     isAuthenticated: !!user,
@@ -39,12 +39,17 @@ export function usePermission() {
     canPerform: (permission: Permission): boolean => {
       if (!user) return false;
 
+      // Super Admin and Admin have access across all standard permissions
+      if (role === "SUPER_ADMIN" || role === "ADMIN") {
+        return true;
+      }
+
       // Use permissions from user object (dynamic roles)
-      if (user.permissions) {
+      if (user.permissions && Array.isArray(user.permissions)) {
         return user.permissions.includes(permission as any);
       }
 
-      // Fallback to hardcoded mapping if array is missing (unlikely with new API)
+      // Fallback to role-based mapping
       if (!role) return false;
       const userPermissions = RolePermissions[role] || [];
       return userPermissions.includes(permission);

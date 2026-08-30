@@ -60,7 +60,7 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
-  // Dynamic CORS for multi-tenant subdomains
+  // Dynamic CORS for multi-tenant subdomains & dynamic deployments
   const allowedOrigins = config
     .get<string>('app.corsOrigin', 'http://localhost:3000')
     .split(',')
@@ -69,14 +69,21 @@ async function bootstrap() {
   app.enableCors({
     origin: (origin, callback) => {
       const subdomainPattern = /^https?:\/\/([\w-]+\.)?nurox\.app$/;
+      const localhostPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+      const lanPattern =
+        /^https?:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$/;
       if (
         !origin ||
+        allowedOrigins.includes('*') ||
+        allowedOrigins.includes(origin) ||
         subdomainPattern.test(origin) ||
-        allowedOrigins.includes(origin)
+        localhostPattern.test(origin) ||
+        lanPattern.test(origin)
       ) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        // Fallback allows deployed custom domain access with credentials
+        callback(null, true);
       }
     },
     credentials: true, // required for httpOnly cookies

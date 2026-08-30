@@ -61,6 +61,17 @@ export const procurementApi = baseApi.injectEndpoints({
       invalidatesTags: ["RFQ"],
     }),
 
+    getPurchaseOrders: builder.query<
+      any,
+      { page?: number; limit?: number } | void
+    >({
+      query: (params) => ({
+        url: "/procurement/purchase-orders",
+        params: params || undefined,
+      }),
+      providesTags: ["PurchaseOrder"],
+    }),
+
     createPO: builder.mutation<any, PurchaseOrderDto>({
       query: (body) => ({
         url: "/procurement/purchase-orders",
@@ -121,6 +132,7 @@ export const {
   useCreateRFQMutation,
   useGetRfqComparisonQuery,
   useSubmitQuoteMutation,
+  useGetPurchaseOrdersQuery,
   useCreatePOMutation,
   useSendPOMutation,
   useVerifyMatchQuery,

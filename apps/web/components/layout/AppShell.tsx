@@ -10,7 +10,7 @@ import { OfflineBanner } from "@/components/common/OfflineBanner";
 import MobileTabBar from "@/components/layout/MobileTabBar";
 import { useAppSelector, useAppDispatch } from "@/hooks/useRedux";
 import { toggleSidebar, toggleCommandPalette } from "@/store/slices/uiSlice";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useEffect } from "react";
 import { useGetCurrentSubscriptionQuery } from "@/store/api/billingApi";
 import { Alert } from "antd";
@@ -22,6 +22,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const collapsed = useAppSelector((s) => s.ui.sidebarCollapsed);
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const params = useParams();
+  const locale = (params?.locale as string) || "en";
 
   const { data: subscription } = useGetCurrentSubscriptionQuery();
 
@@ -44,7 +46,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       // 'H' for Home/Dashboard
       if (e.key.toLowerCase() === "h") {
-        router.push("/dashboard");
+        router.push(`/${locale}/dashboard`);
       }
 
       // '/' or 'S' for Search (Command Palette)

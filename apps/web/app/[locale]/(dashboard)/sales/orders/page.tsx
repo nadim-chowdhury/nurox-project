@@ -30,7 +30,8 @@ export default function OrdersPage() {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return orders.filter(
+    const list = Array.isArray(orders) ? orders : [];
+    return list.filter(
       (row) =>
         row.soNumber.toLowerCase().includes(q) ||
         (row.account?.name ?? "").toLowerCase().includes(q),

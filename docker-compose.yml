@@ -38,6 +38,7 @@ services:
     environment:
       PORT: "3000"
       HOSTNAME: "0.0.0.0"
+      INTERNAL_API_URL: "http://api:3001/api/v1"
     ports:
       - "3000:3000"
     depends_on:

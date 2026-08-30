@@ -121,7 +121,11 @@ export default function KnowledgeBasePage() {
       <Card>
         <List
           loading={loadingArticles}
-          dataSource={articles as KbArticle[]}
+          dataSource={
+            (Array.isArray(articles)
+              ? articles
+              : (articles as any)?.data || []) as KbArticle[]
+          }
           renderItem={(article) => (
             <List.Item
               actions={[

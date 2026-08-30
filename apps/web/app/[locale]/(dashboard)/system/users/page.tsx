@@ -1,7 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button, Space, message, Modal, Form, Input, Select, Row, Col } from "antd";
+import {
+  Button,
+  Space,
+  message,
+  Modal,
+  Form,
+  Input,
+  Select,
+  Row,
+  Col,
+} from "antd";
 import {
   UserAddOutlined,
   FileTextOutlined,
@@ -14,7 +24,11 @@ import { TableToolbar } from "@/components/tables/TableToolbar";
 import { StatusTag } from "@/components/common/StatusTag";
 import { Avatar } from "@/components/common/Avatar";
 import { confirmModal } from "@/components/common/ConfirmModal";
-import { useGetUsersQuery, useDeleteUserMutation, useInviteUserMutation } from "@/store/api/usersApi";
+import {
+  useGetUsersQuery,
+  useDeleteUserMutation,
+  useInviteUserMutation,
+} from "@/store/api/usersApi";
 import { useGetRolesQuery } from "@/store/api/authApi";
 import { usePagination } from "@/hooks/usePagination";
 import { usePermission } from "@/hooks/usePermission";
@@ -27,7 +41,11 @@ export default function UsersPage() {
   const { tablePagination, queryParams } = usePagination();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
-  const { canPerform: _canPerform, Permission: _Permission, isAdmin } = usePermission();
+  const {
+    canPerform: _canPerform,
+    Permission: _Permission,
+    isAdmin,
+  } = usePermission();
   const [form] = Form.useForm();
 
   const { data, isLoading, isFetching, refetch } = useGetUsersQuery({
@@ -56,7 +74,8 @@ export default function UsersPage() {
   const handleDelete = (user: UserResponseDto) => {
     confirmModal({
       title: `Delete User: ${user.firstName} ${user.lastName}?`,
-      content: "This will permanently disable their login. This action cannot be undone.",
+      content:
+        "This will permanently disable their login. This action cannot be undone.",
       onOk: async () => {
         try {
           await deleteUser(user.id).unwrap();
@@ -74,12 +93,18 @@ export default function UsersPage() {
       key: "user",
       render: (_, record) => (
         <Space size={12}>
-          <Avatar name={`${record.firstName} ${record.lastName}`} src={record.avatarUrl || undefined} size={36} />
+          <Avatar
+            name={`${record.firstName} ${record.lastName}`}
+            src={record.avatarUrl || undefined}
+            size={36}
+          />
           <div>
-            <div style={{ fontWeight: 500, color: 'var(--color-on-surface)' }}>
+            <div style={{ fontWeight: 500, color: "var(--color-on-surface)" }}>
               {record.firstName} {record.lastName}
             </div>
-            <div style={{ fontSize: 12, color: 'var(--color-on-surface-variant)' }}>
+            <div
+              style={{ fontSize: 12, color: "var(--color-on-surface-variant)" }}
+            >
               {record.email}
             </div>
           </div>
@@ -91,7 +116,11 @@ export default function UsersPage() {
       dataIndex: "role",
       key: "role",
       render: (role: string) => (
-        <span style={{ fontSize: 13, color: 'var(--color-on-surface-variant)' }}>{role}</span>
+        <span
+          style={{ fontSize: 13, color: "var(--color-on-surface-variant)" }}
+        >
+          {role}
+        </span>
       ),
     },
     {
@@ -105,7 +134,9 @@ export default function UsersPage() {
       dataIndex: "createdAt",
       key: "createdAt",
       render: (date: string) => (
-        <span style={{ fontSize: 12, color: 'var(--color-on-surface-variant)' }}>
+        <span
+          style={{ fontSize: 12, color: "var(--color-on-surface-variant)" }}
+        >
           {new Date(date).toLocaleDateString()}
         </span>
       ),
@@ -116,13 +147,15 @@ export default function UsersPage() {
       align: "right",
       render: (_, record) => (
         <Space size={4}>
-          {isAdmin && <Button type="text" size="small" icon={<EditOutlined />} />}
           {isAdmin && (
-            <Button 
-              type="text" 
-              danger 
-              size="small" 
-              icon={<DeleteOutlined />} 
+            <Button type="text" size="small" icon={<EditOutlined />} />
+          )}
+          {isAdmin && (
+            <Button
+              type="text"
+              danger
+              size="small"
+              icon={<DeleteOutlined />}
               onClick={() => handleDelete(record)}
             />
           )}
@@ -144,14 +177,17 @@ export default function UsersPage() {
         extra={
           <Space>
             {isAdmin && (
-              <Button icon={<FileTextOutlined />} onClick={() => setIsBulkImportOpen(true)}>
+              <Button
+                icon={<FileTextOutlined />}
+                onClick={() => setIsBulkImportOpen(true)}
+              >
                 Bulk Import
               </Button>
             )}
             {isAdmin && (
-              <Button 
-                type="primary" 
-                icon={<UserAddOutlined />} 
+              <Button
+                type="primary"
+                icon={<UserAddOutlined />}
                 onClick={() => setIsInviteModalOpen(true)}
               >
                 Invite User
@@ -192,32 +228,51 @@ export default function UsersPage() {
         <Form form={form} layout="vertical" onFinish={handleInvite}>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="firstName" label="First Name" rules={[{ required: true }]}>
+              <Form.Item
+                name="firstName"
+                label="First Name"
+                rules={[{ required: true }]}
+              >
                 <Input placeholder="John" />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="lastName" label="Last Name" rules={[{ required: true }]}>
+              <Form.Item
+                name="lastName"
+                label="Last Name"
+                rules={[{ required: true }]}
+              >
                 <Input placeholder="Doe" />
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item name="email" label="Email Address" rules={[{ required: true, type: 'email' }]}>
+          <Form.Item
+            name="email"
+            label="Email Address"
+            rules={[{ required: true, type: "email" }]}
+          >
             <Input placeholder="john.doe@company.com" />
           </Form.Item>
-          <Form.Item name="role" label="Assign Role" rules={[{ required: true }]}>
-            <Select 
+          <Form.Item
+            name="role"
+            label="Assign Role"
+            rules={[{ required: true }]}
+          >
+            <Select
               placeholder="Select a role"
-              options={roles?.map(r => ({ label: r.name, value: r.name }))} 
+              options={(Array.isArray(roles) ? roles : []).map((r) => ({
+                label: r.name,
+                value: r.name,
+              }))}
             />
           </Form.Item>
         </Form>
       </Modal>
 
-      <BulkUserImport 
-        open={isBulkImportOpen} 
-        onClose={() => setIsBulkImportOpen(false)} 
-        onSuccess={refetch} 
+      <BulkUserImport
+        open={isBulkImportOpen}
+        onClose={() => setIsBulkImportOpen(false)}
+        onSuccess={refetch}
       />
     </div>
   );
