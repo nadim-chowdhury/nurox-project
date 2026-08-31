@@ -1,34 +1,34 @@
 "use client";
 
 import React, { useState } from "react";
-import { 
-  Typography, 
-  Card, 
-  Row, 
-  Col, 
-  Tag, 
-  Button, 
-  Space, 
-  Divider, 
-  Empty, 
-  Modal, 
-  Form, 
-  Input, 
+import {
+  Typography,
+  Card,
+  Row,
+  Col,
+  Tag,
+  Button,
+  Space,
+  Divider,
+  Empty,
+  Modal,
+  Form,
+  Input,
   InputNumber,
   Checkbox,
   Select,
   Upload,
-  message 
+  message,
 } from "antd";
-import { 
-  EnvironmentOutlined, 
-  ClockCircleOutlined, 
+import {
+  EnvironmentOutlined,
+  ClockCircleOutlined,
   SendOutlined,
-  InboxOutlined 
+  InboxOutlined,
 } from "@ant-design/icons";
-import { 
+import {
   useApplyForJobMutation,
-  useGetPublicResumeUploadUrlMutation 
+  useGetPublicResumeUploadUrlMutation,
 } from "@/store/api/recruitmentApi";
 
 const { Title, Text, Paragraph } = Typography;
@@ -74,14 +74,14 @@ export function CareerPortalClient({ initialJobs }: { initialJobs: any[] }) {
           email: values.email,
           phone: values.phone,
           resumeUrl: resumeUrl,
-          skills: [], 
+          skills: [],
         },
         application: {
           jobId: selectedJob.id,
           notes: values.notes,
-        }
+        },
       }).unwrap();
-      
+
       message.success("Application submitted successfully!");
       setIsApplyModalOpen(false);
       applyForm.resetFields();
@@ -95,7 +95,9 @@ export function CareerPortalClient({ initialJobs }: { initialJobs: any[] }) {
     <div style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 20px" }}>
       <div style={{ textAlign: "center", marginBottom: 60 }}>
         <Title>Join Our Team</Title>
-        <Paragraph style={{ fontSize: 18, color: "var(--color-text-secondary)" }}>
+        <Paragraph
+          style={{ fontSize: 18, color: "var(--color-text-secondary)" }}
+        >
           Help us build the future of enterprise management.
         </Paragraph>
       </div>
@@ -104,8 +106,8 @@ export function CareerPortalClient({ initialJobs }: { initialJobs: any[] }) {
         <Row gutter={[24, 24]}>
           {initialJobs.map((job) => (
             <Col xs={24} key={job.id}>
-              <Card 
-                hoverable 
+              <Card
+                hoverable
                 style={{ borderRadius: 12 }}
                 onClick={() => {
                   setSelectedJob(job);
@@ -114,15 +116,27 @@ export function CareerPortalClient({ initialJobs }: { initialJobs: any[] }) {
               >
                 <Row align="middle" gutter={24}>
                   <Col flex="auto">
-                    <Title level={4} style={{ margin: 0 }}>{job.title}</Title>
-                    <Space split={<Divider type="vertical" />} style={{ marginTop: 8 }}>
-                      <Text type="secondary"><EnvironmentOutlined /> {job.location}</Text>
-                      <Text type="secondary"><ClockCircleOutlined /> {job.employmentType.replace('_', ' ')}</Text>
+                    <Title level={4} style={{ margin: 0 }}>
+                      {job.title}
+                    </Title>
+                    <Space
+                      split={<Divider type="vertical" />}
+                      style={{ marginTop: 8 }}
+                    >
+                      <Text type="secondary">
+                        <EnvironmentOutlined /> {job.location}
+                      </Text>
+                      <Text type="secondary">
+                        <ClockCircleOutlined />{" "}
+                        {job.employmentType.replace("_", " ")}
+                      </Text>
                       <Tag color="blue">{job.department?.name}</Tag>
                     </Space>
                   </Col>
                   <Col>
-                    <Button type="primary" size="large">Apply Now</Button>
+                    <Button type="primary" size="large">
+                      Apply Now
+                    </Button>
                   </Col>
                 </Row>
               </Card>
@@ -143,40 +157,48 @@ export function CareerPortalClient({ initialJobs }: { initialJobs: any[] }) {
       >
         <div style={{ marginBottom: 24 }}>
           <Title level={5}>Job Description</Title>
-          <div 
-            dangerouslySetInnerHTML={{ __html: selectedJob?.description }} 
-            style={{ 
-              backgroundColor: "#fafafa", 
-              padding: 16, 
+          <div
+            dangerouslySetInnerHTML={{ __html: selectedJob?.description }}
+            style={{
+              backgroundColor: "#fafafa",
+              padding: 16,
               borderRadius: 8,
               maxHeight: 200,
-              overflowY: "auto"
-            }} 
+              overflowY: "auto",
+            }}
           />
         </div>
 
         <Divider />
 
-        <Form
-          form={applyForm}
-          layout="vertical"
-          onFinish={handleApply}
-        >
+        <Form form={applyForm} layout="vertical" onFinish={handleApply}>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="firstName" label="First Name" rules={[{ required: true }]}>
+              <Form.Item
+                name="firstName"
+                label="First Name"
+                rules={[{ required: true }]}
+              >
                 <Input />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="lastName" label="Last Name" rules={[{ required: true }]}>
+              <Form.Item
+                name="lastName"
+                label="Last Name"
+                rules={[{ required: true }]}
+              >
                 <Input />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email' }]}>
+              <Form.Item
+                name="email"
+                label="Email"
+                rules={[{ required: true, type: "email" }]}
+              >
                 <Input />
               </Form.Item>
             </Col>
@@ -196,31 +218,40 @@ export function CareerPortalClient({ initialJobs }: { initialJobs: any[] }) {
               key={field.id}
               name={["customFields", field.id]}
               label={field.label}
-              rules={[{ required: field.required, message: `${field.label} is required` }]}
+              rules={[
+                {
+                  required: field.required,
+                  message: `${field.label} is required`,
+                },
+              ]}
             >
               {field.type === "text" && <Input />}
-              {field.type === "number" && <InputNumber style={{ width: "100%" }} />}
+              {field.type === "number" && (
+                <InputNumber style={{ width: "100%" }} />
+              )}
               {field.type === "select" && (
                 <Select placeholder="Select an option">
                   {field.options?.map((opt: string) => (
-                    <Select.Option key={opt} value={opt}>{opt}</Select.Option>
+                    <Select.Option key={opt} value={opt}>
+                      {opt}
+                    </Select.Option>
                   ))}
                 </Select>
               )}
               {field.type === "checkbox" && <Checkbox>{field.label}</Checkbox>}
               {field.type === "file" && (
-                <Upload 
-                  customRequest={handleFileUpload} 
-                  maxCount={1}
-                >
+                <Upload customRequest={handleFileUpload} maxCount={1}>
                   <Button icon={<InboxOutlined />}>Upload File</Button>
                 </Upload>
               )}
             </Form.Item>
           ))}
 
-          <Form.Item label="Resume / CV" extra="Upload your resume in PDF or Word format">
-            <Dragger 
+          <Form.Item
+            label="Resume / CV"
+            extra="Upload your resume in PDF or Word format"
+          >
+            <Dragger
               customRequest={handleFileUpload}
               maxCount={1}
               accept=".pdf,.doc,.docx"
@@ -228,16 +259,20 @@ export function CareerPortalClient({ initialJobs }: { initialJobs: any[] }) {
               <p className="ant-upload-drag-icon">
                 <InboxOutlined />
               </p>
-              <p className="ant-upload-text">Click or drag file to this area to upload</p>
-              <p className="ant-upload-hint">Support for a single upload. Maximum file size: 5MB.</p>
+              <p className="ant-upload-text">
+                Click or drag file to this area to upload
+              </p>
+              <p className="ant-upload-hint">
+                Support for a single upload. Maximum file size: 5MB.
+              </p>
             </Dragger>
           </Form.Item>
-          
+
           <Form.Item>
-            <Button 
-              type="primary" 
-              htmlType="submit" 
-              icon={<SendOutlined />} 
+            <Button
+              type="primary"
+              htmlType="submit"
+              icon={<SendOutlined />}
               loading={isApplying}
               block
               size="large"
@@ -248,8 +283,16 @@ export function CareerPortalClient({ initialJobs }: { initialJobs: any[] }) {
         </Form>
       </Modal>
 
-      <div style={{ marginTop: 80, textAlign: "center", color: "var(--color-text-secondary)" }}>
-        <Text type="secondary">© 2026 Nurox ERP. Powered by Nurox Recruitment.</Text>
+      <div
+        style={{
+          marginTop: 80,
+          textAlign: "center",
+          color: "var(--color-text-secondary)",
+        }}
+      >
+        <Text type="secondary">
+          © 2026 Nurox ERP. Powered by Nurox Recruitment.
+        </Text>
       </div>
     </div>
   );

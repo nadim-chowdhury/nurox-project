@@ -3,7 +3,12 @@
 import React, { useMemo, useRef } from "react";
 import Tree from "react-d3-tree";
 import { Empty, Spin, Button, Space, Tooltip } from "antd";
-import { DownloadOutlined, ZoomInOutlined, ZoomOutOutlined, FullscreenOutlined } from "@ant-design/icons";
+import {
+  DownloadOutlined,
+  ZoomInOutlined,
+  ZoomOutOutlined,
+  FullscreenOutlined,
+} from "@ant-design/icons";
 import { toPng } from "html-to-image";
 
 interface OrgChartProps {
@@ -34,7 +39,7 @@ const renderRectSvgNode = ({ nodeDatum, toggleNode }: any) => (
       stroke="var(--color-primary)"
       strokeWidth="1.5"
       onClick={toggleNode}
-      style={{ cursor: 'pointer' }}
+      style={{ cursor: "pointer" }}
     />
     <text
       fill="var(--color-on-surface)"
@@ -42,7 +47,11 @@ const renderRectSvgNode = ({ nodeDatum, toggleNode }: any) => (
       x="0"
       y="-8"
       textAnchor="middle"
-      style={{ fontSize: '14px', fontWeight: 600, fontFamily: 'var(--font-display)' }}
+      style={{
+        fontSize: "14px",
+        fontWeight: 600,
+        fontFamily: "var(--font-display)",
+      }}
     >
       {nodeDatum.name}
     </text>
@@ -52,7 +61,7 @@ const renderRectSvgNode = ({ nodeDatum, toggleNode }: any) => (
       x="0"
       y="12"
       textAnchor="middle"
-      style={{ fontSize: '11px', fontFamily: 'var(--font-body)' }}
+      style={{ fontSize: "11px", fontFamily: "var(--font-body)" }}
     >
       {nodeDatum.attributes?.designation || nodeDatum.code}
     </text>
@@ -62,22 +71,28 @@ const renderRectSvgNode = ({ nodeDatum, toggleNode }: any) => (
       x="0"
       y="26"
       textAnchor="middle"
-      style={{ fontSize: '10px', fontWeight: 500 }}
+      style={{ fontSize: "10px", fontWeight: 500 }}
     >
       {nodeDatum.attributes?.department}
     </text>
     {nodeDatum.children && nodeDatum.children.length > 0 && (
-      <circle r="6" cy="35" fill="var(--color-primary)" onClick={toggleNode} style={{ cursor: 'pointer' }} />
+      <circle
+        r="6"
+        cy="35"
+        fill="var(--color-primary)"
+        onClick={toggleNode}
+        style={{ cursor: "pointer" }}
+      />
     )}
   </g>
 );
 
 export function OrgChart({ data, loading }: OrgChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   const treeData = useMemo(() => {
     if (!data || data.length === 0) return null;
-    
+
     // If multiple root departments, wrap them in a virtual root
     if (data.length > 1) {
       return {
@@ -91,24 +106,31 @@ export function OrgChart({ data, loading }: OrgChartProps) {
 
   const handleExport = async () => {
     if (!containerRef.current) return;
-    
+
     try {
       const dataUrl = await toPng(containerRef.current, {
-        backgroundColor: '#0c1324', // Match Deep Space palette background
+        backgroundColor: "#0c1324", // Match Deep Space palette background
         cacheBust: true,
       });
-      const link = document.createElement('a');
-      link.download = `nurox-org-chart-${new Date().toISOString().split('T')[0]}.png`;
+      const link = document.createElement("a");
+      link.download = `nurox-org-chart-${new Date().toISOString().split("T")[0]}.png`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
-      console.error('Failed to export org chart', err);
+      console.error("Failed to export org chart", err);
     }
   };
 
   if (loading) {
     return (
-      <div style={{ ...containerStyles, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div
+        style={{
+          ...containerStyles,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <Spin size="large" tip="Generating Org Chart..." />
       </div>
     );
@@ -116,32 +138,49 @@ export function OrgChart({ data, loading }: OrgChartProps) {
 
   if (!treeData) {
     return (
-      <div style={{ ...containerStyles, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div
+        style={{
+          ...containerStyles,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <Empty description="No organization structure found" />
       </div>
     );
   }
 
   return (
-    <div style={containerStyles} ref={containerRef} className="org-chart-container">
-      <div style={{ 
-        position: 'absolute', 
-        top: 16, 
-        right: 16, 
-        zIndex: 10,
-        background: 'rgba(7, 13, 31, 0.6)',
-        padding: '8px',
-        borderRadius: '8px',
-        backdropFilter: 'blur(4px)',
-        border: '1px solid var(--ghost-border)'
-      }}>
+    <div
+      style={containerStyles}
+      ref={containerRef}
+      className="org-chart-container"
+    >
+      <div
+        style={{
+          position: "absolute",
+          top: 16,
+          right: 16,
+          zIndex: 10,
+          background: "rgba(7, 13, 31, 0.6)",
+          padding: "8px",
+          borderRadius: "8px",
+          backdropFilter: "blur(4px)",
+          border: "1px solid var(--ghost-border)",
+        }}
+      >
         <Space>
           <Tooltip title="Export as PNG">
-            <Button icon={<DownloadOutlined />} onClick={handleExport} size="small" />
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={handleExport}
+              size="small"
+            />
           </Tooltip>
         </Space>
       </div>
-      
+
       <Tree
         data={treeData}
         orientation="vertical"
@@ -163,7 +202,7 @@ export function OrgChart({ data, loading }: OrgChartProps) {
           opacity: 0.6;
         }
         .org-chart-container .rd3t-tree-container {
-            background: transparent !important;
+          background: transparent !important;
         }
       `}</style>
     </div>

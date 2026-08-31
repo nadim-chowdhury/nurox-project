@@ -51,7 +51,9 @@ export function BulkImportModal({ open, onClose }: Props) {
       onCancel={onClose}
       width={800}
       footer={[
-        <Button key="cancel" onClick={onClose}>Cancel</Button>,
+        <Button key="cancel" onClick={onClose}>
+          Cancel
+        </Button>,
         <Button
           key="import"
           type="primary"
@@ -73,8 +75,13 @@ export function BulkImportModal({ open, onClose }: Props) {
         <p className="ant-upload-drag-icon">
           <InboxOutlined />
         </p>
-        <p className="ant-upload-text">Click or drag CSV file to this area to upload</p>
-        <p className="ant-upload-hint">Support for a single CSV file import. Column headers must match API fields.</p>
+        <p className="ant-upload-text">
+          Click or drag CSV file to this area to upload
+        </p>
+        <p className="ant-upload-hint">
+          Support for a single CSV file import. Column headers must match API
+          fields.
+        </p>
       </Dragger>
 
       {data.length > 0 && (

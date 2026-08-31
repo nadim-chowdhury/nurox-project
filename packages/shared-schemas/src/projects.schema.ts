@@ -1,11 +1,11 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const projectStatusSchema = z.enum([
-  'NOT_STARTED',
-  'IN_PROGRESS',
-  'ON_HOLD',
-  'COMPLETED',
-  'CANCELLED',
+  "NOT_STARTED",
+  "IN_PROGRESS",
+  "ON_HOLD",
+  "COMPLETED",
+  "CANCELLED",
 ]);
 
 export const createProjectSchema = z.object({
@@ -18,7 +18,7 @@ export const createProjectSchema = z.object({
   endDate: z.string().optional(),
   budgetCost: z.number().nonnegative().optional(),
   budgetTime: z.number().nonnegative().optional(),
-  currency: z.string().default('USD'),
+  currency: z.string().default("USD"),
   managerId: z.string().uuid().optional(),
 });
 
@@ -26,13 +26,13 @@ export type CreateProjectDto = z.infer<typeof createProjectSchema>;
 export const updateProjectSchema = createProjectSchema.partial();
 export type UpdateProjectDto = z.infer<typeof updateProjectSchema>;
 
-export const taskPrioritySchema = z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']);
+export const taskPrioritySchema = z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]);
 export const taskStatusSchema = z.enum([
-  'NOT_STARTED',
-  'IN_PROGRESS',
-  'IN_REVIEW',
-  'COMPLETED',
-  'BLOCKED',
+  "NOT_STARTED",
+  "IN_PROGRESS",
+  "IN_REVIEW",
+  "COMPLETED",
+  "BLOCKED",
 ]);
 
 export const createTaskSchema = z.object({
@@ -74,18 +74,28 @@ export const createTimeLogSchema = z.object({
 });
 export type CreateTimeLogDto = z.infer<typeof createTimeLogSchema>;
 
-export const timesheetStatusSchema = z.enum(['DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED']);
+export const timesheetStatusSchema = z.enum([
+  "DRAFT",
+  "SUBMITTED",
+  "APPROVED",
+  "REJECTED",
+]);
 export const createTimesheetSchema = z.object({
   userId: z.string().uuid(),
   periodStartDate: z.string().datetime(),
   periodEndDate: z.string().datetime(),
-  status: timesheetStatusSchema.default('DRAFT'),
+  status: timesheetStatusSchema.default("DRAFT"),
 });
 export type CreateTimesheetDto = z.infer<typeof createTimesheetSchema>;
 
 // Risk Register
-export const riskProbabilitySchema = z.enum(['LOW', 'MEDIUM', 'HIGH', 'VERY_HIGH']);
-export const riskImpactSchema = z.enum(['LOW', 'MEDIUM', 'HIGH', 'SEVERE']);
+export const riskProbabilitySchema = z.enum([
+  "LOW",
+  "MEDIUM",
+  "HIGH",
+  "VERY_HIGH",
+]);
+export const riskImpactSchema = z.enum(["LOW", "MEDIUM", "HIGH", "SEVERE"]);
 export const createProjectRiskSchema = z.object({
   projectId: z.string().uuid(),
   description: z.string().min(1).max(500),
@@ -97,13 +107,17 @@ export const createProjectRiskSchema = z.object({
 export type CreateProjectRiskDto = z.infer<typeof createProjectRiskSchema>;
 
 // Change Request
-export const changeRequestStatusSchema = z.enum(['PENDING', 'APPROVED', 'REJECTED']);
+export const changeRequestStatusSchema = z.enum([
+  "PENDING",
+  "APPROVED",
+  "REJECTED",
+]);
 export const createChangeRequestSchema = z.object({
   projectId: z.string().uuid(),
   title: z.string().min(1).max(200),
   description: z.string(),
   impactAnalysis: z.string().optional().nullable(),
-  status: changeRequestStatusSchema.default('PENDING'),
+  status: changeRequestStatusSchema.default("PENDING"),
 });
 export type CreateChangeRequestDto = z.infer<typeof createChangeRequestSchema>;
 
@@ -113,4 +127,6 @@ export const createProjectTemplateSchema = z.object({
   description: z.string().optional().nullable(),
   structure: z.any(), // JSON representation of tasks/milestones
 });
-export type CreateProjectTemplateDto = z.infer<typeof createProjectTemplateSchema>;
+export type CreateProjectTemplateDto = z.infer<
+  typeof createProjectTemplateSchema
+>;

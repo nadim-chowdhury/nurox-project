@@ -1,9 +1,26 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Card, Button, Typography, Space, message, QRCode, Modal, Spin } from "antd";
-import { CheckCircleOutlined, LogoutOutlined, QrcodeOutlined } from "@ant-design/icons";
-import { useCheckInMutation, useCheckOutMutation, useLazyGetCheckInQrQuery } from "@/store/api/attendanceApi";
+import {
+  Card,
+  Button,
+  Typography,
+  Space,
+  message,
+  QRCode,
+  Modal,
+  Spin,
+} from "antd";
+import {
+  CheckCircleOutlined,
+  LogoutOutlined,
+  QrcodeOutlined,
+} from "@ant-design/icons";
+import {
+  useCheckInMutation,
+  useCheckOutMutation,
+  useLazyGetCheckInQrQuery,
+} from "@/store/api/attendanceApi";
 import { useAppSelector } from "@/hooks/useRedux";
 
 const { Title, Text } = Typography;
@@ -12,7 +29,8 @@ export const AttendanceCard: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
   const [checkIn, { isLoading: isCheckingIn }] = useCheckInMutation();
   const [checkOut, { isLoading: isCheckingOut }] = useCheckOutMutation();
-  const [triggerQr, { data: qrData, isLoading: isQrLoading }] = useLazyGetCheckInQrQuery();
+  const [triggerQr, { data: qrData, isLoading: isQrLoading }] =
+    useLazyGetCheckInQrQuery();
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -64,34 +82,37 @@ export const AttendanceCard: React.FC = () => {
     <Card className="shadow-md max-w-md">
       <div className="text-center space-y-4">
         <Title level={4}>{currentTime.toLocaleTimeString()}</Title>
-        <Text type="secondary">{currentTime.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</Text>
-        
+        <Text type="secondary">
+          {currentTime.toLocaleDateString(undefined, {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}
+        </Text>
+
         <Divider />
 
         <Space direction="vertical" className="w-full" size="middle">
-          <Button 
-            type="primary" 
-            size="large" 
-            block 
-            icon={<CheckCircleOutlined />} 
+          <Button
+            type="primary"
+            size="large"
+            block
+            icon={<CheckCircleOutlined />}
             loading={isCheckingIn}
             onClick={handleGeoCheckIn}
           >
             Check In (Geo)
           </Button>
-          
+
           <div className="flex gap-2">
-            <Button 
-              block 
-              icon={<QrcodeOutlined />} 
-              onClick={showQr}
-            >
+            <Button block icon={<QrcodeOutlined />} onClick={showQr}>
               My QR
             </Button>
-            <Button 
-              danger 
-              block 
-              icon={<LogoutOutlined />} 
+            <Button
+              danger
+              block
+              icon={<LogoutOutlined />}
               loading={isCheckingOut}
               onClick={handleCheckOut}
             >
@@ -109,10 +130,14 @@ export const AttendanceCard: React.FC = () => {
         centered
       >
         <div className="flex flex-col items-center p-8 gap-4">
-          {isQrLoading ? <Spin /> : (
+          {isQrLoading ? (
+            <Spin />
+          ) : (
             <>
               <QRCode value={qrData?.token || ""} size={250} />
-              <Text type="secondary">Scan this at the entrance station. Valid for 1 minute.</Text>
+              <Text type="secondary">
+                Scan this at the entrance station. Valid for 1 minute.
+              </Text>
             </>
           )}
         </div>

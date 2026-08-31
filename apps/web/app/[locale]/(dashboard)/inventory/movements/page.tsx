@@ -2,7 +2,11 @@
 
 import React, { useState } from "react";
 import { Table, Tag, Button, Space, Modal, Form, Select, Input } from "antd";
-import { PlusOutlined, CheckCircleOutlined, AuditOutlined } from "@ant-design/icons";
+import {
+  PlusOutlined,
+  CheckCircleOutlined,
+  AuditOutlined,
+} from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useGetWarehousesQuery } from "@/store/api/inventoryApi";
 
@@ -26,7 +30,7 @@ export default function StockAuditsPage() {
       startedAt: "2026-04-15 10:00",
       completedAt: "2026-04-15 16:00",
       notes: "Monthly spot check",
-    }
+    },
   ];
 
   const columns = [
@@ -47,9 +51,13 @@ export default function StockAuditsPage() {
       render: (_: any, record: any) => (
         <Space>
           {record.status === "IN_PROGRESS" ? (
-            <Button icon={<CheckCircleOutlined />} type="primary" size="small">Complete Count</Button>
+            <Button icon={<CheckCircleOutlined />} type="primary" size="small">
+              Complete Count
+            </Button>
           ) : (
-            <Button icon={<AuditOutlined />} size="small">View Report</Button>
+            <Button icon={<AuditOutlined />} size="small">
+              View Report
+            </Button>
           )}
         </Space>
       ),
@@ -87,14 +95,21 @@ export default function StockAuditsPage() {
         okText="Initialize Count"
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="warehouseId" label="Select Warehouse" rules={[{ required: true }]}>
-            <Select options={warehouses?.map(w => ({ label: w.name, value: w.id }))} />
+          <Form.Item
+            name="warehouseId"
+            label="Select Warehouse"
+            rules={[{ required: true }]}
+          >
+            <Select
+              options={warehouses?.map((w) => ({ label: w.name, value: w.id }))}
+            />
           </Form.Item>
           <Form.Item name="notes" label="Audit Notes">
             <Input.TextArea rows={3} placeholder="e.g. End of Q1 Audit" />
           </Form.Item>
           <p style={{ color: "gray", fontSize: 12 }}>
-            This will freeze expectations for the current stock level. Discrepancies found during count will generate auto-adjustments.
+            This will freeze expectations for the current stock level.
+            Discrepancies found during count will generate auto-adjustments.
           </p>
         </Form>
       </Modal>

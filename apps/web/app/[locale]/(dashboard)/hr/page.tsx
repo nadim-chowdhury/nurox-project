@@ -73,7 +73,9 @@ const modules = [
   {
     title: "Policies",
     description: "Company handbooks and policies",
-    icon: <SafetyCertificateOutlined style={{ fontSize: 28, color: "#ffb347" }} />,
+    icon: (
+      <SafetyCertificateOutlined style={{ fontSize: 28, color: "#ffb347" }} />
+    ),
     href: "/hr/handbook/builder",
     count: "v1.2",
   },

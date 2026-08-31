@@ -12,9 +12,9 @@ import Link from "next/link";
 import { PageHeader } from "@/components/common/PageHeader";
 import { KpiCard } from "@/components/common/KpiCard";
 import { formatCurrency } from "@/lib/utils";
-import { 
-  useGetStockAlertsQuery, 
-  useGetInventoryAgingQuery 
+import {
+  useGetStockAlertsQuery,
+  useGetInventoryAgingQuery,
 } from "@/store/api/inventoryApi";
 import {
   PieChart,
@@ -31,12 +31,38 @@ export default function InventoryPage() {
   const { data: alerts, isLoading: loadingAlerts } = useGetStockAlertsQuery();
   const { data: aging, isLoading: loadingAging } = useGetInventoryAgingQuery();
 
-  const agingData = aging ? [
-    { name: "0-30 Days", value: aging.reduce((sum, item) => sum + Number(item['0_30_days']), 0) },
-    { name: "31-60 Days", value: aging.reduce((sum, item) => sum + Number(item['31_60_days']), 0) },
-    { name: "61-90 Days", value: aging.reduce((sum, item) => sum + Number(item['61_90_days']), 0) },
-    { name: "Over 90 Days", value: aging.reduce((sum, item) => sum + Number(item['over_90_days']), 0) },
-  ].filter(d => d.value > 0) : [];
+  const agingData = aging
+    ? [
+        {
+          name: "0-30 Days",
+          value: aging.reduce(
+            (sum, item) => sum + Number(item["0_30_days"]),
+            0,
+          ),
+        },
+        {
+          name: "31-60 Days",
+          value: aging.reduce(
+            (sum, item) => sum + Number(item["31_60_days"]),
+            0,
+          ),
+        },
+        {
+          name: "61-90 Days",
+          value: aging.reduce(
+            (sum, item) => sum + Number(item["61_90_days"]),
+            0,
+          ),
+        },
+        {
+          name: "Over 90 Days",
+          value: aging.reduce(
+            (sum, item) => sum + Number(item["over_90_days"]),
+            0,
+          ),
+        },
+      ].filter((d) => d.value > 0)
+    : [];
 
   return (
     <div className="animate-fade-in-up">
@@ -58,7 +84,6 @@ export default function InventoryPage() {
             title="Low Stock Alerts"
             value={alerts?.length?.toString() || "0"}
           />
-
         </Col>
         <Col xs={12} sm={6}>
           <KpiCard title="Active Warehouses" value="4" />
@@ -84,7 +109,10 @@ export default function InventoryPage() {
                     dataKey="value"
                   >
                     {agingData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
                     ))}
                   </Pie>
                   <Tooltip />
@@ -96,8 +124,8 @@ export default function InventoryPage() {
         </Col>
 
         <Col xs={24} lg={12}>
-          <Card 
-            title="Reorder Point Alerts" 
+          <Card
+            title="Reorder Point Alerts"
             extra={<Link href="/inventory/products">Manage SKU</Link>}
             styles={{ body: { padding: 0 } }}
           >
@@ -111,7 +139,9 @@ export default function InventoryPage() {
                     title={item.name}
                     description={`SKU: ${item.sku} | Current: ${item.currentStock} | Reorder: ${item.reorderPoint}`}
                   />
-                  <Button type="link" size="small">Restock</Button>
+                  <Button type="link" size="small">
+                    Restock
+                  </Button>
                 </List.Item>
               )}
             />
@@ -123,7 +153,9 @@ export default function InventoryPage() {
         <Col xs={24} sm={8}>
           <Link href="/inventory/products">
             <Card hoverable className="text-center">
-              <InboxOutlined style={{ fontSize: 32, color: "var(--color-primary)" }} />
+              <InboxOutlined
+                style={{ fontSize: 32, color: "var(--color-primary)" }}
+              />
               <h3 style={{ marginTop: 8 }}>Product Catalog</h3>
             </Card>
           </Link>
@@ -131,7 +163,9 @@ export default function InventoryPage() {
         <Col xs={24} sm={8}>
           <Link href="/inventory/warehouses">
             <Card hoverable className="text-center">
-              <ShopOutlined style={{ fontSize: 32, color: "var(--color-primary)" }} />
+              <ShopOutlined
+                style={{ fontSize: 32, color: "var(--color-primary)" }}
+              />
               <h3 style={{ marginTop: 8 }}>Warehouse Map</h3>
             </Card>
           </Link>
@@ -139,7 +173,9 @@ export default function InventoryPage() {
         <Col xs={24} sm={8}>
           <Link href="/inventory/movements">
             <Card hoverable className="text-center">
-              <HistoryOutlined style={{ fontSize: 32, color: "var(--color-primary)" }} />
+              <HistoryOutlined
+                style={{ fontSize: 32, color: "var(--color-primary)" }}
+              />
               <h3 style={{ marginTop: 8 }}>Stock Audits</h3>
             </Card>
           </Link>

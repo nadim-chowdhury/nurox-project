@@ -26,7 +26,8 @@ const columns: ColumnsType<any> = [
       <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
         {components.map((c, i) => (
           <Tag key={i} color={c.type === "EARNING" ? "blue" : "orange"}>
-            {c.name} ({c.amountType === "PERCENTAGE" ? `${c.value}%` : `$${c.value}`})
+            {c.name} (
+            {c.amountType === "PERCENTAGE" ? `${c.value}%` : `$${c.value}`})
           </Tag>
         ))}
       </div>

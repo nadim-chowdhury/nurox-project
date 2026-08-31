@@ -10,7 +10,11 @@ interface SignatureCanvasProps {
   height?: number;
 }
 
-export function SignatureCanvas({ onSave, width = 400, height = 200 }: SignatureCanvasProps) {
+export function SignatureCanvas({
+  onSave,
+  width = 400,
+  height = 200,
+}: SignatureCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isEmpty, setIsEmpty] = useState(true);
@@ -92,14 +96,14 @@ export function SignatureCanvas({ onSave, width = 400, height = 200 }: Signature
 
   return (
     <div style={{ textAlign: "center" }}>
-      <div 
-        style={{ 
-          border: "2px dashed var(--color-outline-variant)", 
-          borderRadius: 8, 
+      <div
+        style={{
+          border: "2px dashed var(--color-outline-variant)",
+          borderRadius: 8,
           display: "inline-block",
           backgroundColor: "#fff",
           cursor: "crosshair",
-          touchAction: "none"
+          touchAction: "none",
         }}
       >
         <canvas
@@ -117,8 +121,12 @@ export function SignatureCanvas({ onSave, width = 400, height = 200 }: Signature
       </div>
       <div style={{ marginTop: 12 }}>
         <Space>
-          <Button icon={<ClearOutlined />} onClick={clear}>Clear</Button>
-          <Button type="primary" icon={<CheckOutlined />} onClick={handleSave}>Confirm Signature</Button>
+          <Button icon={<ClearOutlined />} onClick={clear}>
+            Clear
+          </Button>
+          <Button type="primary" icon={<CheckOutlined />} onClick={handleSave}>
+            Confirm Signature
+          </Button>
         </Space>
       </div>
     </div>

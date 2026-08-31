@@ -5,21 +5,22 @@ import { headers } from "next/headers";
 export const revalidate = 3600;
 
 async function getJobs(tenantId: string) {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
-  
+  const apiUrl =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+
   try {
     const res = await fetch(`${apiUrl}/public/recruitment/jobs`, {
       headers: {
         "x-tenant-id": tenantId,
       },
-      next: { revalidate: 3600 }
+      next: { revalidate: 3600 },
     });
-    
+
     if (!res.ok) {
       console.error(`Failed to fetch jobs: ${res.status} ${res.statusText}`);
       return [];
     }
-    
+
     return res.json();
   } catch (err) {
     console.error("Error fetching jobs for career portal:", err);
@@ -30,11 +31,11 @@ async function getJobs(tenantId: string) {
 export default async function Page() {
   const headersList = await headers();
   const host = headersList.get("host") || "";
-  
+
   // Resolve tenantId (matches middleware logic)
   let tenantId = "public";
   const baseDomain = "nurox.app";
-  
+
   if (host.includes("localhost")) {
     const parts = host.split(".");
     if (parts.length > 1 && parts[0]) {

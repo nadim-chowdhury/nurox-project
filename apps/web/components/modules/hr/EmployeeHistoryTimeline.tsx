@@ -27,16 +27,21 @@ export const EmployeeHistoryTimeline: React.FC<Props> = ({ employeeId }) => {
   const { data: history, isLoading } = useGetEmployeeHistoryQuery(employeeId);
 
   if (isLoading) return <Spin className="w-full py-10" />;
-  if (!history || history.length === 0) return <Empty description="No history found" />;
+  if (!history || history.length === 0)
+    return <Empty description="No history found" />;
 
   return (
     <Card title="Employment History" className="shadow-sm">
       <Timeline mode="left" className="mt-4">
         {history.map((event) => (
-          <Timeline.Item 
-            key={event.id} 
+          <Timeline.Item
+            key={event.id}
             color={eventColors[event.event] || "gray"}
-            label={<Text type="secondary">{dayjs(event.effectiveDate).format("MMM DD, YYYY")}</Text>}
+            label={
+              <Text type="secondary">
+                {dayjs(event.effectiveDate).format("MMM DD, YYYY")}
+              </Text>
+            }
           >
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
@@ -44,10 +49,14 @@ export const EmployeeHistoryTimeline: React.FC<Props> = ({ employeeId }) => {
                 <Tag color={eventColors[event.event]}>{event.event}</Tag>
               </div>
               {event.designation && (
-                <Text type="secondary">Designation: {event.designation.title}</Text>
+                <Text type="secondary">
+                  Designation: {event.designation.title}
+                </Text>
               )}
               {event.department && (
-                <Text type="secondary">Department: {event.department.name}</Text>
+                <Text type="secondary">
+                  Department: {event.department.name}
+                </Text>
               )}
               {event.comments && (
                 <Text className="mt-1 italic">{event.comments}</Text>

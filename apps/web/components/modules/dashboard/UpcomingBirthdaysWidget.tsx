@@ -7,20 +7,35 @@ import dayjs from "dayjs";
 
 export function UpcomingBirthdaysWidget() {
   const birthdays = [
-    { name: 'Sarah Wilson', date: 'May 05', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah' },
-    { name: 'Michael Chen', date: 'May 12', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Michael' },
-    { name: 'Emma Davis', date: 'May 20', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emma' },
+    {
+      name: "Sarah Wilson",
+      date: "May 05",
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
+    },
+    {
+      name: "Michael Chen",
+      date: "May 12",
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Michael",
+    },
+    {
+      name: "Emma Davis",
+      date: "May 20",
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Emma",
+    },
   ];
 
   return (
     <Card
       title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <GiftOutlined style={{ color: '#ff85c0' }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <GiftOutlined style={{ color: "#ff85c0" }} />
           <span>Upcoming Birthdays</span>
         </div>
       }
-      style={{ background: 'var(--color-surface)', border: '1px solid var(--ghost-border)' }}
+      style={{
+        background: "var(--color-surface)",
+        border: "1px solid var(--ghost-border)",
+      }}
     >
       <List
         dataSource={birthdays}

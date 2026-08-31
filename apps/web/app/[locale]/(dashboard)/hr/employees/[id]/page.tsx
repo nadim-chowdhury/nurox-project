@@ -34,8 +34,8 @@ import { StatusTag } from "@/components/common/StatusTag";
 import { KpiCard } from "@/components/common/KpiCard";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import {
-    useGetEmployeeQuery,
-    useGetSalaryHistoryQuery,
+  useGetEmployeeQuery,
+  useGetSalaryHistoryQuery,
 } from "@/store/api/hrApi";
 import { EmployeeHistoryTimeline } from "@/components/modules/hr/EmployeeHistoryTimeline";
 import { EmployeeClearance } from "@/components/modules/hr/employees/EmployeeClearance";
@@ -69,22 +69,35 @@ export default function EmployeeProfilePage() {
   const [resignationVisible, setResignationVisible] = useState(false);
   const [exitInterviewVisible, setExitInterviewVisible] = useState(false);
   const [rehireVisible, setRehireVisible] = useState(false);
-  const [probationMode, setProbationMode] = useState<"extend" | "complete">("extend");
+  const [probationMode, setProbationMode] = useState<"extend" | "complete">(
+    "extend",
+  );
 
   const { data: emp, isLoading: isEmpLoading } = useGetEmployeeQuery(id);
-  const { data: salaryHistory, isLoading: isSalaryLoading } = useGetSalaryHistoryQuery(id);
+  const { data: salaryHistory, isLoading: isSalaryLoading } =
+    useGetSalaryHistoryQuery(id);
 
   if (isEmpLoading || isSalaryLoading) {
-      return (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-              <Spin size="large" />
-          </div>
-      );
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100%",
+        }}
+      >
+        <Spin size="large" />
+      </div>
+    );
   }
 
   if (!emp) return <div>Employee not found</div>;
 
-  const isInactive = emp.status === 'TERMINATED' || emp.status === 'RESIGNED' || emp.status === 'RETIRED';
+  const isInactive =
+    emp.status === "TERMINATED" ||
+    emp.status === "RESIGNED" ||
+    emp.status === "RETIRED";
 
   return (
     <div className="animate-fade-in-up">
@@ -105,7 +118,7 @@ export default function EmployeeProfilePage() {
             >
               Back
             </Button>
-            
+
             {isInactive ? (
               <Button
                 type="primary"
@@ -188,15 +201,38 @@ export default function EmployeeProfilePage() {
         <Col span={6}>
           <KpiCard
             title="Probation End"
-            value={emp.probationEndDate ? formatDate(emp.probationEndDate) : "N/A"}
+            value={
+              emp.probationEndDate ? formatDate(emp.probationEndDate) : "N/A"
+            }
             icon={<HistoryOutlined />}
             color="var(--color-error)"
-            extra={emp.probationEndDate && !isInactive && (
-              <Space style={{ marginTop: 8 }}>
-                <Button size="small" type="link" onClick={() => { setProbationMode("extend"); setProbationVisible(true); }}>Extend</Button>
-                <Button size="small" type="link" onClick={() => { setProbationMode("complete"); setProbationVisible(true); }}>Complete</Button>
-              </Space>
-            )}
+            extra={
+              emp.probationEndDate &&
+              !isInactive && (
+                <Space style={{ marginTop: 8 }}>
+                  <Button
+                    size="small"
+                    type="link"
+                    onClick={() => {
+                      setProbationMode("extend");
+                      setProbationVisible(true);
+                    }}
+                  >
+                    Extend
+                  </Button>
+                  <Button
+                    size="small"
+                    type="link"
+                    onClick={() => {
+                      setProbationMode("complete");
+                      setProbationVisible(true);
+                    }}
+                  >
+                    Complete
+                  </Button>
+                </Space>
+              )
+            }
           />
         </Col>
       </Row>
@@ -208,7 +244,7 @@ export default function EmployeeProfilePage() {
               background: "var(--color-surface)",
               border: "1px solid var(--ghost-border)",
               borderRadius: 4,
-              height: '100%'
+              height: "100%",
             }}
             styles={{ body: { padding: 24 } }}
           >
@@ -255,16 +291,42 @@ export default function EmployeeProfilePage() {
             <Divider />
 
             <Descriptions column={1} size="small">
-              <Descriptions.Item label={<span style={{ color: 'var(--color-on-surface-variant)' }}><MailOutlined /> Email</span>}>
+              <Descriptions.Item
+                label={
+                  <span style={{ color: "var(--color-on-surface-variant)" }}>
+                    <MailOutlined /> Email
+                  </span>
+                }
+              >
                 {emp.email}
               </Descriptions.Item>
-              <Descriptions.Item label={<span style={{ color: 'var(--color-on-surface-variant)' }}><PhoneOutlined /> Phone</span>}>
+              <Descriptions.Item
+                label={
+                  <span style={{ color: "var(--color-on-surface-variant)" }}>
+                    <PhoneOutlined /> Phone
+                  </span>
+                }
+              >
                 {emp.phone}
               </Descriptions.Item>
-              <Descriptions.Item label={<span style={{ color: 'var(--color-on-surface-variant)' }}>Manager</span>}>
-                {(emp as any).manager ? `${(emp as any).manager.firstName} ${(emp as any).manager.lastName}` : "N/A"}
+              <Descriptions.Item
+                label={
+                  <span style={{ color: "var(--color-on-surface-variant)" }}>
+                    Manager
+                  </span>
+                }
+              >
+                {(emp as any).manager
+                  ? `${(emp as any).manager.firstName} ${(emp as any).manager.lastName}`
+                  : "N/A"}
               </Descriptions.Item>
-              <Descriptions.Item label={<span style={{ color: 'var(--color-on-surface-variant)' }}>Employment</span>}>
+              <Descriptions.Item
+                label={
+                  <span style={{ color: "var(--color-on-surface-variant)" }}>
+                    Employment
+                  </span>
+                }
+              >
                 {emp.employmentType}
               </Descriptions.Item>
             </Descriptions>
@@ -285,14 +347,37 @@ export default function EmployeeProfilePage() {
                 key: "details",
                 label: "Employment Details",
                 children: (
-                  <Descriptions bordered column={2} size="small" style={{ marginTop: 16 }}>
-                    <Descriptions.Item label="Employee ID">{emp.employeeCode}</Descriptions.Item>
-                    <Descriptions.Item label="Join Date">{formatDate(emp.joinDate)}</Descriptions.Item>
-                    <Descriptions.Item label="Gender">{emp.gender}</Descriptions.Item>
-                    <Descriptions.Item label="Date of Birth">{emp.dateOfBirth ? formatDate(emp.dateOfBirth) : "N/A"}</Descriptions.Item>
-                    <Descriptions.Item label="Address" span={2}>{emp.address}</Descriptions.Item>
-                    <Descriptions.Item label="Contract Expiry">{emp.contractExpiryDate ? formatDate(emp.contractExpiryDate) : "N/A"}</Descriptions.Item>
-                    <Descriptions.Item label="Probation End">{emp.probationEndDate ? formatDate(emp.probationEndDate) : "N/A"}</Descriptions.Item>
+                  <Descriptions
+                    bordered
+                    column={2}
+                    size="small"
+                    style={{ marginTop: 16 }}
+                  >
+                    <Descriptions.Item label="Employee ID">
+                      {emp.employeeCode}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Join Date">
+                      {formatDate(emp.joinDate)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Gender">
+                      {emp.gender}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Date of Birth">
+                      {emp.dateOfBirth ? formatDate(emp.dateOfBirth) : "N/A"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Address" span={2}>
+                      {emp.address}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Contract Expiry">
+                      {emp.contractExpiryDate
+                        ? formatDate(emp.contractExpiryDate)
+                        : "N/A"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Probation End">
+                      {emp.probationEndDate
+                        ? formatDate(emp.probationEndDate)
+                        : "N/A"}
+                    </Descriptions.Item>
                   </Descriptions>
                 ),
               },
@@ -306,10 +391,20 @@ export default function EmployeeProfilePage() {
                         color: "purple",
                         children: (
                           <div>
-                            <div style={{ color: "var(--color-on-surface)", fontWeight: 600 }}>
+                            <div
+                              style={{
+                                color: "var(--color-on-surface)",
+                                fontWeight: 600,
+                              }}
+                            >
                               {formatCurrency(s.newSalary)} ({s.reason})
                             </div>
-                            <div style={{ fontSize: 12, color: "var(--color-on-surface-variant)" }}>
+                            <div
+                              style={{
+                                fontSize: 12,
+                                color: "var(--color-on-surface-variant)",
+                              }}
+                            >
                               {formatDate(s.effectiveDate)} · {s.comments}
                             </div>
                           </div>
@@ -322,52 +417,92 @@ export default function EmployeeProfilePage() {
               {
                 key: "timeline",
                 label: "History & Timeline",
-                children: <div style={{ marginTop: 16 }}><EmployeeHistoryTimeline employeeId={id} /></div>,
+                children: (
+                  <div style={{ marginTop: 16 }}>
+                    <EmployeeHistoryTimeline employeeId={id} />
+                  </div>
+                ),
               },
               {
                 key: "clearance",
                 label: "Exit Clearance",
-                children: <div style={{ marginTop: 16 }}><EmployeeClearance employeeId={id} /></div>,
+                children: (
+                  <div style={{ marginTop: 16 }}>
+                    <EmployeeClearance employeeId={id} />
+                  </div>
+                ),
               },
               {
                 key: "okrs",
                 label: "OKR & Goals",
-                children: <div style={{ marginTop: 16 }}><OKRGoals employeeId={id} /></div>,
+                children: (
+                  <div style={{ marginTop: 16 }}>
+                    <OKRGoals employeeId={id} />
+                  </div>
+                ),
               },
               {
                 key: "training",
                 label: "Training",
-                children: <div style={{ marginTop: 16 }}><TrainingTab employeeId={id} /></div>,
+                children: (
+                  <div style={{ marginTop: 16 }}>
+                    <TrainingTab employeeId={id} />
+                  </div>
+                ),
               },
               {
                 key: "skills",
                 label: "Skills",
-                children: <div style={{ marginTop: 16 }}><SkillsTab employeeId={id} /></div>,
+                children: (
+                  <div style={{ marginTop: 16 }}>
+                    <SkillsTab employeeId={id} />
+                  </div>
+                ),
               },
               {
                 key: "performance",
                 label: "Performance",
-                children: <div style={{ marginTop: 16 }}><PerformanceTab employeeId={id} /></div>,
+                children: (
+                  <div style={{ marginTop: 16 }}>
+                    <PerformanceTab employeeId={id} />
+                  </div>
+                ),
               },
               {
                 key: "pip",
                 label: "PIP",
-                children: <div style={{ marginTop: 16 }}><PIPTab employeeId={id} /></div>,
+                children: (
+                  <div style={{ marginTop: 16 }}>
+                    <PIPTab employeeId={id} />
+                  </div>
+                ),
               },
               {
                 key: "engagement",
                 label: "Engagement",
-                children: <div style={{ marginTop: 16 }}><EngagementTab employeeId={id} /></div>,
+                children: (
+                  <div style={{ marginTop: 16 }}>
+                    <EngagementTab employeeId={id} />
+                  </div>
+                ),
               },
               {
                 key: "handbook",
                 label: "Handbook",
-                children: <div style={{ marginTop: 16 }}><HandbookTab employeeId={id} /></div>,
+                children: (
+                  <div style={{ marginTop: 16 }}>
+                    <HandbookTab employeeId={id} />
+                  </div>
+                ),
               },
               {
                 key: "succession",
                 label: "Succession",
-                children: <div style={{ marginTop: 16 }}><SuccessionTab employeeId={id} /></div>,
+                children: (
+                  <div style={{ marginTop: 16 }}>
+                    <SuccessionTab employeeId={id} />
+                  </div>
+                ),
               },
             ]}
           />

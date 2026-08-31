@@ -23,13 +23,16 @@ export function NewHiresWidget({ dateRange }: Props) {
   return (
     <Card
       title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <UserAddOutlined style={{ color: 'var(--color-primary)' }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <UserAddOutlined style={{ color: "var(--color-primary)" }} />
           <span>New Hires</span>
         </div>
       }
       loading={isLoading}
-      style={{ background: 'var(--color-surface)', border: '1px solid var(--ghost-border)' }}
+      style={{
+        background: "var(--color-surface)",
+        border: "1px solid var(--ghost-border)",
+      }}
     >
       {newHires.length > 0 ? (
         <List
@@ -38,13 +41,21 @@ export function NewHiresWidget({ dateRange }: Props) {
           renderItem={(item: any) => (
             <List.Item>
               <List.Item.Meta
-                avatar={<Avatar src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${item.name}`} />}
+                avatar={
+                  <Avatar
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${item.name}`}
+                  />
+                }
                 title={item.name}
                 description={
                   <div>
-                    <Text type="secondary" style={{ fontSize: 12 }}>{item.role}</Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      {item.role}
+                    </Text>
                     <br />
-                    <Text type="secondary" style={{ fontSize: 11 }}>Joined: {dayjs(item.joinDate).format('MMM D, YYYY')}</Text>
+                    <Text type="secondary" style={{ fontSize: 11 }}>
+                      Joined: {dayjs(item.joinDate).format("MMM D, YYYY")}
+                    </Text>
                   </div>
                 }
               />
@@ -52,7 +63,10 @@ export function NewHiresWidget({ dateRange }: Props) {
           )}
         />
       ) : (
-        <Empty description="No new hires" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+        <Empty
+          description="No new hires"
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+        />
       )}
     </Card>
   );

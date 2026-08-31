@@ -2,9 +2,9 @@
 
 import React from "react";
 import { Table, Checkbox, message, Input, Typography } from "antd";
-import { 
-  useGetClearanceChecklistQuery, 
-  useUpdateClearanceItemMutation 
+import {
+  useGetClearanceChecklistQuery,
+  useUpdateClearanceItemMutation,
 } from "@/store/api/hrApi";
 import { formatDate } from "@/lib/utils";
 
@@ -15,7 +15,8 @@ interface Props {
 }
 
 export function EmployeeClearance({ employeeId }: Props) {
-  const { data: checklist, isLoading } = useGetClearanceChecklistQuery(employeeId);
+  const { data: checklist, isLoading } =
+    useGetClearanceChecklistQuery(employeeId);
   const [updateItem] = useUpdateClearanceItemMutation();
 
   const handleStatusChange = async (id: string, isCleared: boolean) => {
@@ -40,8 +41,8 @@ export function EmployeeClearance({ employeeId }: Props) {
       key: "isCleared",
       width: 100,
       render: (isCleared: boolean, record: any) => (
-        <Checkbox 
-          checked={isCleared} 
+        <Checkbox
+          checked={isCleared}
           onChange={(e) => handleStatusChange(record.id, e.target.checked)}
         />
       ),
@@ -51,17 +52,23 @@ export function EmployeeClearance({ employeeId }: Props) {
       dataIndex: "clearedAt",
       key: "clearedAt",
       width: 150,
-      render: (date: string) => date ? formatDate(date) : "-",
+      render: (date: string) => (date ? formatDate(date) : "-"),
     },
     {
       title: "Remarks",
       dataIndex: "remarks",
       key: "remarks",
       render: (text: string, record: any) => (
-        <Input 
-          defaultValue={text} 
+        <Input
+          defaultValue={text}
           placeholder="Add notes..."
-          onBlur={(e) => updateItem({ id: record.id, isCleared: record.isCleared, remarks: e.target.value })}
+          onBlur={(e) =>
+            updateItem({
+              id: record.id,
+              isCleared: record.isCleared,
+              remarks: e.target.value,
+            })
+          }
         />
       ),
     },
@@ -75,7 +82,7 @@ export function EmployeeClearance({ employeeId }: Props) {
       rowKey="id"
       pagination={false}
       size="small"
-      style={{ background: 'transparent' }}
+      style={{ background: "transparent" }}
     />
   );
 }

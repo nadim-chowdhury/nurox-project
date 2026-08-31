@@ -34,11 +34,13 @@ export function DepartmentComparison() {
         const percent = Math.round((record.spend / record.budget) * 100);
         return (
           <div style={{ width: 120 }}>
-            <Progress 
-              percent={percent} 
-              size="small" 
+            <Progress
+              percent={percent}
+              size="small"
               status={percent > 100 ? "exception" : "active"}
-              strokeColor={percent > 100 ? "var(--color-error)" : "var(--color-primary)"}
+              strokeColor={
+                percent > 100 ? "var(--color-error)" : "var(--color-primary)"
+              }
               trailColor="rgba(255,255,255,0.05)"
             />
           </div>
@@ -56,14 +58,21 @@ export function DepartmentComparison() {
   return (
     <Card
       title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ApartmentOutlined style={{ color: 'var(--color-primary)' }} />
-          <span style={{ color: 'var(--color-on-surface)', fontFamily: 'var(--font-display)' }}>Department Performance</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <ApartmentOutlined style={{ color: "var(--color-primary)" }} />
+          <span
+            style={{
+              color: "var(--color-on-surface)",
+              fontFamily: "var(--font-display)",
+            }}
+          >
+            Department Performance
+          </span>
         </div>
       }
-      style={{ 
-        background: 'var(--color-surface)', 
-        border: '1px solid var(--ghost-border)',
+      style={{
+        background: "var(--color-surface)",
+        border: "1px solid var(--ghost-border)",
       }}
       loading={isLoading}
     >

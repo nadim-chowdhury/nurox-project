@@ -3,14 +3,14 @@
 import { ReactNode } from "react";
 import { Tabs } from "antd";
 import { useRouter, usePathname } from "next/navigation";
-import { 
-  BarChartOutlined, 
-  BookOutlined, 
-  FileTextOutlined, 
-  WalletOutlined, 
+import {
+  BarChartOutlined,
+  BookOutlined,
+  FileTextOutlined,
+  WalletOutlined,
   AppstoreOutlined,
   SwapOutlined,
-  SettingOutlined
+  SettingOutlined,
 } from "@ant-design/icons";
 
 interface FinanceLayoutProps {
@@ -105,7 +105,9 @@ export default function FinanceLayout({ children }: FinanceLayoutProps) {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Finance & Accounting</h1>
-        <p className="text-gray-500">Manage your organization's financial health and compliance.</p>
+        <p className="text-gray-500">
+          Manage your organization's financial health and compliance.
+        </p>
       </div>
 
       <Tabs
@@ -115,9 +117,7 @@ export default function FinanceLayout({ children }: FinanceLayoutProps) {
         className="mb-6"
       />
 
-      <div className="bg-white p-6 rounded-lg shadow-sm">
-        {children}
-      </div>
+      <div className="bg-white p-6 rounded-lg shadow-sm">{children}</div>
     </div>
   );
 }

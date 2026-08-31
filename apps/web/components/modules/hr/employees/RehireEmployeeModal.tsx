@@ -1,8 +1,20 @@
 "use client";
 
 import React from "react";
-import { Modal, Form, DatePicker, InputNumber, Select, message, Alert } from "antd";
-import { useRehireEmployeeMutation, useGetDepartmentsQuery, useGetDesignationsQuery } from "@/store/api/hrApi";
+import {
+  Modal,
+  Form,
+  DatePicker,
+  InputNumber,
+  Select,
+  message,
+  Alert,
+} from "antd";
+import {
+  useRehireEmployeeMutation,
+  useGetDepartmentsQuery,
+  useGetDesignationsQuery,
+} from "@/store/api/hrApi";
 import dayjs from "dayjs";
 
 interface Props {
@@ -11,7 +23,11 @@ interface Props {
   onClose: () => void;
 }
 
-export const RehireEmployeeModal: React.FC<Props> = ({ employee, open, onClose }) => {
+export const RehireEmployeeModal: React.FC<Props> = ({
+  employee,
+  open,
+  onClose,
+}) => {
   const [form] = Form.useForm();
   const [rehire, { isLoading }] = useRehireEmployeeMutation();
   const { data: departments } = useGetDepartmentsQuery();
@@ -52,25 +68,59 @@ export const RehireEmployeeModal: React.FC<Props> = ({ employee, open, onClose }
         style={{ marginBottom: 20 }}
       />
       <Form form={form} layout="vertical">
-        <Form.Item name="joinDate" label="New Join Date" rules={[{ required: true }]} initialValue={dayjs()}>
+        <Form.Item
+          name="joinDate"
+          label="New Join Date"
+          rules={[{ required: true }]}
+          initialValue={dayjs()}
+        >
           <DatePicker style={{ width: "100%" }} />
         </Form.Item>
-        <Form.Item name="baseSalary" label="New Base Salary" rules={[{ required: true }]} initialValue={employee?.salary}>
+        <Form.Item
+          name="baseSalary"
+          label="New Base Salary"
+          rules={[{ required: true }]}
+          initialValue={employee?.salary}
+        >
           <InputNumber style={{ width: "100%" }} prefix="$" />
         </Form.Item>
-        <Form.Item name="departmentId" label="Department" rules={[{ required: true }]} initialValue={employee?.departmentId}>
-          <Select options={departments?.map(d => ({ value: d.id, label: d.name }))} />
+        <Form.Item
+          name="departmentId"
+          label="Department"
+          rules={[{ required: true }]}
+          initialValue={employee?.departmentId}
+        >
+          <Select
+            options={departments?.map((d) => ({ value: d.id, label: d.name }))}
+          />
         </Form.Item>
-        <Form.Item name="designationId" label="Designation" rules={[{ required: true }]} initialValue={employee?.designationId}>
-          <Select options={designations?.map(d => ({ value: d.id, label: d.title }))} />
+        <Form.Item
+          name="designationId"
+          label="Designation"
+          rules={[{ required: true }]}
+          initialValue={employee?.designationId}
+        >
+          <Select
+            options={designations?.map((d) => ({
+              value: d.id,
+              label: d.title,
+            }))}
+          />
         </Form.Item>
-        <Form.Item name="employmentType" label="Employment Type" rules={[{ required: true }]} initialValue={employee?.employmentType}>
-          <Select options={[
+        <Form.Item
+          name="employmentType"
+          label="Employment Type"
+          rules={[{ required: true }]}
+          initialValue={employee?.employmentType}
+        >
+          <Select
+            options={[
               { value: "FULL_TIME", label: "Full Time" },
               { value: "PART_TIME", label: "Part Time" },
               { value: "CONTRACT", label: "Contract" },
               { value: "INTERN", label: "Intern" },
-          ]} />
+            ]}
+          />
         </Form.Item>
       </Form>
     </Modal>

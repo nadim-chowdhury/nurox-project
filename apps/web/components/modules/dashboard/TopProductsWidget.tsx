@@ -18,12 +18,15 @@ export function TopProductsWidget() {
   return (
     <Card
       title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ShopOutlined style={{ color: 'var(--color-primary)' }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <ShopOutlined style={{ color: "var(--color-primary)" }} />
           <span>Top Selling Products</span>
         </div>
       }
-      style={{ background: 'var(--color-surface)', border: '1px solid var(--ghost-border)' }}
+      style={{
+        background: "var(--color-surface)",
+        border: "1px solid var(--ghost-border)",
+      }}
     >
       <List
         dataSource={products}
@@ -33,7 +36,7 @@ export function TopProductsWidget() {
               title={item.name}
               description={`${item.sales} units sold`}
             />
-            <div style={{ textAlign: 'right' }}>
+            <div style={{ textAlign: "right" }}>
               <Text strong>${item.revenue.toLocaleString()}</Text>
             </div>
           </List.Item>

@@ -1,14 +1,31 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card, Table, Tag, Button, Modal, Form, Input, InputNumber, Space, Switch, Divider, message } from "antd";
+import {
+  Card,
+  Table,
+  Tag,
+  Button,
+  Modal,
+  Form,
+  Input,
+  InputNumber,
+  Space,
+  Switch,
+  Divider,
+  message,
+} from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
-import { useGetTaxConfigsQuery, useCreateTaxConfigMutation } from "@/store/api/payrollApi";
+import {
+  useGetTaxConfigsQuery,
+  useCreateTaxConfigMutation,
+} from "@/store/api/payrollApi";
 
 export default function TaxConfigPage() {
   const { data: configs, isLoading } = useGetTaxConfigsQuery();
-  const [createConfig, { isLoading: isCreating }] = useCreateTaxConfigMutation();
+  const [createConfig, { isLoading: isCreating }] =
+    useCreateTaxConfigMutation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
 
@@ -37,19 +54,25 @@ export default function TaxConfigPage() {
     {
       title: "Status",
       dataIndex: "isActive",
-      render: (active: boolean) => <Tag color={active ? "green" : "default"}>{active ? "ACTIVE" : "INACTIVE"}</Tag>,
+      render: (active: boolean) => (
+        <Tag color={active ? "green" : "default"}>
+          {active ? "ACTIVE" : "INACTIVE"}
+        </Tag>
+      ),
     },
     {
-        title: "Brackets",
-        dataIndex: "brackets",
-        render: (brackets: any[]) => (
-            <div className="text-xs">
-                {brackets.map((b, i) => (
-                    <div key={i}>Up to ${b.upperLimit?.toLocaleString() || "Rest"} @ {b.rate}%</div>
-                ))}
+      title: "Brackets",
+      dataIndex: "brackets",
+      render: (brackets: any[]) => (
+        <div className="text-xs">
+          {brackets.map((b, i) => (
+            <div key={i}>
+              Up to ${b.upperLimit?.toLocaleString() || "Rest"} @ {b.rate}%
             </div>
-        )
-    }
+          ))}
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -63,9 +86,13 @@ export default function TaxConfigPage() {
           { label: "Tax Config" },
         ]}
         extra={
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>
-                New Config
-            </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setIsModalOpen(true)}
+          >
+            New Config
+          </Button>
         }
       />
 
@@ -91,40 +118,78 @@ export default function TaxConfigPage() {
         confirmLoading={isCreating}
         width={600}
       >
-        <Form form={form} layout="vertical" onFinish={onFinish} initialValues={{ isActive: true }}>
-            <div className="grid grid-cols-2 gap-4">
-                <Form.Item name="fiscalYear" label="Fiscal Year" rules={[{ required: true }]}>
-                    <Input placeholder="e.g. 2025-26" />
-                </Form.Item>
-                <Form.Item name="taxExemptThreshold" label="Exempt Threshold" rules={[{ required: true }]}>
-                    <InputNumber style={{ width: "100%" }} />
-                </Form.Item>
-            </div>
-            <Form.Item name="isActive" label="Set as Active" valuePropName="checked">
-                <Switch />
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          initialValues={{ isActive: true }}
+        >
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item
+              name="fiscalYear"
+              label="Fiscal Year"
+              rules={[{ required: true }]}
+            >
+              <Input placeholder="e.g. 2025-26" />
             </Form.Item>
+            <Form.Item
+              name="taxExemptThreshold"
+              label="Exempt Threshold"
+              rules={[{ required: true }]}
+            >
+              <InputNumber style={{ width: "100%" }} />
+            </Form.Item>
+          </div>
+          <Form.Item
+            name="isActive"
+            label="Set as Active"
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
 
-            <Divider titlePlacement="left">Tax Brackets</Divider>
-            <Form.List name="brackets">
-                {(fields, { add, remove }) => (
-                    <>
-                        {fields.map(({ key, name, ...restField }) => (
-                            <Space key={key} style={{ display: "flex", marginBottom: 8 }} align="baseline">
-                                <Form.Item {...restField} name={[name, "upperLimit"]} label="Upper Limit (Null for Rest)">
-                                    <InputNumber style={{ width: 150 }} />
-                                </Form.Item>
-                                <Form.Item {...restField} name={[name, "rate"]} label="Rate (%)" rules={[{ required: true }]}>
-                                    <InputNumber style={{ width: 100 }} />
-                                </Form.Item>
-                                <DeleteOutlined onClick={() => remove(name)} style={{ color: "red" }} />
-                            </Space>
-                        ))}
-                        <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
-                            Add Bracket
-                        </Button>
-                    </>
-                )}
-            </Form.List>
+          <Divider titlePlacement="left">Tax Brackets</Divider>
+          <Form.List name="brackets">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ key, name, ...restField }) => (
+                  <Space
+                    key={key}
+                    style={{ display: "flex", marginBottom: 8 }}
+                    align="baseline"
+                  >
+                    <Form.Item
+                      {...restField}
+                      name={[name, "upperLimit"]}
+                      label="Upper Limit (Null for Rest)"
+                    >
+                      <InputNumber style={{ width: 150 }} />
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[name, "rate"]}
+                      label="Rate (%)"
+                      rules={[{ required: true }]}
+                    >
+                      <InputNumber style={{ width: 100 }} />
+                    </Form.Item>
+                    <DeleteOutlined
+                      onClick={() => remove(name)}
+                      style={{ color: "red" }}
+                    />
+                  </Space>
+                ))}
+                <Button
+                  type="dashed"
+                  onClick={() => add()}
+                  block
+                  icon={<PlusOutlined />}
+                >
+                  Add Bracket
+                </Button>
+              </>
+            )}
+          </Form.List>
         </Form>
       </Modal>
     </div>

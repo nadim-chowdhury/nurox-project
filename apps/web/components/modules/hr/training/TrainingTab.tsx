@@ -1,12 +1,27 @@
 "use client";
 
 import React, { useState } from "react";
-import { List, Card, Button, Tag, Space, Modal, Select, message, Typography } from "antd";
-import { PlusOutlined, BookOutlined, CheckCircleOutlined, ClockCircleOutlined } from "@ant-design/icons";
-import { 
-  useGetTrainingsQuery, 
-  useGetTrainingCoursesQuery, 
-  useEnrollInTrainingMutation 
+import {
+  List,
+  Card,
+  Button,
+  Tag,
+  Space,
+  Modal,
+  Select,
+  message,
+  Typography,
+} from "antd";
+import {
+  PlusOutlined,
+  BookOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+} from "@ant-design/icons";
+import {
+  useGetTrainingsQuery,
+  useGetTrainingCoursesQuery,
+  useEnrollInTrainingMutation,
 } from "@/store/api/hrApi";
 import { formatDate } from "@/lib/utils";
 
@@ -17,7 +32,8 @@ interface Props {
 }
 
 export function TrainingTab({ employeeId }: Props) {
-  const { data: userTrainings, isLoading: isTrainingsLoading } = useGetTrainingsQuery(); // This should be scoped by employeeId in real app
+  const { data: userTrainings, isLoading: isTrainingsLoading } =
+    useGetTrainingsQuery(); // This should be scoped by employeeId in real app
   const { data: allCourses } = useGetTrainingCoursesQuery();
   const [enroll, { isLoading: isEnrolling }] = useEnrollInTrainingMutation();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -37,20 +53,31 @@ export function TrainingTab({ employeeId }: Props) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "COMPLETED": return "success";
-      case "IN_PROGRESS": return "processing";
-      case "ENROLLED": return "default";
-      case "FAILED": return "error";
-      default: return "default";
+      case "COMPLETED":
+        return "success";
+      case "IN_PROGRESS":
+        return "processing";
+      case "ENROLLED":
+        return "default";
+      case "FAILED":
+        return "error";
+      default:
+        return "default";
     }
   };
 
   return (
     <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
-        <Button 
-          type="primary" 
-          icon={<PlusOutlined />} 
+      <div
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          justifyContent: "flex-end",
+        }}
+      >
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
           onClick={() => setIsModalOpen(true)}
         >
           Enroll in Course
@@ -59,20 +86,41 @@ export function TrainingTab({ employeeId }: Props) {
 
       <List
         loading={isTrainingsLoading}
-        dataSource={userTrainings?.filter(t => t.employeeId === employeeId)}
+        dataSource={userTrainings?.filter((t) => t.employeeId === employeeId)}
         renderItem={(item) => (
-          <Card 
-            size="small" 
-            style={{ marginBottom: 12, background: 'var(--color-surface-container-low)', border: '1px solid var(--ghost-border)' }}
+          <Card
+            size="small"
+            style={{
+              marginBottom: 12,
+              background: "var(--color-surface-container-low)",
+              border: "1px solid var(--ghost-border)",
+            }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+              }}
+            >
               <Space>
-                <div style={{ padding: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 4 }}>
-                  <BookOutlined style={{ color: 'var(--color-primary)' }} />
+                <div
+                  style={{
+                    padding: 8,
+                    background: "rgba(255,255,255,0.05)",
+                    borderRadius: 4,
+                  }}
+                >
+                  <BookOutlined style={{ color: "var(--color-primary)" }} />
                 </div>
                 <div>
                   <Text strong>{item.title}</Text>
-                  <div style={{ fontSize: 12, color: 'var(--color-on-surface-variant)' }}>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "var(--color-on-surface-variant)",
+                    }}
+                  >
                     {item.provider} · {item.durationHours} hours
                   </div>
                 </div>
@@ -80,8 +128,15 @@ export function TrainingTab({ employeeId }: Props) {
               <Tag color={getStatusColor(item.status)}>{item.status}</Tag>
             </div>
             {item.completionDate && (
-              <div style={{ marginTop: 8, fontSize: 11, color: 'var(--color-success)' }}>
-                <CheckCircleOutlined /> Completed on {formatDate(item.completionDate)}
+              <div
+                style={{
+                  marginTop: 8,
+                  fontSize: 11,
+                  color: "var(--color-success)",
+                }}
+              >
+                <CheckCircleOutlined /> Completed on{" "}
+                {formatDate(item.completionDate)}
               </div>
             )}
           </Card>
@@ -96,14 +151,21 @@ export function TrainingTab({ employeeId }: Props) {
         confirmLoading={isEnrolling}
       >
         <div style={{ marginTop: 16 }}>
-          <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>Select a course from the catalog</Text>
+          <Text type="secondary" style={{ display: "block", marginBottom: 8 }}>
+            Select a course from the catalog
+          </Text>
           <Select
             placeholder="Search courses..."
-            style={{ width: '100%' }}
+            style={{ width: "100%" }}
             onChange={setSelectedCourse}
-            options={allCourses?.map(c => ({ label: `${c.title} (${c.category})`, value: c.id }))}
+            options={allCourses?.map((c) => ({
+              label: `${c.title} (${c.category})`,
+              value: c.id,
+            }))}
             showSearch
-            filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+            filterOption={(input, option) =>
+              (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+            }
           />
         </div>
       </Modal>

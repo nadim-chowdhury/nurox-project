@@ -1,30 +1,36 @@
 "use client";
 
 import { Card, Row, Col, Statistic, Table } from "antd";
-import { 
-  ArrowUpOutlined, 
-  ArrowDownOutlined, 
-  FileTextOutlined, 
+import {
+  ArrowUpOutlined,
+  ArrowDownOutlined,
+  FileTextOutlined,
   BankOutlined,
-  BookOutlined
+  BookOutlined,
 } from "@ant-design/icons";
-import { useGetInvoicesQuery, useGetAccountsQuery } from "@/store/api/financeApi";
+import {
+  useGetInvoicesQuery,
+  useGetAccountsQuery,
+} from "@/store/api/financeApi";
 
 export default function FinanceDashboard() {
   const { data: invoices } = useGetInvoicesQuery({ page: 1, limit: 5 });
   const { data: accounts } = useGetAccountsQuery();
 
-  const totalRevenue = accounts
-    ?.filter(a => a.type === "REVENUE")
-    .reduce((sum, a) => sum + Number(a.balance), 0) || 0;
+  const totalRevenue =
+    accounts
+      ?.filter((a) => a.type === "REVENUE")
+      .reduce((sum, a) => sum + Number(a.balance), 0) || 0;
 
-  const totalExpense = accounts
-    ?.filter(a => a.type === "EXPENSE")
-    .reduce((sum, a) => sum + Number(a.balance), 0) || 0;
+  const totalExpense =
+    accounts
+      ?.filter((a) => a.type === "EXPENSE")
+      .reduce((sum, a) => sum + Number(a.balance), 0) || 0;
 
-  const cashBalance = accounts
-    ?.filter(a => a.code.startsWith("10"))
-    .reduce((sum, a) => sum + Number(a.balance), 0) || 0;
+  const cashBalance =
+    accounts
+      ?.filter((a) => a.code.startsWith("10"))
+      .reduce((sum, a) => sum + Number(a.balance), 0) || 0;
 
   return (
     <div className="space-y-6">
@@ -35,7 +41,7 @@ export default function FinanceDashboard() {
               title="Total Revenue (YTD)"
               value={totalRevenue}
               precision={2}
-              valueStyle={{ color: '#3f8600' }}
+              valueStyle={{ color: "#3f8600" }}
               prefix={<ArrowUpOutlined />}
               suffix="USD"
             />
@@ -47,7 +53,7 @@ export default function FinanceDashboard() {
               title="Total Expenses (YTD)"
               value={totalExpense}
               precision={2}
-              valueStyle={{ color: '#cf1322' }}
+              valueStyle={{ color: "#cf1322" }}
               prefix={<ArrowDownOutlined />}
               suffix="USD"
             />
@@ -59,7 +65,9 @@ export default function FinanceDashboard() {
               title="Net Income"
               value={totalRevenue - totalExpense}
               precision={2}
-              valueStyle={{ color: totalRevenue - totalExpense >= 0 ? '#3f8600' : '#cf1322' }}
+              valueStyle={{
+                color: totalRevenue - totalExpense >= 0 ? "#3f8600" : "#cf1322",
+              }}
               suffix="USD"
             />
           </Card>
@@ -79,7 +87,10 @@ export default function FinanceDashboard() {
 
       <Row gutter={16}>
         <Col span={12}>
-          <Card title="Recent Invoices" extra={<a href="/finance/invoices">View All</a>}>
+          <Card
+            title="Recent Invoices"
+            extra={<a href="/finance/invoices">View All</a>}
+          >
             <Table
               dataSource={invoices?.data}
               pagination={false}
@@ -87,7 +98,11 @@ export default function FinanceDashboard() {
               columns={[
                 { title: "Invoice #", dataIndex: "invoiceNumber" },
                 { title: "Customer", dataIndex: "customerName" },
-                { title: "Amount", dataIndex: "totalAmount", render: (val) => `$${val}` },
+                {
+                  title: "Amount",
+                  dataIndex: "totalAmount",
+                  render: (val) => `$${val}`,
+                },
                 { title: "Status", dataIndex: "status" },
               ]}
             />
@@ -96,11 +111,19 @@ export default function FinanceDashboard() {
         <Col span={12}>
           <Card title="Quick Actions">
             <div className="grid grid-cols-2 gap-4">
-              <Card hoverable className="text-center cursor-pointer" onClick={() => window.location.href='/finance/journals'}>
+              <Card
+                hoverable
+                className="text-center cursor-pointer"
+                onClick={() => (window.location.href = "/finance/journals")}
+              >
                 <BookOutlined className="text-2xl mb-2" />
                 <div>New Journal</div>
               </Card>
-              <Card hoverable className="text-center cursor-pointer" onClick={() => window.location.href='/finance/invoices'}>
+              <Card
+                hoverable
+                className="text-center cursor-pointer"
+                onClick={() => (window.location.href = "/finance/invoices")}
+              >
                 <FileTextOutlined className="text-2xl mb-2" />
                 <div>Create Invoice</div>
               </Card>

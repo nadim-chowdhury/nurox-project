@@ -9,9 +9,9 @@ export default async function DashboardPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ 
-    from?: string; 
-    to?: string; 
+  searchParams: Promise<{
+    from?: string;
+    to?: string;
     compare?: string;
   }>;
 }) {
@@ -27,12 +27,15 @@ export default async function DashboardPage({
       <PageHeader
         title="Organization Overview"
         subtitle="Real-time monitoring and analytics"
-        breadcrumbs={[{ label: "Home", href: "/dashboard" }, { label: "Dashboard" }]}
+        breadcrumbs={[
+          { label: "Home", href: "/dashboard" },
+          { label: "Dashboard" },
+        ]}
       />
 
-      <DashboardShell 
-        startDate={startDate.toISOString()} 
-        endDate={endDate.toISOString()} 
+      <DashboardShell
+        startDate={startDate.toISOString()}
+        endDate={endDate.toISOString()}
         showComparison={showComparison}
       />
 

@@ -92,7 +92,10 @@ export default function CandidateProfilePage() {
       <Row gutter={[24, 24]}>
         <Col xs={24} md={8}>
           <Card style={{ textAlign: "center", marginBottom: 24 }}>
-            <Avatar name={`${candidate.firstName} ${candidate.lastName}`} size={120} />
+            <Avatar
+              name={`${candidate.firstName} ${candidate.lastName}`}
+              size={120}
+            />
             <Title level={3} style={{ marginTop: 16, marginBottom: 4 }}>
               {candidate.firstName} {candidate.lastName}
             </Title>
@@ -127,12 +130,20 @@ export default function CandidateProfilePage() {
         <Col xs={24} md={16}>
           <Card title="Application Details" style={{ marginBottom: 24 }}>
             <Descriptions column={2}>
-              <Descriptions.Item label="Position">Senior Backend Developer</Descriptions.Item>
-              <Descriptions.Item label="Applied Date">{candidate.appliedDate}</Descriptions.Item>
+              <Descriptions.Item label="Position">
+                Senior Backend Developer
+              </Descriptions.Item>
+              <Descriptions.Item label="Applied Date">
+                {candidate.appliedDate}
+              </Descriptions.Item>
               <Descriptions.Item label="Resume">
                 <Space>
                   <FilePdfOutlined style={{ color: "red" }} />
-                  <a href={candidate.resumeUrl} target="_blank" rel="noreferrer">
+                  <a
+                    href={candidate.resumeUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     resume.pdf
                   </a>
                   <Upload showUploadList={false} onChange={handleUpload}>

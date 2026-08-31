@@ -1,40 +1,40 @@
 "use client";
 
 import React, { useState } from "react";
-import { 
-  Card, 
-  Button, 
-  Space, 
-  Input, 
-  Select, 
-  Switch, 
-  Typography, 
-  Row, 
-  Col, 
+import {
+  Card,
+  Button,
+  Space,
+  Input,
+  Select,
+  Switch,
+  Typography,
+  Row,
+  Col,
   InputNumber,
-  message
+  message,
 } from "antd";
-import { 
-  PlusOutlined, 
-  DeleteOutlined, 
+import {
+  PlusOutlined,
+  DeleteOutlined,
   HolderOutlined,
-  SaveOutlined
+  SaveOutlined,
 } from "@ant-design/icons";
-import { 
-  DndContext, 
+import {
+  DndContext,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent
+  DragEndEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-  useSortable
+  useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
@@ -54,11 +54,19 @@ interface TemplateBuilderProps {
   onSave: (data: any) => Promise<void>;
 }
 
-export function OnboardingTemplateBuilder({ initialData, onSave }: TemplateBuilderProps) {
+export function OnboardingTemplateBuilder({
+  initialData,
+  onSave,
+}: TemplateBuilderProps) {
   const [name, setName] = useState(initialData?.name || "");
-  const [employmentType, setEmploymentType] = useState(initialData?.employmentType || "FULL_TIME");
+  const [employmentType, setEmploymentType] = useState(
+    initialData?.employmentType || "FULL_TIME",
+  );
   const [tasks, setTasks] = useState<OnboardingTaskTemplate[]>(
-    initialData?.tasks?.map((t: any) => ({ ...t, id: Math.random().toString(36).substr(2, 9) })) || []
+    initialData?.tasks?.map((t: any) => ({
+      ...t,
+      id: Math.random().toString(36).substr(2, 9),
+    })) || [],
   );
   const [isSaving, setIsSaving] = useState(false);
 
@@ -66,7 +74,7 @@ export function OnboardingTemplateBuilder({ initialData, onSave }: TemplateBuild
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const handleAddTask = () => {
@@ -81,12 +89,15 @@ export function OnboardingTemplateBuilder({ initialData, onSave }: TemplateBuild
     setTasks([...tasks, newTask]);
   };
 
-  const handleUpdateTask = (id: string, updates: Partial<OnboardingTaskTemplate>) => {
-    setTasks(tasks.map(t => t.id === id ? { ...t, ...updates } : t));
+  const handleUpdateTask = (
+    id: string,
+    updates: Partial<OnboardingTaskTemplate>,
+  ) => {
+    setTasks(tasks.map((t) => (t.id === id ? { ...t, ...updates } : t)));
   };
 
   const handleDeleteTask = (id: string) => {
-    setTasks(tasks.filter(t => t.id !== id));
+    setTasks(tasks.filter((t) => t.id !== id));
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -120,14 +131,18 @@ export function OnboardingTemplateBuilder({ initialData, onSave }: TemplateBuild
 
   return (
     <div style={{ padding: 24 }}>
-      <Card title="Onboarding Template Configuration" bordered={false} style={{ marginBottom: 24 }}>
+      <Card
+        title="Onboarding Template Configuration"
+        bordered={false}
+        style={{ marginBottom: 24 }}
+      >
         <Row gutter={16}>
           <Col span={16}>
             <div style={{ marginBottom: 16 }}>
               <Text strong>Template Name</Text>
-              <Input 
-                value={name} 
-                onChange={(e) => setName(e.target.value)} 
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Standard Full-time Onboarding"
                 size="large"
                 style={{ marginTop: 8 }}
@@ -137,9 +152,9 @@ export function OnboardingTemplateBuilder({ initialData, onSave }: TemplateBuild
           <Col span={8}>
             <div style={{ marginBottom: 16 }}>
               <Text strong>Employment Type</Text>
-              <Select 
-                value={employmentType} 
-                onChange={setEmploymentType} 
+              <Select
+                value={employmentType}
+                onChange={setEmploymentType}
                 style={{ width: "100%", marginTop: 8 }}
                 size="large"
               >
@@ -153,27 +168,36 @@ export function OnboardingTemplateBuilder({ initialData, onSave }: TemplateBuild
         </Row>
       </Card>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <Title level={4} style={{ margin: 0 }}>Tasks & Milestones</Title>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 16,
+        }}
+      >
+        <Title level={4} style={{ margin: 0 }}>
+          Tasks & Milestones
+        </Title>
         <Button type="primary" icon={<PlusOutlined />} onClick={handleAddTask}>
           Add Task
         </Button>
       </div>
 
-      <DndContext 
-        sensors={sensors} 
-        collisionDetection={closestCenter} 
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext 
-          items={tasks.map(t => t.id)} 
+        <SortableContext
+          items={tasks.map((t) => t.id)}
           strategy={verticalListSortingStrategy}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {tasks.map((task) => (
-              <SortableTask 
-                key={task.id} 
-                task={task} 
+              <SortableTask
+                key={task.id}
+                task={task}
                 onUpdate={(updates) => handleUpdateTask(task.id, updates)}
                 onDelete={() => handleDeleteTask(task.id)}
               />
@@ -183,18 +207,28 @@ export function OnboardingTemplateBuilder({ initialData, onSave }: TemplateBuild
       </DndContext>
 
       {tasks.length === 0 && (
-        <Card style={{ textAlign: "center", padding: 40, border: "1px dashed #d9d9d9" }}>
-          <Paragraph type="secondary">No tasks defined for this template yet.</Paragraph>
-          <Button type="dashed" icon={<PlusOutlined />} onClick={handleAddTask}>Add your first task</Button>
+        <Card
+          style={{
+            textAlign: "center",
+            padding: 40,
+            border: "1px dashed #d9d9d9",
+          }}
+        >
+          <Paragraph type="secondary">
+            No tasks defined for this template yet.
+          </Paragraph>
+          <Button type="dashed" icon={<PlusOutlined />} onClick={handleAddTask}>
+            Add your first task
+          </Button>
         </Card>
       )}
 
       <div style={{ marginTop: 32, textAlign: "right" }}>
-        <Button 
-          type="primary" 
-          size="large" 
-          icon={<SaveOutlined />} 
-          onClick={handleSave} 
+        <Button
+          type="primary"
+          size="large"
+          icon={<SaveOutlined />}
+          onClick={handleSave}
           loading={isSaving}
           style={{ width: 200 }}
         >
@@ -205,12 +239,12 @@ export function OnboardingTemplateBuilder({ initialData, onSave }: TemplateBuild
   );
 }
 
-function SortableTask({ 
-  task, 
-  onUpdate, 
-  onDelete 
-}: { 
-  task: OnboardingTaskTemplate; 
+function SortableTask({
+  task,
+  onUpdate,
+  onDelete,
+}: {
+  task: OnboardingTaskTemplate;
   onUpdate: (updates: Partial<OnboardingTaskTemplate>) => void;
   onDelete: () => void;
 }) {
@@ -220,7 +254,7 @@ function SortableTask({
     setNodeRef,
     transform,
     transition,
-    isDragging
+    isDragging,
   } = useSortable({ id: task.id });
 
   const style = {
@@ -231,26 +265,26 @@ function SortableTask({
   };
 
   return (
-    <Card 
-      ref={setNodeRef} 
-      style={style} 
+    <Card
+      ref={setNodeRef}
+      style={style}
       size="small"
       bodyStyle={{ padding: "16px" }}
     >
       <div style={{ display: "flex", gap: 16 }}>
-        <div 
-          {...attributes} 
-          {...listeners} 
+        <div
+          {...attributes}
+          {...listeners}
           style={{ cursor: "grab", marginTop: 8, color: "#999" }}
         >
           <HolderOutlined />
         </div>
-        
+
         <div style={{ flex: 1 }}>
           <Row gutter={[16, 16]}>
             <Col span={12}>
-              <Input 
-                value={task.title} 
+              <Input
+                value={task.title}
                 placeholder="Task Title"
                 onChange={(e) => onUpdate({ title: e.target.value })}
                 style={{ fontWeight: 600 }}
@@ -259,21 +293,26 @@ function SortableTask({
             <Col span={6}>
               <Space>
                 <Text type="secondary">Due Day</Text>
-                <InputNumber 
-                  min={0} 
-                  value={task.daysOffset} 
-                  onChange={(v) => onUpdate({ daysOffset: v || 0 })} 
+                <InputNumber
+                  min={0}
+                  value={task.daysOffset}
+                  onChange={(v) => onUpdate({ daysOffset: v || 0 })}
                   style={{ width: 80 }}
                 />
               </Space>
             </Col>
             <Col span={6} style={{ textAlign: "right" }}>
-              <Button danger type="text" icon={<DeleteOutlined />} onClick={onDelete} />
+              <Button
+                danger
+                type="text"
+                icon={<DeleteOutlined />}
+                onClick={onDelete}
+              />
             </Col>
-            
+
             <Col span={24}>
-              <Input.TextArea 
-                value={task.description} 
+              <Input.TextArea
+                value={task.description}
                 placeholder="Description / Instructions"
                 onChange={(e) => onUpdate({ description: e.target.value })}
                 rows={2}
@@ -283,10 +322,9 @@ function SortableTask({
             <Col span={24}>
               <Space split={<Text type="secondary">|</Text>}>
                 <Space>
-                  <Text type="secondary">
-Assign To Role:</Text>
-                  <Select 
-                    value={task.ownerRole} 
+                  <Text type="secondary">Assign To Role:</Text>
+                  <Select
+                    value={task.ownerRole}
                     onChange={(v) => onUpdate({ ownerRole: v })}
                     size="small"
                     style={{ width: 120 }}
@@ -298,13 +336,12 @@ Assign To Role:</Text>
                   </Select>
                 </Space>
                 <Space>
-                  <Switch 
-                    size="small" 
-                    checked={task.isRequired} 
-                    onChange={(v) => onUpdate({ isRequired: v })} 
+                  <Switch
+                    size="small"
+                    checked={task.isRequired}
+                    onChange={(v) => onUpdate({ isRequired: v })}
                   />
-                  <Text type="secondary">
-Required</Text>
+                  <Text type="secondary">Required</Text>
                 </Space>
               </Space>
             </Col>

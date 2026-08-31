@@ -2,11 +2,14 @@ import { io, Socket } from "socket.io-client";
 
 const sockets: Record<string, Socket> = {};
 
-export const getSocket = (token?: string, namespace = "notifications"): Socket | null => {
+export const getSocket = (
+  token?: string,
+  namespace = "notifications",
+): Socket | null => {
   if (typeof window === "undefined") return null;
 
   const url = `${process.env.NEXT_PUBLIC_WS_URL || "http://localhost:3001"}/${namespace}`;
-  
+
   if (!sockets[namespace]) {
     sockets[namespace] = io(url, {
       auth: {

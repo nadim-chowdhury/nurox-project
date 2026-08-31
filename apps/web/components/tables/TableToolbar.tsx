@@ -109,7 +109,11 @@ export function TableToolbar({
 
         {showRefresh && (
           <Tooltip title="Refresh">
-            <Button icon={<ReloadOutlined />} onClick={onRefresh} loading={loading} />
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={onRefresh}
+              loading={loading}
+            />
           </Tooltip>
         )}
 

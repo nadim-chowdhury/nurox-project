@@ -3,7 +3,17 @@
 import React from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, Input, Button, Table, Space, DatePicker, Typography, Card, message } from "antd";
+import {
+  Form,
+  Input,
+  Button,
+  Table,
+  Space,
+  DatePicker,
+  Typography,
+  Card,
+  message,
+} from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import { journalEntrySchema } from "@repo/shared-schemas";
 import dayjs from "dayjs";
@@ -36,8 +46,14 @@ export function JournalEntryForm() {
   });
 
   const lines = watch("lines");
-  const totalDebit = lines.reduce((sum, line) => sum + (Number(line.debit) || 0), 0);
-  const totalCredit = lines.reduce((sum, line) => sum + (Number(line.credit) || 0), 0);
+  const totalDebit = lines.reduce(
+    (sum, line) => sum + (Number(line.debit) || 0),
+    0,
+  );
+  const totalCredit = lines.reduce(
+    (sum, line) => sum + (Number(line.credit) || 0),
+    0,
+  );
   const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
 
   const onSubmit = (data: any) => {
@@ -54,7 +70,9 @@ export function JournalEntryForm() {
               <DatePicker
                 style={{ width: "100%" }}
                 defaultValue={dayjs()}
-                onChange={(date) => setValue("entryDate", date?.toISOString() || "")}
+                onChange={(date) =>
+                  setValue("entryDate", date?.toISOString() || "")
+                }
               />
             </Form.Item>
           </Col>
@@ -73,9 +91,7 @@ export function JournalEntryForm() {
             {
               title: "Account",
               dataIndex: "accountId",
-              render: (_, __, _index) => (
-                <Input placeholder="Select Account" />
-              ),
+              render: (_, __, _index) => <Input placeholder="Select Account" />,
             },
             {
               title: "Description",
@@ -87,11 +103,7 @@ export function JournalEntryForm() {
               dataIndex: "debit",
               width: 150,
               render: (_, __, _index) => (
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                />
+                <Input type="number" step="0.01" placeholder="0.00" />
               ),
             },
             {
@@ -99,11 +111,7 @@ export function JournalEntryForm() {
               dataIndex: "credit",
               width: 150,
               render: (_, __, _index) => (
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                />
+                <Input type="number" step="0.01" placeholder="0.00" />
               ),
             },
             {
@@ -121,20 +129,36 @@ export function JournalEntryForm() {
             },
           ]}
           footer={() => (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Button type="dashed" icon={<PlusOutlined />} onClick={() => append({ accountId: "", debit: 0, credit: 0 })}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Button
+                type="dashed"
+                icon={<PlusOutlined />}
+                onClick={() => append({ accountId: "", debit: 0, credit: 0 })}
+              >
                 Add Line
               </Button>
               <Space size="large">
-                <Text>Total Debit: <Text strong>${totalDebit.toFixed(2)}</Text></Text>
-                <Text>Total Credit: <Text strong>${totalCredit.toFixed(2)}</Text></Text>
+                <Text>
+                  Total Debit: <Text strong>${totalDebit.toFixed(2)}</Text>
+                </Text>
+                <Text>
+                  Total Credit: <Text strong>${totalCredit.toFixed(2)}</Text>
+                </Text>
                 {!isBalanced && <Text type="danger">Out of Balance</Text>}
               </Space>
             </div>
           )}
         />
 
-        <div style={{ marginTop: 24, display: "flex", justifyContent: "flex-end" }}>
+        <div
+          style={{ marginTop: 24, display: "flex", justifyContent: "flex-end" }}
+        >
           <Space>
             <Button>Save Draft</Button>
             <Button type="primary" htmlType="submit" disabled={!isBalanced}>

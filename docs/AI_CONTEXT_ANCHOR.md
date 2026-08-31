@@ -42,7 +42,9 @@
   - Configured Next.js reverse-proxy rewrites (`/api/v1/:path*`) in `apps/web/next.config.mjs` and dynamic `getApiUrl()` in `api-client.ts` to prevent broken `localhost:3001` hardcoding when deployed on remote servers, LAN IPs, or containerized environments.
   - Hardened API CORS policy in `main.ts` to dynamically accept localhost ports, LAN IPs, and custom domains without hard preflight rejections.
   - Injected `INTERNAL_API_URL` into `docker-compose.yml` for internal container-to-container SSR communication.
-  - Upgraded `usePermission` hook to support `SUPER_ADMIN` and comprehensive permission fallbacks.
+  - Implemented Module 28 (Manufacturing & Production) with `manufacturingApi.ts`, Work Orders, Bill of Materials (BOM), Workcenters, Machine scheduling, and live OEE tracking in `app/[locale]/(dashboard)/manufacturing/page.tsx`.
+  - Implemented Module 24 (Customer Support & Help Desk) with `supportApi.ts`, omnichannel ticket management, AI copilot suggested reply generation, message threads, and KB gap analysis in `app/[locale]/(dashboard)/support/page.tsx` and `app/[locale]/(dashboard)/support/kb/page.tsx`.
+  - Implemented Module 30 (Compliance, Tax & Regulatory) with `complianceApi.ts`, NBR Mushak 6.3 tax invoices, Mushak 6.6 VDS certificates, Mushak 9.1 monthly VAT return packages, and multi-jurisdiction tax calculator in `app/[locale]/(dashboard)/compliance/page.tsx`.
   - Implemented Module 18 (Reporting & Analytics) with `reportsApi.ts` RTK slice, custom report template creation, dynamic query execution, and direct PDF/Excel/CSV export handlers in `app/[locale]/(dashboard)/reports/page.tsx`.
   - Hardened Module 15 (Document Management) in `app/[locale]/(dashboard)/documents/page.tsx` with folder creation modal (`useCreateFolderMutation`), S3 presigned URL uploads, and soft-delete/restore operations.
   - Implemented Module 29 (Logistics & Fleet Management) with full backend query/mutation endpoints (`FleetController`, `FleetService`), `fleetApi.ts` RTK Query slice, AI route waypoint optimization, and `app/[locale]/(dashboard)/fleet/page.tsx` UI.
@@ -58,16 +60,20 @@
 ## 5. Session Recovery Context
 
 **LAST ACTION:**
-Implemented and verified Module 18 (Reporting & Analytics) and Module 15 (Document Management) alongside Module 29 (Logistics & Fleet) and Module 27 (POS & Retail) with complete full-stack API endpoints, RTK Query slices, and Liquid Precision frontend UI.
+Dockerized and launched full multi-container stack (`pnpm docker:up`). Verified 100% healthy via `pnpm docker:verify`.
 
-- **`pnpm check-types`**: 100% PASS (0 errors across 7 workspace packages).
-- **`pnpm --filter api test`**: 100% PASS (26/26 NestJS test suites passed, 60/60 unit tests passed).
-- **`pnpm lint`**: 100% PASS (0 errors across monorepo).
-- **`pnpm build`**: 100% PASS (Production Next.js 16 + NestJS build successful).
+- **Containers Running:** `nurox_api`, `nurox_web`, `nurox_postgres`, `nurox_redis`, `nurox_minio`, `nurox_meilisearch`, `nurox_mailhog`.
+- **API Health:** `http://localhost:3001/api/health` -> HTTP 200 (DB up, Redis up).
+- **Web App:** `http://localhost:3000/en/login` -> HTTP 200.
+- **Verification Suites:**
+  - `pnpm check-types`: 100% PASS (0 errors across 7 workspace packages)
+  - `pnpm --filter api test`: 100% PASS (26/26 NestJS test suites passed, 60/60 unit tests passed)
+  - `pnpm lint`: 100% PASS (0 errors across monorepo)
+  - `pnpm docker:verify`: 100% PASS
 - Synced state machine anchor.
 
 **NEXT TASK:**
-Continue step-by-step module hardening according to `docs/PRODUCTION_ROADMAP.md` and `docs/NUROX_ERP_MASTER_ARCHITECTURE.md`.
+Continue step-by-step feature hardening and module maintenance according to `docs/PRODUCTION_ROADMAP.md` and `docs/NUROX_ERP_MASTER_ARCHITECTURE.md`.
 
 ---
 

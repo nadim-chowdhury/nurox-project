@@ -1,7 +1,18 @@
 "use client";
 
 import React, { useState } from "react";
-import { Row, Col, Card, Table, Tag, Button, Space, message, DatePicker, Modal } from "antd";
+import {
+  Row,
+  Col,
+  Card,
+  Table,
+  Tag,
+  Button,
+  Space,
+  message,
+  DatePicker,
+  Modal,
+} from "antd";
 import {
   ClockCircleOutlined,
   CheckCircleOutlined,
@@ -19,7 +30,10 @@ import { StatusTag } from "@/components/common/StatusTag";
 import { Avatar } from "@/components/common/Avatar";
 import { formatDate } from "@/lib/utils";
 import type { ColumnsType } from "antd/es/table";
-import { useGetTeamAttendanceQuery, useCheckInMutation } from "@/store/api/attendanceApi";
+import {
+  useGetTeamAttendanceQuery,
+  useCheckInMutation,
+} from "@/store/api/attendanceApi";
 import { AttendanceEntryModal } from "@/components/modules/hr/attendance/AttendanceEntryModal";
 import { BulkImportModal } from "@/components/modules/hr/attendance/BulkImportModal";
 import { QRKiosk } from "@/components/modules/hr/attendance/QRKiosk";
@@ -34,12 +48,23 @@ const columns: ColumnsType<any> = [
     width: 220,
     render: (_, r) => (
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <Avatar name={`${r.employee?.firstName} ${r.employee?.lastName}`} size={32} />
+        <Avatar
+          name={`${r.employee?.firstName} ${r.employee?.lastName}`}
+          size={32}
+        />
         <div>
-          <div style={{ color: "var(--color-on-surface)", fontSize: 13, fontWeight: 500 }}>
+          <div
+            style={{
+              color: "var(--color-on-surface)",
+              fontSize: 13,
+              fontWeight: 500,
+            }}
+          >
             {r.employee?.firstName} {r.employee?.lastName}
           </div>
-          <div style={{ color: "var(--color-on-surface-variant)", fontSize: 11 }}>
+          <div
+            style={{ color: "var(--color-on-surface-variant)", fontSize: 11 }}
+          >
             {r.employee?.department?.name}
           </div>
         </div>
@@ -63,7 +88,13 @@ const columns: ColumnsType<any> = [
     key: "checkIn",
     width: 110,
     render: (v: string) => (
-      <span style={{ color: v ? "#6dd58c" : "var(--color-on-surface-variant)", fontSize: 13, fontWeight: 500 }}>
+      <span
+        style={{
+          color: v ? "#6dd58c" : "var(--color-on-surface-variant)",
+          fontSize: 13,
+          fontWeight: 500,
+        }}
+      >
         {v ? dayjs(v).format("hh:mm A") : "—"}
       </span>
     ),
@@ -74,7 +105,13 @@ const columns: ColumnsType<any> = [
     key: "checkOut",
     width: 110,
     render: (v: string) => (
-      <span style={{ color: v ? "#c3f5ff" : "var(--color-on-surface-variant)", fontSize: 13, fontWeight: 500 }}>
+      <span
+        style={{
+          color: v ? "#c3f5ff" : "var(--color-on-surface-variant)",
+          fontSize: 13,
+          fontWeight: 500,
+        }}
+      >
         {v ? dayjs(v).format("hh:mm A") : "—"}
       </span>
     ),
@@ -94,11 +131,12 @@ const columns: ColumnsType<any> = [
     render: (s: string) => <StatusTag status={s?.toLowerCase()} />,
   },
   {
-      title: "Overtime",
-      key: "overtime",
-      width: 100,
-      render: (_, r) => r.isOvertime ? <Tag color="orange">{r.overtimeMinutes}m</Tag> : "—",
-  }
+    title: "Overtime",
+    key: "overtime",
+    width: 100,
+    render: (_, r) =>
+      r.isOvertime ? <Tag color="orange">{r.overtimeMinutes}m</Tag> : "—",
+  },
 ];
 
 export default function AttendancePage() {
@@ -117,34 +155,34 @@ export default function AttendancePage() {
   const overtime = records?.filter((r) => r.isOvertime).length || 0;
 
   const handleGeoCheckIn = () => {
-      if (!navigator.geolocation) {
-          return message.error("Geolocation is not supported by your browser");
-      }
+    if (!navigator.geolocation) {
+      return message.error("Geolocation is not supported by your browser");
+    }
 
-      navigator.geolocation.getCurrentPosition(async (pos) => {
-          try {
-              // In a real app, employeeId would come from auth context
-              const employeeId = "current-user-id"; 
-              await checkIn({
-                  employeeId,
-                  method: "GEO_FENCED",
-                  location: {
-                      lat: pos.coords.latitude,
-                      lng: pos.coords.longitude,
-                      address: "Current Location"
-                  }
-              }).unwrap();
-              message.success("Geo-fenced check-in successful");
-          } catch (err: any) {
-              message.error(err.data?.message || "Geo-fenced check-in failed");
-          }
-      });
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      try {
+        // In a real app, employeeId would come from auth context
+        const employeeId = "current-user-id";
+        await checkIn({
+          employeeId,
+          method: "GEO_FENCED",
+          location: {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            address: "Current Location",
+          },
+        }).unwrap();
+        message.success("Geo-fenced check-in successful");
+      } catch (err: any) {
+        message.error(err.data?.message || "Geo-fenced check-in failed");
+      }
+    });
   };
 
   const handleExport = async () => {
-      const month = dayjs().month() + 1;
-      const year = dayjs().year();
-      window.open(`/api/attendance/report?month=${month}&year=${year}`, '_blank');
+    const month = dayjs().month() + 1;
+    const year = dayjs().year();
+    window.open(`/api/attendance/report?month=${month}&year=${year}`, "_blank");
   };
 
   return (
@@ -157,42 +195,84 @@ export default function AttendancePage() {
           { label: "Attendance" },
         ]}
         extra={
-            <Space wrap>
-                <Button icon={<QrcodeOutlined />} onClick={() => setIsQrOpen(true)}>
-                    My QR
-                </Button>
-                <Button icon={<EnvironmentOutlined />} onClick={handleGeoCheckIn} loading={isGeoLoading}>
-                    Geo Check-In
-                </Button>
-                <Button icon={<PlusOutlined />} onClick={() => setIsEntryModalOpen(true)}>
-                    Manual Entry
-                </Button>
-                <Button icon={<UploadOutlined />} onClick={() => setIsBulkModalOpen(true)}>
-                    Bulk Import
-                </Button>
-                <Button icon={<CalendarOutlined />} onClick={() => router.push("/attendance/holidays")}>
-                    Holidays
-                </Button>
-                <Button type="primary" icon={<FileExcelOutlined />} onClick={handleExport}>
-                    Monthly Report
-                </Button>
-            </Space>
+          <Space wrap>
+            <Button icon={<QrcodeOutlined />} onClick={() => setIsQrOpen(true)}>
+              My QR
+            </Button>
+            <Button
+              icon={<EnvironmentOutlined />}
+              onClick={handleGeoCheckIn}
+              loading={isGeoLoading}
+            >
+              Geo Check-In
+            </Button>
+            <Button
+              icon={<PlusOutlined />}
+              onClick={() => setIsEntryModalOpen(true)}
+            >
+              Manual Entry
+            </Button>
+            <Button
+              icon={<UploadOutlined />}
+              onClick={() => setIsBulkModalOpen(true)}
+            >
+              Bulk Import
+            </Button>
+            <Button
+              icon={<CalendarOutlined />}
+              onClick={() => router.push("/attendance/holidays")}
+            >
+              Holidays
+            </Button>
+            <Button
+              type="primary"
+              icon={<FileExcelOutlined />}
+              onClick={handleExport}
+            >
+              Monthly Report
+            </Button>
+          </Space>
         }
       />
 
-      <Card 
-        style={{ marginBottom: 24, background: 'rgba(195, 245, 255, 0.05)', border: '1px dashed var(--color-primary)' }}
+      <Card
+        style={{
+          marginBottom: 24,
+          background: "rgba(195, 245, 255, 0.05)",
+          border: "1px dashed var(--color-primary)",
+        }}
         styles={{ body: { padding: 12 } }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <QrcodeOutlined style={{ fontSize: 24, color: 'var(--color-primary)' }} />
-                <div>
-                    <div style={{ fontWeight: 600, color: 'var(--color-on-surface)' }}>Attendance Kiosk Mode</div>
-                    <div style={{ fontSize: 12, color: 'var(--color-on-surface-variant)' }}>Enable tablet-friendly scanning at office entrance</div>
-                </div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <QrcodeOutlined
+              style={{ fontSize: 24, color: "var(--color-primary)" }}
+            />
+            <div>
+              <div
+                style={{ fontWeight: 600, color: "var(--color-on-surface)" }}
+              >
+                Attendance Kiosk Mode
+              </div>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: "var(--color-on-surface-variant)",
+                }}
+              >
+                Enable tablet-friendly scanning at office entrance
+              </div>
             </div>
-            <Button type="primary" onClick={() => setIsKioskOpen(true)}>Launch Kiosk</Button>
+          </div>
+          <Button type="primary" onClick={() => setIsKioskOpen(true)}>
+            Launch Kiosk
+          </Button>
         </div>
       </Card>
 
@@ -235,12 +315,19 @@ export default function AttendancePage() {
         }}
         styles={{ body: { padding: 0 } }}
       >
-          <div style={{ padding: 16, borderBottom: "1px solid var(--ghost-border)" }}>
-              <Space>
-                  <span style={{ color: "var(--color-on-surface-variant)" }}>Viewing attendance for:</span>
-                  <DatePicker defaultValue={dayjs()} onChange={(d) => setDate(d?.format("YYYY-MM-DD") || "")} />
-              </Space>
-          </div>
+        <div
+          style={{ padding: 16, borderBottom: "1px solid var(--ghost-border)" }}
+        >
+          <Space>
+            <span style={{ color: "var(--color-on-surface-variant)" }}>
+              Viewing attendance for:
+            </span>
+            <DatePicker
+              defaultValue={dayjs()}
+              onChange={(d) => setDate(d?.format("YYYY-MM-DD") || "")}
+            />
+          </Space>
+        </div>
         <Table
           columns={columns}
           dataSource={records}
@@ -252,13 +339,19 @@ export default function AttendancePage() {
         />
       </Card>
 
-      <AttendanceEntryModal open={isEntryModalOpen} onClose={() => setIsEntryModalOpen(false)} />
-      <BulkImportModal open={isBulkModalOpen} onClose={() => setIsBulkModalOpen(false)} />
+      <AttendanceEntryModal
+        open={isEntryModalOpen}
+        onClose={() => setIsEntryModalOpen(false)}
+      />
+      <BulkImportModal
+        open={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
+      />
       <QRKiosk open={isKioskOpen} onClose={() => setIsKioskOpen(false)} />
-      <Modal 
-        title="My Check-In QR" 
-        open={isQrOpen} 
-        onCancel={() => setIsQrOpen(false)} 
+      <Modal
+        title="My Check-In QR"
+        open={isQrOpen}
+        onCancel={() => setIsQrOpen(false)}
         footer={null}
         width={350}
       >

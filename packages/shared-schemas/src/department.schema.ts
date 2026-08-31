@@ -12,7 +12,7 @@ export interface DepartmentDto {
   children?: DepartmentDto[];
 }
 
-export const departmentSchema: z.ZodType<DepartmentDto> = z.lazy(() => 
+export const departmentSchema: z.ZodType<DepartmentDto> = z.lazy(() =>
   z.object({
     id: z.string().uuid().optional(),
     name: z.string().min(1, "Department name is required").max(100),
@@ -23,7 +23,7 @@ export const departmentSchema: z.ZodType<DepartmentDto> = z.lazy(() =>
     isActive: z.boolean().default(true),
     parentId: z.string().uuid().nullable().optional(),
     children: z.array(departmentSchema).optional(),
-  })
+  }),
 );
 
 export const createDepartmentSchema = z.object({

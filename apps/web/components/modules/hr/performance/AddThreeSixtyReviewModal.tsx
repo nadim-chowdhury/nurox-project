@@ -2,14 +2,20 @@
 
 import React from "react";
 import { Modal, Form, Select, Input, Rate, message } from "antd";
-import { useSubmit360ReviewMutation, useGetEmployeesQuery } from "@/store/api/hrApi";
+import {
+  useSubmit360ReviewMutation,
+  useGetEmployeesQuery,
+} from "@/store/api/hrApi";
 
 interface Props {
   visible: boolean;
   onClose: () => void;
 }
 
-export const AddThreeSixtyReviewModal: React.FC<Props> = ({ visible, onClose }) => {
+export const AddThreeSixtyReviewModal: React.FC<Props> = ({
+  visible,
+  onClose,
+}) => {
   const [form] = Form.useForm();
   const [submit360, { isLoading }] = useSubmit360ReviewMutation();
   const { data: employees } = useGetEmployeesQuery({});
@@ -39,25 +45,48 @@ export const AddThreeSixtyReviewModal: React.FC<Props> = ({ visible, onClose }) 
       destroyOnClose
     >
       <Form form={form} layout="vertical">
-        <Form.Item name="employeeId" label="Employee" rules={[{ required: true }]}>
-          <Select 
+        <Form.Item
+          name="employeeId"
+          label="Employee"
+          rules={[{ required: true }]}
+        >
+          <Select
             showSearch
             placeholder="Select employee"
-            options={employees?.data.map(e => ({ value: e.id, label: `${e.firstName} ${e.lastName}` }))}
-            filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+            options={employees?.data.map((e) => ({
+              value: e.id,
+              label: `${e.firstName} ${e.lastName}`,
+            }))}
+            filterOption={(input, option) =>
+              (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+            }
           />
         </Form.Item>
-        <Form.Item name="period" label="Review Period" rules={[{ required: true }]}>
-            <Select options={[
-                { value: "Annual 2025", label: "Annual 2025" },
-                { value: "Mid-Year 2026", label: "Mid-Year 2026" },
-                { value: "Probation Review", label: "Probation Review" },
-            ]} />
+        <Form.Item
+          name="period"
+          label="Review Period"
+          rules={[{ required: true }]}
+        >
+          <Select
+            options={[
+              { value: "Annual 2025", label: "Annual 2025" },
+              { value: "Mid-Year 2026", label: "Mid-Year 2026" },
+              { value: "Probation Review", label: "Probation Review" },
+            ]}
+          />
         </Form.Item>
-        <Form.Item name="objective" label="Review Focus" rules={[{ required: true }]}>
+        <Form.Item
+          name="objective"
+          label="Review Focus"
+          rules={[{ required: true }]}
+        >
           <Input placeholder="e.g. Leadership and Collaboration" />
         </Form.Item>
-        <Form.Item name="selfRating" label="Self Rating" rules={[{ required: true }]}>
+        <Form.Item
+          name="selfRating"
+          label="Self Rating"
+          rules={[{ required: true }]}
+        >
           <Rate allowHalf />
         </Form.Item>
         <Form.Item name="comments" label="Overall Feedback">

@@ -1,10 +1,26 @@
 "use client";
 
 import React, { useState } from "react";
-import { Table, Button, Tag, Space, Modal, Form, Input, InputNumber, Select, message, Row, Col } from "antd";
+import {
+  Table,
+  Button,
+  Tag,
+  Space,
+  Modal,
+  Form,
+  Input,
+  InputNumber,
+  Select,
+  message,
+  Row,
+  Col,
+} from "antd";
 import { PlusOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
-import { useGetVendorsQuery, useCreateVendorMutation } from "@/store/api/procurementApi";
+import {
+  useGetVendorsQuery,
+  useCreateVendorMutation,
+} from "@/store/api/procurementApi";
 import { formatCurrency } from "@/lib/utils";
 
 export default function VendorsPage() {
@@ -31,7 +47,11 @@ export default function VendorsPage() {
       render: (_: any, record: any) => (
         <Space direction="vertical" size={0}>
           <span style={{ fontWeight: 600 }}>{record.name}</span>
-          <span style={{ fontSize: 12, color: "var(--color-on-surface-variant)" }}>{record.code}</span>
+          <span
+            style={{ fontSize: 12, color: "var(--color-on-surface-variant)" }}
+          >
+            {record.code}
+          </span>
         </Space>
       ),
     },
@@ -40,8 +60,14 @@ export default function VendorsPage() {
       key: "contact",
       render: (_: any, record: any) => (
         <Space direction="vertical" size={0}>
-          <span><MailOutlined style={{ fontSize: 12, marginRight: 4 }} />{record.email || "N/A"}</span>
-          <span><PhoneOutlined style={{ fontSize: 12, marginRight: 4 }} />{record.phone || "N/A"}</span>
+          <span>
+            <MailOutlined style={{ fontSize: 12, marginRight: 4 }} />
+            {record.email || "N/A"}
+          </span>
+          <span>
+            <PhoneOutlined style={{ fontSize: 12, marginRight: 4 }} />
+            {record.phone || "N/A"}
+          </span>
         </Space>
       ),
     },
@@ -61,16 +87,16 @@ export default function VendorsPage() {
       dataIndex: "kycStatus",
       key: "kycStatus",
       render: (status: string) => (
-        <Tag color={status === "VERIFIED" ? "green" : "orange"}>
-          {status}
-        </Tag>
+        <Tag color={status === "VERIFIED" ? "green" : "orange"}>{status}</Tag>
       ),
     },
     {
       title: "Action",
       key: "action",
       render: (_: any, _record: any) => (
-        <Button type="link" size="small">View Profile</Button>
+        <Button type="link" size="small">
+          View Profile
+        </Button>
       ),
     },
   ];
@@ -112,32 +138,56 @@ export default function VendorsPage() {
         onOk={() => form.submit()}
       >
         <Form form={form} layout="vertical" onFinish={handleCreate}>
-          <Form.Item name="name" label="Vendor Name" rules={[{ required: true }]}>
+          <Form.Item
+            name="name"
+            label="Vendor Name"
+            rules={[{ required: true }]}
+          >
             <Input placeholder="e.g. Acme Corp" />
           </Form.Item>
-          <Form.Item name="code" label="Vendor Code" rules={[{ required: true }]}>
+          <Form.Item
+            name="code"
+            label="Vendor Code"
+            rules={[{ required: true }]}
+          >
             <Input placeholder="e.g. VEND001" />
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="email" label="Email">
-                <Input prefix={<MailOutlined />} placeholder="vendor@example.com" />
+                <Input
+                  prefix={<MailOutlined />}
+                  placeholder="vendor@example.com"
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item name="phone" label="Phone">
-                <Input prefix={<PhoneOutlined />} placeholder="+1 234 567 890" />
+                <Input
+                  prefix={<PhoneOutlined />}
+                  placeholder="+1 234 567 890"
+                />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="currency" label="Currency" initialValue="USD">
-                <Select options={[{ label: "USD", value: "USD" }, { label: "EUR", value: "EUR" }, { label: "GBP", value: "GBP" }]} />
+                <Select
+                  options={[
+                    { label: "USD", value: "USD" },
+                    { label: "EUR", value: "EUR" },
+                    { label: "GBP", value: "GBP" },
+                  ]}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="creditLimit" label="Credit Limit" initialValue={0}>
+              <Form.Item
+                name="creditLimit"
+                label="Credit Limit"
+                initialValue={0}
+              >
                 <InputNumber style={{ width: "100%" }} min={0} />
               </Form.Item>
             </Col>

@@ -20,30 +20,30 @@ export function QuickActionButton() {
     {
       icon: <TeamOutlined />,
       tooltip: "New Employee",
-      onClick: () => router.push('/hr/employees/new'),
+      onClick: () => router.push("/hr/employees/new"),
       visible: canPerform(Permission.HR_UPDATE_EMPLOYEE),
     },
     {
       icon: <FileTextOutlined />,
       tooltip: "Create Invoice",
-      onClick: () => router.push('/finance/invoices'),
+      onClick: () => router.push("/finance/invoices"),
       visible: canPerform(Permission.FINANCE_MANAGE_INVOICES),
     },
     {
       icon: <CalendarOutlined />,
       tooltip: "Apply Leave",
-      onClick: () => router.push('/leave/apply'),
+      onClick: () => router.push("/leave/apply"),
       visible: true, // Everyone can apply leave
     },
     {
       icon: <ProjectOutlined />,
       tooltip: "Add Task",
-      onClick: () => router.push('/projects/tasks'),
+      onClick: () => router.push("/projects/tasks"),
       visible: canPerform(Permission.PROJECTS_MANAGE),
     },
   ];
 
-  const visibleActions = actions.filter(a => a.visible);
+  const visibleActions = actions.filter((a) => a.visible);
 
   if (visibleActions.length === 0) return null;
 
@@ -55,11 +55,11 @@ export function QuickActionButton() {
       icon={<PlusOutlined />}
     >
       {visibleActions.map((action, index) => (
-        <FloatButton 
+        <FloatButton
           key={index}
-          icon={action.icon} 
-          tooltip={action.tooltip} 
-          onClick={action.onClick} 
+          icon={action.icon}
+          tooltip={action.tooltip}
+          onClick={action.onClick}
         />
       ))}
     </FloatButton.Group>

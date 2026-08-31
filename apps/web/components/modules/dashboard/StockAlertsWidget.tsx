@@ -27,7 +27,9 @@ export function StockAlertsWidget({ dateRange }: Props) {
         <div>
           <Text strong>{text}</Text>
           <br />
-          <Text type="secondary" style={{ fontSize: 12 }}>{record.sku}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {record.sku}
+          </Text>
         </div>
       ),
     },
@@ -54,13 +56,16 @@ export function StockAlertsWidget({ dateRange }: Props) {
   return (
     <Card
       title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <WarningOutlined style={{ color: 'var(--color-warning)' }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <WarningOutlined style={{ color: "var(--color-warning)" }} />
           <span>Stock Alerts</span>
         </div>
       }
       loading={isLoading}
-      style={{ background: 'var(--color-surface)', border: '1px solid var(--ghost-border)' }}
+      style={{
+        background: "var(--color-surface)",
+        border: "1px solid var(--ghost-border)",
+      }}
       bodyStyle={{ padding: 0 }}
     >
       {stockAlerts.length > 0 ? (
@@ -72,7 +77,11 @@ export function StockAlertsWidget({ dateRange }: Props) {
           rowKey="productId"
         />
       ) : (
-        <Empty description="No stock alerts" image={Empty.PRESENTED_IMAGE_SIMPLE} style={{ padding: 20 }} />
+        <Empty
+          description="No stock alerts"
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          style={{ padding: 20 }}
+        />
       )}
     </Card>
   );

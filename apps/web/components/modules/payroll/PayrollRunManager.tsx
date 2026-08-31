@@ -1,15 +1,32 @@
 "use client";
 
 import React, { useState } from "react";
-import { Table, Button, Tag, Space, Card, Modal, Input, message, Typography, Badge } from "antd";
-import { 
-  useGetPayrollRunsQuery, 
-  useCreatePayrollRunMutation, 
-  useProcessPayrollRunMutation, 
-  useApprovePayrollRunMutation, 
-  useFinalizePayrollRunMutation 
+import {
+  Table,
+  Button,
+  Tag,
+  Space,
+  Card,
+  Modal,
+  Input,
+  message,
+  Typography,
+  Badge,
+} from "antd";
+import {
+  useGetPayrollRunsQuery,
+  useCreatePayrollRunMutation,
+  useProcessPayrollRunMutation,
+  useApprovePayrollRunMutation,
+  useFinalizePayrollRunMutation,
 } from "@/store/api/payrollApi";
-import { PlayCircleOutlined, CheckCircleOutlined, FileTextOutlined, DownloadOutlined, PlusOutlined } from "@ant-design/icons";
+import {
+  PlayCircleOutlined,
+  CheckCircleOutlined,
+  FileTextOutlined,
+  DownloadOutlined,
+  PlusOutlined,
+} from "@ant-design/icons";
 import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
@@ -17,7 +34,8 @@ const { Title, Text } = Typography;
 export const PayrollRunManager: React.FC = () => {
   const { data: runs, isLoading } = useGetPayrollRunsQuery();
   const [createRun] = useCreatePayrollRunMutation();
-  const [processRun, { isLoading: isProcessing }] = useProcessPayrollRunMutation();
+  const [processRun, { isLoading: isProcessing }] =
+    useProcessPayrollRunMutation();
   const [approveRun] = useApprovePayrollRunMutation();
   const [finalizeRun] = useFinalizePayrollRunMutation();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,7 +61,10 @@ export const PayrollRunManager: React.FC = () => {
   };
 
   const handleExportBeftn = (id: string) => {
-    window.open(`${process.env.NEXT_PUBLIC_API_URL}/payroll/runs/${id}/beftn`, "_blank");
+    window.open(
+      `${process.env.NEXT_PUBLIC_API_URL}/payroll/runs/${id}/beftn`,
+      "_blank",
+    );
   };
 
   const statusColors: Record<string, string> = {
@@ -65,7 +86,9 @@ export const PayrollRunManager: React.FC = () => {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (status: string) => <Tag color={statusColors[status]}>{status}</Tag>,
+      render: (status: string) => (
+        <Tag color={statusColors[status]}>{status}</Tag>
+      ),
     },
     {
       title: "Gross Pay",
@@ -77,7 +100,9 @@ export const PayrollRunManager: React.FC = () => {
       title: "Net Pay",
       dataIndex: "totalNet",
       key: "totalNet",
-      render: (val: number) => <Text strong>$${Number(val).toLocaleString()}</Text>,
+      render: (val: number) => (
+        <Text strong>$${Number(val).toLocaleString()}</Text>
+      ),
     },
     {
       title: "Employees",
@@ -90,18 +115,46 @@ export const PayrollRunManager: React.FC = () => {
       render: (_: any, record: any) => (
         <Space>
           {record.status === "DRAFT" && (
-            <Button size="small" icon={<PlayCircleOutlined />} onClick={() => handleProcess(record.id)}>Process</Button>
+            <Button
+              size="small"
+              icon={<PlayCircleOutlined />}
+              onClick={() => handleProcess(record.id)}
+            >
+              Process
+            </Button>
           )}
           {record.status === "REVIEW" && (
-            <Button size="small" type="primary" onClick={() => approveRun(record.id)}>Approve</Button>
+            <Button
+              size="small"
+              type="primary"
+              onClick={() => approveRun(record.id)}
+            >
+              Approve
+            </Button>
           )}
           {record.status === "APPROVED" && (
-            <Button size="small" type="primary" color="green" variant="solid" onClick={() => finalizeRun(record.id)}>Finalize & Post</Button>
+            <Button
+              size="small"
+              type="primary"
+              color="green"
+              variant="solid"
+              onClick={() => finalizeRun(record.id)}
+            >
+              Finalize & Post
+            </Button>
           )}
           {record.status === "PROCESSED" && (
             <>
-              <Button size="small" icon={<DownloadOutlined />} onClick={() => handleExportBeftn(record.id)}>BEFTN</Button>
-              <Button size="small" icon={<FileTextOutlined />}>Report</Button>
+              <Button
+                size="small"
+                icon={<DownloadOutlined />}
+                onClick={() => handleExportBeftn(record.id)}
+              >
+                BEFTN
+              </Button>
+              <Button size="small" icon={<FileTextOutlined />}>
+                Report
+              </Button>
             </>
           )}
         </Space>
@@ -114,18 +167,25 @@ export const PayrollRunManager: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <Title level={2}>Payroll Management</Title>
-          <Text type="secondary">Manage monthly payroll cycles and salary disbursements.</Text>
+          <Text type="secondary">
+            Manage monthly payroll cycles and salary disbursements.
+          </Text>
         </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)} size="large">
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => setIsModalOpen(true)}
+          size="large"
+        >
           New Payroll Run
         </Button>
       </div>
 
       <Card className="shadow-sm">
-        <Table 
-          dataSource={runs} 
-          columns={columns} 
-          loading={isLoading || isProcessing} 
+        <Table
+          dataSource={runs}
+          columns={columns}
+          loading={isLoading || isProcessing}
           rowKey="id"
           pagination={{ pageSize: 12 }}
         />
@@ -139,10 +199,10 @@ export const PayrollRunManager: React.FC = () => {
       >
         <div className="py-4">
           <Text>Enter period (YYYY-MM):</Text>
-          <Input 
-            placeholder="e.g. 2026-04" 
-            value={period} 
-            onChange={(e) => setPeriod(e.target.value)} 
+          <Input
+            placeholder="e.g. 2026-04"
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
             className="mt-2"
           />
         </div>

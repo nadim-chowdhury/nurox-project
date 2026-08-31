@@ -1,11 +1,21 @@
 "use client";
 
 import React, { useState } from "react";
-import { List, Card, Button, Modal, Typography, Tag, message, Row, Col } from "antd";
+import {
+  List,
+  Card,
+  Button,
+  Modal,
+  Typography,
+  Tag,
+  message,
+  Row,
+  Col,
+} from "antd";
 import { EyeOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
-import { 
+import {
   useGetHandbooksQuery,
-  useAcknowledgeHandbookMutation
+  useAcknowledgeHandbookMutation,
 } from "@/store/api/hrApi";
 
 const { Text, Title, Paragraph } = Typography;
@@ -21,7 +31,10 @@ export function HandbookTab({ employeeId }: Props) {
 
   const handleAcknowledge = async () => {
     try {
-      await acknowledge({ id: employeeId, handbookId: selectedHandbook.id }).unwrap();
+      await acknowledge({
+        id: employeeId,
+        handbookId: selectedHandbook.id,
+      }).unwrap();
       message.success("Handbook acknowledged successfully");
       setSelectedHandbook(null);
     } catch {
@@ -33,26 +46,32 @@ export function HandbookTab({ employeeId }: Props) {
     <div>
       <Row gutter={24}>
         <Col span={24}>
-          <Title level={5} style={{ marginBottom: 16 }}>Company Handbooks & Policies</Title>
+          <Title level={5} style={{ marginBottom: 16 }}>
+            Company Handbooks & Policies
+          </Title>
           <List
             loading={isLoading}
             grid={{ gutter: 16, xs: 1, sm: 2, md: 2 }}
-            dataSource={handbooks?.filter(h => h.isActive)}
+            dataSource={handbooks?.filter((h) => h.isActive)}
             renderItem={(item) => (
               <List.Item>
-                <Card 
-                  size="small" 
+                <Card
+                  size="small"
                   title={item.title}
                   extra={<Tag color="blue">v{item.version}.0</Tag>}
-                  style={{ background: 'var(--color-surface-container-low)', border: '1px solid var(--ghost-border)' }}
+                  style={{
+                    background: "var(--color-surface-container-low)",
+                    border: "1px solid var(--ghost-border)",
+                  }}
                 >
                   <Paragraph ellipsis={{ rows: 2 }} style={{ fontSize: 12 }}>
-                    Official company policy regarding {item.title.toLowerCase()}. Please read and acknowledge.
+                    Official company policy regarding {item.title.toLowerCase()}
+                    . Please read and acknowledge.
                   </Paragraph>
-                  <Button 
-                    type="primary" 
-                    block 
-                    icon={<EyeOutlined />} 
+                  <Button
+                    type="primary"
+                    block
+                    icon={<EyeOutlined />}
                     onClick={() => setSelectedHandbook(item)}
                   >
                     View & Acknowledge
@@ -70,30 +89,46 @@ export function HandbookTab({ employeeId }: Props) {
         onCancel={() => setSelectedHandbook(null)}
         width={800}
         footer={[
-          <Button key="close" onClick={() => setSelectedHandbook(null)}>Close</Button>,
+          <Button key="close" onClick={() => setSelectedHandbook(null)}>
+            Close
+          </Button>,
           selectedHandbook?.requireAcknowledgment && (
-            <Button key="ack" type="primary" icon={<SafetyCertificateOutlined />} onClick={handleAcknowledge}>
+            <Button
+              key="ack"
+              type="primary"
+              icon={<SafetyCertificateOutlined />}
+              onClick={handleAcknowledge}
+            >
               I have read and agree
             </Button>
-          )
+          ),
         ]}
       >
-        <div 
-          style={{ 
-            maxHeight: 500, 
-            overflowY: 'auto', 
-            padding: 16, 
-            background: 'rgba(255,255,255,0.02)',
+        <div
+          style={{
+            maxHeight: 500,
+            overflowY: "auto",
+            padding: 16,
+            background: "rgba(255,255,255,0.02)",
             borderRadius: 8,
-            color: 'var(--color-on-surface)'
+            color: "var(--color-on-surface)",
           }}
           dangerouslySetInnerHTML={{ __html: selectedHandbook?.content || "" }}
         />
         {selectedHandbook?.requireAcknowledgment && (
-          <div style={{ marginTop: 24, padding: 12, background: 'rgba(195, 245, 255, 0.05)', borderRadius: 4, borderLeft: '4px solid var(--color-primary)' }}>
+          <div
+            style={{
+              marginTop: 24,
+              padding: 12,
+              background: "rgba(195, 245, 255, 0.05)",
+              borderRadius: 4,
+              borderLeft: "4px solid var(--color-primary)",
+            }}
+          >
             <Text strong>Acknowledgment Required</Text>
             <div style={{ fontSize: 12, marginTop: 4 }}>
-              By clicking "I have read and agree", you confirm that you have read and understood the terms of this handbook.
+              By clicking "I have read and agree", you confirm that you have
+              read and understood the terms of this handbook.
             </div>
           </div>
         )}

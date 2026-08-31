@@ -1,15 +1,15 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const assetStatusSchema = z.enum([
-  'PURCHASED',
-  'ACTIVE',
-  'UNDER_MAINTENANCE',
-  'DISPOSED',
+  "PURCHASED",
+  "ACTIVE",
+  "UNDER_MAINTENANCE",
+  "DISPOSED",
 ]);
 
 export const depreciationMethodSchema = z.enum([
-  'STRAIGHT_LINE',
-  'DECLINING_BALANCE',
+  "STRAIGHT_LINE",
+  "DECLINING_BALANCE",
 ]);
 
 export const createAssetCategorySchema = z.object({
@@ -62,5 +62,7 @@ export type CreateAssetCategoryDto = z.infer<typeof createAssetCategorySchema>;
 export type CreateAssetDto = z.infer<typeof createAssetSchema>;
 export type UpdateAssetDto = z.infer<typeof updateAssetSchema>;
 export type AssignAssetDto = z.infer<typeof assignAssetSchema>;
-export type CreateAssetMaintenanceDto = z.infer<typeof createAssetMaintenanceSchema>;
+export type CreateAssetMaintenanceDto = z.infer<
+  typeof createAssetMaintenanceSchema
+>;
 export type DisposeAssetDto = z.infer<typeof disposeAssetSchema>;

@@ -1,10 +1,30 @@
 "use client";
 
 import React, { useState } from "react";
-import { Table, Button, Space, Modal, Form, Input, message, Tree, Card, Row, Col } from "antd";
-import { PlusOutlined, ShopOutlined, PartitionOutlined, BuildOutlined } from "@ant-design/icons";
+import {
+  Table,
+  Button,
+  Space,
+  Modal,
+  Form,
+  Input,
+  message,
+  Tree,
+  Card,
+  Row,
+  Col,
+} from "antd";
+import {
+  PlusOutlined,
+  ShopOutlined,
+  PartitionOutlined,
+  BuildOutlined,
+} from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
-import { useGetWarehousesQuery, useCreateWarehouseMutation } from "@/store/api/inventoryApi";
+import {
+  useGetWarehousesQuery,
+  useCreateWarehouseMutation,
+} from "@/store/api/inventoryApi";
 
 export default function WarehousesPage() {
   const { data: warehouses, isLoading } = useGetWarehousesQuery();
@@ -38,15 +58,20 @@ export default function WarehousesPage() {
     {
       title: "Location",
       key: "location",
-      render: (_: any, _record: any) => `${_record.city || ""}, ${_record.country || ""}`,
+      render: (_: any, _record: any) =>
+        `${_record.city || ""}, ${_record.country || ""}`,
     },
     {
       title: "Action",
       key: "action",
       render: (_: any, _record: any) => (
         <Space>
-          <Button icon={<PartitionOutlined />} size="small">Layout</Button>
-          <Button type="link" size="small">Details</Button>
+          <Button icon={<PartitionOutlined />} size="small">
+            Layout
+          </Button>
+          <Button type="link" size="small">
+            Details
+          </Button>
         </Space>
       ),
     },
@@ -102,8 +127,16 @@ export default function WarehousesPage() {
                       key: "z-1",
                       icon: <PartitionOutlined />,
                       children: [
-                        { title: "Rack A1", key: "r-1", icon: <BuildOutlined /> },
-                        { title: "Rack A2", key: "r-2", icon: <BuildOutlined /> },
+                        {
+                          title: "Rack A1",
+                          key: "r-1",
+                          icon: <BuildOutlined />,
+                        },
+                        {
+                          title: "Rack A2",
+                          key: "r-2",
+                          icon: <BuildOutlined />,
+                        },
                       ],
                     },
                     {
@@ -126,7 +159,11 @@ export default function WarehousesPage() {
         onOk={() => form.submit()}
       >
         <Form form={form} layout="vertical" onFinish={handleCreate}>
-          <Form.Item name="name" label="Warehouse Name" rules={[{ required: true }]}>
+          <Form.Item
+            name="name"
+            label="Warehouse Name"
+            rules={[{ required: true }]}
+          >
             <Input placeholder="e.g. Central Distribution Center" />
           </Form.Item>
           <Form.Item name="code" label="Code" rules={[{ required: true }]}>

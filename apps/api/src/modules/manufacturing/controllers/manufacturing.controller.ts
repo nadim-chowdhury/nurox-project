@@ -73,6 +73,11 @@ export class ManufacturingController {
     return this.mfgService.createBom(tenantId, dto);
   }
 
+  @Get('boms')
+  listBoms(@CurrentTenant() tenantId: string) {
+    return this.mfgService.listBoms(tenantId);
+  }
+
   @Post('work-orders')
   @UsePipes(new ZodValidationPipe(createWorkOrderSchema))
   createWorkOrder(

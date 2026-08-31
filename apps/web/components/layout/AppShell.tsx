@@ -104,7 +104,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             minHeight: "calc(100vh - 64px)",
           }}
         >
-          <Breadcrumbs />
           {children}
           <FloatingActions />
           <GlobalSearch />

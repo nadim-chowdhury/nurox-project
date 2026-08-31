@@ -15,7 +15,7 @@ export default function ResetPasswordPage() {
   const [form] = Form.useForm();
   const password = Form.useWatch("password", form);
   const [submitted, setSubmitted] = useState(false);
-  
+
   const email = searchParams.get("email");
   const token = searchParams.get("token");
 

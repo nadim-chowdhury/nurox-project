@@ -20,6 +20,8 @@ import {
   BarChartOutlined,
   CustomerServiceOutlined,
   CarOutlined,
+  BuildOutlined,
+  SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import { usePathname, useRouter } from "next/navigation";
 import { useAppSelector, useAppDispatch } from "@/hooks/useRedux";
@@ -239,10 +241,22 @@ export function Sidebar() {
       label: "Assets",
     },
     {
+      key: "/manufacturing",
+      icon: <BuildOutlined />,
+      label: "Manufacturing",
+      hidden: !enabledModuleKeys.includes("manufacturing"),
+    },
+    {
       key: "/fleet",
       icon: <CarOutlined />,
       label: "Fleet & Logistics",
       hidden: !enabledModuleKeys.includes("fleet"),
+    },
+    {
+      key: "/compliance",
+      icon: <SafetyCertificateOutlined />,
+      label: "Tax & Compliance",
+      hidden: !enabledModuleKeys.includes("compliance"),
     },
     {
       key: "/reports",

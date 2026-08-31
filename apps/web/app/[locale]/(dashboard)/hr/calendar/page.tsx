@@ -52,7 +52,8 @@ const DAYS_OF_WEEK = [
 ];
 
 export default function CalendarManagementPage() {
-  const { data: calendars, isLoading: loadingCalendars } = useGetCalendarsQuery();
+  const { data: calendars, isLoading: loadingCalendars } =
+    useGetCalendarsQuery();
   const { data: holidays, isLoading: loadingHolidays } = useGetHolidaysQuery();
   const { data: branches } = useGetBranchesQuery();
 
@@ -125,8 +126,12 @@ export default function CalendarManagementPage() {
       dataIndex: "workingDays",
       key: "workingDays",
       render: (days: string[]) => (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-          {days.map(d => <Tag key={d} style={{ fontSize: 11 }}>{d.substring(0, 3)}</Tag>)}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+          {days.map((d) => (
+            <Tag key={d} style={{ fontSize: 11 }}>
+              {d.substring(0, 3)}
+            </Tag>
+          ))}
         </div>
       ),
     },
@@ -184,7 +189,8 @@ export default function CalendarManagementPage() {
       title: "Recurring",
       dataIndex: "isRecurring",
       key: "isRecurring",
-      render: (val: boolean) => (val ? <Tag color="green">Yes</Tag> : <Tag>No</Tag>),
+      render: (val: boolean) =>
+        val ? <Tag color="green">Yes</Tag> : <Tag>No</Tag>,
     },
     {
       title: "Actions",
@@ -313,7 +319,11 @@ export default function CalendarManagementPage() {
           layout="vertical"
           onFinish={handleSaveCalendar}
         >
-          <Form.Item name="name" label="Schedule Name" rules={[{ required: true }]}>
+          <Form.Item
+            name="name"
+            label="Schedule Name"
+            rules={[{ required: true }]}
+          >
             <Input placeholder="e.g. Standard 5-Day Week" />
           </Form.Item>
           <Form.Item name="branchId" label="Assign to Branch (Optional)">
@@ -324,7 +334,9 @@ export default function CalendarManagementPage() {
             />
           </Form.Item>
           <Form.Item name="workingDays" label="Working Days">
-            <Checkbox.Group options={DAYS_OF_WEEK.map(d => d.toLowerCase())} />
+            <Checkbox.Group
+              options={DAYS_OF_WEEK.map((d) => d.toLowerCase())}
+            />
           </Form.Item>
           <Form.Item name="isDefault" valuePropName="checked">
             <Checkbox>Set as default for new employees</Checkbox>
@@ -340,7 +352,11 @@ export default function CalendarManagementPage() {
         onOk={() => holidayForm.submit()}
       >
         <Form form={holidayForm} layout="vertical" onFinish={handleSaveHoliday}>
-          <Form.Item name="name" label="Holiday Name" rules={[{ required: true }]}>
+          <Form.Item
+            name="name"
+            label="Holiday Name"
+            rules={[{ required: true }]}
+          >
             <Input placeholder="e.g. Independence Day" />
           </Form.Item>
           <Row gutter={16}>
@@ -354,7 +370,10 @@ export default function CalendarManagementPage() {
                 <Select
                   allowClear
                   placeholder="Global"
-                  options={branches?.map((b) => ({ label: b.name, value: b.id }))}
+                  options={branches?.map((b) => ({
+                    label: b.name,
+                    value: b.id,
+                  }))}
                 />
               </Form.Item>
             </Col>

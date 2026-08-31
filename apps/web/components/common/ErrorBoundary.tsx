@@ -33,7 +33,9 @@ export class ErrorBoundary extends Component<Props, State> {
           <Result
             status="error"
             title="Something went wrong"
-            subTitle={this.state.error?.message || "An unexpected error occurred."}
+            subTitle={
+              this.state.error?.message || "An unexpected error occurred."
+            }
             extra={[
               <Button
                 type="primary"

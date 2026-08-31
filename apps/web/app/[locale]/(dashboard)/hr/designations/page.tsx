@@ -8,7 +8,10 @@ import { DataTable } from "@/components/tables/DataTable";
 import { TableToolbar } from "@/components/tables/TableToolbar";
 import { StatusTag } from "@/components/common/StatusTag";
 import type { ColumnsType } from "antd/es/table";
-import { useGetDesignationsQuery, useGetDepartmentsQuery } from "@/store/api/hrApi";
+import {
+  useGetDesignationsQuery,
+  useGetDepartmentsQuery,
+} from "@/store/api/hrApi";
 
 const LEVEL_COLORS: Record<string, string> = {
   "C-Suite": "#c3f5ff",
@@ -55,15 +58,16 @@ export default function DesignationsPage() {
       dataIndex: ["department", "name"],
       key: "department",
       width: 180,
-      filters: (departments || []).map(
-        (d) => ({ text: d.name, value: d.id as string }),
-      ),
+      filters: (departments || []).map((d) => ({
+        text: d.name,
+        value: d.id as string,
+      })),
       onFilter: (value, record) => record.departmentId === value,
       render: (val: string) => (
         <span
           style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
         >
-          {val || 'N/A'}
+          {val || "N/A"}
         </span>
       ),
     },
@@ -82,7 +86,7 @@ export default function DesignationsPage() {
             fontSize: 12,
           }}
         >
-          {level || 'Standard'}
+          {level || "Standard"}
         </Tag>
       ),
     },
@@ -112,7 +116,9 @@ export default function DesignationsPage() {
       dataIndex: "isActive",
       key: "status",
       width: 100,
-      render: (isActive: boolean) => <StatusTag status={isActive ? "active" : "inactive"} />,
+      render: (isActive: boolean) => (
+        <StatusTag status={isActive ? "active" : "inactive"} />
+      ),
     },
     {
       title: "",

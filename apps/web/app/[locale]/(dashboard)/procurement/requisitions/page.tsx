@@ -2,16 +2,22 @@
 
 import React, { useState } from "react";
 import { Table, Tag, Button, Space, Modal } from "antd";
-import { PlusOutlined, FileSearchOutlined, SwapOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import {
+  PlusOutlined,
+  FileSearchOutlined,
+  SwapOutlined,
+  CheckCircleOutlined,
+} from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useGetRfqComparisonQuery } from "@/store/api/procurementApi";
 import { formatCurrency } from "@/lib/utils";
 
 export default function RequisitionsPage() {
   const [selectedRfq, setSelectedRfq] = useState<string | null>(null);
-  const { data: comparison, isLoading: loadingComparison } = useGetRfqComparisonQuery(selectedRfq!, {
-    skip: !selectedRfq,
-  });
+  const { data: comparison, isLoading: loadingComparison } =
+    useGetRfqComparisonQuery(selectedRfq!, {
+      skip: !selectedRfq,
+    });
 
   const mockPRs = [
     {
@@ -54,7 +60,9 @@ export default function RequisitionsPage() {
       dataIndex: "status",
       key: "status",
       render: (status: string) => (
-        <Tag color={status === "CONVERTED_TO_RFQ" ? "blue" : "orange"}>{status}</Tag>
+        <Tag color={status === "CONVERTED_TO_RFQ" ? "blue" : "orange"}>
+          {status}
+        </Tag>
       ),
     },
     {
@@ -62,12 +70,14 @@ export default function RequisitionsPage() {
       key: "action",
       render: (_: any, record: any) => (
         <Space>
-          <Button icon={<FileSearchOutlined />} size="small">Details</Button>
+          <Button icon={<FileSearchOutlined />} size="small">
+            Details
+          </Button>
           {record.status === "CONVERTED_TO_RFQ" && (
-            <Button 
-              type="primary" 
-              ghost 
-              icon={<SwapOutlined />} 
+            <Button
+              type="primary"
+              ghost
+              icon={<SwapOutlined />}
               size="small"
               onClick={() => setSelectedRfq(record.id)}
             >
@@ -104,8 +114,12 @@ export default function RequisitionsPage() {
         onCancel={() => setSelectedRfq(null)}
         width={800}
         footer={[
-          <Button key="close" onClick={() => setSelectedRfq(null)}>Close</Button>,
-          <Button key="po" type="primary" icon={<CheckCircleOutlined />}>Convert to PO</Button>
+          <Button key="close" onClick={() => setSelectedRfq(null)}>
+            Close
+          </Button>,
+          <Button key="po" type="primary" icon={<CheckCircleOutlined />}>
+            Convert to PO
+          </Button>,
         ]}
       >
         <p>Consolidated view of all vendor responses for this requisition.</p>
@@ -115,7 +129,12 @@ export default function RequisitionsPage() {
           pagination={false}
           columns={[
             { title: "Vendor", dataIndex: "vendorId", key: "v" },
-            { title: "Total Amount", dataIndex: "totalAmount", key: "amt", render: (v) => formatCurrency(v) },
+            {
+              title: "Total Amount",
+              dataIndex: "totalAmount",
+              key: "amt",
+              render: (v) => formatCurrency(v),
+            },
             { title: "Currency", dataIndex: "currency", key: "curr" },
             { title: "Lead Time (Avg)", key: "lt", render: () => "5 Days" },
           ]}

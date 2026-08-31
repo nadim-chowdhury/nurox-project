@@ -25,10 +25,18 @@ import {
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/common/PageHeader";
 import { formatCurrency } from "@/lib/utils";
-import { useForm, Controller, useFieldArray, SubmitHandler } from "react-hook-form";
+import {
+  useForm,
+  Controller,
+  useFieldArray,
+  SubmitHandler,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { journalEntrySchema, type JournalEntryDto } from "@repo/shared-schemas";
-import { useGetAccountsQuery, useCreateJournalMutation } from "@/store/api/financeApi";
+import {
+  useGetAccountsQuery,
+  useCreateJournalMutation,
+} from "@/store/api/financeApi";
 import { RichTextEditor } from "@/components/common/RichTextEditor";
 import dayjs from "dayjs";
 
@@ -38,7 +46,8 @@ const labelStyle = { color: "var(--color-on-surface-variant)", fontSize: 13 };
 export default function NewJournalPage() {
   const router = useRouter();
   const { data: accountsData } = useGetAccountsQuery();
-  const [createJournal, { isLoading: isSubmitting }] = useCreateJournalMutation();
+  const [createJournal, { isLoading: isSubmitting }] =
+    useCreateJournalMutation();
 
   const {
     control,
@@ -62,9 +71,16 @@ export default function NewJournalPage() {
   });
 
   const lines = watch("lines");
-  const totalDebit = useMemo(() => lines?.reduce((a, l) => a + (l.debit || 0), 0) || 0, [lines]);
-  const totalCredit = useMemo(() => lines?.reduce((a, l) => a + (l.credit || 0), 0) || 0, [lines]);
-  const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01 && totalDebit > 0;
+  const totalDebit = useMemo(
+    () => lines?.reduce((a, l) => a + (l.debit || 0), 0) || 0,
+    [lines],
+  );
+  const totalCredit = useMemo(
+    () => lines?.reduce((a, l) => a + (l.credit || 0), 0) || 0,
+    [lines],
+  );
+  const isBalanced =
+    Math.abs(totalDebit - totalCredit) < 0.01 && totalDebit > 0;
 
   const onSubmit: SubmitHandler<JournalEntryDto> = async (data) => {
     try {
@@ -82,7 +98,7 @@ export default function NewJournalPage() {
         value: acc.id,
         label: `${acc.code} — ${acc.name}`,
       })) || [],
-    [accountsData]
+    [accountsData],
   );
 
   return (
@@ -138,7 +154,12 @@ export default function NewJournalPage() {
                 name="reference"
                 control={control}
                 render={({ field }) => (
-                  <Input {...field} value={field.value || ""} placeholder="JV-2026-001" size="large" />
+                  <Input
+                    {...field}
+                    value={field.value || ""}
+                    placeholder="JV-2026-001"
+                    size="large"
+                  />
                 )}
               />
             </Form.Item>
@@ -218,7 +239,11 @@ export default function NewJournalPage() {
                   name={`lines.${index}.description`}
                   control={control}
                   render={({ field }) => (
-                    <Input {...field} value={field.value || ""} placeholder="Line description" />
+                    <Input
+                      {...field}
+                      value={field.value || ""}
+                      placeholder="Line description"
+                    />
                   )}
                 />
               ),
@@ -289,32 +314,59 @@ export default function NewJournalPage() {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                padding: "8px 16px"
+                padding: "8px 16px",
               }}
             >
-              <Button type="dashed" icon={<PlusOutlined />} onClick={() => append({ accountId: "", debit: 0, credit: 0 })}>
+              <Button
+                type="dashed"
+                icon={<PlusOutlined />}
+                onClick={() => append({ accountId: "", debit: 0, credit: 0 })}
+              >
                 Add Line
               </Button>
               <Space size={32}>
-                <span style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}>
+                <span
+                  style={{
+                    color: "var(--color-on-surface-variant)",
+                    fontSize: 13,
+                  }}
+                >
                   Total Debit:{" "}
-                  <strong style={{ color: "#6dd58c", fontFamily: "var(--font-display)" }}>
+                  <strong
+                    style={{
+                      color: "#6dd58c",
+                      fontFamily: "var(--font-display)",
+                    }}
+                  >
                     {formatCurrency(totalDebit)}
                   </strong>
                 </span>
-                <span style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}>
+                <span
+                  style={{
+                    color: "var(--color-on-surface-variant)",
+                    fontSize: 13,
+                  }}
+                >
                   Total Credit:{" "}
-                  <strong style={{ color: "#c3f5ff", fontFamily: "var(--font-display)" }}>
+                  <strong
+                    style={{
+                      color: "#c3f5ff",
+                      fontFamily: "var(--font-display)",
+                    }}
+                  >
                     {formatCurrency(totalCredit)}
                   </strong>
                 </span>
                 {!isBalanced && (totalDebit > 0 || totalCredit > 0) && (
                   <Text type="danger" strong>
-                    ⚠ Unbalanced (Diff: {formatCurrency(Math.abs(totalDebit - totalCredit))})
+                    ⚠ Unbalanced (Diff:{" "}
+                    {formatCurrency(Math.abs(totalDebit - totalCredit))})
                   </Text>
                 )}
                 {isBalanced && (
-                  <Text type="success" strong>✓ Balanced</Text>
+                  <Text type="success" strong>
+                    ✓ Balanced
+                  </Text>
                 )}
               </Space>
             </div>
@@ -336,7 +388,9 @@ export default function NewJournalPage() {
       </div>
       {Object.keys(errors).length > 0 && (
         <div style={{ marginTop: 12 }}>
-          <Text type="danger">Please fix the errors before posting: {JSON.stringify(errors)}</Text>
+          <Text type="danger">
+            Please fix the errors before posting: {JSON.stringify(errors)}
+          </Text>
         </div>
       )}
     </div>

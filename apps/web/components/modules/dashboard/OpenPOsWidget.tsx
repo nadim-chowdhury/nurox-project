@@ -41,7 +41,7 @@ export function OpenPOsWidget({ dateRange }: Props) {
       dataIndex: "status",
       key: "status",
       render: (status: string) => (
-        <Tag color={status === 'SENT' ? 'blue' : 'default'}>{status}</Tag>
+        <Tag color={status === "SENT" ? "blue" : "default"}>{status}</Tag>
       ),
     },
   ];
@@ -51,13 +51,16 @@ export function OpenPOsWidget({ dateRange }: Props) {
   return (
     <Card
       title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ShoppingCartOutlined style={{ color: 'var(--color-info)' }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <ShoppingCartOutlined style={{ color: "var(--color-info)" }} />
           <span>Open Purchase Orders</span>
         </div>
       }
       loading={isLoading}
-      style={{ background: 'var(--color-surface)', border: '1px solid var(--ghost-border)' }}
+      style={{
+        background: "var(--color-surface)",
+        border: "1px solid var(--ghost-border)",
+      }}
       bodyStyle={{ padding: 0 }}
     >
       {openPos.length > 0 ? (
@@ -69,7 +72,11 @@ export function OpenPOsWidget({ dateRange }: Props) {
           rowKey="id"
         />
       ) : (
-        <Empty description="No open POs" image={Empty.PRESENTED_IMAGE_SIMPLE} style={{ padding: 20 }} />
+        <Empty
+          description="No open POs"
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          style={{ padding: 20 }}
+        />
       )}
     </Card>
   );

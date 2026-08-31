@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { Tree, Button, Modal, Form, Input, Select, message } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
-import { 
-  useGetAccountsTreeQuery, 
+import {
+  useGetAccountsTreeQuery,
   useCreateAccountMutation,
-  useGetAccountsQuery
+  useGetAccountsQuery,
 } from "@/store/api/financeApi";
 
 const { TreeNode } = Tree;
@@ -33,8 +33,8 @@ export default function ChartOfAccounts() {
     data.map((item) => {
       if (item.children && item.children.length > 0) {
         return (
-          <TreeNode 
-            title={`${item.code} - ${item.name} (${item.balance} ${item.currency})`} 
+          <TreeNode
+            title={`${item.code} - ${item.name} (${item.balance} ${item.currency})`}
             key={item.id}
           >
             {renderTreeNodes(item.children)}
@@ -42,9 +42,9 @@ export default function ChartOfAccounts() {
         );
       }
       return (
-        <TreeNode 
-          title={`${item.code} - ${item.name} (${item.balance} ${item.currency})`} 
-          key={item.id} 
+        <TreeNode
+          title={`${item.code} - ${item.name} (${item.balance} ${item.currency})`}
+          key={item.id}
         />
       );
     });
@@ -53,9 +53,9 @@ export default function ChartOfAccounts() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold">Chart of Accounts</h2>
-        <Button 
-          type="primary" 
-          icon={<PlusOutlined />} 
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
           onClick={() => setIsModalOpen(true)}
         >
           Add Account
@@ -77,39 +77,44 @@ export default function ChartOfAccounts() {
         onOk={() => form.submit()}
       >
         <Form form={form} layout="vertical" onFinish={handleCreate}>
-          <Form.Item 
-            name="code" 
-            label="Account Code" 
+          <Form.Item
+            name="code"
+            label="Account Code"
             rules={[{ required: true, message: "Required" }]}
           >
             <Input placeholder="e.g., 1010" />
           </Form.Item>
-          <Form.Item 
-            name="name" 
-            label="Account Name" 
+          <Form.Item
+            name="name"
+            label="Account Name"
             rules={[{ required: true, message: "Required" }]}
           >
             <Input placeholder="e.g., Main Cash Account" />
           </Form.Item>
-          <Form.Item 
-            name="type" 
-            label="Account Type" 
+          <Form.Item
+            name="type"
+            label="Account Type"
             rules={[{ required: true, message: "Required" }]}
           >
-            <Select options={[
-              { label: "Asset", value: "ASSET" },
-              { label: "Liability", value: "LIABILITY" },
-              { label: "Equity", value: "EQUITY" },
-              { label: "Revenue", value: "REVENUE" },
-              { label: "Expense", value: "EXPENSE" },
-            ]} />
+            <Select
+              options={[
+                { label: "Asset", value: "ASSET" },
+                { label: "Liability", value: "LIABILITY" },
+                { label: "Equity", value: "EQUITY" },
+                { label: "Revenue", value: "REVENUE" },
+                { label: "Expense", value: "EXPENSE" },
+              ]}
+            />
           </Form.Item>
           <Form.Item name="parentId" label="Parent Account">
-            <Select 
-              allowClear 
+            <Select
+              allowClear
               showSearch
               placeholder="Select parent account"
-              options={flatAccounts?.map(a => ({ label: `${a.code} - ${a.name}`, value: a.id }))}
+              options={flatAccounts?.map((a) => ({
+                label: `${a.code} - ${a.name}`,
+                value: a.id,
+              }))}
             />
           </Form.Item>
           <Form.Item name="description" label="Description">

@@ -10,7 +10,10 @@ export const companyProfileSchema = z.object({
   phoneNumber: z.string().max(20).nullable().optional(),
   email: z.string().email().max(100).nullable().optional(),
   website: z.string().url().max(100).nullable().optional(),
-  primaryColor: z.string().regex(/^#[0-9A-F]{6}$/i).default("#00b96b"),
+  primaryColor: z
+    .string()
+    .regex(/^#[0-9A-F]{6}$/i)
+    .default("#00b96b"),
 });
 
 export type CompanyProfileDto = z.infer<typeof companyProfileSchema>;

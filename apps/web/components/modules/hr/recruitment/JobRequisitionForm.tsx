@@ -1,9 +1,24 @@
 "use client";
 
 import React from "react";
-import { Form, Input, Select, InputNumber, Button, Space, Card, Row, Col, message, Divider } from "antd";
+import {
+  Form,
+  Input,
+  Select,
+  InputNumber,
+  Button,
+  Space,
+  Card,
+  Row,
+  Col,
+  message,
+  Divider,
+} from "antd";
 import { useCreateJobMutation } from "@/store/api/recruitmentApi";
-import { useGetDepartmentsQuery, useGetDesignationsQuery } from "@/store/api/hrApi";
+import {
+  useGetDepartmentsQuery,
+  useGetDesignationsQuery,
+} from "@/store/api/hrApi";
 import { useGetUsersQuery } from "@/store/api/usersApi";
 import { RichTextEditor } from "@/components/common/RichTextEditor";
 import { ApplicationFormBuilder } from "./ApplicationFormBuilder";
@@ -13,7 +28,12 @@ export function JobRequisitionForm({ onSuccess }: { onSuccess?: () => void }) {
   const [createJob, { isLoading }] = useCreateJobMutation();
   const { data: departments } = useGetDepartmentsQuery();
   const { data: designations } = useGetDesignationsQuery();
-  const { data: usersResponse } = useGetUsersQuery({ page: 1, limit: 100, sortBy: "firstName", sortOrder: "ASC" });
+  const { data: usersResponse } = useGetUsersQuery({
+    page: 1,
+    limit: 100,
+    sortBy: "firstName",
+    sortOrder: "ASC",
+  });
   const users = usersResponse?.data;
 
   const onFinish = async (values: any) => {
@@ -22,7 +42,7 @@ export function JobRequisitionForm({ onSuccess }: { onSuccess?: () => void }) {
       const approverIds = [
         values.reportingManagerId,
         values.hrManagerId,
-        values.financeManagerId
+        values.financeManagerId,
       ].filter(Boolean);
 
       const payload = {
@@ -45,7 +65,11 @@ export function JobRequisitionForm({ onSuccess }: { onSuccess?: () => void }) {
         form={form}
         layout="vertical"
         onFinish={onFinish}
-        initialValues={{ currency: "USD", employmentType: "FULL_TIME", vacancies: 1 }}
+        initialValues={{
+          currency: "USD",
+          employmentType: "FULL_TIME",
+          vacancies: 1,
+        }}
       >
         <Row gutter={16}>
           <Col span={24}>
@@ -66,9 +90,19 @@ export function JobRequisitionForm({ onSuccess }: { onSuccess?: () => void }) {
               label="Department"
               rules={[{ required: true, message: "Please select department" }]}
             >
-              <Select placeholder="Select department" showSearch filterOption={(input, option) => (option?.children as unknown as string).toLowerCase().includes(input.toLowerCase())}>
+              <Select
+                placeholder="Select department"
+                showSearch
+                filterOption={(input, option) =>
+                  (option?.children as unknown as string)
+                    .toLowerCase()
+                    .includes(input.toLowerCase())
+                }
+              >
                 {departments?.map((dept) => (
-                  <Select.Option key={dept.id} value={dept.id}>{dept.name}</Select.Option>
+                  <Select.Option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </Select.Option>
                 ))}
               </Select>
             </Form.Item>
@@ -79,9 +113,19 @@ export function JobRequisitionForm({ onSuccess }: { onSuccess?: () => void }) {
               label="Designation"
               rules={[{ required: true, message: "Please select designation" }]}
             >
-              <Select placeholder="Select designation" showSearch filterOption={(input, option) => (option?.children as unknown as string).toLowerCase().includes(input.toLowerCase())}>
+              <Select
+                placeholder="Select designation"
+                showSearch
+                filterOption={(input, option) =>
+                  (option?.children as unknown as string)
+                    .toLowerCase()
+                    .includes(input.toLowerCase())
+                }
+              >
                 {designations?.map((desig) => (
-                  <Select.Option key={desig.id} value={desig.id}>{desig.title}</Select.Option>
+                  <Select.Option key={desig.id} value={desig.id}>
+                    {desig.title}
+                  </Select.Option>
                 ))}
               </Select>
             </Form.Item>
@@ -120,7 +164,9 @@ export function JobRequisitionForm({ onSuccess }: { onSuccess?: () => void }) {
             >
               <Select placeholder="Select Manager" showSearch>
                 {users?.map((u: any) => (
-                  <Select.Option key={u.id} value={u.id}>{u.firstName} {u.lastName}</Select.Option>
+                  <Select.Option key={u.id} value={u.id}>
+                    {u.firstName} {u.lastName}
+                  </Select.Option>
                 ))}
               </Select>
             </Form.Item>
@@ -133,7 +179,9 @@ export function JobRequisitionForm({ onSuccess }: { onSuccess?: () => void }) {
             >
               <Select placeholder="Select HR" showSearch>
                 {users?.map((u: any) => (
-                  <Select.Option key={u.id} value={u.id}>{u.firstName} {u.lastName}</Select.Option>
+                  <Select.Option key={u.id} value={u.id}>
+                    {u.firstName} {u.lastName}
+                  </Select.Option>
                 ))}
               </Select>
             </Form.Item>
@@ -146,15 +194,16 @@ export function JobRequisitionForm({ onSuccess }: { onSuccess?: () => void }) {
             >
               <Select placeholder="Select Finance" showSearch>
                 {users?.map((u: any) => (
-                  <Select.Option key={u.id} value={u.id}>{u.firstName} {u.lastName}</Select.Option>
+                  <Select.Option key={u.id} value={u.id}>
+                    {u.firstName} {u.lastName}
+                  </Select.Option>
                 ))}
               </Select>
             </Form.Item>
           </Col>
         </Row>
 
-        <Divider>
-Compensation & Vacancies</Divider>
+        <Divider>Compensation & Vacancies</Divider>
         <Row gutter={16}>
           <Col span={6}>
             <Form.Item name="vacancies" label="Vacancies">
@@ -186,18 +235,24 @@ Compensation & Vacancies</Divider>
           <RichTextEditor placeholder="Enter job description, requirements, responsibilities..." />
         </Form.Item>
 
-        <Divider>
-Application Form Customization</Divider>
+        <Divider>Application Form Customization</Divider>
         <Form.Item name="applicationFormConfig">
           <ApplicationFormBuilder />
         </Form.Item>
 
         <Form.Item>
           <Space>
-            <Button type="primary" htmlType="submit" loading={isLoading} size="large">
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={isLoading}
+              size="large"
+            >
               Create Requisition
             </Button>
-            <Button onClick={() => form.resetFields()} size="large">Reset</Button>
+            <Button onClick={() => form.resetFields()} size="large">
+              Reset
+            </Button>
           </Space>
         </Form.Item>
       </Form>

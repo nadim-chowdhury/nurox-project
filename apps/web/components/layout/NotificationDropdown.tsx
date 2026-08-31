@@ -29,7 +29,8 @@ export function NotificationDropdown() {
         width: 320,
         backgroundColor: "#ffffff",
         borderRadius: 8,
-        boxShadow: "0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)",
+        boxShadow:
+          "0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)",
         overflow: "hidden",
       }}
     >
@@ -57,7 +58,9 @@ export function NotificationDropdown() {
 
       <div style={{ maxHeight: 400, overflowY: "auto" }}>
         {isLoading ? (
-          <div style={{ padding: 40, textAlign: "center" }}><Spin /></div>
+          <div style={{ padding: 40, textAlign: "center" }}>
+            <Spin />
+          </div>
         ) : notifications.length > 0 ? (
           <List
             itemLayout="horizontal"
@@ -88,21 +91,35 @@ export function NotificationDropdown() {
                   avatar={
                     <Avatar
                       style={{
-                        backgroundColor: item.type === "SYSTEM" ? "#1890ff" : "#52c41a",
+                        backgroundColor:
+                          item.type === "SYSTEM" ? "#1890ff" : "#52c41a",
                       }}
                     >
                       {item.type[0]}
                     </Avatar>
                   }
                   title={
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ fontWeight: item.isRead ? 400 : 600 }}>{item.title}</span>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <span style={{ fontWeight: item.isRead ? 400 : 600 }}>
+                        {item.title}
+                      </span>
                     </div>
                   }
                   description={
                     <div>
-                      <div style={{ fontSize: 13, color: "#666", marginBottom: 4 }}>{item.message}</div>
-                      <div style={{ fontSize: 11, color: "#999" }}>{dayjs(item.createdAt).fromNow()}</div>
+                      <div
+                        style={{ fontSize: 13, color: "#666", marginBottom: 4 }}
+                      >
+                        {item.message}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#999" }}>
+                        {dayjs(item.createdAt).fromNow()}
+                      </div>
                     </div>
                   }
                 />
@@ -123,7 +140,12 @@ export function NotificationDropdown() {
           textAlign: "center",
         }}
       >
-        <Button type="link" size="small" href="/notifications" style={{ width: "100%" }}>
+        <Button
+          type="link"
+          size="small"
+          href="/notifications"
+          style={{ width: "100%" }}
+        >
           View all
         </Button>
       </div>
@@ -131,10 +153,23 @@ export function NotificationDropdown() {
   );
 
   return (
-    <Dropdown dropdownRender={() => content} trigger={["click"]} placement="bottomRight">
-      <div style={{ cursor: "pointer", padding: "0 12px", display: "flex", alignItems: "center" }}>
+    <Dropdown
+      dropdownRender={() => content}
+      trigger={["click"]}
+      placement="bottomRight"
+    >
+      <div
+        style={{
+          cursor: "pointer",
+          padding: "0 12px",
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
         <Badge count={unreadCount} size="small" offset={[2, 0]}>
-          <BellOutlined style={{ fontSize: 20, color: "rgba(255, 255, 255, 0.85)" }} />
+          <BellOutlined
+            style={{ fontSize: 20, color: "rgba(255, 255, 255, 0.85)" }}
+          />
         </Badge>
       </div>
     </Dropdown>

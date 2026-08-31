@@ -31,26 +31,70 @@ export function DashboardFilter({ value }: Props) {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "flex-end",
+        alignItems: "center",
+      }}
+    >
       <Space size="middle">
-        <Text style={{ color: 'var(--color-on-surface-variant)', fontSize: 13 }}>Time Period:</Text>
-        <RangePicker 
+        <Text
+          style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
+        >
+          Time Period:
+        </Text>
+        <RangePicker
           value={value}
           onChange={handleRangeChange}
           presets={[
-            { label: 'Today', value: [dayjs().startOf('day'), dayjs().endOf('day')] },
-            { label: 'This Week', value: [dayjs().startOf('week'), dayjs().endOf('week')] },
-            { label: 'Last 7 Days', value: [dayjs().subtract(7, 'd'), dayjs()] },
-            { label: 'Last 30 Days', value: [dayjs().subtract(30, 'd'), dayjs()] },
-            { label: 'This Month', value: [dayjs().startOf('month'), dayjs().endOf('month')] },
-            { label: 'This Quarter', value: [dayjs().startOf('quarter' as any), dayjs().endOf('quarter' as any)] },
-            { label: 'Last Quarter', value: [dayjs().subtract(1, 'quarter' as any).startOf('quarter' as any), dayjs().subtract(1, 'quarter' as any).endOf('quarter' as any)] },
-            { label: 'This Year', value: [dayjs().startOf('year'), dayjs().endOf('year')] },
+            {
+              label: "Today",
+              value: [dayjs().startOf("day"), dayjs().endOf("day")],
+            },
+            {
+              label: "This Week",
+              value: [dayjs().startOf("week"), dayjs().endOf("week")],
+            },
+            {
+              label: "Last 7 Days",
+              value: [dayjs().subtract(7, "d"), dayjs()],
+            },
+            {
+              label: "Last 30 Days",
+              value: [dayjs().subtract(30, "d"), dayjs()],
+            },
+            {
+              label: "This Month",
+              value: [dayjs().startOf("month"), dayjs().endOf("month")],
+            },
+            {
+              label: "This Quarter",
+              value: [
+                dayjs().startOf("quarter" as any),
+                dayjs().endOf("quarter" as any),
+              ],
+            },
+            {
+              label: "Last Quarter",
+              value: [
+                dayjs()
+                  .subtract(1, "quarter" as any)
+                  .startOf("quarter" as any),
+                dayjs()
+                  .subtract(1, "quarter" as any)
+                  .endOf("quarter" as any),
+              ],
+            },
+            {
+              label: "This Year",
+              value: [dayjs().startOf("year"), dayjs().endOf("year")],
+            },
           ]}
-          style={{ 
-            background: 'var(--color-surface-container-low)', 
-            border: '1px solid var(--ghost-border)',
-            borderRadius: 4
+          style={{
+            background: "var(--color-surface-container-low)",
+            border: "1px solid var(--ghost-border)",
+            borderRadius: 4,
           }}
         />
       </Space>

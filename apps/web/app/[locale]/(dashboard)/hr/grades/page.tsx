@@ -1,14 +1,29 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button, Tag, Space, Modal, Form, Input, InputNumber, Switch, message } from "antd";
+import {
+  Button,
+  Tag,
+  Space,
+  Modal,
+  Form,
+  Input,
+  InputNumber,
+  Switch,
+  message,
+} from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/tables/DataTable";
 import { TableToolbar } from "@/components/tables/TableToolbar";
 import { StatusTag } from "@/components/common/StatusTag";
 import type { ColumnsType } from "antd/es/table";
-import { useGetGradesQuery, useCreateGradeMutation, useUpdateGradeMutation, useDeleteGradeMutation } from "@/store/api/hrApi";
+import {
+  useGetGradesQuery,
+  useCreateGradeMutation,
+  useUpdateGradeMutation,
+  useDeleteGradeMutation,
+} from "@/store/api/hrApi";
 import { confirmModal } from "@/components/common/ConfirmModal";
 
 interface Grade {
@@ -31,8 +46,8 @@ export default function GradesPage() {
   const [editingGrade, setEditingGrade] = useState<Grade | null>(null);
   const [form] = Form.useForm();
 
-  const filtered = (grades || []).filter(
-    (g) => g.name.toLowerCase().includes(search.toLowerCase())
+  const filtered = (grades || []).filter((g) =>
+    g.name.toLowerCase().includes(search.toLowerCase()),
   );
 
   const handleAdd = () => {
@@ -86,7 +101,9 @@ export default function GradesPage() {
       key: "name",
       sorter: (a, b) => a.name.localeCompare(b.name),
       render: (val: string) => (
-        <span style={{ color: "var(--color-on-surface)", fontWeight: 500 }}>{val}</span>
+        <span style={{ color: "var(--color-on-surface)", fontWeight: 500 }}>
+          {val}
+        </span>
       ),
     },
     {
@@ -112,7 +129,9 @@ export default function GradesPage() {
       title: "Status",
       dataIndex: "isActive",
       key: "isActive",
-      render: (val: boolean) => <StatusTag status={val ? "ACTIVE" : "INACTIVE"} />,
+      render: (val: boolean) => (
+        <StatusTag status={val ? "ACTIVE" : "INACTIVE"} />
+      ),
     },
     {
       title: "",
@@ -176,19 +195,54 @@ export default function GradesPage() {
         onOk={() => form.submit()}
         destroyOnClose
       >
-        <Form form={form} layout="vertical" onFinish={onFinish} initialValues={{ isActive: true }}>
-          <Form.Item name="name" label="Grade Name" rules={[{ required: true }]}>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          initialValues={{ isActive: true }}
+        >
+          <Form.Item
+            name="name"
+            label="Grade Name"
+            rules={[{ required: true }]}
+          >
             <Input placeholder="e.g. G1, Senior, Executive" />
           </Form.Item>
-          <Form.Item name="level" label="Seniority Level" rules={[{ required: true }]}>
-            <InputNumber min={1} style={{ width: '100%' }} placeholder="1" />
+          <Form.Item
+            name="level"
+            label="Seniority Level"
+            rules={[{ required: true }]}
+          >
+            <InputNumber min={1} style={{ width: "100%" }} placeholder="1" />
           </Form.Item>
-          <div style={{ display: 'flex', gap: 16 }}>
-            <Form.Item name="minSalary" label="Min Salary" rules={[{ required: true }]} style={{ flex: 1 }}>
-              <InputNumber min={0} style={{ width: '100%' }} formatter={val => `$ ${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} />
+          <div style={{ display: "flex", gap: 16 }}>
+            <Form.Item
+              name="minSalary"
+              label="Min Salary"
+              rules={[{ required: true }]}
+              style={{ flex: 1 }}
+            >
+              <InputNumber
+                min={0}
+                style={{ width: "100%" }}
+                formatter={(val) =>
+                  `$ ${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                }
+              />
             </Form.Item>
-            <Form.Item name="maxSalary" label="Max Salary" rules={[{ required: true }]} style={{ flex: 1 }}>
-              <InputNumber min={0} style={{ width: '100%' }} formatter={val => `$ ${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} />
+            <Form.Item
+              name="maxSalary"
+              label="Max Salary"
+              rules={[{ required: true }]}
+              style={{ flex: 1 }}
+            >
+              <InputNumber
+                min={0}
+                style={{ width: "100%" }}
+                formatter={(val) =>
+                  `$ ${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                }
+              />
             </Form.Item>
           </div>
           <Form.Item name="isActive" label="Is Active" valuePropName="checked">

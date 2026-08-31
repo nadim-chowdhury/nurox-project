@@ -10,7 +10,11 @@ interface SignaturePadProps {
   height?: number;
 }
 
-export function SignaturePad({ onSave, width = 500, height = 200 }: SignaturePadProps) {
+export function SignaturePad({
+  onSave,
+  width = 500,
+  height = 200,
+}: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
@@ -82,7 +86,10 @@ export function SignaturePad({ onSave, width = 500, height = 200 }: SignaturePad
   };
 
   return (
-    <Card size="small" style={{ border: "1px solid var(--color-outline-variant)" }}>
+    <Card
+      size="small"
+      style={{ border: "1px solid var(--color-outline-variant)" }}
+    >
       <canvas
         ref={canvasRef}
         width={width}

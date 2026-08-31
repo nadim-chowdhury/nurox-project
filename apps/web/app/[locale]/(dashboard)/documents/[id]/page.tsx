@@ -1,11 +1,28 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
-import { Button, Card, Col, Row, Space, Typography, message, Modal, Spin } from "antd";
-import { ArrowLeftOutlined, EditOutlined, DownloadOutlined } from "@ant-design/icons";
+import {
+  Button,
+  Card,
+  Col,
+  Row,
+  Space,
+  Typography,
+  message,
+  Modal,
+  Spin,
+} from "antd";
+import {
+  ArrowLeftOutlined,
+  EditOutlined,
+  DownloadOutlined,
+} from "@ant-design/icons";
 import { useRouter, useParams } from "next/navigation";
 import SignatureCanvas from "react-signature-canvas";
-import { useGetDownloadUrlQuery, useSignDocumentMutation } from "@/store/api/documentsApi";
+import {
+  useGetDownloadUrlQuery,
+  useSignDocumentMutation,
+} from "@/store/api/documentsApi";
 
 const { Title, Text } = Typography;
 
@@ -18,7 +35,9 @@ export default function DocumentViewerPage() {
   const [signerName, setSignerName] = useState("John Doe"); // Hardcoded for demo
   const sigPad = useRef<any>(null);
 
-  const { data: downloadData, isLoading } = useGetDownloadUrlQuery({ id: documentId });
+  const { data: downloadData, isLoading } = useGetDownloadUrlQuery({
+    id: documentId,
+  });
   const [signDocument, { isLoading: isSigning }] = useSignDocumentMutation();
 
   const handleSign = async () => {
@@ -27,7 +46,9 @@ export default function DocumentViewerPage() {
       return;
     }
 
-    const signatureBase64 = sigPad.current?.getTrimmedCanvas().toDataURL("image/png");
+    const signatureBase64 = sigPad.current
+      ?.getTrimmedCanvas()
+      .toDataURL("image/png");
 
     try {
       await signDocument({
@@ -47,9 +68,9 @@ export default function DocumentViewerPage() {
   return (
     <div className="animate-fade-in-up">
       <Space style={{ marginBottom: 24 }}>
-        <Button 
-          icon={<ArrowLeftOutlined />} 
-          type="text" 
+        <Button
+          icon={<ArrowLeftOutlined />}
+          type="text"
           onClick={() => router.push("/documents")}
           style={{ color: "var(--color-on-surface-variant)" }}
         >
@@ -59,36 +80,55 @@ export default function DocumentViewerPage() {
 
       <Row gutter={[24, 24]}>
         <Col xs={24} lg={18}>
-          <Card 
-            title={<Title level={4} style={{ margin: 0 }}>Document Preview</Title>}
+          <Card
+            title={
+              <Title level={4} style={{ margin: 0 }}>
+                Document Preview
+              </Title>
+            }
             extra={
               <Space>
-                <Button icon={<DownloadOutlined />} onClick={() => window.open(downloadData?.downloadUrl)}>
+                <Button
+                  icon={<DownloadOutlined />}
+                  onClick={() => window.open(downloadData?.downloadUrl)}
+                >
                   Download
                 </Button>
-                <Button type="primary" icon={<EditOutlined />} onClick={() => setIsSignModalVisible(true)}>
+                <Button
+                  type="primary"
+                  icon={<EditOutlined />}
+                  onClick={() => setIsSignModalVisible(true)}
+                >
                   E-Sign
                 </Button>
               </Space>
             }
-            style={{ 
-              background: 'rgba(255,255,255,0.02)', 
-              borderColor: 'rgba(255,255,255,0.05)',
-              minHeight: '80vh'
+            style={{
+              background: "rgba(255,255,255,0.02)",
+              borderColor: "rgba(255,255,255,0.05)",
+              minHeight: "80vh",
             }}
           >
             {isLoading ? (
-              <div style={{ textAlign: 'center', padding: 100 }}><Spin size="large" /></div>
+              <div style={{ textAlign: "center", padding: 100 }}>
+                <Spin size="large" />
+              </div>
             ) : downloadData?.downloadUrl ? (
-              <iframe 
-                src={downloadData.downloadUrl} 
-                width="100%" 
-                height="800px" 
-                style={{ border: 'none', borderRadius: 8 }}
+              <iframe
+                src={downloadData.downloadUrl}
+                width="100%"
+                height="800px"
+                style={{ border: "none", borderRadius: 8 }}
                 title="Document Preview"
               />
             ) : (
-              <div style={{ textAlign: 'center', color: 'var(--color-on-surface-variant)', padding: 100 }}>
+              <div
+                style={{
+                  textAlign: "center",
+                  color: "var(--color-on-surface-variant)",
+                  padding: 100,
+                }}
+              >
                 Failed to load document preview.
               </div>
             )}
@@ -96,17 +136,22 @@ export default function DocumentViewerPage() {
         </Col>
 
         <Col xs={24} lg={6}>
-          <Card 
-            title="Properties" 
-            style={{ 
-              background: 'rgba(255,255,255,0.02)', 
-              borderColor: 'rgba(255,255,255,0.05)' 
+          <Card
+            title="Properties"
+            style={{
+              background: "rgba(255,255,255,0.02)",
+              borderColor: "rgba(255,255,255,0.05)",
             }}
           >
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space direction="vertical" style={{ width: "100%" }}>
               <div>
-                <Text type="secondary" style={{ color: 'var(--color-on-surface-variant)' }}>Document ID</Text>
-                <p style={{ color: 'var(--color-on-surface)' }}>{documentId}</p>
+                <Text
+                  type="secondary"
+                  style={{ color: "var(--color-on-surface-variant)" }}
+                >
+                  Document ID
+                </Text>
+                <p style={{ color: "var(--color-on-surface)" }}>{documentId}</p>
               </div>
             </Space>
           </Card>
@@ -122,26 +167,30 @@ export default function DocumentViewerPage() {
         okText="Sign & Apply"
         width={600}
       >
-        <div style={{ padding: '20px 0' }}>
-          <p style={{ marginBottom: 16 }}>Sign below as <strong>{signerName}</strong>:</p>
-          <div style={{ 
-            border: '2px dashed var(--color-outline)', 
-            borderRadius: 8, 
-            background: '#fff', // White background needed for clear signature capture
-            padding: 4 
-          }}>
-            <SignatureCanvas 
+        <div style={{ padding: "20px 0" }}>
+          <p style={{ marginBottom: 16 }}>
+            Sign below as <strong>{signerName}</strong>:
+          </p>
+          <div
+            style={{
+              border: "2px dashed var(--color-outline)",
+              borderRadius: 8,
+              background: "#fff", // White background needed for clear signature capture
+              padding: 4,
+            }}
+          >
+            <SignatureCanvas
               ref={sigPad}
               penColor="black"
               canvasProps={{
-                width: 500, 
-                height: 200, 
-                className: 'sigCanvas'
-              }} 
+                width: 500,
+                height: 200,
+                className: "sigCanvas",
+              }}
             />
           </div>
-          <Button 
-            type="link" 
+          <Button
+            type="link"
             onClick={() => sigPad.current?.clear()}
             style={{ marginTop: 8, padding: 0 }}
           >

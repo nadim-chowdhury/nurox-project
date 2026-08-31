@@ -108,6 +108,14 @@ export class ManufacturingService {
     return { ...bom, items };
   }
 
+  async listBoms(tenantId: string) {
+    return this.bomRepo.find({
+      where: { tenantId },
+      relations: ['items', 'finishedProduct'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   private buildDefaultStages(
     tenantId: string,
     workOrderId: string,

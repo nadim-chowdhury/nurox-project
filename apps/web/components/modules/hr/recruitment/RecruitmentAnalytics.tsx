@@ -2,23 +2,23 @@
 
 import React from "react";
 import { Row, Col, Card, Statistic, Table, Progress, Typography } from "antd";
-import { 
-  UserOutlined, 
-  HourglassOutlined, 
-  CheckCircleOutlined, 
-  ArrowUpOutlined 
+import {
+  UserOutlined,
+  HourglassOutlined,
+  CheckCircleOutlined,
+  ArrowUpOutlined,
 } from "@ant-design/icons";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  PieChart, 
-  Pie, 
-  Cell 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import { useGetAnalyticsQuery } from "@/store/api/recruitmentApi";
 
@@ -35,11 +35,13 @@ export function RecruitmentAnalytics() {
   const sourceData = analytics?.sources || [];
 
   // Transform interviewer load for the table
-  const interviewerLoad = Object.entries(analytics?.interviewerLoad || {}).map(([name, count]) => ({
-    name,
-    interviews: count,
-    rating: 4.5, // Mocked
-  }));
+  const interviewerLoad = Object.entries(analytics?.interviewerLoad || {}).map(
+    ([name, count]) => ({
+      name,
+      interviews: count,
+      rating: 4.5, // Mocked
+    }),
+  );
 
   return (
     <div style={{ padding: 24 }}>
@@ -82,7 +84,12 @@ export function RecruitmentAnalytics() {
           <Card bordered={false} className="analytics-card">
             <Statistic
               title="Success Rate"
-              value={((analytics?.funnel?.find((f: any) => f.name === 'HIRED')?.value || 0) / (analytics?.totalApplicants || 1)) * 100}
+              value={
+                ((analytics?.funnel?.find((f: any) => f.name === "HIRED")
+                  ?.value || 0) /
+                  (analytics?.totalApplicants || 1)) *
+                100
+              }
               precision={1}
               valueStyle={{ color: "#1677ff" }}
               prefix={<CheckCircleOutlined />}
@@ -123,7 +130,10 @@ export function RecruitmentAnalytics() {
                     dataKey="value"
                   >
                     {sourceData.map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
                     ))}
                   </Pie>
                   <Tooltip />
@@ -131,9 +141,26 @@ export function RecruitmentAnalytics() {
               </ResponsiveContainer>
               <div style={{ minWidth: 150 }}>
                 {sourceData.map((s: any, i: number) => (
-                  <div key={s.name} style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: COLORS[i % COLORS.length], marginRight: 8 }} />
-                    <Text type="secondary">{s.name}: {s.value}</Text>
+                  <div
+                    key={s.name}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: "50%",
+                        backgroundColor: COLORS[i % COLORS.length],
+                        marginRight: 8,
+                      }}
+                    />
+                    <Text type="secondary">
+                      {s.name}: {s.value}
+                    </Text>
                   </div>
                 ))}
               </div>
@@ -145,26 +172,38 @@ export function RecruitmentAnalytics() {
       <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
         <Col span={24}>
           <Card title="Interviewer Performance & Load" bordered={false}>
-            <Table 
-              dataSource={interviewerLoad} 
+            <Table
+              dataSource={interviewerLoad}
               pagination={false}
               size="small"
               columns={[
                 { title: "Interviewer", dataIndex: "name", key: "name" },
-                { title: "Total Interviews", dataIndex: "interviews", key: "interviews" },
-                { 
-                  title: "Load", 
+                {
+                  title: "Total Interviews",
+                  dataIndex: "interviews",
+                  key: "interviews",
+                },
+                {
+                  title: "Load",
                   key: "load",
                   render: (_, record: any) => (
-                    <Progress percent={(record.interviews / 20) * 100} showInfo={false} strokeColor="#1677ff" />
-                  )
+                    <Progress
+                      percent={(record.interviews / 20) * 100}
+                      showInfo={false}
+                      strokeColor="#1677ff"
+                    />
+                  ),
                 },
-                { 
-                  title: "Avg. Rating", 
-                  dataIndex: "rating", 
+                {
+                  title: "Avg. Rating",
+                  dataIndex: "rating",
                   key: "rating",
-                  render: (v) => <Text strong color="#faad14">{v} / 5.0</Text>
-                }
+                  render: (v) => (
+                    <Text strong color="#faad14">
+                      {v} / 5.0
+                    </Text>
+                  ),
+                },
               ]}
             />
           </Card>

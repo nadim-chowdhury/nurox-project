@@ -28,7 +28,11 @@ export function ComparisonToggle({ checked }: Props) {
   return (
     <Space size="large">
       <Space>
-        <Text style={{ color: 'var(--color-on-surface-variant)', fontSize: 13 }}>Comparison Mode:</Text>
+        <Text
+          style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
+        >
+          Comparison Mode:
+        </Text>
         <Switch checked={checked} onChange={onChange} size="small" />
       </Space>
     </Space>

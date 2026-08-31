@@ -1,39 +1,105 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, Clock, CheckSquare } from "lucide-react";
+import React from "react";
+import { usePathname, useRouter, useParams } from "next/navigation";
+import {
+  DashboardOutlined,
+  TeamOutlined,
+  DollarOutlined,
+  ProjectOutlined,
+  ShoppingOutlined,
+} from "@ant-design/icons";
 
 export default function MobileTabBar() {
   const pathname = usePathname();
   const router = useRouter();
+  const params = useParams();
+  const locale = (params?.locale as string) || "en";
 
   const tabs = [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/en" },
-    { label: "HR", icon: Users, href: "/en/hr" },
-    { label: "Attendance", icon: Clock, href: "/en/attendance" },
-    { label: "Tasks", icon: CheckSquare, href: "/en/projects" },
+    {
+      label: "Dashboard",
+      icon: DashboardOutlined,
+      href: `/${locale}/dashboard`,
+    },
+    { label: "HR", icon: TeamOutlined, href: `/${locale}/hr/employees` },
+    {
+      label: "Finance",
+      icon: DollarOutlined,
+      href: `/${locale}/finance/journals`,
+    },
+    { label: "Projects", icon: ProjectOutlined, href: `/${locale}/projects` },
+    { label: "POS", icon: ShoppingOutlined, href: `/${locale}/pos` },
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 flex h-16 w-full items-center justify-around border-t border-gray-200 bg-white/80 backdrop-blur-md pb-safe md:hidden dark:border-gray-800 dark:bg-gray-900/80">
+    <nav
+      aria-label="Mobile Navigation Bar"
+      className="md:hidden"
+      style={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1000,
+        height: 60,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-around",
+        background: "rgba(17, 24, 39, 0.85)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        borderTop: "1px solid var(--ghost-border, rgba(61, 74, 99, 0.15))",
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+      }}
+    >
       {tabs.map((tab) => {
         const isActive =
-          pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+          pathname === tab.href ||
+          (tab.href !== `/${locale}/dashboard` &&
+            pathname.startsWith(tab.href));
         return (
           <button
             key={tab.href}
+            type="button"
             onClick={() => router.push(tab.href)}
-            className={`flex flex-col items-center justify-center space-y-1 w-full h-full ${
-              isActive
-                ? "text-primary"
-                : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
-            }`}
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 4,
+              flex: 1,
+              height: "100%",
+              color: isActive
+                ? "var(--color-primary, #c3f5ff)"
+                : "var(--color-on-surface-variant, #9aa5be)",
+              transition: "color 0.15s ease",
+            }}
           >
-            <tab.icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
-            <span className="text-[10px] font-medium">{tab.label}</span>
+            <tab.icon
+              style={{
+                fontSize: 18,
+                color: isActive
+                  ? "var(--color-primary, #c3f5ff)"
+                  : "var(--color-on-surface-variant, #9aa5be)",
+              }}
+            />
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: isActive ? 600 : 400,
+                letterSpacing: "0.02em",
+              }}
+            >
+              {tab.label}
+            </span>
           </button>
         );
       })}
-    </div>
+    </nav>
   );
 }

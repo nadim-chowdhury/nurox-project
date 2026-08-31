@@ -1,13 +1,35 @@
 "use client";
 
 import React, { useState } from "react";
-import { List, Card, Button, Checkbox, Space, Modal, Typography, Tag, Form, Input, DatePicker, message, Row, Col, Divider } from "antd";
-import { PlusOutlined, WarningOutlined, CalendarOutlined, CheckCircleOutlined, FilePdfOutlined } from "@ant-design/icons";
-import { 
+import {
+  List,
+  Card,
+  Button,
+  Checkbox,
+  Space,
+  Modal,
+  Typography,
+  Tag,
+  Form,
+  Input,
+  DatePicker,
+  message,
+  Row,
+  Col,
+  Divider,
+} from "antd";
+import {
+  PlusOutlined,
+  WarningOutlined,
+  CalendarOutlined,
+  CheckCircleOutlined,
+  FilePdfOutlined,
+} from "@ant-design/icons";
+import {
   useGetPerformanceReviewsQuery,
   useGetPIPActionsQuery,
   useCreatePIPActionMutation,
-  useUpdatePIPActionMutation
+  useUpdatePIPActionMutation,
 } from "@/store/api/hrApi";
 import { formatDate } from "@/lib/utils";
 
@@ -18,12 +40,18 @@ interface Props {
 }
 
 export function PIPTab({ employeeId }: Props) {
-  const { data: pips, isLoading } = useGetPerformanceReviewsQuery({ employeeId, type: "PIP" });
-  const [selectedPip, setSelectedReview] = useState<any>(null);
-  const { data: actions, isLoading: isActionsLoading } = useGetPIPActionsQuery(selectedPip?.id, {
-    skip: !selectedPip
+  const { data: pips, isLoading } = useGetPerformanceReviewsQuery({
+    employeeId,
+    type: "PIP",
   });
-  
+  const [selectedPip, setSelectedReview] = useState<any>(null);
+  const { data: actions, isLoading: isActionsLoading } = useGetPIPActionsQuery(
+    selectedPip?.id,
+    {
+      skip: !selectedPip,
+    },
+  );
+
   const [createAction] = useCreatePIPActionMutation();
   const [updateAction] = useUpdatePIPActionMutation();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -57,37 +85,57 @@ export function PIPTab({ employeeId }: Props) {
     <div>
       <Row gutter={24}>
         <Col span={8}>
-          <Title level={5} style={{ marginBottom: 16 }}>PIP Records</Title>
+          <Title level={5} style={{ marginBottom: 16 }}>
+            PIP Records
+          </Title>
           <List
             loading={isLoading}
             dataSource={pips}
             renderItem={(item) => (
-              <Card 
-                size="small" 
+              <Card
+                size="small"
                 hoverable
                 onClick={() => setSelectedReview(item)}
-                style={{ 
-                  marginBottom: 12, 
-                  background: selectedPip?.id === item.id ? 'rgba(255, 180, 171, 0.05)' : 'var(--color-surface-container-low)',
-                  borderColor: selectedPip?.id === item.id ? 'var(--color-error)' : 'var(--ghost-border)'
+                style={{
+                  marginBottom: 12,
+                  background:
+                    selectedPip?.id === item.id
+                      ? "rgba(255, 180, 171, 0.05)"
+                      : "var(--color-surface-container-low)",
+                  borderColor:
+                    selectedPip?.id === item.id
+                      ? "var(--color-error)"
+                      : "var(--ghost-border)",
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Space>
-                        <WarningOutlined style={{ color: 'var(--color-error)' }} />
-                        <Text strong>{item.period}</Text>
-                    </Space>
-                    <Button 
-                        size="small" 
-                        type="text" 
-                        icon={<FilePdfOutlined />} 
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(`${process.env.NEXT_PUBLIC_API_URL}/hr/performance-reviews/${item.id}/pip-letter`, "_blank");
-                        }}
-                    />
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Space>
+                    <WarningOutlined style={{ color: "var(--color-error)" }} />
+                    <Text strong>{item.period}</Text>
+                  </Space>
+                  <Button
+                    size="small"
+                    type="text"
+                    icon={<FilePdfOutlined />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(
+                        `${process.env.NEXT_PUBLIC_API_URL}/hr/performance-reviews/${item.id}/pip-letter`,
+                        "_blank",
+                      );
+                    }}
+                  />
                 </div>
-                <Paragraph ellipsis={{ rows: 2 }} style={{ fontSize: 12, marginTop: 8, marginBottom: 0 }}>
+                <Paragraph
+                  ellipsis={{ rows: 2 }}
+                  style={{ fontSize: 12, marginTop: 8, marginBottom: 0 }}
+                >
                   {item.objective}
                 </Paragraph>
               </Card>
@@ -97,13 +145,33 @@ export function PIPTab({ employeeId }: Props) {
 
         <Col span={16}>
           {selectedPip ? (
-            <Card style={{ background: 'var(--color-surface-container-low)', border: '1px solid var(--ghost-border)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Card
+              style={{
+                background: "var(--color-surface-container-low)",
+                border: "1px solid var(--ghost-border)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                }}
+              >
                 <div>
-                  <Title level={4} style={{ margin: 0 }}>{selectedPip.period} Action Plan</Title>
+                  <Title level={4} style={{ margin: 0 }}>
+                    {selectedPip.period} Action Plan
+                  </Title>
                   <Text type="secondary">{selectedPip.objective}</Text>
                 </div>
-                <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>Add Target</Button>
+                <Button
+                  type="primary"
+                  size="small"
+                  icon={<PlusOutlined />}
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  Add Target
+                </Button>
               </div>
 
               <Divider />
@@ -114,27 +182,47 @@ export function PIPTab({ employeeId }: Props) {
                 renderItem={(action: any) => (
                   <List.Item
                     actions={[
-                      <Checkbox 
-                        key="status" 
-                        checked={action.isAchieved} 
-                        onChange={(e) => handleToggleAchieved(action.id, e.target.checked)}
+                      <Checkbox
+                        key="status"
+                        checked={action.isAchieved}
+                        onChange={(e) =>
+                          handleToggleAchieved(action.id, e.target.checked)
+                        }
                       >
                         Achieved
-                      </Checkbox>
+                      </Checkbox>,
                     ]}
                   >
                     <List.Item.Meta
                       title={
                         <Space>
                           <Text strong>{action.targetArea}</Text>
-                          {action.isAchieved && <Tag color="success" icon={<CheckCircleOutlined />}>Done</Tag>}
+                          {action.isAchieved && (
+                            <Tag color="success" icon={<CheckCircleOutlined />}>
+                              Done
+                            </Tag>
+                          )}
                         </Space>
                       }
                       description={
                         <div style={{ marginTop: 4 }}>
-                          <div style={{ fontSize: 13, color: 'var(--color-on-surface)' }}>{action.expectedOutcome}</div>
-                          <div style={{ fontSize: 11, color: 'var(--color-on-surface-variant)', marginTop: 4 }}>
-                            <CalendarOutlined /> Review Date: {formatDate(action.reviewDate)}
+                          <div
+                            style={{
+                              fontSize: 13,
+                              color: "var(--color-on-surface)",
+                            }}
+                          >
+                            {action.expectedOutcome}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 11,
+                              color: "var(--color-on-surface-variant)",
+                              marginTop: 4,
+                            }}
+                          >
+                            <CalendarOutlined /> Review Date:{" "}
+                            {formatDate(action.reviewDate)}
                           </div>
                         </div>
                       }
@@ -144,8 +232,18 @@ export function PIPTab({ employeeId }: Props) {
               />
             </Card>
           ) : (
-            <Card style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.02)' }}>
-              <Text type="secondary">Select a PIP record to see the action plan</Text>
+            <Card
+              style={{
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(255,255,255,0.02)",
+              }}
+            >
+              <Text type="secondary">
+                Select a PIP record to see the action plan
+              </Text>
             </Card>
           )}
         </Col>
@@ -157,15 +255,35 @@ export function PIPTab({ employeeId }: Props) {
         onCancel={() => setIsModalOpen(false)}
         onOk={() => form.submit()}
       >
-        <Form form={form} layout="vertical" onFinish={handleAddAction} style={{ marginTop: 16 }}>
-          <Form.Item name="targetArea" label="Target Area / Skill" rules={[{ required: true }]}>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleAddAction}
+          style={{ marginTop: 16 }}
+        >
+          <Form.Item
+            name="targetArea"
+            label="Target Area / Skill"
+            rules={[{ required: true }]}
+          >
             <Input placeholder="e.g. Code Quality, Punctuality..." />
           </Form.Item>
-          <Form.Item name="expectedOutcome" label="Expected Outcome" rules={[{ required: true }]}>
-            <Input.TextArea rows={3} placeholder="Describe what success looks like..." />
+          <Form.Item
+            name="expectedOutcome"
+            label="Expected Outcome"
+            rules={[{ required: true }]}
+          >
+            <Input.TextArea
+              rows={3}
+              placeholder="Describe what success looks like..."
+            />
           </Form.Item>
-          <Form.Item name="reviewDate" label="Review Date" rules={[{ required: true }]}>
-            <DatePicker style={{ width: '100%' }} />
+          <Form.Item
+            name="reviewDate"
+            label="Review Date"
+            rules={[{ required: true }]}
+          >
+            <DatePicker style={{ width: "100%" }} />
           </Form.Item>
         </Form>
       </Modal>

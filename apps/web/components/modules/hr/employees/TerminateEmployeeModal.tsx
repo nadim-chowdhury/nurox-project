@@ -1,7 +1,15 @@
 "use client";
 
 import React from "react";
-import { Modal, Form, Select, DatePicker, Input, message, Checkbox } from "antd";
+import {
+  Modal,
+  Form,
+  Select,
+  DatePicker,
+  Input,
+  message,
+  Checkbox,
+} from "antd";
 import { useTerminateEmployeeMutation } from "@/store/api/hrApi";
 import dayjs from "dayjs";
 
@@ -26,7 +34,11 @@ const clearanceItems = [
   "Full & Final Settlement Paid",
 ];
 
-export const TerminateEmployeeModal: React.FC<Props> = ({ employeeId, visible, onClose }) => {
+export const TerminateEmployeeModal: React.FC<Props> = ({
+  employeeId,
+  visible,
+  onClose,
+}) => {
   const [form] = Form.useForm();
   const [terminate, { isLoading }] = useTerminateEmployeeMutation();
 

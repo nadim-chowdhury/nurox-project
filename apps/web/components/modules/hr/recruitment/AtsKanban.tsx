@@ -21,7 +21,11 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Card, Badge, Space, Button, message, Modal } from "antd";
-import { MoreOutlined, CalendarOutlined, FileTextOutlined } from "@ant-design/icons";
+import {
+  MoreOutlined,
+  CalendarOutlined,
+  FileTextOutlined,
+} from "@ant-design/icons";
 import { Avatar } from "@/components/common/Avatar";
 import { useUpdateApplicationStatusMutation } from "@/store/api/recruitmentApi";
 import { ApplicationDetails } from "./ApplicationDetails";
@@ -53,7 +57,11 @@ const COLUMNS = [
   { id: "REJECTED", title: "Rejected" },
 ];
 
-export function AtsKanban({ initialApplications }: { initialApplications: any[] }) {
+export function AtsKanban({
+  initialApplications,
+}: {
+  initialApplications: any[];
+}) {
   const [applications, setApplications] = useState<Application[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
@@ -61,12 +69,16 @@ export function AtsKanban({ initialApplications }: { initialApplications: any[] 
 
   useEffect(() => {
     if (initialApplications) {
-      setApplications(initialApplications.map(app => ({
-        id: app.id,
-        candidateName: app.candidate ? `${app.candidate.firstName} ${app.candidate.lastName}` : "Unknown",
-        jobTitle: app.job?.title || "Unknown position",
-        status: app.status,
-      })));
+      setApplications(
+        initialApplications.map((app) => ({
+          id: app.id,
+          candidateName: app.candidate
+            ? `${app.candidate.firstName} ${app.candidate.lastName}`
+            : "Unknown",
+          jobTitle: app.job?.title || "Unknown position",
+          status: app.status,
+        })),
+      );
     }
   }, [initialApplications]);
 
@@ -74,7 +86,7 @@ export function AtsKanban({ initialApplications }: { initialApplications: any[] 
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   function handleDragStart(event: DragStartEvent) {
@@ -90,24 +102,26 @@ export function AtsKanban({ initialApplications }: { initialApplications: any[] 
 
     // Determine if it was dropped on a column or another card
     let newStatus = overId;
-    if (!COLUMNS.some(col => col.id === overId)) {
-        // Dropped on a card, get its status
-        const overApp = applications.find(a => a.id === overId);
-        if (overApp) newStatus = overApp.status;
+    if (!COLUMNS.some((col) => col.id === overId)) {
+      // Dropped on a card, get its status
+      const overApp = applications.find((a) => a.id === overId);
+      if (overApp) newStatus = overApp.status;
     }
 
     if (activeApp && activeApp.status !== newStatus) {
-        try {
-            await updateStatus({ id: activeApp.id, status: newStatus }).unwrap();
-            setApplications((apps) =>
-                apps.map((a) => (a.id === active.id ? { ...a, status: newStatus } : a))
-            );
-            message.success(`Candidate moved to ${newStatus}`);
-        } catch (err) {
-            message.error("Failed to update application status");
-        }
+      try {
+        await updateStatus({ id: activeApp.id, status: newStatus }).unwrap();
+        setApplications((apps) =>
+          apps.map((a) =>
+            a.id === active.id ? { ...a, status: newStatus } : a,
+          ),
+        );
+        message.success(`Candidate moved to ${newStatus}`);
+      } catch (err) {
+        message.error("Failed to update application status");
+      }
     }
-    
+
     setActiveId(null);
   }
 
@@ -119,7 +133,14 @@ export function AtsKanban({ initialApplications }: { initialApplications: any[] 
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div style={{ display: "flex", gap: 16, overflowX: "auto", paddingBottom: 16 }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 16,
+            overflowX: "auto",
+            paddingBottom: 16,
+          }}
+        >
           {COLUMNS.map((col) => (
             <KanbanColumn
               key={col.id}
@@ -130,15 +151,17 @@ export function AtsKanban({ initialApplications }: { initialApplications: any[] 
             />
           ))}
         </div>
-        <DragOverlay dropAnimation={{
-          sideEffects: defaultDropAnimationSideEffects({
-            styles: {
-              active: {
-                opacity: '0.5',
+        <DragOverlay
+          dropAnimation={{
+            sideEffects: defaultDropAnimationSideEffects({
+              styles: {
+                active: {
+                  opacity: "0.5",
+                },
               },
-            },
-          }),
-        }}>
+            }),
+          }}
+        >
           {activeId ? (
             <ApplicationCard
               application={applications.find((a) => a.id === activeId)!}
@@ -156,20 +179,25 @@ export function AtsKanban({ initialApplications }: { initialApplications: any[] 
         destroyOnClose
         styles={{ body: { padding: 0 } }}
       >
-        {selectedAppId && <ApplicationDetails id={selectedAppId} onSuccess={() => setSelectedAppId(null)} />}
+        {selectedAppId && (
+          <ApplicationDetails
+            id={selectedAppId}
+            onSuccess={() => setSelectedAppId(null)}
+          />
+        )}
       </Modal>
     </>
   );
 }
 
-function KanbanColumn({ 
-  id: _id, 
-  title, 
-  applications, 
-  onCardClick 
-}: { 
-  id: string; 
-  title: string; 
+function KanbanColumn({
+  id: _id,
+  title,
+  applications,
+  onCardClick,
+}: {
+  id: string;
+  title: string;
   applications: Application[];
   onCardClick: (id: string) => void;
 }) {
@@ -186,15 +214,48 @@ function KanbanColumn({
         minHeight: 500,
       }}
     >
-      <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--color-on-surface)" }}>{title}</h3>
-        <Badge count={applications.length} style={{ backgroundColor: "var(--color-primary)" }} />
+      <div
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <h3
+          style={{
+            margin: 0,
+            fontSize: 14,
+            fontWeight: 700,
+            color: "var(--color-on-surface)",
+          }}
+        >
+          {title}
+        </h3>
+        <Badge
+          count={applications.length}
+          style={{ backgroundColor: "var(--color-primary)" }}
+        />
       </div>
-      
-      <SortableContext items={applications.map(a => a.id)} strategy={verticalListSortingStrategy}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, flexGrow: 1 }}>
+
+      <SortableContext
+        items={applications.map((a) => a.id)}
+        strategy={verticalListSortingStrategy}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+            flexGrow: 1,
+          }}
+        >
           {applications.map((app) => (
-            <SortableApplicationCard key={app.id} application={app} onClick={() => onCardClick(app.id)} />
+            <SortableApplicationCard
+              key={app.id}
+              application={app}
+              onClick={() => onCardClick(app.id)}
+            />
           ))}
         </div>
       </SortableContext>
@@ -202,7 +263,13 @@ function KanbanColumn({
   );
 }
 
-function SortableApplicationCard({ application, onClick }: { application: Application; onClick: () => void }) {
+function SortableApplicationCard({
+  application,
+  onClick,
+}: {
+  application: Application;
+  onClick: () => void;
+}) {
   const {
     attributes,
     listeners,
@@ -219,17 +286,29 @@ function SortableApplicationCard({ application, onClick }: { application: Applic
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} onClick={(e) => {
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      onClick={(e) => {
         // Prevent drag listener from blocking click
         if (e.defaultPrevented) return;
         onClick();
-    }}>
+      }}
+    >
       <ApplicationCard application={application} />
     </div>
   );
 }
 
-function ApplicationCard({ application, isOverlay }: { application: Application; isOverlay?: boolean }) {
+function ApplicationCard({
+  application,
+  isOverlay,
+}: {
+  application: Application;
+  isOverlay?: boolean;
+}) {
   return (
     <Card
       size="small"
@@ -237,37 +316,72 @@ function ApplicationCard({ application, isOverlay }: { application: Application;
       style={{
         cursor: "grab",
         borderRadius: 8,
-        boxShadow: isOverlay ? "0 12px 24px rgba(0,0,0,0.2)" : "0 2px 4px rgba(0,0,0,0.05)",
-        border: isOverlay ? "2px solid var(--color-primary)" : "1px solid var(--color-outline-variant)",
+        boxShadow: isOverlay
+          ? "0 12px 24px rgba(0,0,0,0.2)"
+          : "0 2px 4px rgba(0,0,0,0.05)",
+        border: isOverlay
+          ? "2px solid var(--color-primary)"
+          : "1px solid var(--color-outline-variant)",
         backgroundColor: "var(--color-surface)",
       }}
       bodyStyle={{ padding: 12 }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: 8,
+        }}
+      >
         <Space>
           <Avatar name={application.candidateName} size={28} />
           <div>
-            <div style={{ fontWeight: 600, fontSize: 13, color: "var(--color-on-surface)" }}>{application.candidateName}</div>
-            <div style={{ color: "var(--color-on-surface-variant)", fontSize: 11 }}>{application.jobTitle}</div>
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: 13,
+                color: "var(--color-on-surface)",
+              }}
+            >
+              {application.candidateName}
+            </div>
+            <div
+              style={{ color: "var(--color-on-surface-variant)", fontSize: 11 }}
+            >
+              {application.jobTitle}
+            </div>
           </div>
         </Space>
-        <Button 
-            type="text" 
-            size="small" 
-            icon={<MoreOutlined />} 
-            onClick={(e) => {
-                e.stopPropagation();
-                // Show actions menu
-            }}
+        <Button
+          type="text"
+          size="small"
+          icon={<MoreOutlined />}
+          onClick={(e) => {
+            e.stopPropagation();
+            // Show actions menu
+          }}
         />
       </div>
-      
-      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8, gap: 8 }}>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          marginTop: 8,
+          gap: 8,
+        }}
+      >
         {application.status === "INTERVIEW" && (
-            <CalendarOutlined style={{ color: "var(--color-primary)", fontSize: 14 }} title="Interview Scheduled" />
+          <CalendarOutlined
+            style={{ color: "var(--color-primary)", fontSize: 14 }}
+            title="Interview Scheduled"
+          />
         )}
         {application.status === "OFFER" && (
-            <FileTextOutlined style={{ color: "#00b96b", fontSize: 14 }} title="Offer Extended" />
+          <FileTextOutlined
+            style={{ color: "#00b96b", fontSize: 14 }}
+            title="Offer Extended"
+          />
         )}
       </div>
     </Card>

@@ -2,7 +2,12 @@
 
 import React, { useState } from "react";
 import { Modal, Upload, Button, Table, Alert, message, Space } from "antd";
-import { UploadOutlined, FileTextOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
+import {
+  UploadOutlined,
+  FileTextOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+} from "@ant-design/icons";
 import Papa from "papaparse";
 import { z } from "zod";
 import { useBulkCreateUsersMutation } from "@/store/api/usersApi";
@@ -21,7 +26,11 @@ interface BulkUserImportProps {
   onSuccess: () => void;
 }
 
-export function BulkUserImport({ open, onClose, onSuccess }: BulkUserImportProps) {
+export function BulkUserImport({
+  open,
+  onClose,
+  onSuccess,
+}: BulkUserImportProps) {
   const [data, setData] = useState<any[]>([]);
   const [errors, setErrors] = useState<any[]>([]);
   const [bulkCreate, { isLoading }] = useBulkCreateUsersMutation();
@@ -37,11 +46,11 @@ export function BulkUserImport({ open, onClose, onSuccess }: BulkUserImportProps
         results.data.forEach((row: any, index: number) => {
           try {
             const parsed = csvRowSchema.parse(row);
-            validatedData.push({ ...parsed, status: 'ACTIVE' });
+            validatedData.push({ ...parsed, status: "ACTIVE" });
           } catch (err: any) {
             validationErrors.push({
               row: index + 2, // +1 for header, +1 for 1-based index
-              email: row.email || 'N/A',
+              email: row.email || "N/A",
               error: err.errors?.[0]?.message || "Invalid row data",
             });
           }
@@ -49,7 +58,7 @@ export function BulkUserImport({ open, onClose, onSuccess }: BulkUserImportProps
 
         setData(validatedData);
         setErrors(validationErrors);
-        
+
         if (validationErrors.length > 0) {
           message.warning(`Found ${validationErrors.length} errors in CSV`);
         } else {
@@ -77,7 +86,13 @@ export function BulkUserImport({ open, onClose, onSuccess }: BulkUserImportProps
   const columns = [
     { title: "Row", dataIndex: "row", width: 80 },
     { title: "Email", dataIndex: "email", width: 200 },
-    { title: "Error", dataIndex: "error", render: (text: string) => <span style={{ color: 'var(--color-error)' }}>{text}</span> },
+    {
+      title: "Error",
+      dataIndex: "error",
+      render: (text: string) => (
+        <span style={{ color: "var(--color-error)" }}>{text}</span>
+      ),
+    },
   ];
 
   return (
@@ -87,26 +102,35 @@ export function BulkUserImport({ open, onClose, onSuccess }: BulkUserImportProps
       onCancel={onClose}
       width={700}
       footer={[
-        <Button key="cancel" onClick={onClose}>Cancel</Button>,
-        <Button 
-          key="import" 
-          type="primary" 
-          disabled={data.length === 0} 
+        <Button key="cancel" onClick={onClose}>
+          Cancel
+        </Button>,
+        <Button
+          key="import"
+          type="primary"
+          disabled={data.length === 0}
           loading={isLoading}
           onClick={handleImport}
         >
           Import {data.length} Users
-        </Button>
+        </Button>,
       ]}
     >
       <div style={{ marginBottom: 24 }}>
-        <p style={{ fontSize: 13, color: 'var(--color-on-surface-variant)', marginBottom: 16 }}>
-          Upload a CSV file with columns: <b>firstName, lastName, email, role</b>. 
-          The role is optional (defaults to EMPLOYEE).
+        <p
+          style={{
+            fontSize: 13,
+            color: "var(--color-on-surface-variant)",
+            marginBottom: 16,
+          }}
+        >
+          Upload a CSV file with columns:{" "}
+          <b>firstName, lastName, email, role</b>. The role is optional
+          (defaults to EMPLOYEE).
         </p>
-        <Upload 
-          accept=".csv" 
-          beforeUpload={handleFileUpload} 
+        <Upload
+          accept=".csv"
+          beforeUpload={handleFileUpload}
           showUploadList={false}
         >
           <Button icon={<UploadOutlined />}>Select CSV File</Button>
@@ -132,10 +156,10 @@ export function BulkUserImport({ open, onClose, onSuccess }: BulkUserImportProps
             message={`Found ${errors.length} errors. Please fix these rows in your CSV and re-upload.`}
             style={{ marginBottom: 16 }}
           />
-          <Table 
-            dataSource={errors} 
-            columns={columns} 
-            size="small" 
+          <Table
+            dataSource={errors}
+            columns={columns}
+            size="small"
             pagination={{ pageSize: 5 }}
             rowKey="row"
           />

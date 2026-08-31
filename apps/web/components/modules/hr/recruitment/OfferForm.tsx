@@ -1,13 +1,33 @@
 "use client";
 
 import React from "react";
-import { Form, Input, InputNumber, DatePicker, Button, Space, message, Select } from "antd";
-import { useCreateOfferMutation, useGenerateOfferPdfMutation, useGetOnboardingTemplatesQuery } from "@/store/api/recruitmentApi";
+import {
+  Form,
+  Input,
+  InputNumber,
+  DatePicker,
+  Button,
+  Space,
+  message,
+  Select,
+} from "antd";
+import {
+  useCreateOfferMutation,
+  useGenerateOfferPdfMutation,
+  useGetOnboardingTemplatesQuery,
+} from "@/store/api/recruitmentApi";
 
-export function OfferForm({ applicationId, onSuccess }: { applicationId: string; onSuccess?: () => void }) {
+export function OfferForm({
+  applicationId,
+  onSuccess,
+}: {
+  applicationId: string;
+  onSuccess?: () => void;
+}) {
   const [form] = Form.useForm();
   const [createOffer, { isLoading: isCreating }] = useCreateOfferMutation();
-  const [generatePdf, { isLoading: isGenerating }] = useGenerateOfferPdfMutation();
+  const [generatePdf, { isLoading: isGenerating }] =
+    useGenerateOfferPdfMutation();
   const { data: templates } = useGetOnboardingTemplatesQuery();
 
   const onFinish = async (values: any) => {
@@ -22,10 +42,10 @@ export function OfferForm({ applicationId, onSuccess }: { applicationId: string;
       }).unwrap();
 
       message.success("Offer created, generating PDF...");
-      
+
       await generatePdf(offer.id).unwrap();
       message.success("Offer letter generated successfully");
-      
+
       if (onSuccess) onSuccess();
     } catch (err) {
       message.error("Failed to create offer letter");
@@ -44,7 +64,12 @@ export function OfferForm({ applicationId, onSuccess }: { applicationId: string;
         label="Annual Base Salary"
         rules={[{ required: true, message: "Please enter salary" }]}
       >
-        <InputNumber style={{ width: "100%" }} formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} />
+        <InputNumber
+          style={{ width: "100%" }}
+          formatter={(value) =>
+            `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+          }
+        />
       </Form.Item>
 
       <Form.Item
@@ -74,18 +99,26 @@ export function OfferForm({ applicationId, onSuccess }: { applicationId: string;
       <Form.Item
         name="onboardingTemplateId"
         label="Onboarding Plan"
-        rules={[{ required: true, message: "Please select an onboarding plan" }]}
+        rules={[
+          { required: true, message: "Please select an onboarding plan" },
+        ]}
       >
         <Select placeholder="Select onboarding template">
           {templates?.map((t: any) => (
-            <Select.Option key={t.id} value={t.id}>{t.name} ({t.employmentType})</Select.Option>
+            <Select.Option key={t.id} value={t.id}>
+              {t.name} ({t.employmentType})
+            </Select.Option>
           ))}
         </Select>
       </Form.Item>
 
       <Form.Item>
         <Space>
-          <Button type="primary" htmlType="submit" loading={isCreating || isGenerating}>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={isCreating || isGenerating}
+          >
             Create & Generate PDF
           </Button>
           <Button onClick={() => form.resetFields()}>Reset</Button>

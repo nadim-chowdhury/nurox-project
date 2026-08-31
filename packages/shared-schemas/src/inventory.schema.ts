@@ -1,12 +1,30 @@
 import { z } from "zod";
 
-export const unitOfMeasureEnum = z.enum(["PCS", "KG", "L", "M", "BOX", "DOZEN"]);
+export const unitOfMeasureEnum = z.enum([
+  "PCS",
+  "KG",
+  "L",
+  "M",
+  "BOX",
+  "DOZEN",
+]);
 export type UnitOfMeasure = z.infer<typeof unitOfMeasureEnum>;
 
-export const stockMovementTypeEnum = z.enum(["RECEIPT", "ISSUE", "TRANSFER", "ADJUSTMENT", "RETURN"]);
+export const stockMovementTypeEnum = z.enum([
+  "RECEIPT",
+  "ISSUE",
+  "TRANSFER",
+  "ADJUSTMENT",
+  "RETURN",
+]);
 export type StockMovementType = z.infer<typeof stockMovementTypeEnum>;
 
-export const valuationMethodEnum = z.enum(["FIFO", "LIFO", "WEIGHTED_AVERAGE", "FEFO"]);
+export const valuationMethodEnum = z.enum([
+  "FIFO",
+  "LIFO",
+  "WEIGHTED_AVERAGE",
+  "FEFO",
+]);
 export type ValuationMethod = z.infer<typeof valuationMethodEnum>;
 
 export const productSchema = z.object({
@@ -268,7 +286,9 @@ export const stockTransferSchema = z.object({
   id: z.string().uuid().optional(),
   fromWarehouseId: z.string().uuid(),
   toWarehouseId: z.string().uuid(),
-  status: z.enum(["DRAFT", "IN_TRANSIT", "COMPLETED", "CANCELLED"]).default("DRAFT"),
+  status: z
+    .enum(["DRAFT", "IN_TRANSIT", "COMPLETED", "CANCELLED"])
+    .default("DRAFT"),
   reference: z.string().optional().nullable(),
   date: z.string().datetime(),
 });

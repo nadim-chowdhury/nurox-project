@@ -1,19 +1,9 @@
 "use client";
 
 import React from "react";
-import {
-  Modal,
-  Form,
-  DatePicker,
-  Input,
-  message,
-} from "antd";
-import {
-  LogoutOutlined,
-} from "@ant-design/icons";
-import { 
-  useSubmitResignationMutation 
-} from "@/store/api/hrApi";
+import { Modal, Form, DatePicker, Input, message } from "antd";
+import { LogoutOutlined } from "@ant-design/icons";
+import { useSubmitResignationMutation } from "@/store/api/hrApi";
 import dayjs from "dayjs";
 
 interface Props {
@@ -47,9 +37,11 @@ export function ResignationModal({ employee, open, onClose }: Props) {
   return (
     <Modal
       title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <LogoutOutlined style={{ color: 'var(--color-error)' }} />
-          <span>Submit Resignation: {employee?.firstName} {employee?.lastName}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <LogoutOutlined style={{ color: "var(--color-error)" }} />
+          <span>
+            Submit Resignation: {employee?.firstName} {employee?.lastName}
+          </span>
         </div>
       }
       open={open}
@@ -60,20 +52,23 @@ export function ResignationModal({ employee, open, onClose }: Props) {
       okButtonProps={{ danger: true }}
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-        <Form.Item 
-          name="requestedLastWorkingDay" 
-          label="Requested Last Working Day" 
+        <Form.Item
+          name="requestedLastWorkingDay"
+          label="Requested Last Working Day"
           rules={[{ required: true }]}
-          initialValue={dayjs().add(30, 'day')}
+          initialValue={dayjs().add(30, "day")}
         >
-          <DatePicker style={{ width: '100%' }} />
+          <DatePicker style={{ width: "100%" }} />
         </Form.Item>
-        <Form.Item 
-          name="reason" 
-          label="Reason for Leaving" 
-          rules={[{ required: true, message: 'Please provide a reason' }]}
+        <Form.Item
+          name="reason"
+          label="Reason for Leaving"
+          rules={[{ required: true, message: "Please provide a reason" }]}
         >
-          <TextArea rows={4} placeholder="Briefly describe your reason for leaving..." />
+          <TextArea
+            rows={4}
+            placeholder="Briefly describe your reason for leaving..."
+          />
         </Form.Item>
       </Form>
     </Modal>

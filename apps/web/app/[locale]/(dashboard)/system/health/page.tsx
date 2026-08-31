@@ -29,7 +29,12 @@ import { PageHeader } from "@/components/common/PageHeader";
 const { Text, Title } = Typography;
 
 export default function HealthDashboard() {
-  const { data: health, isLoading, error, refetch } = useGetHealthQuery(undefined, {
+  const {
+    data: health,
+    isLoading,
+    error,
+    refetch,
+  } = useGetHealthQuery(undefined, {
     pollingInterval: 30000, // Refresh every 30 seconds
   });
 
@@ -42,7 +47,9 @@ export default function HealthDashboard() {
     switch (s) {
       case "up":
       case "ok":
-        return <CheckCircleOutlined style={{ color: "var(--color-success)" }} />;
+        return (
+          <CheckCircleOutlined style={{ color: "var(--color-success)" }} />
+        );
       case "down":
       case "error":
         return (
@@ -219,7 +226,9 @@ export default function HealthDashboard() {
               <Col span={12}>
                 <Text type="secondary">Disk Storage</Text>
                 <Progress
-                  percent={Math.round((details.disk?.status === "up" ? 0.45 : 0.95) * 100)}
+                  percent={Math.round(
+                    (details.disk?.status === "up" ? 0.45 : 0.95) * 100,
+                  )}
                   size="small"
                   strokeColor="var(--color-warning)"
                 />

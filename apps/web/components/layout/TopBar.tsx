@@ -12,6 +12,7 @@ import {
 import { useRouter, useParams } from "next/navigation";
 import { useAppSelector, useAppDispatch } from "@/hooks/useRedux";
 import { useLogoutMutation } from "@/store/api/authApi";
+import { toggleCommandPalette } from "@/store/slices/uiSlice";
 import { Breadcrumbs } from "../common/Breadcrumbs";
 import { NotificationDropdown } from "./NotificationDropdown";
 
@@ -73,9 +74,10 @@ export function TopBar() {
         alignItems: "center",
         justifyContent: "space-between",
         paddingInline: "24px",
-        marginInlineStart: collapsed ? 64 : 256,
-        transition: "all 0.2s ease",
-        background: "rgba(17, 24, 39, 0.7)",
+        background: "rgba(17, 24, 39, 0.75)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        borderBottom: "1px solid var(--ghost-border, rgba(61, 74, 99, 0.15))",
         height: 64,
       }}
     >
@@ -108,6 +110,7 @@ export function TopBar() {
           type="text"
           icon={<SearchOutlined />}
           aria-label="Open Command Palette"
+          onClick={() => dispatch(toggleCommandPalette())}
           style={{
             color: "var(--color-on-surface-variant)",
             display: "flex",

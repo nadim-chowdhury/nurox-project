@@ -2,22 +2,33 @@
 
 import React, { useState, useEffect } from "react";
 import { Row, Col, Card, Table, Select, Button, Space, Tag } from "antd";
-import { BankOutlined, SwapOutlined, DollarOutlined, UploadOutlined } from "@ant-design/icons";
+import {
+  BankOutlined,
+  SwapOutlined,
+  DollarOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
 import { KpiCard } from "@/components/common/KpiCard";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { useGetBankAccountsQuery, useGetBankTransactionsQuery } from "@/store/api/financeApi";
+import {
+  useGetBankAccountsQuery,
+  useGetBankTransactionsQuery,
+} from "@/store/api/financeApi";
 import type { ColumnsType } from "antd/es/table";
 
 const { Option } = Select;
 
 export default function BankingPage() {
-  const { data: bankAccounts, isLoading: accountsLoading } = useGetBankAccountsQuery();
-  const [selectedBankAccountId, setSelectedBankAccountId] = useState<string | null>(null);
-  const { data: transactions, isLoading: transactionsLoading } = useGetBankTransactionsQuery(
-    selectedBankAccountId!,
-    { skip: !selectedBankAccountId }
-  );
+  const { data: bankAccounts, isLoading: accountsLoading } =
+    useGetBankAccountsQuery();
+  const [selectedBankAccountId, setSelectedBankAccountId] = useState<
+    string | null
+  >(null);
+  const { data: transactions, isLoading: transactionsLoading } =
+    useGetBankTransactionsQuery(selectedBankAccountId!, {
+      skip: !selectedBankAccountId,
+    });
 
   useEffect(() => {
     if (bankAccounts && bankAccounts.length > 0 && !selectedBankAccountId) {
@@ -32,7 +43,9 @@ export default function BankingPage() {
       key: "date",
       width: 120,
       render: (d: string) => (
-        <span style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}>
+        <span
+          style={{ color: "var(--color-on-surface-variant)", fontSize: 13 }}
+        >
           {formatDate(d)}
         </span>
       ),
@@ -78,7 +91,9 @@ export default function BankingPage() {
     },
   ];
 
-  const selectedAccount = bankAccounts?.find(a => a.id === selectedBankAccountId);
+  const selectedAccount = bankAccounts?.find(
+    (a) => a.id === selectedBankAccountId,
+  );
 
   return (
     <div className="animate-fade-in-up">
@@ -99,8 +114,10 @@ export default function BankingPage() {
               style={{ width: 250 }}
               placeholder="Select Bank Account"
             >
-              {bankAccounts?.map(acc => (
-                <Option key={acc.id} value={acc.id}>{acc.bankName} - {acc.accountNumber}</Option>
+              {bankAccounts?.map((acc) => (
+                <Option key={acc.id} value={acc.id}>
+                  {acc.bankName} - {acc.accountNumber}
+                </Option>
               ))}
             </Select>
             <Button icon={<UploadOutlined />}>Import Statement</Button>

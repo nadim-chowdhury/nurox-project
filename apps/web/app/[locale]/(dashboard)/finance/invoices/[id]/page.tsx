@@ -1,15 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  Card,
-  Descriptions,
-  Table,
-  Button,
-  Space,
-  Row,
-  Col,
-} from "antd";
+import { Card, Descriptions, Table, Button, Space, Row, Col } from "antd";
 import {
   ArrowLeftOutlined,
   PrinterOutlined,

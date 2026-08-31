@@ -1,10 +1,31 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card, Tag, Button, Tree, Space, Typography, Spin, Modal, Form, Input, Select, message } from "antd";
-import { PlusOutlined, FolderOutlined, FileTextOutlined } from "@ant-design/icons";
+import {
+  Card,
+  Tag,
+  Button,
+  Tree,
+  Space,
+  Typography,
+  Spin,
+  Modal,
+  Form,
+  Input,
+  Select,
+  message,
+} from "antd";
+import {
+  PlusOutlined,
+  FolderOutlined,
+  FileTextOutlined,
+} from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
-import { useGetAccountsTreeQuery, useCreateAccountMutation, useGetAccountsQuery } from "@/store/api/financeApi";
+import {
+  useGetAccountsTreeQuery,
+  useCreateAccountMutation,
+  useGetAccountsQuery,
+} from "@/store/api/financeApi";
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -71,7 +92,11 @@ export default function ChartOfAccountsPage() {
           { label: "Chart of Accounts" },
         ]}
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setIsModalOpen(true)}
+          >
             Add Account
           </Button>
         }
@@ -97,13 +122,25 @@ export default function ChartOfAccountsPage() {
         onOk={() => form.submit()}
       >
         <Form form={form} layout="vertical" onFinish={handleCreate}>
-          <Form.Item name="code" label="Account Code" rules={[{ required: true }]}>
+          <Form.Item
+            name="code"
+            label="Account Code"
+            rules={[{ required: true }]}
+          >
             <Input placeholder="e.g. 1000, 2100" />
           </Form.Item>
-          <Form.Item name="name" label="Account Name" rules={[{ required: true }]}>
+          <Form.Item
+            name="name"
+            label="Account Name"
+            rules={[{ required: true }]}
+          >
             <Input placeholder="e.g. Cash at Bank, Accounts Payable" />
           </Form.Item>
-          <Form.Item name="type" label="Account Type" rules={[{ required: true }]}>
+          <Form.Item
+            name="type"
+            label="Account Type"
+            rules={[{ required: true }]}
+          >
             <Select>
               <Option value="ASSET">Asset</Option>
               <Option value="LIABILITY">Liability</Option>
@@ -114,7 +151,7 @@ export default function ChartOfAccountsPage() {
           </Form.Item>
           <Form.Item name="parentId" label="Parent Account">
             <Select allowClear showSearch optionFilterProp="children">
-              {flatAccounts?.map(acc => (
+              {flatAccounts?.map((acc) => (
                 <Option key={acc.id} value={acc.id}>
                   {acc.code} - {acc.name}
                 </Option>

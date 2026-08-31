@@ -88,6 +88,22 @@ export const supportApi = baseApi.injectEndpoints({
         method: "POST",
       }),
     }),
+
+    // Analytics
+    getSupportAnalytics: builder.query<
+      {
+        totalTickets: number;
+        openTickets: number;
+        resolvedTickets: number;
+        avgResolutionTimeHours: number;
+        slaComplianceRate: number;
+        csatScore: number;
+      },
+      void
+    >({
+      query: () => "/support/analytics",
+      providesTags: ["Ticket"],
+    }),
   }),
 });
 
@@ -103,4 +119,5 @@ export const {
   useCreateKbArticleMutation,
   usePublishKbArticleMutation,
   useAnalyzeKbGapsMutation,
+  useGetSupportAnalyticsQuery,
 } = supportApi;

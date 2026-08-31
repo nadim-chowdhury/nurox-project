@@ -12,7 +12,14 @@ export default function OrgChartPage() {
 
   if (isLoading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100%",
+        }}
+      >
         <Spin size="large" />
       </div>
     );
@@ -28,10 +35,13 @@ export default function OrgChartPage() {
 
   // react-d3-tree expects a single root object.
   // If there are multiple roots (e.g. multiple CEOs), we wrap them in a virtual root.
-  const treeData = data.length === 1 ? data[0] : {
-    name: "Organization",
-    children: data,
-  };
+  const treeData =
+    data.length === 1
+      ? data[0]
+      : {
+          name: "Organization",
+          children: data,
+        };
 
   const containerStyles = {
     width: "100%",
@@ -62,7 +72,14 @@ export default function OrgChartPage() {
             width: "180px",
           }}
         >
-          <div style={{ fontWeight: 600, fontSize: "14px", color: "#0c1324", textAlign: "center" }}>
+          <div
+            style={{
+              fontWeight: 600,
+              fontSize: "14px",
+              color: "#0c1324",
+              textAlign: "center",
+            }}
+          >
             {nodeDatum.name}
           </div>
           <div style={{ fontSize: "12px", color: "#595959", marginTop: "4px" }}>

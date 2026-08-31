@@ -27,14 +27,24 @@ const { Title, Text, Paragraph } = Typography;
 
 export default function OnboardingPortalPage() {
   const [tasks, setTasks] = useState([
-    { title: "Personal Information", completed: true, icon: <IdcardOutlined /> },
+    {
+      title: "Personal Information",
+      completed: true,
+      icon: <IdcardOutlined />,
+    },
     { title: "Bank Details", completed: false, icon: <BankOutlined /> },
-    { title: "Educational Certificates", completed: false, icon: <FileTextOutlined /> },
+    {
+      title: "Educational Certificates",
+      completed: false,
+      icon: <FileTextOutlined />,
+    },
     { title: "Work Experience", completed: false, icon: <FileTextOutlined /> },
     { title: "E-Signature", completed: false, icon: <EditOutlined /> },
   ]);
 
-  const progress = Math.round((tasks.filter((t) => t.completed).length / tasks.length) * 100);
+  const progress = Math.round(
+    (tasks.filter((t) => t.completed).length / tasks.length) * 100,
+  );
 
   const handleTaskToggle = (index: number) => {
     const newTasks = [...tasks];
@@ -84,7 +94,8 @@ export default function OnboardingPortalPage() {
 
           <Card title="Document Upload">
             <Paragraph>
-              Please upload clear copies of the following documents for verification.
+              Please upload clear copies of the following documents for
+              verification.
             </Paragraph>
             <Row gutter={[16, 16]}>
               <Col span={12}>
@@ -105,17 +116,23 @@ export default function OnboardingPortalPage() {
           </Card>
           <Card title="E-Signature" style={{ marginTop: 24 }}>
             <Paragraph>
-              Please sign below to confirm your acceptance of the offer and terms.
+              Please sign below to confirm your acceptance of the offer and
+              terms.
             </Paragraph>
-            <SignaturePad onSave={(_url) => {
-              message.success("Signature saved successfully");
-              handleTaskToggle(4); // Mark E-Signature as done
-            }} />
+            <SignaturePad
+              onSave={(_url) => {
+                message.success("Signature saved successfully");
+                handleTaskToggle(4); // Mark E-Signature as done
+              }}
+            />
           </Card>
         </Col>
 
         <Col xs={24} md={8}>
-          <Card title="Your Progress" style={{ textAlign: "center", marginBottom: 24 }}>
+          <Card
+            title="Your Progress"
+            style={{ textAlign: "center", marginBottom: 24 }}
+          >
             <Progress type="circle" percent={progress} />
             <Title level={4} style={{ marginTop: 24 }}>
               {progress === 100 ? "Ready to Join!" : "Almost There"}
@@ -127,7 +144,8 @@ export default function OnboardingPortalPage() {
 
           <Card title="Need Help?">
             <Paragraph>
-              If you have any questions regarding your onboarding, please contact our HR support.
+              If you have any questions regarding your onboarding, please
+              contact our HR support.
             </Paragraph>
             <Button block type="primary" ghost>
               Contact Support

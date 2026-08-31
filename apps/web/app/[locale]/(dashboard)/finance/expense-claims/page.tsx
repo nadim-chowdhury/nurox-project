@@ -1,10 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { Table, Button, Modal, Form, Input, InputNumber, DatePicker, Select, Tag, message, Space } from "antd";
-import { PlusOutlined, CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
+import {
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  InputNumber,
+  DatePicker,
+  Select,
+  Tag,
+  message,
+  Space,
+} from "antd";
+import {
+  PlusOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+} from "@ant-design/icons";
 import { PageHeader } from "@/components/common/PageHeader";
-import { useGetExpenseClaimsQuery, useCreateExpenseClaimMutation, useApproveExpenseClaimMutation } from "@/store/api/financeApi";
+import {
+  useGetExpenseClaimsQuery,
+  useCreateExpenseClaimMutation,
+  useApproveExpenseClaimMutation,
+} from "@/store/api/financeApi";
 import dayjs from "dayjs";
 
 const { Option } = Select;
@@ -31,42 +51,58 @@ export default function ExpenseClaims() {
   };
 
   const handleApprove = async (id: string) => {
-      try {
-          await approveClaim({ id, approverId: "current-user-id" }).unwrap();
-          message.success("Expense claim approved");
-      } catch (err: any) {
-          message.error(err.data?.message || "Failed to approve claim");
-      }
+    try {
+      await approveClaim({ id, approverId: "current-user-id" }).unwrap();
+      message.success("Expense claim approved");
+    } catch (err: any) {
+      message.error(err.data?.message || "Failed to approve claim");
+    }
   };
 
   const columns = [
-    { title: "Date", dataIndex: "date", render: (d: string) => dayjs(d).format("YYYY-MM-DD") },
+    {
+      title: "Date",
+      dataIndex: "date",
+      render: (d: string) => dayjs(d).format("YYYY-MM-DD"),
+    },
     { title: "Description", dataIndex: "description" },
     { title: "Category", dataIndex: "category" },
-    { title: "Amount", dataIndex: "amount", render: (val: number) => `$${val.toFixed(2)}` },
-    { 
-      title: "Status", 
-      dataIndex: "status",
-      render: (s: string) => {
-          let color = "orange";
-          if (s === "APPROVED") color = "green";
-          if (s === "REJECTED") color = "red";
-          if (s === "PAID") color = "blue";
-          return <Tag color={color}>{s}</Tag>;
-      }
+    {
+      title: "Amount",
+      dataIndex: "amount",
+      render: (val: number) => `$${val.toFixed(2)}`,
     },
     {
-        title: "Actions",
-        key: "actions",
-        render: (_: any, record: any) => (
-            record.status === "PENDING" && (
-                <Space>
-                    <Button size="small" icon={<CheckCircleOutlined />} type="primary" onClick={() => handleApprove(record.id)}>Approve</Button>
-                    <Button size="small" icon={<CloseCircleOutlined />} danger>Reject</Button>
-                </Space>
-            )
-        )
-    }
+      title: "Status",
+      dataIndex: "status",
+      render: (s: string) => {
+        let color = "orange";
+        if (s === "APPROVED") color = "green";
+        if (s === "REJECTED") color = "red";
+        if (s === "PAID") color = "blue";
+        return <Tag color={color}>{s}</Tag>;
+      },
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_: any, record: any) =>
+        record.status === "PENDING" && (
+          <Space>
+            <Button
+              size="small"
+              icon={<CheckCircleOutlined />}
+              type="primary"
+              onClick={() => handleApprove(record.id)}
+            >
+              Approve
+            </Button>
+            <Button size="small" icon={<CloseCircleOutlined />} danger>
+              Reject
+            </Button>
+          </Space>
+        ),
+    },
   ];
 
   return (
@@ -80,13 +116,22 @@ export default function ExpenseClaims() {
           { label: "Expense Claims" },
         ]}
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setIsModalOpen(true)}
+          >
             Submit Expense
           </Button>
         }
       />
 
-      <Table dataSource={claims} columns={columns} rowKey="id" loading={isLoading} />
+      <Table
+        dataSource={claims}
+        columns={columns}
+        rowKey="id"
+        loading={isLoading}
+      />
 
       <Modal
         title="Submit New Expense Claim"
@@ -95,25 +140,43 @@ export default function ExpenseClaims() {
         onOk={() => form.submit()}
       >
         <Form form={form} layout="vertical" onFinish={handleCreate}>
-          <Form.Item name="date" label="Expense Date" rules={[{ required: true }]} initialValue={dayjs()}>
+          <Form.Item
+            name="date"
+            label="Expense Date"
+            rules={[{ required: true }]}
+            initialValue={dayjs()}
+          >
             <DatePicker className="w-full" />
           </Form.Item>
-          <Form.Item name="description" label="Description" rules={[{ required: true }]}>
+          <Form.Item
+            name="description"
+            label="Description"
+            rules={[{ required: true }]}
+          >
             <Input placeholder="e.g., Client dinner, Taxi to airport" />
           </Form.Item>
-          <Form.Item name="category" label="Category" rules={[{ required: true }]}>
+          <Form.Item
+            name="category"
+            label="Category"
+            rules={[{ required: true }]}
+          >
             <Select>
-                <Option value="Travel">Travel</Option>
-                <Option value="Meals">Meals</Option>
-                <Option value="Supplies">Supplies</Option>
-                <Option value="Other">Other</Option>
+              <Option value="Travel">Travel</Option>
+              <Option value="Meals">Meals</Option>
+              <Option value="Supplies">Supplies</Option>
+              <Option value="Other">Other</Option>
             </Select>
           </Form.Item>
           <Form.Item name="amount" label="Amount" rules={[{ required: true }]}>
-            <InputNumber className="w-full" min={0.01} precision={2} prefix="$" />
+            <InputNumber
+              className="w-full"
+              min={0.01}
+              precision={2}
+              prefix="$"
+            />
           </Form.Item>
           <Form.Item name="receiptUrl" label="Receipt Image URL">
-              <Input placeholder="https://..." />
+            <Input placeholder="https://..." />
           </Form.Item>
         </Form>
       </Modal>

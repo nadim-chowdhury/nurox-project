@@ -1,19 +1,11 @@
 "use client";
 
 import React from "react";
+import { Modal, Form, DatePicker, Input, message } from "antd";
+import { HistoryOutlined } from "@ant-design/icons";
 import {
-  Modal,
-  Form,
-  DatePicker,
-  Input,
-  message,
-} from "antd";
-import {
-  HistoryOutlined,
-} from "@ant-design/icons";
-import { 
   useExtendProbationMutation,
-  useCompleteProbationMutation
+  useCompleteProbationMutation,
 } from "@/store/api/hrApi";
 import dayjs from "dayjs";
 
@@ -28,8 +20,10 @@ const { TextArea } = Input;
 
 export function ProbationActionModal({ employee, open, onClose, mode }: Props) {
   const [form] = Form.useForm();
-  const [extendProbation, { isLoading: isExtending }] = useExtendProbationMutation();
-  const [completeProbation, { isLoading: isCompleting }] = useCompleteProbationMutation();
+  const [extendProbation, { isLoading: isExtending }] =
+    useExtendProbationMutation();
+  const [completeProbation, { isLoading: isCompleting }] =
+    useCompleteProbationMutation();
 
   const handleSubmit = async () => {
     try {
@@ -58,9 +52,12 @@ export function ProbationActionModal({ employee, open, onClose, mode }: Props) {
   return (
     <Modal
       title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <HistoryOutlined style={{ color: 'var(--color-primary)' }} />
-          <span>{mode === "extend" ? "Extend Probation" : "Complete Probation"}: {employee?.firstName} {employee?.lastName}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <HistoryOutlined style={{ color: "var(--color-primary)" }} />
+          <span>
+            {mode === "extend" ? "Extend Probation" : "Complete Probation"}:{" "}
+            {employee?.firstName} {employee?.lastName}
+          </span>
         </div>
       }
       open={open}
@@ -71,21 +68,28 @@ export function ProbationActionModal({ employee, open, onClose, mode }: Props) {
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
         {mode === "extend" && (
-          <Form.Item 
-            name="newEndDate" 
-            label="New Probation End Date" 
+          <Form.Item
+            name="newEndDate"
+            label="New Probation End Date"
             rules={[{ required: true }]}
-            initialValue={employee?.probationEndDate ? dayjs(employee.probationEndDate).add(3, 'month') : dayjs().add(3, 'month')}
+            initialValue={
+              employee?.probationEndDate
+                ? dayjs(employee.probationEndDate).add(3, "month")
+                : dayjs().add(3, "month")
+            }
           >
-            <DatePicker style={{ width: '100%' }} />
+            <DatePicker style={{ width: "100%" }} />
           </Form.Item>
         )}
-        <Form.Item 
-          name="comments" 
-          label="Comments / Review Summary" 
-          rules={[{ required: true, message: 'Please provide comments' }]}
+        <Form.Item
+          name="comments"
+          label="Comments / Review Summary"
+          rules={[{ required: true, message: "Please provide comments" }]}
         >
-          <TextArea rows={4} placeholder="Summarize the performance review..." />
+          <TextArea
+            rows={4}
+            placeholder="Summarize the performance review..."
+          />
         </Form.Item>
       </Form>
     </Modal>

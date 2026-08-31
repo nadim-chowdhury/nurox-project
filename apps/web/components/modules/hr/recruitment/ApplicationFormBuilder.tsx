@@ -1,39 +1,39 @@
 "use client";
 
 import React, { useState } from "react";
-import { 
-  Card, 
-  Button, 
-  Space, 
-  Input, 
-  Select, 
-  Switch, 
-  List, 
-  Typography, 
+import {
+  Card,
+  Button,
+  Space,
+  Input,
+  Select,
+  Switch,
+  List,
+  Typography,
   Divider,
-  Tag
+  Tag,
 } from "antd";
-import { 
-  PlusOutlined, 
-  DeleteOutlined, 
+import {
+  PlusOutlined,
+  DeleteOutlined,
   MenuOutlined,
-  HolderOutlined
+  HolderOutlined,
 } from "@ant-design/icons";
-import { 
-  DndContext, 
+import {
+  DndContext,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent
+  DragEndEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-  useSortable
+  useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
@@ -52,12 +52,15 @@ interface FormBuilderProps {
   onChange?: (fields: FormField[]) => void;
 }
 
-export function ApplicationFormBuilder({ value = [], onChange }: FormBuilderProps) {
+export function ApplicationFormBuilder({
+  value = [],
+  onChange,
+}: FormBuilderProps) {
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const handleAddField = () => {
@@ -72,12 +75,14 @@ export function ApplicationFormBuilder({ value = [], onChange }: FormBuilderProp
   };
 
   const handleUpdateField = (id: string, updates: Partial<FormField>) => {
-    const newFields = value.map(f => f.id === id ? { ...f, ...updates } : f);
+    const newFields = value.map((f) =>
+      f.id === id ? { ...f, ...updates } : f,
+    );
     onChange?.(newFields);
   };
 
   const handleDeleteField = (id: string) => {
-    const newFields = value.filter(f => f.id !== id);
+    const newFields = value.filter((f) => f.id !== id);
     onChange?.(newFields);
   };
 
@@ -92,11 +97,20 @@ export function ApplicationFormBuilder({ value = [], onChange }: FormBuilderProp
 
   return (
     <div style={{ backgroundColor: "#f5f5f5", padding: 16, borderRadius: 8 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <Title level={5} style={{ margin: 0 }}>Custom Application Questions</Title>
-        <Button 
-          type="dashed" 
-          icon={<PlusOutlined />} 
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 16,
+        }}
+      >
+        <Title level={5} style={{ margin: 0 }}>
+          Custom Application Questions
+        </Title>
+        <Button
+          type="dashed"
+          icon={<PlusOutlined />}
           onClick={handleAddField}
           block
         >
@@ -104,20 +118,20 @@ export function ApplicationFormBuilder({ value = [], onChange }: FormBuilderProp
         </Button>
       </div>
 
-      <DndContext 
-        sensors={sensors} 
-        collisionDetection={closestCenter} 
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext 
-          items={value.map(f => f.id)} 
+        <SortableContext
+          items={value.map((f) => f.id)}
           strategy={verticalListSortingStrategy}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {value.map((field) => (
-              <SortableField 
-                key={field.id} 
-                field={field} 
+              <SortableField
+                key={field.id}
+                field={field}
                 onUpdate={(updates) => handleUpdateField(field.id, updates)}
                 onDelete={() => handleDeleteField(field.id)}
               />
@@ -127,20 +141,27 @@ export function ApplicationFormBuilder({ value = [], onChange }: FormBuilderProp
       </DndContext>
 
       {value.length === 0 && (
-        <div style={{ textAlign: "center", padding: "24px", color: "var(--color-text-secondary)" }}>
-          No custom questions yet. Candidates will only see the default personal info and resume fields.
+        <div
+          style={{
+            textAlign: "center",
+            padding: "24px",
+            color: "var(--color-text-secondary)",
+          }}
+        >
+          No custom questions yet. Candidates will only see the default personal
+          info and resume fields.
         </div>
       )}
     </div>
   );
 }
 
-function SortableField({ 
-  field, 
-  onUpdate, 
-  onDelete 
-}: { 
-  field: FormField; 
+function SortableField({
+  field,
+  onUpdate,
+  onDelete,
+}: {
+  field: FormField;
   onUpdate: (updates: Partial<FormField>) => void;
   onDelete: () => void;
 }) {
@@ -150,7 +171,7 @@ function SortableField({
     setNodeRef,
     transform,
     transition,
-    isDragging
+    isDragging,
   } = useSortable({ id: field.id });
 
   const style = {
@@ -161,33 +182,33 @@ function SortableField({
   };
 
   return (
-    <Card 
-      ref={setNodeRef} 
-      style={style} 
-      size="small" 
+    <Card
+      ref={setNodeRef}
+      style={style}
+      size="small"
       bodyStyle={{ padding: "12px" }}
       className="form-builder-field"
     >
       <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-        <div 
-          {...attributes} 
-          {...listeners} 
+        <div
+          {...attributes}
+          {...listeners}
           style={{ cursor: "grab", marginTop: 6, color: "#999" }}
         >
           <HolderOutlined />
         </div>
-        
+
         <div style={{ flex: 1 }}>
           <Space direction="vertical" style={{ width: "100%" }} size={8}>
             <div style={{ display: "flex", gap: 8 }}>
-              <Input 
-                value={field.label} 
+              <Input
+                value={field.label}
                 placeholder="Question Label"
                 onChange={(e) => onUpdate({ label: e.target.value })}
                 style={{ fontWeight: 600 }}
               />
-              <Select 
-                value={field.type} 
+              <Select
+                value={field.type}
                 onChange={(v) => onUpdate({ type: v as any })}
                 style={{ width: 140 }}
               >
@@ -200,27 +221,37 @@ function SortableField({
             </div>
 
             {field.type === "select" && (
-              <Input 
+              <Input
                 placeholder="Comma separated options: e.g. Yes, No, Maybe"
                 value={field.options?.join(", ")}
-                onChange={(e) => onUpdate({ options: e.target.value.split(",").map(s => s.trim()) })}
+                onChange={(e) =>
+                  onUpdate({
+                    options: e.target.value.split(",").map((s) => s.trim()),
+                  })
+                }
               />
             )}
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
               <Space>
-                <Switch 
-                  size="small" 
-                  checked={field.required} 
-                  onChange={(v) => onUpdate({ required: v })} 
+                <Switch
+                  size="small"
+                  checked={field.required}
+                  onChange={(v) => onUpdate({ required: v })}
                 />
                 <Text type="secondary">Required Field</Text>
               </Space>
-              <Button 
-                danger 
-                type="text" 
-                size="small" 
-                icon={<DeleteOutlined />} 
+              <Button
+                danger
+                type="text"
+                size="small"
+                icon={<DeleteOutlined />}
                 onClick={onDelete}
               >
                 Remove
